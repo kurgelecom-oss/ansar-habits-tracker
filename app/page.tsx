@@ -2,56 +2,101 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase, getTodayDate, getWeekStart, getTodayDayName } from "./lib/supabase";
 
-const HABIT_POINTS: Record<string, number> = {
-  wake: 0, fajr: 0, bed: 0, movement: 0, breakfast: 0, quran: 0,
-  goals: 2, school: 3, readtheory: 1, khan: 1, journal: 1,
-  soccer: 2, btn: 1, namaz: 1, room: 0, shower: 0, teeth: 0, reading: 1,
-};
+// ANSAR FC system — points are tracked from day one, but reward enforcement
+// only activates 13 Jul 2026 after a green soft-launch week.
+const POINTS_ACTIVE = false;
 
 const SOCCER_DAYS = ["Monday", "Wednesday"];
 
-function buildHabits(dayName: string) {
+type Habit = { id: string; block: string; label: string; icon: string; chip?: string };
+
+function buildHabits(dayName: string): Habit[] {
   const hasSoccer = SOCCER_DAYS.includes(dayName);
   return [
-    { id: "wake",      block: "pre",    label: "Feet on floor by 6:45am — no phone",  points: 0, icon: "🌅" },
-    { id: "fajr",      block: "pre",    label: "Fajr Namaz done",                      points: 0, icon: "🕌" },
-    { id: "bed",       block: "pre",    label: "Bed made + dressed",                   points: 0, icon: "🛏️" },
-    { id: "movement",  block: "pre",    label: "Morning movement — 20 min outside",    points: 0, icon: "⚽" },
-    { id: "breakfast", block: "pre",    label: "Breakfast done — no screens",          points: 0, icon: "🍳" },
-    { id: "quran",     block: "pre",    label: "Qur'an recitation — 20 min",           points: 0, icon: "📖" },
-    { id: "goals",     block: "pre",    label: "Daily goals written",                  points: 2, icon: "✍️" },
-    { id: "school",    block: "school", label: "Homeschool session completed — 4 hrs", points: 3, icon: "📚" },
-    { id: "readtheory",block: "school", label: "ReadTheory done",                      points: 1, icon: "📝" },
-    { id: "khan",      block: "school", label: "Khan Academy done",                    points: 1, icon: "🎓" },
-    { id: "journal",   block: "school", label: "Daily learning journal entry written", points: 1, icon: "📒" },
-    ...(hasSoccer ? [{ id: "soccer", block: "arvo", label: "Soccer training — attend + full effort", points: 2, icon: "⚽" }] : []),
-    { id: "btn",       block: "arvo",   label: "BTN episode + Cornell notes done",     points: 1, icon: "📰" },
-    { id: "namaz",     block: "arvo",   label: "Duhr + Asr + Maghrib + Isha Namaz",   points: 1, icon: "🕌" },
-    { id: "room",      block: "arvo",   label: "Room tidy",                            points: 0, icon: "🧹" },
-    { id: "shower",    block: "arvo",   label: "Shower done",                          points: 0, icon: "🚿" },
-    { id: "teeth",     block: "arvo",   label: "Teeth brushed",                        points: 0, icon: "🪥" },
-    { id: "reading",   block: "arvo",   label: "Reading in bed — 15+ min",             points: 1, icon: "🌙" },
+    { id: "feet_floor",         block: "pre_homeschool",    label: "Feet on floor by 6:45am - no phone",                icon: "🌅" },
+    { id: "fajr",               block: "pre_homeschool",    label: "Fajr Namaz done",                                    icon: "🕌" },
+    { id: "bed_dressed",        block: "pre_homeschool",    label: "Bed made + dressed",                                 icon: "🛏️" },
+    { id: "movement",           block: "pre_homeschool",    label: "Morning movement - 20 min outside (ball work)",      icon: "⚽" },
+    { id: "breakfast",          block: "pre_homeschool",    label: "Breakfast done - no screens",                        icon: "🍳" },
+    { id: "quran",              block: "pre_homeschool",    label: "Qur'an recitation - 20 min",                         icon: "📖" },
+    { id: "goals",              block: "pre_homeschool",    label: "Daily goals written + Habits page reviewed",         icon: "✍️" },
+    { id: "homeschool_session", block: "homeschool",        label: "Homeschool session completed (4 hrs)",               icon: "📚", chip: "+3 pts" },
+    { id: "readtheory",         block: "homeschool",        label: "ReadTheory done",                                    icon: "📝", chip: "+1 pair" },
+    { id: "khan",               block: "homeschool",        label: "Khan Academy done",                                  icon: "🎓", chip: "+1 pair" },
+    { id: "journal",            block: "homeschool",        label: "Daily learning journal entry written",               icon: "📒", chip: "+1 pt" },
+    { id: "btn_cornell",        block: "afternoon_evening", label: "BTN episode + Cornell notes done",                   icon: "📰", chip: "+1 pt" },
+    { id: "all_namaz",          block: "afternoon_evening", label: "All Namaz done (Fajr, Duhr, Asr, Maghrib, Isha)",    icon: "🕌", chip: "+1 pt" },
+    { id: "room_tidy",          block: "afternoon_evening", label: "Room tidy",                                          icon: "🧹" },
+    { id: "shower",             block: "afternoon_evening", label: "Shower done",                                        icon: "🚿" },
+    { id: "teeth",              block: "afternoon_evening", label: "Teeth brushed",                                      icon: "🪥" },
+    { id: "reading",            block: "afternoon_evening", label: "Reading in bed (15+ min)",                           icon: "🌙" },
+    ...(hasSoccer ? [{ id: "soccer_training", block: "conditional", label: "Soccer training attended", icon: "⚽", chip: "+1 pt" }] : []),
   ];
 }
 
 const BLOCKS = [
-  { id: "pre",    label: "🌅 Pre-Homeschool",      subtitle: "Before 8:30am",    color: "#ffa500" },
-  { id: "school", label: "📚 Homeschool",           subtitle: "4 hour block",     color: "#00d9ff" },
-  { id: "arvo",   label: "🌆 Afternoon & Evening",  subtitle: "After school",     color: "#00ff88" },
+  { id: "pre_homeschool",    label: "🌅 Pre-Homeschool",      subtitle: "Before 8:30am · all 7 = +2 pts", color: "#ffa500" },
+  { id: "homeschool",        label: "📚 Homeschool",           subtitle: "4 hour block",                   color: "#00d9ff" },
+  { id: "afternoon_evening", label: "🌆 Afternoon / Evening",  subtitle: "After school",                   color: "#00ff88" },
+  { id: "conditional",       label: "⚽ Conditional",          subtitle: "Mon & Wed only",                 color: "#a78bfa" },
 ];
 
+const PRE_HABIT_IDS = ["feet_floor", "fajr", "bed_dressed", "movement", "breakfast", "quran", "goals"];
+
+// Block-based scoring — NOT per-habit sums.
+// Daily max = 10 on a non-training day, 11 on a training day (Mon/Wed).
+function scoreDay(completedIds: Set<string>, dayName: string) {
+  const hasSoccer = SOCCER_DAYS.includes(dayName);
+
+  const pre = PRE_HABIT_IDS.every(id => completedIds.has(id)) ? 2 : 0;
+
+  let school = 0;
+  if (completedIds.has("homeschool_session")) school += 3;
+  if (completedIds.has("readtheory") && completedIds.has("khan")) school += 1;
+  if (completedIds.has("journal")) school += 1;
+
+  let arvo = 0;
+  if (completedIds.has("btn_cornell")) arvo += 1;
+  if (completedIds.has("all_namaz")) arvo += 1;
+
+  const conditional = hasSoccer && completedIds.has("soccer_training") ? 1 : 0;
+
+  const visibleIds = buildHabits(dayName).map(h => h.id);
+  const perfect = visibleIds.length > 0 && visibleIds.every(id => completedIds.has(id));
+  const bonus = perfect ? 1 : 0;
+
+  return {
+    total: pre + school + arvo + conditional + bonus,
+    blocks: { pre_homeschool: pre, homeschool: school, afternoon_evening: arvo, conditional } as Record<string, number>,
+    perfect,
+  };
+}
+
+// ANSAR FC weekly tiers. Weekly max = 56 (incl. +3 streak bonus for 5 Perfect Days Mon–Fri).
+const WEEKLY_MAX = 56;
+
 const THRESHOLDS = [
-  { min: 40, label: "Full Weekend 🏆", desc: "PS5 Sat+Sun · Full iPad · Movie Friday · Free time", color: "#00ff88" },
-  { min: 32, label: "Good Week ✅",    desc: "PS5 Saturday only · iPad normal · Free time",        color: "#00d9ff" },
-  { min: 25, label: "Average Week ⚠️", desc: "No PS5 · iPad halved · Catch-up Saturday morning",  color: "#ffa500" },
-  { min: 0,  label: "Reset Week ❌",   desc: "No PS5 · No iPad · Full catch-up weekend",           color: "#ff4444" },
+  { min: 42, label: "First Team 🏆",      desc: "42+ pts",   color: "#00ff88" },
+  { min: 34, label: "Bench ✅",           desc: "34–41 pts", color: "#00d9ff" },
+  { min: 26, label: "Reserves ⚠️",        desc: "26–33 pts", color: "#ffa500" },
+  { min: 0,  label: "Training Ground ❌", desc: "0–25 pts",  color: "#ff4444" },
 ];
 
 function getThreshold(pts: number) {
   return THRESHOLDS.find(t => pts >= t.min) || THRESHOLDS[THRESHOLDS.length - 1];
 }
 
-function getHabitState(habit: ReturnType<typeof buildHabits>[0], blockHabits: ReturnType<typeof buildHabits>, completed: Record<string, boolean>): "done" | "available" | "locked" {
+function dayNameOf(dateStr: string) {
+  return new Date(dateStr + "T12:00:00").toLocaleDateString("en-AU", { weekday: "long" });
+}
+
+function addDays(dateStr: string, n: number) {
+  const d = new Date(dateStr + "T12:00:00");
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split("T")[0];
+}
+
+function getHabitState(habit: Habit, blockHabits: Habit[], completed: Record<string, boolean>): "done" | "available" | "locked" {
   if (completed[habit.id]) return "done";
   const idx = blockHabits.findIndex(h => h.id === habit.id);
   const incompleteBefore = blockHabits.slice(0, idx).filter(h => !completed[h.id]).length;
@@ -95,7 +140,7 @@ async function calculateStreak(): Promise<number> {
 
 export default function AnsarPage() {
   const [dayName, setDayName] = useState("");
-  const [habits, setHabits] = useState<ReturnType<typeof buildHabits>>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState("");
@@ -115,10 +160,24 @@ export default function AnsarPage() {
       .lte("completed_date", today);
 
     if (!error && data) {
-      let total = 0;
+      const byDate: Record<string, Set<string>> = {};
       data.forEach((r: { habit_id: string; completed_date: string }) => {
-        total += HABIT_POINTS[r.habit_id] || 0;
+        if (!byDate[r.completed_date]) byDate[r.completed_date] = new Set();
+        byDate[r.completed_date].add(r.habit_id);
       });
+
+      let total = 0;
+      Object.keys(byDate).forEach(ds => {
+        total += scoreDay(byDate[ds], dayNameOf(ds)).total;
+      });
+
+      // Weekly streak bonus: 5 Perfect Days Mon–Fri = +3 to weekly total.
+      const weekdayDates = [0, 1, 2, 3, 4].map(i => addDays(weekStart, i));
+      const allWeekdaysPerfect = weekdayDates.every(
+        ds => byDate[ds] && scoreDay(byDate[ds], dayNameOf(ds)).perfect
+      );
+      if (allWeekdaysPerfect) total += 3;
+
       setWeeklyPts(total);
     }
   }, []);
@@ -183,11 +242,13 @@ export default function AnsarPage() {
     setSaving(null);
   }
 
-  const todayPts = habits.filter(h => completed[h.id]).reduce((a, h) => a + h.points, 0);
+  const completedSet = new Set(Object.keys(completed).filter(k => completed[k]));
+  const dayScore = scoreDay(completedSet, dayName);
+  const todayPts = dayScore.total;
   const todayDone = habits.filter(h => completed[h.id]).length;
   const overallPct = habits.length > 0 ? Math.round((todayDone / habits.length) * 100) : 0;
   const weekThreshold = getThreshold(weeklyPts ?? 0);
-  const WEEKLY_MAX = SOCCER_DAYS.includes(dayName) ? 51 : 47;
+  const DAILY_MAX = SOCCER_DAYS.includes(dayName) ? 11 : 10;
 
   return (
     <div style={{ minHeight: "100vh", background: "#0f1419", color: "#ffffff", fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column" }}>
@@ -200,7 +261,7 @@ export default function AnsarPage() {
       }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "#ffffff" }}>
-            Ansar <span style={{ color: "#ffa500" }}>· Daily Habits</span>
+            Ansar <span style={{ color: "#ffa500" }}>· ANSAR FC</span>
           </div>
           <div style={{ fontSize: 12, color: "#757f8f", marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}>
             {mounted ? new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" }) : ""} · {time}
@@ -221,13 +282,26 @@ export default function AnsarPage() {
       <div style={{ flex: 1, overflowY: "auto", padding: "24px", width: "100%" }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
 
+          {/* SOFT-LAUNCH NOTICE */}
+          {!POINTS_ACTIVE && (
+            <div style={{
+              background: "rgba(255,165,0,0.1)", border: "1px solid rgba(255,165,0,0.3)",
+              borderRadius: 10, padding: "12px 16px", marginBottom: 16,
+              fontSize: 12, color: "#ffa500", fontWeight: 600, display: "flex", alignItems: "center", gap: 8,
+            }}>
+              🟡 Soft-launch week — points are tracked and shown, but rewards don&apos;t count yet. Points activate 13 Jul 2026.
+            </div>
+          )}
+
           {/* TOP METRICS ROW */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
             <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
               <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Points Today</div>
-              <div style={{ fontSize: 36, fontWeight: 700, color: "#ffa500", lineHeight: 1 }}>{mounted ? todayPts : "—"}</div>
+              <div style={{ fontSize: 36, fontWeight: 700, color: "#ffa500", lineHeight: 1 }}>
+                {mounted ? todayPts : "—"}{mounted && dayScore.perfect && <span style={{ fontSize: 20, marginLeft: 6 }}>⭐</span>}
+              </div>
               <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
-                <span>📊</span> {mounted ? todayDone : 0}/{habits.length} complete
+                <span>📊</span> {mounted ? todayDone : 0}/{habits.length} complete · max {DAILY_MAX} pts
               </div>
             </div>
 
@@ -251,7 +325,7 @@ export default function AnsarPage() {
             <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
               <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Progress</div>
               <div style={{ fontSize: 36, fontWeight: 700, color: "#00d9ff", lineHeight: 1 }}>{mounted ? overallPct : 0}%</div>
-              <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8 }}>Today's completion</div>
+              <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8 }}>Today&apos;s completion</div>
             </div>
           </div>
 
@@ -268,6 +342,9 @@ export default function AnsarPage() {
                 background: "linear-gradient(90deg, #ffa500, #00ff88)",
               }} />
             </div>
+            <div style={{ fontSize: 11, color: "#757f8f", marginTop: 10, fontWeight: 500 }}>
+              ⭐ Perfect Day: tick every habit for +1 bonus pt
+            </div>
           </div>
 
           {/* HABIT BLOCKS GRID */}
@@ -276,7 +353,7 @@ export default function AnsarPage() {
             const blockHabits = habits.filter(h => h.block === block.id);
             if (blockHabits.length === 0) return null;
             const blockDone = blockHabits.filter(h => completed[h.id]).length;
-            const blockPts = blockHabits.filter(h => completed[h.id]).reduce((a, h) => a + h.points, 0);
+            const blockPts = mounted ? (dayScore.blocks[block.id] ?? 0) : 0;
             const blockPct = Math.round((blockDone / blockHabits.length) * 100);
 
             return (
@@ -344,7 +421,7 @@ export default function AnsarPage() {
                         {isLocked && <div style={{ fontSize: 10, color: "#565f70", marginTop: 2, fontWeight: 500 }}>Complete previous habits to unlock</div>}
                       </div>
 
-                      {habit.points > 0 && (
+                      {habit.chip && (
                         <div style={{
                           fontSize: 11, fontWeight: 600, flexShrink: 0,
                           color: isDone ? block.color : isLocked ? "#565f70" : "#b0b5c1",
@@ -352,7 +429,7 @@ export default function AnsarPage() {
                           padding: "4px 8px", borderRadius: 6,
                           border: `1px solid ${isDone ? block.color + "40" : "#2d3543"}`,
                         }}>
-                          +{habit.points} pt{habit.points > 1 ? "s" : ""}
+                          {habit.chip}
                         </div>
                       )}
                     </div>
@@ -372,7 +449,7 @@ export default function AnsarPage() {
                 borderRadius: 10, padding: "12px 16px", marginBottom: 12,
                 fontSize: 12, color: "#ffa500", fontWeight: 600, display: "flex", alignItems: "center", gap: 8,
               }}>
-                ⚽ Soccer training day — check afternoon block for bonus habit (+2 pts)
+                ⚽ Soccer training day — Conditional block active (+1 pt per session)
               </div>
             )}
 
@@ -381,7 +458,9 @@ export default function AnsarPage() {
               borderRadius: 12, padding: "20px",
               boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
             }}>
-              <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8, fontWeight: 600 }}>This week you&apos;re on track for</div>
+              <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8, fontWeight: 600 }}>
+                This week you&apos;re on track for{!POINTS_ACTIVE && " (preview — not yet enforced)"}
+              </div>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 20, fontWeight: 700, color: weekThreshold.color, marginBottom: 8 }}>{weekThreshold.label}</div>
@@ -399,7 +478,7 @@ export default function AnsarPage() {
           <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
             <div style={{ height: 3, background: "linear-gradient(90deg, #ffa500, #00ff88, #00d9ff)" }} />
             <div style={{ padding: "20px" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>🏆 Weekly Reward Tiers</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>🏆 Weekly Tiers · ANSAR FC</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 {THRESHOLDS.map((t, i) => {
                   const weekPts = weeklyPts ?? 0;
@@ -423,6 +502,9 @@ export default function AnsarPage() {
                     </div>
                   );
                 })}
+              </div>
+              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 14, fontWeight: 500 }}>
+                🔥 Weekly streak bonus: 5 Perfect Days Mon–Fri = +3 pts · Weekly max {WEEKLY_MAX}
               </div>
             </div>
           </div>
