@@ -494,7 +494,19 @@ export default function AnsarPage() {
   };
 
   return (
-    <div style={{ height: "100vh", background: "#0f1419", color: "#ffffff", fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column" }}>
+    <div style={{
+      height: "100vh",
+      // Decorative Bernabeu backdrop. A near-solid dark scrim (82% of the original
+      // #0f1419 page colour) sits on top of the photo and does ALL the work of
+      // preserving contrast — no text/card styling is changed. Bump the 0.82 alpha
+      // toward 0.9 if any section ever looks low-contrast; never lighten text.
+      backgroundColor: "#0f1419",
+      backgroundImage: "linear-gradient(rgba(15,20,25,0.92), rgba(15,20,25,0.92)), url('/bernabeu-bg.jpg')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      backgroundAttachment: "fixed",
+      color: "#ffffff", fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column" }}>
 
       {/* HEADER */}
       <header style={{
