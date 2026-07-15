@@ -550,18 +550,86 @@ export default function AnsarPage() {
         </div>
       </header>
 
-      {/* MAIN CONTENT - SCROLLABLE */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "24px", width: "100%" }}>
+      {/* MAIN CONTENT - SCROLLABLE. No TOP padding: the pinned block below owns
+          top:0 flush under the header and supplies its own top spacing as solid
+          padding, so scrolling content can't peek through a gutter above it. */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", width: "100%" }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
 
-          {/* ═══ BALANCE BAR — pinned at the very top. Shows earned/cap when the
-              wallet is unlocked, or a compact locked indicator when not (this is
-              the ONLY place the locked state is announced now). ═══ */}
+          {/* ═══ PINNED TOP — the fuller stat block (Points / Week / Streak /
+              Progress cards + Today's Progress bar) sits FIRST, with the Stretch
+              Wallet balance bar directly beneath it. The whole unit is ONE sticky
+              container, so stats + balance bar stay pinned together while the rest
+              of the page scrolls underneath. Solid page-colour background + a soft
+              bottom shadow stop scrolling content bleeding through the gaps between
+              the pinned cards and mark the pinned/scroll boundary. ═══ */}
           <div style={{
             position: "sticky", top: 0, zIndex: 50, marginBottom: 24,
-            background: "#16192d", border: "1px solid #3a2d5a", borderRadius: 12,
-            overflow: "hidden", boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
+            background: "#0f1419", paddingTop: 24, paddingBottom: 4,
+            boxShadow: "0 10px 16px -10px rgba(0,0,0,0.6)",
           }}>
+
+            {/* TOP METRICS ROW — Points Today / Week Total / Day Streak / Progress */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
+              <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
+                <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Points Today</div>
+                <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
+                  {mounted ? todayPts : "—"}{mounted && dayScore.perfect && <span style={{ fontSize: 20, marginLeft: 6 }}>⭐</span>}
+                </div>
+                <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span>📊</span> {mounted ? todayDone : 0}/{habits.length} complete · max {DAILY_MAX} pts
+                </div>
+              </div>
+
+              <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
+                <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Week Total</div>
+                <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</div>
+                <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span>📈</span> /{WEEKLY_MAX} pts max
+                </div>
+              </div>
+
+              <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
+                <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Day Streak</div>
+                <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, display: "flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
+                  {mounted && streak !== null ? streak : "—"}
+                  {mounted && streak !== null && streak > 0 && <span>🔥</span>}
+                </div>
+                <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8 }}>Consecutive days</div>
+              </div>
+
+              <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
+                <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Progress</div>
+                <div style={{ fontSize: 36, fontWeight: 700, color: "#00d9ff", lineHeight: 1 }}>{mounted ? overallPct : 0}%</div>
+                <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8 }}>Today&apos;s completion</div>
+              </div>
+            </div>
+
+            {/* TODAY'S PROGRESS BAR */}
+            <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "16px", marginBottom: 16, boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span style={{ fontSize: 13, color: "#b0b5c1", fontWeight: 600 }}>Today&apos;s Progress</span>
+                <span style={{ fontSize: 13, color: "#ffffff", fontWeight: 700 }}>{mounted ? todayDone : 0} of {habits.length} habits</span>
+              </div>
+              <div style={{ height: 10, background: "#1f2438", borderRadius: 6, overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", borderRadius: 6, transition: "width 200ms ease-in-out",
+                  width: mounted ? `${overallPct}%` : "0%",
+                  background: "linear-gradient(90deg, #ffa500, #00ff88)",
+                }} />
+              </div>
+              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 10, fontWeight: 500 }}>
+                ⭐ Perfect Day: tick every habit for +1 bonus pt <span style={{ color: RM_GOLD, fontWeight: 800, letterSpacing: "0.04em" }}>· ¡Vamos!</span>
+              </div>
+            </div>
+
+            {/* ═══ STRETCH WALLET BALANCE BAR — second in the pinned block now.
+                Shows earned/cap when the wallet is unlocked, or a compact locked
+                indicator when not (the ONLY place the locked state is announced). ═══ */}
+            <div style={{
+              background: "#16192d", border: "1px solid #3a2d5a", borderRadius: 12,
+              overflow: "hidden", boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
+            }}>
             <div style={{ height: 3, background: "linear-gradient(90deg, #a78bfa, #00d9ff)" }} />
             <div style={{ padding: "16px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -633,6 +701,7 @@ export default function AnsarPage() {
                   )}
                 </>
               )}
+            </div>
             </div>
           </div>
 
@@ -764,60 +833,9 @@ export default function AnsarPage() {
             </div>
           </div>
 
-          {/* TOP METRICS ROW — relocated below the gate/wallet flow (a top-pinned
-              balance bar now owns the very top; this stat row would collide with it). */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
-            <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-              <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Points Today</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
-                {mounted ? todayPts : "—"}{mounted && dayScore.perfect && <span style={{ fontSize: 20, marginLeft: 6 }}>⭐</span>}
-              </div>
-              <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
-                <span>📊</span> {mounted ? todayDone : 0}/{habits.length} complete · max {DAILY_MAX} pts
-              </div>
-            </div>
-
-            <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-              <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Week Total</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</div>
-              <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
-                <span>📈</span> /{WEEKLY_MAX} pts max
-              </div>
-            </div>
-
-            <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-              <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Day Streak</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, display: "flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
-                {mounted && streak !== null ? streak : "—"}
-                {mounted && streak !== null && streak > 0 && <span>🔥</span>}
-              </div>
-              <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8 }}>Consecutive days</div>
-            </div>
-
-            <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-              <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Progress</div>
-              <div style={{ fontSize: 36, fontWeight: 700, color: "#00d9ff", lineHeight: 1 }}>{mounted ? overallPct : 0}%</div>
-              <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8 }}>Today&apos;s completion</div>
-            </div>
-          </div>
-
-          {/* PROGRESS BAR */}
-          <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "16px", marginBottom: 24, boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <span style={{ fontSize: 13, color: "#b0b5c1", fontWeight: 600 }}>Today&apos;s Progress</span>
-              <span style={{ fontSize: 13, color: "#ffffff", fontWeight: 700 }}>{mounted ? todayDone : 0} of {habits.length} habits</span>
-            </div>
-            <div style={{ height: 10, background: "#1f2438", borderRadius: 6, overflow: "hidden" }}>
-              <div style={{
-                height: "100%", borderRadius: 6, transition: "width 200ms ease-in-out",
-                width: mounted ? `${overallPct}%` : "0%",
-                background: "linear-gradient(90deg, #ffa500, #00ff88)",
-              }} />
-            </div>
-            <div style={{ fontSize: 11, color: "#757f8f", marginTop: 10, fontWeight: 500 }}>
-              ⭐ Perfect Day: tick every habit for +1 bonus pt <span style={{ color: RM_GOLD, fontWeight: 800, letterSpacing: "0.04em" }}>· ¡Vamos!</span>
-            </div>
-          </div>
+          {/* TOP METRICS ROW + TODAY'S PROGRESS BAR — moved UP into the pinned
+              top region (see the sticky container above the slim stat row). They
+              are the first thing on the page now, with the balance bar beneath. */}
 
           {/* ALERTS & STATUS SECTION */}
           <div style={{ marginBottom: 24 }}>
