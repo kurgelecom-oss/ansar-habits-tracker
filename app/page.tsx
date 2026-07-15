@@ -336,6 +336,11 @@ export default function AnsarPage() {
 
   async function earnStretch(item: StretchItem) {
     if (stretchSaving) return;
+    // One earn per item per calendar day. stretchLog mirrors stretch_completions
+    // for completed_date=today (loaded from Supabase + polled + refreshed after
+    // each earn), so an existing row for this item_id means it's already done —
+    // block regardless of the 75-min cap. Resets naturally at the next day's date.
+    if (stretchLog.some(r => r.item_id === item.id)) return;
     const today = getTodayDate();
     const itemMin = item.points * STRETCH_MIN_PER_POINT;
     const alreadyEarned = stretchEarnedMinutes(stretchLog);
@@ -669,12 +674,13 @@ export default function AnsarPage() {
                   return (
                     <div
                       key={item.id}
-                      onClick={() => !isSaving && !walletLocked && earnStretch(item)}
+                      onClick={() => !isSaving && !walletLocked && !done && earnStretch(item)}
                       style={{
                         display: "flex", alignItems: "flex-start", gap: 12, padding: "12px", borderRadius: 8,
                         border: `1px solid ${done ? "#a78bfa50" : "#2d3543"}`,
                         background: done ? "rgba(167,139,250,0.06)" : "#1f2438",
-                        cursor: "pointer", transition: "all 150ms ease-out", WebkitTapHighlightColor: "transparent",
+                        opacity: done ? 0.55 : 1,
+                        cursor: done ? "default" : "pointer", transition: "all 150ms ease-out", WebkitTapHighlightColor: "transparent",
                       }}
                     >
                       <div style={{
@@ -707,8 +713,9 @@ export default function AnsarPage() {
                         background: done ? "rgba(167,139,250,0.15)" : "#16192d",
                         padding: "4px 10px", borderRadius: 6,
                         border: `1px solid ${done ? "#a78bfa40" : "#2d3543"}`,
+                        whiteSpace: "nowrap",
                       }}>
-                        {done ? `+${earnedForItem}m` : "Tap to earn"}
+                        {done ? "✓ Done for today" : "Tap to earn"}
                       </div>
                     </div>
                   );
