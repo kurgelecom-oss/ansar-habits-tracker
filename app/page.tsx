@@ -43,6 +43,28 @@ const BLOCKS = [
 
 const PRE_HABIT_IDS = ["feet_floor", "fajr", "bed_dressed", "movement", "breakfast", "quran", "goals"];
 
+// ═══════════════════════════════════════════════════════════════════════════
+// STRETCH POINTS — a SEPARATE daily system from the ANSAR FC weekly scoring
+// above. 1 stretch point = 10 minutes of screen time. Daily cap = 75 earned
+// minutes (1h15m). Qur'an's daily minimum stays in the FC habit list, NOT here.
+// The item list is a PLACEHOLDER until tk supplies the real stretch tasks —
+// structure only. Completions persist to the Supabase `stretch_completions`
+// table (localStorage fallback, mirroring how habit_completions behaves).
+// ═══════════════════════════════════════════════════════════════════════════
+const STRETCH_MIN_PER_POINT = 10;
+const STRETCH_DAILY_CAP_MIN = 75;   // earnable screen-time minutes per day
+const STRETCH_SPEND_STEP_MIN = 10;  // each "Spend" tap burns 10 min (v1, no PS5 integration)
+const SPEND_ITEM_ID = "__spend__";  // ledger marker for spend rows (negative minutes)
+
+type StretchItem = { id: string; label: string; points: number; placeholder?: boolean };
+type StretchRow = { item_id: string; minutes: number };
+
+// PLACEHOLDER items only — replace with tk's real stretch tasks when supplied.
+const STRETCH_ITEMS: StretchItem[] = [
+  { id: "placeholder_1", label: "Placeholder stretch task A (tk to define)", points: 1, placeholder: true },
+  { id: "placeholder_2", label: "Placeholder stretch task B (tk to define)", points: 2, placeholder: true },
+];
+
 // Block-based scoring — NOT per-habit sums.
 // Daily max = 10 on a non-training day, 11 on a training day (Mon/Wed).
 function scoreDay(completedIds: Set<string>, dayName: string) {
@@ -148,6 +170,9 @@ export default function AnsarPage() {
   const [online, setOnline] = useState(true);
   const [weeklyPts, setWeeklyPts] = useState<number | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
+  // Stretch wallet (separate from FC): today's ledger rows + in-flight marker
+  const [stretchLog, setStretchLog] = useState<StretchRow[]>([]);
+  const [stretchSaving, setStretchSaving] = useState<string | null>(null);
 
   const loadWeeklyData = useCallback(async () => {
     const weekStart = getWeekStart();
@@ -200,6 +225,25 @@ export default function AnsarPage() {
     }
   }, []);
 
+  // Stretch ledger load — independent of the FC `online` badge. If the Supabase
+  // table is missing/unreachable, it silently falls back to localStorage so the
+  // wallet still works and the FC status indicator is unaffected.
+  const loadStretch = useCallback(async () => {
+    const today = getTodayDate();
+    const { data, error } = await supabase
+      .from("stretch_completions")
+      .select("item_id, minutes")
+      .eq("completed_date", today);
+    if (!error && data) {
+      const rows = data as StretchRow[];
+      setStretchLog(rows);
+      localStorage.setItem(`ansar-stretch-${today}`, JSON.stringify(rows));
+    } else {
+      const saved = localStorage.getItem(`ansar-stretch-${today}`);
+      setStretchLog(saved ? JSON.parse(saved) : []);
+    }
+  }, []);
+
   useEffect(() => {
     const dn = getTodayDayName();
     setDayName(dn);
@@ -207,6 +251,7 @@ export default function AnsarPage() {
     setMounted(true);
     loadFromSupabase();
     loadWeeklyData();
+    loadStretch();
     calculateStreak().then(setStreak);
 
     const tick = setInterval(() => {
@@ -217,10 +262,11 @@ export default function AnsarPage() {
     const poll = setInterval(() => {
       loadFromSupabase();
       loadWeeklyData();
+      loadStretch();
     }, 30000);
 
     return () => { clearInterval(tick); clearInterval(poll); };
-  }, [loadFromSupabase, loadWeeklyData]);
+  }, [loadFromSupabase, loadWeeklyData, loadStretch]);
 
   async function toggle(id: string, state: string) {
     if (state !== "available") return;
@@ -242,6 +288,52 @@ export default function AnsarPage() {
     setSaving(null);
   }
 
+  // ── Stretch wallet handlers (append-only ledger, separate from FC toggle) ──
+  // Cap is enforced on cumulative EARNED minutes per day (independent of spend),
+  // so a completion past the 75-min cap still logs a row (minutes: 0) for the
+  // record but adds nothing to the balance.
+  function stretchEarnedMinutes(rows: StretchRow[]): number {
+    return rows.filter(r => r.item_id !== SPEND_ITEM_ID && r.minutes > 0).reduce((s, r) => s + r.minutes, 0);
+  }
+
+  async function earnStretch(item: StretchItem) {
+    if (stretchSaving) return;
+    const today = getTodayDate();
+    const itemMin = item.points * STRETCH_MIN_PER_POINT;
+    const alreadyEarned = stretchEarnedMinutes(stretchLog);
+    const credited = Math.max(0, Math.min(itemMin, STRETCH_DAILY_CAP_MIN - alreadyEarned));
+    const row: StretchRow = { item_id: item.id, minutes: credited };
+    setStretchSaving(item.id);
+    setStretchLog(prev => {
+      const next = [...prev, row];
+      localStorage.setItem(`ansar-stretch-${today}`, JSON.stringify(next));
+      return next;
+    });
+    await supabase.from("stretch_completions").insert({ item_id: item.id, completed_date: today, minutes: credited });
+    setStretchSaving(null);
+    loadStretch();
+  }
+
+  async function spendStretch() {
+    if (stretchSaving) return;
+    const today = getTodayDate();
+    const earned = stretchEarnedMinutes(stretchLog);
+    const spent = stretchLog.filter(r => r.item_id === SPEND_ITEM_ID).reduce((s, r) => s + Math.abs(r.minutes), 0);
+    const balance = earned - spent;
+    if (balance <= 0) return;
+    const burn = Math.min(STRETCH_SPEND_STEP_MIN, balance);
+    const row: StretchRow = { item_id: SPEND_ITEM_ID, minutes: -burn };
+    setStretchSaving(SPEND_ITEM_ID);
+    setStretchLog(prev => {
+      const next = [...prev, row];
+      localStorage.setItem(`ansar-stretch-${today}`, JSON.stringify(next));
+      return next;
+    });
+    await supabase.from("stretch_completions").insert({ item_id: SPEND_ITEM_ID, completed_date: today, minutes: -burn });
+    setStretchSaving(null);
+    loadStretch();
+  }
+
   const completedSet = new Set(Object.keys(completed).filter(k => completed[k]));
   const dayScore = scoreDay(completedSet, dayName);
   const todayPts = dayScore.total;
@@ -249,6 +341,19 @@ export default function AnsarPage() {
   const overallPct = habits.length > 0 ? Math.round((todayDone / habits.length) * 100) : 0;
   const weekThreshold = getThreshold(weeklyPts ?? 0);
   const DAILY_MAX = SOCCER_DAYS.includes(dayName) ? 11 : 10;
+
+  // ── Stretch wallet derived values (today) ──
+  const stretchEarned = stretchEarnedMinutes(stretchLog);           // capped ≤ 75
+  const stretchSpent = stretchLog.filter(r => r.item_id === SPEND_ITEM_ID).reduce((s, r) => s + Math.abs(r.minutes), 0);
+  const stretchBalance = Math.max(0, stretchEarned - stretchSpent);
+  const stretchCapReached = stretchEarned >= STRETCH_DAILY_CAP_MIN;
+  const stretchByItem: Record<string, number> = {};
+  const stretchCountByItem: Record<string, number> = {};
+  stretchLog.forEach(r => {
+    if (r.item_id === SPEND_ITEM_ID) return;
+    stretchByItem[r.item_id] = (stretchByItem[r.item_id] || 0) + r.minutes;
+    stretchCountByItem[r.item_id] = (stretchCountByItem[r.item_id] || 0) + 1;
+  });
 
   return (
     <div style={{ minHeight: "100vh", background: "#0f1419", color: "#ffffff", fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column" }}>
@@ -271,11 +376,19 @@ export default function AnsarPage() {
             </span>
           </div>
         </div>
-        <a href="/" style={{
-          fontSize: 11, color: "#b0b5c1", textDecoration: "none", fontWeight: 600,
-          background: "#1f2438", padding: "6px 12px", borderRadius: 6, border: "1px solid #2d3543",
-          cursor: "pointer", transition: "all 150ms ease-out",
-        }}>← Back</a>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {/* External cross-nav to Nihal's weekly view on the family dashboard */}
+          <a href="https://kurgel-dashboard.netlify.app/week" target="_blank" rel="noopener noreferrer" style={{
+            fontSize: 11, color: "#ffa500", textDecoration: "none", fontWeight: 700,
+            background: "rgba(255,165,0,0.1)", padding: "6px 12px", borderRadius: 6, border: "1px solid rgba(255,165,0,0.35)",
+            cursor: "pointer", transition: "all 150ms ease-out",
+          }}>📅 Homeschool Week ↗</a>
+          <a href="/" style={{
+            fontSize: 11, color: "#b0b5c1", textDecoration: "none", fontWeight: 600,
+            background: "#1f2438", padding: "6px 12px", borderRadius: 6, border: "1px solid #2d3543",
+            cursor: "pointer", transition: "all 150ms ease-out",
+          }}>← Back</a>
+        </div>
       </header>
 
       {/* MAIN CONTENT - SCROLLABLE */}
@@ -292,6 +405,115 @@ export default function AnsarPage() {
               🟡 Soft-launch week — points are tracked and shown, but rewards don&apos;t count yet. Points activate 13 Jul 2026.
             </div>
           )}
+
+          {/* ═══ STRETCH WALLET — separate daily screen-time bank (NOT ANSAR FC) ═══ */}
+          <div style={{ background: "#16192d", border: "1px solid #3a2d5a", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", marginBottom: 24 }}>
+            <div style={{ height: 3, background: "linear-gradient(90deg, #a78bfa, #00d9ff)" }} />
+            <div style={{ padding: "20px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa" }}>🎮 Stretch Wallet</div>
+                  <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>
+                    Screen-time bank · 1 stretch point = {STRETCH_MIN_PER_POINT} min · separate from ANSAR FC
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 36, fontWeight: 700, color: "#a78bfa", lineHeight: 1 }}>
+                      {mounted ? stretchBalance : "—"}<span style={{ fontSize: 16, color: "#757f8f", fontWeight: 600 }}> / {STRETCH_DAILY_CAP_MIN} min</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4 }}>
+                      {mounted ? `${stretchEarned} earned · ${stretchSpent} spent today` : ""}
+                    </div>
+                  </div>
+                  <button
+                    onClick={spendStretch}
+                    disabled={!mounted || stretchBalance <= 0}
+                    style={{
+                      fontSize: 12, fontWeight: 700, flexShrink: 0,
+                      color: mounted && stretchBalance > 0 ? "#0f1419" : "#757f8f",
+                      background: mounted && stretchBalance > 0 ? "#a78bfa" : "#1f2438",
+                      border: `1px solid ${mounted && stretchBalance > 0 ? "#a78bfa" : "#2d3543"}`,
+                      padding: "10px 16px", borderRadius: 8,
+                      cursor: mounted && stretchBalance > 0 ? "pointer" : "not-allowed",
+                      transition: "all 150ms ease-out",
+                    }}
+                  >
+                    Spend {STRETCH_SPEND_STEP_MIN}m
+                  </button>
+                </div>
+              </div>
+
+              {/* Cap progress bar (earned toward 75) */}
+              <div style={{ height: 8, background: "#1f2438", borderRadius: 4, overflow: "hidden", marginTop: 16 }}>
+                <div style={{
+                  height: "100%", borderRadius: 4, transition: "width 200ms ease-in-out",
+                  width: mounted ? `${Math.min(100, (stretchEarned / STRETCH_DAILY_CAP_MIN) * 100)}%` : "0%",
+                  background: stretchCapReached ? "#00ff88" : "#a78bfa",
+                }} />
+              </div>
+              {mounted && stretchCapReached && (
+                <div style={{ fontSize: 11, color: "#00ff88", marginTop: 8, fontWeight: 600 }}>
+                  ✅ Daily cap reached — extra completions still log for the record but don&apos;t add minutes.
+                </div>
+              )}
+
+              {/* Placeholder notice */}
+              <div style={{ background: "rgba(167,139,250,0.08)", border: "1px dashed rgba(167,139,250,0.4)", borderRadius: 8, padding: "8px 12px", marginTop: 16, fontSize: 11, color: "#a78bfa", fontWeight: 500 }}>
+                ⚠️ Placeholder items — real stretch tasks to be supplied by tk. Structure only for now.
+              </div>
+
+              {/* Stretch items */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                {STRETCH_ITEMS.map(item => {
+                  const earnedForItem = mounted ? (stretchByItem[item.id] || 0) : 0;
+                  const countForItem = mounted ? (stretchCountByItem[item.id] || 0) : 0;
+                  const itemMin = item.points * STRETCH_MIN_PER_POINT;
+                  const isSaving = stretchSaving === item.id;
+                  const done = countForItem > 0;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => !isSaving && earnStretch(item)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 12, padding: "12px", borderRadius: 8,
+                        border: `1px solid ${done ? "#a78bfa50" : "#2d3543"}`,
+                        background: done ? "rgba(167,139,250,0.06)" : "#1f2438",
+                        cursor: "pointer", transition: "all 150ms ease-out", WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      <div style={{
+                        width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                        border: `2px solid ${done ? "#a78bfa" : "#2d3543"}`,
+                        background: done ? "#a78bfa" : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {isSaving ? <span style={{ fontSize: 10 }}>⏳</span> : done ? <span style={{ fontSize: 12, color: "#0f1419", fontWeight: 700 }}>✓</span> : null}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#ffffff" }}>
+                          🧩 {item.label}
+                          {item.placeholder && <span style={{ fontSize: 10, color: "#a78bfa", marginLeft: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>placeholder</span>}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#757f8f", marginTop: 2 }}>
+                          Worth {item.points} pt · +{itemMin} min{done ? ` · earned ${earnedForItem} min today${countForItem > 1 ? ` (×${countForItem})` : ""}` : ""}
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: 12, fontWeight: 700, flexShrink: 0,
+                        color: done ? "#a78bfa" : "#b0b5c1",
+                        background: done ? "rgba(167,139,250,0.15)" : "#16192d",
+                        padding: "4px 10px", borderRadius: 6,
+                        border: `1px solid ${done ? "#a78bfa40" : "#2d3543"}`,
+                      }}>
+                        {done ? `+${earnedForItem}m` : "Tap to earn"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
           {/* TOP METRICS ROW */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>

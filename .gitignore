@@ -6,3 +6,8 @@ dist
 .env
 .env.local
 .env.*.local
+
+# Build-generated / tooling artifacts (never committed)
+next-env.d.ts
+tsconfig.tsbuildinfo
+package-lock.json
