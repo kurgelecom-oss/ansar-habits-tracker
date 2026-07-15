@@ -47,23 +47,18 @@ const PRE_HABIT_IDS = ["feet_floor", "fajr", "bed_dressed", "movement", "breakfa
 // STRETCH POINTS — a SEPARATE daily system from the ANSAR FC weekly scoring
 // above. 1 stretch point = 10 minutes of screen time. Daily cap = 75 earned
 // minutes (1h15m). Qur'an's daily minimum stays in the FC habit list, NOT here.
-// The item list is a PLACEHOLDER until tk supplies the real stretch tasks —
-// structure only. Completions persist to the Supabase `stretch_completions`
-// table (localStorage fallback, mirroring how habit_completions behaves).
+// Items are loaded live from Notion via /api/stretch-items (Points editable in
+// Notion without a redeploy). Completions persist to the Supabase
+// `stretch_completions` table (localStorage fallback, like habit_completions).
 // ═══════════════════════════════════════════════════════════════════════════
 const STRETCH_MIN_PER_POINT = 10;
 const STRETCH_DAILY_CAP_MIN = 75;   // earnable screen-time minutes per day
 const STRETCH_SPEND_STEP_MIN = 10;  // each "Spend" tap burns 10 min (v1, no PS5 integration)
 const SPEND_ITEM_ID = "__spend__";  // ledger marker for spend rows (negative minutes)
 
-type StretchItem = { id: string; label: string; points: number; placeholder?: boolean };
+// Shape returned by /api/stretch-items (mapped from Notion Stretch Items source).
+type StretchItem = { id: string; name: string; category: string; points: number; whatCountsAsDone: string };
 type StretchRow = { item_id: string; minutes: number };
-
-// PLACEHOLDER items only — replace with tk's real stretch tasks when supplied.
-const STRETCH_ITEMS: StretchItem[] = [
-  { id: "placeholder_1", label: "Placeholder stretch task A (tk to define)", points: 1, placeholder: true },
-  { id: "placeholder_2", label: "Placeholder stretch task B (tk to define)", points: 2, placeholder: true },
-];
 
 // Block-based scoring — NOT per-habit sums.
 // Daily max = 10 on a non-training day, 11 on a training day (Mon/Wed).
@@ -173,6 +168,8 @@ export default function AnsarPage() {
   // Stretch wallet (separate from FC): today's ledger rows + in-flight marker
   const [stretchLog, setStretchLog] = useState<StretchRow[]>([]);
   const [stretchSaving, setStretchSaving] = useState<string | null>(null);
+  // Stretch item definitions loaded live from Notion (/api/stretch-items)
+  const [stretchItems, setStretchItems] = useState<StretchItem[]>([]);
 
   const loadWeeklyData = useCallback(async () => {
     const weekStart = getWeekStart();
@@ -244,6 +241,19 @@ export default function AnsarPage() {
     }
   }, []);
 
+  // Stretch item definitions from Notion (server-cached 5 min). Best-effort:
+  // if it fails, the wallet shows its "no items" empty state rather than erroring.
+  const loadStretchItems = useCallback(async () => {
+    try {
+      const res = await fetch("/api/stretch-items");
+      if (!res.ok) return;
+      const items = (await res.json()) as StretchItem[];
+      if (Array.isArray(items)) setStretchItems(items);
+    } catch {
+      // best-effort; leaves the last-known (or empty) item list in place
+    }
+  }, []);
+
   useEffect(() => {
     const dn = getTodayDayName();
     setDayName(dn);
@@ -252,6 +262,7 @@ export default function AnsarPage() {
     loadFromSupabase();
     loadWeeklyData();
     loadStretch();
+    loadStretchItems();
     calculateStreak().then(setStreak);
 
     const tick = setInterval(() => {
@@ -266,7 +277,7 @@ export default function AnsarPage() {
     }, 30000);
 
     return () => { clearInterval(tick); clearInterval(poll); };
-  }, [loadFromSupabase, loadWeeklyData, loadStretch]);
+  }, [loadFromSupabase, loadWeeklyData, loadStretch, loadStretchItems]);
 
   async function toggle(id: string, state: string) {
     if (state !== "available") return;
@@ -458,14 +469,14 @@ export default function AnsarPage() {
                 </div>
               )}
 
-              {/* Placeholder notice */}
-              <div style={{ background: "rgba(167,139,250,0.08)", border: "1px dashed rgba(167,139,250,0.4)", borderRadius: 8, padding: "8px 12px", marginTop: 16, fontSize: 11, color: "#a78bfa", fontWeight: 500 }}>
-                ⚠️ Placeholder items — real stretch tasks to be supplied by tk. Structure only for now.
-              </div>
-
-              {/* Stretch items */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
-                {STRETCH_ITEMS.map(item => {
+              {/* Stretch items — live from Notion (/api/stretch-items) */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
+                {mounted && stretchItems.length === 0 && (
+                  <div style={{ fontSize: 12, color: "#757f8f", padding: "8px 2px" }}>
+                    No stretch items available right now.
+                  </div>
+                )}
+                {stretchItems.map(item => {
                   const earnedForItem = mounted ? (stretchByItem[item.id] || 0) : 0;
                   const countForItem = mounted ? (stretchCountByItem[item.id] || 0) : 0;
                   const itemMin = item.points * STRETCH_MIN_PER_POINT;
@@ -476,14 +487,14 @@ export default function AnsarPage() {
                       key={item.id}
                       onClick={() => !isSaving && earnStretch(item)}
                       style={{
-                        display: "flex", alignItems: "center", gap: 12, padding: "12px", borderRadius: 8,
+                        display: "flex", alignItems: "flex-start", gap: 12, padding: "12px", borderRadius: 8,
                         border: `1px solid ${done ? "#a78bfa50" : "#2d3543"}`,
                         background: done ? "rgba(167,139,250,0.06)" : "#1f2438",
                         cursor: "pointer", transition: "all 150ms ease-out", WebkitTapHighlightColor: "transparent",
                       }}
                     >
                       <div style={{
-                        width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                        width: 22, height: 22, borderRadius: 6, flexShrink: 0, marginTop: 1,
                         border: `2px solid ${done ? "#a78bfa" : "#2d3543"}`,
                         background: done ? "#a78bfa" : "transparent",
                         display: "flex", alignItems: "center", justifyContent: "center",
@@ -491,11 +502,18 @@ export default function AnsarPage() {
                         {isSaving ? <span style={{ fontSize: 10 }}>⏳</span> : done ? <span style={{ fontSize: 12, color: "#0f1419", fontWeight: 700 }}>✓</span> : null}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#ffffff" }}>
-                          🧩 {item.label}
-                          {item.placeholder && <span style={{ fontSize: 10, color: "#a78bfa", marginLeft: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>placeholder</span>}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: "#ffffff" }}>🧩 {item.name}</span>
+                          {item.category && (
+                            <span style={{ fontSize: 9, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", background: "rgba(167,139,250,0.12)", padding: "2px 6px", borderRadius: 4 }}>{item.category}</span>
+                          )}
                         </div>
-                        <div style={{ fontSize: 11, color: "#757f8f", marginTop: 2 }}>
+                        {item.whatCountsAsDone && (
+                          <div style={{ fontSize: 11, color: "#b0b5c1", marginTop: 3, lineHeight: 1.45 }}>
+                            ✅ {item.whatCountsAsDone}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 11, color: "#757f8f", marginTop: 3 }}>
                           Worth {item.points} pt · +{itemMin} min{done ? ` · earned ${earnedForItem} min today${countForItem > 1 ? ` (×${countForItem})` : ""}` : ""}
                         </div>
                       </div>
