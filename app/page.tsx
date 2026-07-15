@@ -504,7 +504,7 @@ export default function AnsarPage() {
 
   return (
     <div style={{
-      height: "100vh",
+      minHeight: "100vh",
       // Decorative Bernabeu backdrop. A near-solid dark scrim (82% of the original
       // #0f1419 page colour) sits on top of the photo and does ALL the work of
       // preserving contrast — no text/card styling is changed. Bump the 0.82 alpha
@@ -550,23 +550,20 @@ export default function AnsarPage() {
         </div>
       </header>
 
-      {/* MAIN CONTENT - SCROLLABLE. No TOP padding: the pinned block below owns
-          top:0 flush under the header and supplies its own top spacing as solid
-          padding, so scrolling content can't peek through a gutter above it. */}
+      {/* MAIN CONTENT - SCROLLABLE. No TOP padding: the top block below supplies
+          its own top spacing via paddingTop, so the header/content gap lives in
+          one place. Everything here scrolls normally, top block included. */}
       <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", width: "100%" }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
 
-          {/* ═══ PINNED TOP — the fuller stat block (Points / Week / Streak /
+          {/* ═══ TOP BLOCK — the fuller stat block (Points / Week / Streak /
               Progress cards + Today's Progress bar) sits FIRST, with the Stretch
-              Wallet balance bar directly beneath it. The whole unit is ONE sticky
-              container, so stats + balance bar stay pinned together while the rest
-              of the page scrolls underneath. Solid page-colour background + a soft
-              bottom shadow stop scrolling content bleeding through the gaps between
-              the pinned cards and mark the pinned/scroll boundary. ═══ */}
+              Wallet balance bar directly beneath it. Plain wrapper: it scrolls
+              away with the rest of the page like every other section (no sticky/
+              pinned positioning). paddingTop supplies the gap under the header
+              since the scroll container has no top padding of its own. ═══ */}
           <div style={{
-            position: "sticky", top: 0, zIndex: 50, marginBottom: 24,
-            background: "#0f1419", paddingTop: 24, paddingBottom: 4,
-            boxShadow: "0 10px 16px -10px rgba(0,0,0,0.6)",
+            marginBottom: 24, paddingTop: 24,
           }}>
 
             {/* TOP METRICS ROW — Points Today / Week Total / Day Streak / Progress */}
@@ -623,7 +620,7 @@ export default function AnsarPage() {
               </div>
             </div>
 
-            {/* ═══ STRETCH WALLET BALANCE BAR — second in the pinned block now.
+            {/* ═══ STRETCH WALLET BALANCE BAR — second in the top block.
                 Shows earned/cap when the wallet is unlocked, or a compact locked
                 indicator when not (the ONLY place the locked state is announced). ═══ */}
             <div style={{
@@ -833,9 +830,9 @@ export default function AnsarPage() {
             </div>
           </div>
 
-          {/* TOP METRICS ROW + TODAY'S PROGRESS BAR — moved UP into the pinned
-              top region (see the sticky container above the slim stat row). They
-              are the first thing on the page now, with the balance bar beneath. */}
+          {/* TOP METRICS ROW + TODAY'S PROGRESS BAR — live in the top block near
+              the top of the page (see the top block above the slim stat row),
+              first thing on the page, with the balance bar beneath. */}
 
           {/* ALERTS & STATUS SECTION */}
           <div style={{ marginBottom: 24 }}>
