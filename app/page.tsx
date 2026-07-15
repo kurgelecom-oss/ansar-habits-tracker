@@ -35,7 +35,7 @@ function buildHabits(dayName: string): Habit[] {
 }
 
 const BLOCKS = [
-  { id: "pre_homeschool",    label: "🌅 Pre-Homeschool",      subtitle: "Before 8:30am · all 7 = +2 pts", color: "#ffa500" },
+  { id: "pre_homeschool",    label: "🌅 Morning Habits",      subtitle: "Before 8:30am · all 7 = +2 pts", color: "#ffa500" },
   { id: "homeschool",        label: "📚 Homeschool",           subtitle: "4 hour block",                   color: "#00d9ff" },
   { id: "afternoon_evening", label: "🌆 Afternoon / Evening",  subtitle: "After school",                   color: "#00ff88" },
   { id: "conditional",       label: "⚽ Conditional",          subtitle: "Mon & Wed only",                 color: "#a78bfa" },
@@ -170,6 +170,10 @@ export default function AnsarPage() {
   const [stretchSaving, setStretchSaving] = useState<string | null>(null);
   // Stretch item definitions loaded live from Notion (/api/stretch-items)
   const [stretchItems, setStretchItems] = useState<StretchItem[]>([]);
+  // Stretch Wallet daily unlock gate. Opens once Morning Habits + Homeschool are
+  // both 100% done, then STAYS open for the rest of the day (sticky per-day flag
+  // in localStorage). Never re-locks.
+  const [stretchUnlocked, setStretchUnlocked] = useState(false);
 
   const loadWeeklyData = useCallback(async () => {
     const weekStart = getWeekStart();
@@ -259,6 +263,11 @@ export default function AnsarPage() {
     setDayName(dn);
     setHabits(buildHabits(dn));
     setMounted(true);
+    // Restore today's sticky Stretch-Wallet unlock flag (set once Morning Habits +
+    // Homeschool were both cleared earlier today) so a reload doesn't re-lock it.
+    if (localStorage.getItem(`ansar-stretch-unlocked-${getTodayDate()}`) === "1") {
+      setStretchUnlocked(true);
+    }
     loadFromSupabase();
     loadWeeklyData();
     loadStretch();
@@ -278,6 +287,24 @@ export default function AnsarPage() {
 
     return () => { clearInterval(tick); clearInterval(poll); };
   }, [loadFromSupabase, loadWeeklyData, loadStretch, loadStretchItems]);
+
+  // Stretch-Wallet unlock gate. Opens once BOTH the Morning Habits block AND the
+  // Homeschool block are 100% complete — the Afternoon/Evening (and Conditional)
+  // blocks are still required for FC points but do NOT gate stretch access.
+  // Once opened it's sticky for the day (never re-locks): the early-return on
+  // `stretchUnlocked` guarantees we only ever flip false→true. Keeping it sticky
+  // matters if Morning/Homeschool habits are ever time-gated later.
+  useEffect(() => {
+    if (!mounted || stretchUnlocked || habits.length === 0) return;
+    const blockComplete = (blockId: string) => {
+      const bh = habits.filter(h => h.block === blockId);
+      return bh.length > 0 && bh.every(h => completed[h.id]);
+    };
+    if (blockComplete("pre_homeschool") && blockComplete("homeschool")) {
+      setStretchUnlocked(true);
+      localStorage.setItem(`ansar-stretch-unlocked-${getTodayDate()}`, "1");
+    }
+  }, [mounted, stretchUnlocked, habits, completed]);
 
   async function toggle(id: string, state: string) {
     if (state !== "available") return;
@@ -358,6 +385,8 @@ export default function AnsarPage() {
   const stretchSpent = stretchLog.filter(r => r.item_id === SPEND_ITEM_ID).reduce((s, r) => s + Math.abs(r.minutes), 0);
   const stretchBalance = Math.max(0, stretchEarned - stretchSpent);
   const stretchCapReached = stretchEarned >= STRETCH_DAILY_CAP_MIN;
+  // Wallet is locked until Morning Habits + Homeschool are cleared (sticky once opened).
+  const walletLocked = mounted && !stretchUnlocked;
   const stretchByItem: Record<string, number> = {};
   const stretchCountByItem: Record<string, number> = {};
   stretchLog.forEach(r => {
@@ -366,8 +395,101 @@ export default function AnsarPage() {
     stretchCountByItem[r.item_id] = (stretchCountByItem[r.item_id] || 0) + 1;
   });
 
+  // Renders a single habit block (header + chained habit rows). Extracted so the
+  // page can place blocks individually in the new layout order.
+  const renderBlock = (block: (typeof BLOCKS)[number]) => {
+    const blockHabits = habits.filter(h => h.block === block.id);
+    if (blockHabits.length === 0) return null;
+    const blockDone = blockHabits.filter(h => completed[h.id]).length;
+    const blockPts = mounted ? (dayScore.blocks[block.id] ?? 0) : 0;
+    const blockPct = Math.round((blockDone / blockHabits.length) * 100);
+
+    return (
+      <div key={block.id} style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)", display: "flex", flexDirection: "column" }}>
+        <div style={{ height: 3, background: block.color }} />
+        <div style={{ padding: "16px", borderBottom: "1px solid #2d3543" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: block.color }}>{block.label}</div>
+              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>{block.subtitle}</div>
+            </div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: "#ffffff" }}>{blockDone}/{blockHabits.length}</div>
+              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>{blockPts} pts</div>
+            </div>
+          </div>
+          <div style={{ height: 6, background: "#1f2438", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${blockPct}%`, background: block.color, borderRadius: 3, transition: "width 200ms ease-in-out", boxShadow: `0 0 8px ${block.color}40` }} />
+          </div>
+        </div>
+
+        <div style={{ padding: "12px", flex: 1, overflowY: "auto", maxHeight: "400px" }}>
+        {blockHabits.map((habit) => {
+          const state = mounted ? getHabitState(habit, blockHabits, completed) : "locked";
+          const isDone = state === "done";
+          const isAvailable = state === "available";
+          const isLocked = state === "locked";
+          const isSaving = saving === habit.id;
+
+          return (
+            <div
+              key={habit.id}
+              onClick={() => toggle(habit.id, state)}
+              style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "12px", marginBottom: 6, borderRadius: 8,
+                border: `1px solid ${isDone ? block.color + "50" : isAvailable ? "#2d3543" : "#1f2438"}`,
+                background: isDone ? block.color + "0a" : isAvailable ? "#1f2438" : "#16192d",
+                opacity: isLocked ? 0.5 : 1,
+                cursor: isAvailable ? "pointer" : "default",
+                transition: "all 150ms ease-out",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <div style={{
+                width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                border: `2px solid ${isDone ? block.color : isAvailable ? "#2d3543" : "#1f2438"}`,
+                background: isDone ? block.color : "transparent",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 150ms ease-out",
+              }}>
+                {isSaving ? <span style={{ fontSize: 10 }}>⏳</span> :
+                 isDone ? <span style={{ fontSize: 12, color: "#000", fontWeight: 700 }}>✓</span> :
+                 isLocked ? <span style={{ fontSize: 9 }}>🔒</span> : null}
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 13, fontWeight: isAvailable ? 600 : 500,
+                  color: isDone ? "#757f8f" : isLocked ? "#565f70" : "#ffffff",
+                  textDecoration: isDone ? "line-through" : "none",
+                }}>
+                  {habit.icon} {habit.label}
+                </div>
+                {isLocked && <div style={{ fontSize: 10, color: "#565f70", marginTop: 2, fontWeight: 500 }}>Complete previous habits to unlock</div>}
+              </div>
+
+              {habit.chip && (
+                <div style={{
+                  fontSize: 11, fontWeight: 600, flexShrink: 0,
+                  color: isDone ? block.color : isLocked ? "#565f70" : "#b0b5c1",
+                  background: isDone ? block.color + "15" : "#1f2438",
+                  padding: "4px 8px", borderRadius: 6,
+                  border: `1px solid ${isDone ? block.color + "40" : "#2d3543"}`,
+                }}>
+                  {habit.chip}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div style={{ minHeight: "100vh", background: "#0f1419", color: "#ffffff", fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "100vh", background: "#0f1419", color: "#ffffff", fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column" }}>
 
       {/* HEADER */}
       <header style={{
@@ -406,6 +528,100 @@ export default function AnsarPage() {
       <div style={{ flex: 1, overflowY: "auto", padding: "24px", width: "100%" }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
 
+          {/* ═══ BALANCE BAR — pinned at the very top. Shows earned/cap when the
+              wallet is unlocked, or a compact locked indicator when not (this is
+              the ONLY place the locked state is announced now). ═══ */}
+          <div style={{
+            position: "sticky", top: 0, zIndex: 50, marginBottom: 24,
+            background: "#16192d", border: "1px solid #3a2d5a", borderRadius: 12,
+            overflow: "hidden", boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
+          }}>
+            <div style={{ height: 3, background: "linear-gradient(90deg, #a78bfa, #00d9ff)" }} />
+            <div style={{ padding: "16px 20px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa" }}>🎮 Stretch Wallet</div>
+                  <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>
+                    Screen-time bank · 1 stretch point = {STRETCH_MIN_PER_POINT} min · separate from ANSAR FC
+                  </div>
+                </div>
+
+                {mounted && walletLocked ? (
+                  /* Compact locked indicator — replaces the balance + the old banner */
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "10px 14px", borderRadius: 8,
+                    border: "1px solid #3a2d5a", background: "rgba(167,139,250,0.10)",
+                    fontSize: 12, color: "#a78bfa", fontWeight: 700,
+                  }}>
+                    🔒 Finish Morning Habits + Homeschool to unlock
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 36, fontWeight: 700, color: "#a78bfa", lineHeight: 1 }}>
+                        {mounted ? stretchBalance : "—"}<span style={{ fontSize: 16, color: "#757f8f", fontWeight: 600 }}> / {STRETCH_DAILY_CAP_MIN} min</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4 }}>
+                        {mounted ? `${stretchEarned} earned · ${stretchSpent} spent today` : ""}
+                      </div>
+                    </div>
+                    <button
+                      onClick={spendStretch}
+                      disabled={!mounted || walletLocked || stretchBalance <= 0}
+                      style={{
+                        fontSize: 12, fontWeight: 700, flexShrink: 0,
+                        color: mounted && stretchBalance > 0 ? "#0f1419" : "#757f8f",
+                        background: mounted && stretchBalance > 0 ? "#a78bfa" : "#1f2438",
+                        border: `1px solid ${mounted && stretchBalance > 0 ? "#a78bfa" : "#2d3543"}`,
+                        padding: "10px 16px", borderRadius: 8,
+                        cursor: mounted && stretchBalance > 0 ? "pointer" : "not-allowed",
+                        transition: "all 150ms ease-out",
+                      }}
+                    >
+                      Spend {STRETCH_SPEND_STEP_MIN}m
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Cap progress bar — only when unlocked (locked state stays compact) */}
+              {!(mounted && walletLocked) && (
+                <>
+                  <div style={{ height: 8, background: "#1f2438", borderRadius: 4, overflow: "hidden", marginTop: 16 }}>
+                    <div style={{
+                      height: "100%", borderRadius: 4, transition: "width 200ms ease-in-out",
+                      width: mounted ? `${Math.min(100, (stretchEarned / STRETCH_DAILY_CAP_MIN) * 100)}%` : "0%",
+                      background: stretchCapReached ? "#00ff88" : "#a78bfa",
+                    }} />
+                  </div>
+                  {mounted && stretchCapReached && (
+                    <div style={{ fontSize: 11, color: "#00ff88", marginTop: 8, fontWeight: 600 }}>
+                      ✅ Daily cap reached — extra completions still log for the record but don&apos;t add minutes.
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* SLIM STAT ROW — compact, top-of-page companion to the balance bar.
+              Reads the SAME state as the fuller row near the tier card below (no
+              extra fetch), so the two can never disagree. Kept visually quiet so
+              the balance bar stays the primary element. */}
+          <div style={{
+            display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14,
+            padding: "10px 16px", marginBottom: 24, borderRadius: 10,
+            background: "#16192d", border: "1px solid #2d3543", fontSize: 12, color: "#b0b5c1",
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em" }}>ANSAR FC</span>
+            <span><b style={{ color: "#ffa500", fontWeight: 700 }}>{mounted ? todayPts : "—"}</b> pts today{mounted && dayScore.perfect ? " ⭐" : ""}</span>
+            <span style={{ color: "#2d3543" }}>·</span>
+            <span><b style={{ color: "#00ff88", fontWeight: 700 }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</b> this week</span>
+            <span style={{ color: "#2d3543" }}>·</span>
+            <span><b style={{ color: "#00d9ff", fontWeight: 700 }}>{mounted && streak !== null ? streak : "—"}</b> day streak{mounted && streak !== null && streak > 0 ? " 🔥" : ""}</span>
+          </div>
+
           {/* SOFT-LAUNCH NOTICE */}
           {!POINTS_ACTIVE && (
             <div style={{
@@ -417,60 +633,28 @@ export default function AnsarPage() {
             </div>
           )}
 
-          {/* ═══ STRETCH WALLET — separate daily screen-time bank (NOT ANSAR FC) ═══ */}
+          {/* GATE BLOCKS — Morning Habits + Homeschool must both hit 100% to open the wallet */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16, marginBottom: 16 }}>
+            {renderBlock(BLOCKS.find(b => b.id === "pre_homeschool")!)}
+            {renderBlock(BLOCKS.find(b => b.id === "homeschool")!)}
+          </div>
+
+          {/* ═══ STRETCH WALLET (item list) — placed right after Homeschool, the
+              moment it becomes relevant. Dimmed + non-interactive while locked. ═══ */}
           <div style={{ background: "#16192d", border: "1px solid #3a2d5a", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", marginBottom: 24 }}>
             <div style={{ height: 3, background: "linear-gradient(90deg, #a78bfa, #00d9ff)" }} />
             <div style={{ padding: "20px" }}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa" }}>🎮 Stretch Wallet</div>
-                  <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>
-                    Screen-time bank · 1 stretch point = {STRETCH_MIN_PER_POINT} min · separate from ANSAR FC
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 36, fontWeight: 700, color: "#a78bfa", lineHeight: 1 }}>
-                      {mounted ? stretchBalance : "—"}<span style={{ fontSize: 16, color: "#757f8f", fontWeight: 600 }}> / {STRETCH_DAILY_CAP_MIN} min</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4 }}>
-                      {mounted ? `${stretchEarned} earned · ${stretchSpent} spent today` : ""}
-                    </div>
-                  </div>
-                  <button
-                    onClick={spendStretch}
-                    disabled={!mounted || stretchBalance <= 0}
-                    style={{
-                      fontSize: 12, fontWeight: 700, flexShrink: 0,
-                      color: mounted && stretchBalance > 0 ? "#0f1419" : "#757f8f",
-                      background: mounted && stretchBalance > 0 ? "#a78bfa" : "#1f2438",
-                      border: `1px solid ${mounted && stretchBalance > 0 ? "#a78bfa" : "#2d3543"}`,
-                      padding: "10px 16px", borderRadius: 8,
-                      cursor: mounted && stretchBalance > 0 ? "pointer" : "not-allowed",
-                      transition: "all 150ms ease-out",
-                    }}
-                  >
-                    Spend {STRETCH_SPEND_STEP_MIN}m
-                  </button>
-                </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa" }}>🎮 Stretch Wallet · earn screen time</div>
+              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>
+                Tap an item once you&apos;ve done it — each adds minutes toward today&apos;s {STRETCH_DAILY_CAP_MIN}-min cap.
               </div>
-
-              {/* Cap progress bar (earned toward 75) */}
-              <div style={{ height: 8, background: "#1f2438", borderRadius: 4, overflow: "hidden", marginTop: 16 }}>
-                <div style={{
-                  height: "100%", borderRadius: 4, transition: "width 200ms ease-in-out",
-                  width: mounted ? `${Math.min(100, (stretchEarned / STRETCH_DAILY_CAP_MIN) * 100)}%` : "0%",
-                  background: stretchCapReached ? "#00ff88" : "#a78bfa",
-                }} />
-              </div>
-              {mounted && stretchCapReached && (
-                <div style={{ fontSize: 11, color: "#00ff88", marginTop: 8, fontWeight: 600 }}>
-                  ✅ Daily cap reached — extra completions still log for the record but don&apos;t add minutes.
-                </div>
-              )}
 
               {/* Stretch items — live from Notion (/api/stretch-items) */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
+              <div style={{
+                display: "flex", flexDirection: "column", gap: 8, marginTop: 16,
+                opacity: walletLocked ? 0.4 : 1,
+                pointerEvents: walletLocked ? "none" : "auto",
+              }}>
                 {mounted && stretchItems.length === 0 && (
                   <div style={{ fontSize: 12, color: "#757f8f", padding: "8px 2px" }}>
                     No stretch items available right now.
@@ -485,7 +669,7 @@ export default function AnsarPage() {
                   return (
                     <div
                       key={item.id}
-                      onClick={() => !isSaving && earnStretch(item)}
+                      onClick={() => !isSaving && !walletLocked && earnStretch(item)}
                       style={{
                         display: "flex", alignItems: "flex-start", gap: 12, padding: "12px", borderRadius: 8,
                         border: `1px solid ${done ? "#a78bfa50" : "#2d3543"}`,
@@ -533,7 +717,21 @@ export default function AnsarPage() {
             </div>
           </div>
 
-          {/* TOP METRICS ROW */}
+          {/* AFTERNOON / EVENING (+ Conditional) — still required for FC points, but
+              NOT a gate for the wallet above. Set apart in its own outlined group so
+              it doesn't read as "blocking" the wallet. */}
+          <div style={{ border: "1px dashed #2d3543", borderRadius: 12, padding: "12px", marginBottom: 24, background: "rgba(255,255,255,0.015)" }}>
+            <div style={{ fontSize: 11, color: "#757f8f", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", padding: "4px 4px 12px" }}>
+              Still required · doesn&apos;t gate the wallet
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16 }}>
+              {renderBlock(BLOCKS.find(b => b.id === "afternoon_evening")!)}
+              {renderBlock(BLOCKS.find(b => b.id === "conditional")!)}
+            </div>
+          </div>
+
+          {/* TOP METRICS ROW — relocated below the gate/wallet flow (a top-pinned
+              balance bar now owns the very top; this stat row would collide with it). */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
             <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
               <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Points Today</div>
@@ -585,100 +783,6 @@ export default function AnsarPage() {
             <div style={{ fontSize: 11, color: "#757f8f", marginTop: 10, fontWeight: 500 }}>
               ⭐ Perfect Day: tick every habit for +1 bonus pt
             </div>
-          </div>
-
-          {/* HABIT BLOCKS GRID */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16, marginBottom: 24 }}>
-          {BLOCKS.map(block => {
-            const blockHabits = habits.filter(h => h.block === block.id);
-            if (blockHabits.length === 0) return null;
-            const blockDone = blockHabits.filter(h => completed[h.id]).length;
-            const blockPts = mounted ? (dayScore.blocks[block.id] ?? 0) : 0;
-            const blockPct = Math.round((blockDone / blockHabits.length) * 100);
-
-            return (
-              <div key={block.id} style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)", display: "flex", flexDirection: "column" }}>
-                <div style={{ height: 3, background: block.color }} />
-                <div style={{ padding: "16px", borderBottom: "1px solid #2d3543" }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: block.color }}>{block.label}</div>
-                      <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>{block.subtitle}</div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 20, fontWeight: 700, color: "#ffffff" }}>{blockDone}/{blockHabits.length}</div>
-                      <div style={{ fontSize: 11, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>{blockPts} pts</div>
-                    </div>
-                  </div>
-                  <div style={{ height: 6, background: "#1f2438", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${blockPct}%`, background: block.color, borderRadius: 3, transition: "width 200ms ease-in-out", boxShadow: `0 0 8px ${block.color}40` }} />
-                  </div>
-                </div>
-
-                <div style={{ padding: "12px", flex: 1, overflowY: "auto", maxHeight: "400px" }}>
-                {blockHabits.map((habit) => {
-                  const state = mounted ? getHabitState(habit, blockHabits, completed) : "locked";
-                  const isDone = state === "done";
-                  const isAvailable = state === "available";
-                  const isLocked = state === "locked";
-                  const isSaving = saving === habit.id;
-
-                  return (
-                    <div
-                      key={habit.id}
-                      onClick={() => toggle(habit.id, state)}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 12,
-                        padding: "12px", marginBottom: 6, borderRadius: 8,
-                        border: `1px solid ${isDone ? block.color + "50" : isAvailable ? "#2d3543" : "#1f2438"}`,
-                        background: isDone ? block.color + "0a" : isAvailable ? "#1f2438" : "#16192d",
-                        opacity: isLocked ? 0.5 : 1,
-                        cursor: isAvailable ? "pointer" : "default",
-                        transition: "all 150ms ease-out",
-                        WebkitTapHighlightColor: "transparent",
-                      }}
-                    >
-                      <div style={{
-                        width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                        border: `2px solid ${isDone ? block.color : isAvailable ? "#2d3543" : "#1f2438"}`,
-                        background: isDone ? block.color : "transparent",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        transition: "all 150ms ease-out",
-                      }}>
-                        {isSaving ? <span style={{ fontSize: 10 }}>⏳</span> :
-                         isDone ? <span style={{ fontSize: 12, color: "#000", fontWeight: 700 }}>✓</span> :
-                         isLocked ? <span style={{ fontSize: 9 }}>🔒</span> : null}
-                      </div>
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: 13, fontWeight: isAvailable ? 600 : 500,
-                          color: isDone ? "#757f8f" : isLocked ? "#565f70" : "#ffffff",
-                          textDecoration: isDone ? "line-through" : "none",
-                        }}>
-                          {habit.icon} {habit.label}
-                        </div>
-                        {isLocked && <div style={{ fontSize: 10, color: "#565f70", marginTop: 2, fontWeight: 500 }}>Complete previous habits to unlock</div>}
-                      </div>
-
-                      {habit.chip && (
-                        <div style={{
-                          fontSize: 11, fontWeight: 600, flexShrink: 0,
-                          color: isDone ? block.color : isLocked ? "#565f70" : "#b0b5c1",
-                          background: isDone ? block.color + "15" : "#1f2438",
-                          padding: "4px 8px", borderRadius: 6,
-                          border: `1px solid ${isDone ? block.color + "40" : "#2d3543"}`,
-                        }}>
-                          {habit.chip}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                </div>
-              </div>
-            );
-          })}
           </div>
 
           {/* ALERTS & STATUS SECTION */}
