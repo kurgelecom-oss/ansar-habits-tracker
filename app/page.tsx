@@ -8,6 +8,15 @@ const POINTS_ACTIVE = false;
 
 const SOCCER_DAYS = ["Monday", "Wednesday"];
 
+// Real Madrid-inspired accents. Base surfaces stay DARK on purpose: the stadium
+// background scrim was tuned for dark cards, and every text token here is
+// light-on-dark — switching to white surfaces would recolour all of it and
+// re-open the contrast work. RM identity instead comes from Champions-League
+// gold + royal navy + kit-white accents on the dark base.
+const RM_GOLD = "#D4AF37";        // CL gold — FC scoreboard, achievements, top tier
+const RM_GOLD_BRIGHT = "#E7C55B"; // brighter gold for large scoreboard numbers on dark
+const RM_NAVY = "#0d2350";        // deep royal navy — scoreboard bar / section accents
+
 type Habit = { id: string; block: string; label: string; icon: string; chip?: string };
 
 function buildHabits(dayName: string): Habit[] {
@@ -93,7 +102,7 @@ function scoreDay(completedIds: Set<string>, dayName: string) {
 const WEEKLY_MAX = 56;
 
 const THRESHOLDS = [
-  { min: 42, label: "First Team 🏆",      desc: "42+ pts",   color: "#00ff88" },
+  { min: 42, label: "First Team 🏆",      desc: "42+ pts",   color: RM_GOLD },
   { min: 34, label: "Bench ✅",           desc: "34–41 pts", color: "#00d9ff" },
   { min: 26, label: "Reserves ⚠️",        desc: "26–33 pts", color: "#ffa500" },
   { min: 0,  label: "Training Ground ❌", desc: "0–25 pts",  color: "#ff4444" },
@@ -516,7 +525,7 @@ export default function AnsarPage() {
       }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "#ffffff" }}>
-            Ansar <span style={{ color: "#ffa500" }}>· ANSAR FC</span>
+            Ansar <span style={{ color: RM_GOLD, letterSpacing: "0.04em" }}>· ANSAR FC</span>
           </div>
           <div style={{ fontSize: 12, color: "#757f8f", marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}>
             {mounted ? new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" }) : ""} · {time}
@@ -561,6 +570,11 @@ export default function AnsarPage() {
                   <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>
                     Screen-time bank · 1 stretch point = {STRETCH_MIN_PER_POINT} min · separate from ANSAR FC
                   </div>
+                  {mounted && !walletLocked && (
+                    <div style={{ fontSize: 11, color: RM_GOLD, marginTop: 6, fontWeight: 800, letterSpacing: "0.04em" }}>
+                      ¡Vamos! · screen time unlocked
+                    </div>
+                  )}
                 </div>
 
                 {mounted && walletLocked ? (
@@ -576,7 +590,7 @@ export default function AnsarPage() {
                 ) : (
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 36, fontWeight: 700, color: "#a78bfa", lineHeight: 1 }}>
+                      <div style={{ fontSize: 36, fontWeight: 800, color: "#a78bfa", lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
                         {mounted ? stretchBalance : "—"}<span style={{ fontSize: 16, color: "#757f8f", fontWeight: 600 }}> / {STRETCH_DAILY_CAP_MIN} min</span>
                       </div>
                       <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4 }}>
@@ -629,14 +643,15 @@ export default function AnsarPage() {
           <div style={{
             display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14,
             padding: "10px 16px", marginBottom: 24, borderRadius: 10,
-            background: "#16192d", border: "1px solid #2d3543", fontSize: 12, color: "#b0b5c1",
+            background: RM_NAVY, border: `1px solid ${RM_GOLD}33`, fontSize: 12, color: "#e8ebf2",
+            fontVariantNumeric: "tabular-nums",
           }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em" }}>ANSAR FC</span>
-            <span><b style={{ color: "#ffa500", fontWeight: 700 }}>{mounted ? todayPts : "—"}</b> pts today{mounted && dayScore.perfect ? " ⭐" : ""}</span>
-            <span style={{ color: "#2d3543" }}>·</span>
-            <span><b style={{ color: "#00ff88", fontWeight: 700 }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</b> this week</span>
-            <span style={{ color: "#2d3543" }}>·</span>
-            <span><b style={{ color: "#00d9ff", fontWeight: 700 }}>{mounted && streak !== null ? streak : "—"}</b> day streak{mounted && streak !== null && streak > 0 ? " 🔥" : ""}</span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: RM_GOLD, textTransform: "uppercase", letterSpacing: "0.12em" }}>ANSAR FC</span>
+            <span><b style={{ color: RM_GOLD_BRIGHT, fontWeight: 800, letterSpacing: "0.02em" }}>{mounted ? todayPts : "—"}</b> pts today{mounted && dayScore.perfect ? " ⭐" : ""}</span>
+            <span style={{ color: `${RM_GOLD}55` }}>·</span>
+            <span><b style={{ color: RM_GOLD_BRIGHT, fontWeight: 800, letterSpacing: "0.02em" }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</b> this week</span>
+            <span style={{ color: `${RM_GOLD}55` }}>·</span>
+            <span><b style={{ color: RM_GOLD_BRIGHT, fontWeight: 800, letterSpacing: "0.02em" }}>{mounted && streak !== null ? streak : "—"}</b> day streak{mounted && streak !== null && streak > 0 ? " 🔥" : ""}</span>
           </div>
 
           {/* SOFT-LAUNCH NOTICE */}
@@ -754,7 +769,7 @@ export default function AnsarPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
             <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
               <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Points Today</div>
-              <div style={{ fontSize: 36, fontWeight: 700, color: "#ffa500", lineHeight: 1 }}>
+              <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
                 {mounted ? todayPts : "—"}{mounted && dayScore.perfect && <span style={{ fontSize: 20, marginLeft: 6 }}>⭐</span>}
               </div>
               <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
@@ -764,7 +779,7 @@ export default function AnsarPage() {
 
             <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
               <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Week Total</div>
-              <div style={{ fontSize: 36, fontWeight: 700, color: "#00ff88", lineHeight: 1 }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</div>
+              <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</div>
               <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
                 <span>📈</span> /{WEEKLY_MAX} pts max
               </div>
@@ -772,7 +787,7 @@ export default function AnsarPage() {
 
             <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
               <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Day Streak</div>
-              <div style={{ fontSize: 36, fontWeight: 700, color: "#00d9ff", lineHeight: 1, display: "flex", alignItems: "center", gap: 4 }}>
+              <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, display: "flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
                 {mounted && streak !== null ? streak : "—"}
                 {mounted && streak !== null && streak > 0 && <span>🔥</span>}
               </div>
@@ -800,7 +815,7 @@ export default function AnsarPage() {
               }} />
             </div>
             <div style={{ fontSize: 11, color: "#757f8f", marginTop: 10, fontWeight: 500 }}>
-              ⭐ Perfect Day: tick every habit for +1 bonus pt
+              ⭐ Perfect Day: tick every habit for +1 bonus pt <span style={{ color: RM_GOLD, fontWeight: 800, letterSpacing: "0.04em" }}>· ¡Vamos!</span>
             </div>
           </div>
 
@@ -830,7 +845,7 @@ export default function AnsarPage() {
                   <div style={{ fontSize: 13, color: "#b0b5c1", lineHeight: 1.6 }}>{weekThreshold.desc}</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 32, fontWeight: 700, color: weekThreshold.color, lineHeight: 1 }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: weekThreshold.color, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</div>
                   <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4 }}>/ {WEEKLY_MAX} pts</div>
                 </div>
               </div>
@@ -839,9 +854,9 @@ export default function AnsarPage() {
 
           {/* REWARD TIERS */}
           <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-            <div style={{ height: 3, background: "linear-gradient(90deg, #ffa500, #00ff88, #00d9ff)" }} />
+            <div style={{ height: 3, background: `linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)` }} />
             <div style={{ padding: "20px" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 16 }}>🏆 Weekly Tiers · ANSAR FC</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: RM_GOLD, marginBottom: 16, letterSpacing: "0.04em" }}>🏆 Weekly Tiers · ANSAR FC</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 {THRESHOLDS.map((t, i) => {
                   const weekPts = weeklyPts ?? 0;
