@@ -130,9 +130,8 @@ function getHabitState(habit: Habit, blockHabits: Habit[], completed: Record<str
 }
 
 async function calculateStreak(): Promise<number> {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 60);
-  const cutoffStr = cutoff.toISOString().split("T")[0];
+  const today = getTodayDate();
+  const cutoffStr = addDays(today, -60);
 
   const { data, error } = await supabase
     .from("habit_completions")
@@ -148,11 +147,8 @@ async function calculateStreak(): Promise<number> {
   });
 
   let streak = 0;
-  const check = new Date();
   for (let i = 0; i <= 60; i++) {
-    const d = new Date(check);
-    d.setDate(check.getDate() - i);
-    const ds = d.toISOString().split("T")[0];
+    const ds = addDays(today, -i);
     if ((byDate[ds] || 0) >= 5) {
       streak++;
     } else if (i === 0) {
