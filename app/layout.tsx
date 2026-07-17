@@ -30,9 +30,12 @@ export default function RootLayout({
 
           /* ── TOP NAV ─────────────────────────────────────────────
              Colours are hardcoded rather than tokenised: this repo has no
-             stylesheet or theme tokens, so the values below are ansar's own
-             palette lifted from page.tsx (card #16192d, border #2d3543,
-             secondary #757f8f, cyan #00d9ff). */
+             stylesheet or theme tokens. Chrome is ansar's own palette,
+             lifted from page.tsx (card #16192d, border #2d3543, secondary
+             #757f8f). The active cue is the canonical #00d4ff — NOT ansar's
+             native #00d9ff, which is a near-identical but different cyan.
+             The nav is one shared object and must read identically on all
+             six surfaces, so this value tracks family-dashboard's --cyan. */
           .topnav {
             position: fixed;
             top: 0;
@@ -64,7 +67,7 @@ export default function RootLayout({
             transition: color 0.2s ease;
           }
           .topnav-link:hover { color: #ffffff; }
-          .topnav-link.active { color: #00d9ff; }
+          .topnav-link.active { color: #00d4ff; }
 
           .topnav-link.active::after {
             content: "";
@@ -73,7 +76,7 @@ export default function RootLayout({
             right: 10px;
             bottom: 0;
             height: 2px;
-            background: #00d9ff;
+            background: #00d4ff;
             border-radius: 1px 1px 0 0;
           }
         `}</style>
