@@ -535,12 +535,6 @@ export default function AnsarPage() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          {/* External cross-nav to Nihal's weekly view on the family dashboard */}
-          <a href="https://kurgel-dashboard.netlify.app/week" target="_blank" rel="noopener noreferrer" style={{
-            fontSize: 11, color: "#ffa500", textDecoration: "none", fontWeight: 700,
-            background: "rgba(255,165,0,0.1)", padding: "6px 12px", borderRadius: 6, border: "1px solid rgba(255,165,0,0.35)",
-            cursor: "pointer", transition: "all 150ms ease-out",
-          }}>📅 Homeschool Week ↗</a>
           <a href="/" style={{
             fontSize: 11, color: "#b0b5c1", textDecoration: "none", fontWeight: 600,
             background: "#1f2438", padding: "6px 12px", borderRadius: 6, border: "1px solid #2d3543",
