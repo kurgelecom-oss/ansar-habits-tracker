@@ -500,7 +500,8 @@ export default function AnsarPage() {
 
   return (
     <div style={{
-      minHeight: "100vh",
+      minHeight: "calc(100vh - var(--nav-h))",
+      marginTop: "var(--nav-h)",
       // Decorative Bernabeu backdrop. A near-solid dark scrim (82% of the original
       // #0f1419 page colour) sits on top of the photo and does ALL the work of
       // preserving contrast — no text/card styling is changed. Bump the 0.82 alpha
@@ -517,7 +518,9 @@ export default function AnsarPage() {
       <header style={{
         background: "#16192d", borderBottom: "1px solid #2d3543",
         padding: "16px 24px", display: "flex", alignItems: "center",
-        justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, flexShrink: 0,
+        // top:var(--nav-h) — the page scrolls on the body, so sticky resolves
+        // against the viewport; top:0 would park this under the fixed nav.
+        justifyContent: "space-between", position: "sticky", top: "var(--nav-h)", zIndex: 100, flexShrink: 0,
       }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "#ffffff" }}>
