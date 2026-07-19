@@ -29,10 +29,7 @@ function buildHabits(dayName: string): Habit[] {
     { id: "breakfast",          block: "pre_homeschool",    label: "Breakfast done - no screens",                        icon: "🍳" },
     { id: "quran",              block: "pre_homeschool",    label: "Qur'an recitation - 20 min",                         icon: "📖" },
     { id: "goals",              block: "pre_homeschool",    label: "Daily goals written + Habits page reviewed",         icon: "✍️" },
-    { id: "homeschool_session", block: "homeschool",        label: "Homeschool session completed (4 hrs)",               icon: "📚", chip: "+3 pts" },
-    { id: "readtheory",         block: "homeschool",        label: "ReadTheory done",                                    icon: "📝", chip: "+1 pair" },
-    { id: "khan",               block: "homeschool",        label: "Khan Academy done",                                  icon: "🎓", chip: "+1 pair" },
-    { id: "journal",            block: "homeschool",        label: "Daily learning journal entry written",               icon: "📒", chip: "+1 pt" },
+    { id: "homeschool_session", block: "homeschool",        label: "Homeschool completed",                               icon: "📚", chip: "+5 pts" },
     { id: "btn_cornell",        block: "afternoon_evening", label: "BTN episode + Cornell notes done",                   icon: "📰", chip: "+1 pt" },
     { id: "all_namaz",          block: "afternoon_evening", label: "All Namaz done (Fajr, Duhr, Asr, Maghrib, Isha)",    icon: "🕌", chip: "+1 pt" },
     { id: "room_tidy",          block: "afternoon_evening", label: "Room tidy",                                          icon: "🧹" },
@@ -45,7 +42,7 @@ function buildHabits(dayName: string): Habit[] {
 
 const BLOCKS = [
   { id: "pre_homeschool",    label: "🌅 Morning Habits",      subtitle: "Before 8:30am · all 7 = +2 pts", color: "#ffa500" },
-  { id: "homeschool",        label: "📚 Homeschool",           subtitle: "4 hour block",                   color: "#00d9ff" },
+  { id: "homeschool",        label: "📚 Homeschool",           subtitle: "Daily completion · +5 pts",      color: "#00d9ff" },
   { id: "afternoon_evening", label: "🌆 Afternoon / Evening",  subtitle: "After school",                   color: "#00ff88" },
   { id: "conditional",       label: "⚽ Conditional",          subtitle: "Mon & Wed only",                 color: "#a78bfa" },
 ];
@@ -77,9 +74,7 @@ function scoreDay(completedIds: Set<string>, dayName: string) {
   const pre = PRE_HABIT_IDS.every(id => completedIds.has(id)) ? 2 : 0;
 
   let school = 0;
-  if (completedIds.has("homeschool_session")) school += 3;
-  if (completedIds.has("readtheory") && completedIds.has("khan")) school += 1;
-  if (completedIds.has("journal")) school += 1;
+  if (completedIds.has("homeschool_session")) school += 5;
 
   let arvo = 0;
   if (completedIds.has("btn_cornell")) arvo += 1;
