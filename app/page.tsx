@@ -1,12 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { supabase, getTodayDate, getWeekStart, getTodayDayName } from "./lib/supabase";
+import { scoreDay, SOCCER_DAYS } from "./lib/scoring";
 
 // ANSAR FC system — points are tracked from day one, but reward enforcement
 // only activates 13 Jul 2026 after a green soft-launch week.
 const POINTS_ACTIVE = false;
-
-const SOCCER_DAYS = ["Monday", "Wednesday"];
 
 // Real Madrid-inspired accents. Base surfaces stay DARK on purpose: the stadium
 // background scrim was tuned for dark cards, and every text token here is
@@ -68,29 +67,14 @@ type StretchRow = { item_id: string; minutes: number };
 
 // Block-based scoring — NOT per-habit sums.
 // Daily max = 10 on a non-training day, 11 on a training day (Mon/Wed).
-function scoreDay(completedIds: Set<string>, dayName: string) {
-  const hasSoccer = SOCCER_DAYS.includes(dayName);
-
-  const pre = PRE_HABIT_IDS.every(id => completedIds.has(id)) ? 2 : 0;
-
-  let school = 0;
-  if (completedIds.has("homeschool_session")) school += 5;
-
-  let arvo = 0;
-  if (completedIds.has("btn_cornell")) arvo += 1;
-  if (completedIds.has("all_namaz")) arvo += 1;
-
-  const conditional = hasSoccer && completedIds.has("soccer_training") ? 1 : 0;
-
-  const visibleIds = buildHabits(dayName).map(h => h.id);
-  const perfect = visibleIds.length > 0 && visibleIds.every(id => completedIds.has(id));
-  const bonus = perfect ? 1 : 0;
-
-  return {
-    total: pre + school + arvo + conditional + bonus,
-    blocks: { pre_homeschool: pre, homeschool: school, afternoon_evening: arvo, conditional } as Record<string, number>,
-    perfect,
-  };
+//
+// The arithmetic lives in app/lib/scoring.ts, mirrored into family-dashboard so
+// both surfaces score the same Supabase rows identically. This adapter supplies
+// the habit-id sets, which this app builds locally while family-dashboard reads
+// them from Notion.
+function scoreLocal(completedIds: Set<string>, dayName: string) {
+  const baseIds = buildHabits(dayName).filter(h => h.block !== "conditional").map(h => h.id);
+  return scoreDay(completedIds, dayName, PRE_HABIT_IDS, baseIds);
 }
 
 // ANSAR FC weekly tiers. Weekly max = 56 (incl. +3 streak bonus for 5 Perfect Days Mon–Fri).
@@ -194,13 +178,13 @@ export default function AnsarPage() {
 
       let total = 0;
       Object.keys(byDate).forEach(ds => {
-        total += scoreDay(byDate[ds], dayNameOf(ds)).total;
+        total += scoreLocal(byDate[ds], dayNameOf(ds)).total;
       });
 
       // Weekly streak bonus: 5 Perfect Days Mon–Fri = +3 to weekly total.
       const weekdayDates = [0, 1, 2, 3, 4].map(i => addDays(weekStart, i));
       const allWeekdaysPerfect = weekdayDates.every(
-        ds => byDate[ds] && scoreDay(byDate[ds], dayNameOf(ds)).perfect
+        ds => byDate[ds] && scoreLocal(byDate[ds], dayNameOf(ds)).perfect
       );
       if (allWeekdaysPerfect) total += 3;
 
@@ -378,7 +362,7 @@ export default function AnsarPage() {
   }
 
   const completedSet = new Set(Object.keys(completed).filter(k => completed[k]));
-  const dayScore = scoreDay(completedSet, dayName);
+  const dayScore = scoreLocal(completedSet, dayName);
   const todayPts = dayScore.total;
   const todayDone = habits.filter(h => completed[h.id]).length;
   const overallPct = habits.length > 0 ? Math.round((todayDone / habits.length) * 100) : 0;
