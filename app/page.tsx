@@ -309,6 +309,14 @@ export default function AnsarPage() {
   // ── Log Work: Esc-to-close + body-scroll lock while the modal is open ──
   // Below 1440px .ab-root scrolls, so the lock is on <body>, and the previous
   // value is restored on close rather than assumed to be "".
+  //
+  // KNOWN LIMIT, verified in production: once the user clicks into the Tally
+  // form, document.activeElement becomes the iframe and keystrokes go to a
+  // cross-origin document this listener can never see — so Esc stops working
+  // mid-form. That is a browser security boundary, not something a handler can
+  // work around. Esc still fires whenever focus is in the parent (right after
+  // opening, or after clicking the panel chrome). The ✕ and the backdrop work
+  // unconditionally, which is why the subtitle points at ✕ and not at Esc.
   useEffect(() => {
     if (!logOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setLogOpen(false); };
@@ -1053,7 +1061,7 @@ export default function AnsarPage() {
                 }}>
                   {logSaved
                     ? "✅ Logged — resetting for your next entry"
-                    : "Log as many entries as you need · Esc to close"}
+                    : "Log as many entries as you need · tap ✕ to close"}
                 </div>
               </div>
               {/* Focused on open so the keyboard lands inside the dialog rather
