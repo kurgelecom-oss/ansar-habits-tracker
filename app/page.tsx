@@ -56,6 +56,17 @@ const PRE_HABIT_IDS = ["feet_floor", "fajr", "bed_dressed", "movement", "breakfa
 // Notion without a redeploy). Completions persist to the Supabase
 // `stretch_completions` table (localStorage fallback, like habit_completions).
 // ═══════════════════════════════════════════════════════════════════════════
+// ── LOG WORK ────────────────────────────────────────────────────────────────
+// Tally intake form, opened in a modal so Ansar never leaves the board. Purely
+// additive: nothing here reads or writes points, tiers, streak, screen time or
+// the Stretch Wallet. `TALLY_ORIGIN` is the postMessage allow-list of one.
+const TALLY_ORIGIN = "https://tally.so";
+const TALLY_EMBED_JS = `${TALLY_ORIGIN}/widgets/embed.js`;
+// dynamicHeight lets embed.js report the form's real height so the panel hugs
+// it instead of leaving dead space under a short form. If the script never
+// loads, .lw-frame's min-height keeps the form perfectly usable anyway.
+const TALLY_FORM_SRC = `${TALLY_ORIGIN}/embed/ODKlVa?alignLeft=1&hideTitle=1&dynamicHeight=1`;
+
 const STRETCH_MIN_PER_POINT = 10;
 const STRETCH_DAILY_CAP_MIN = 75;   // earnable screen-time minutes per day
 const STRETCH_SPEND_STEP_MIN = 10;  // each "Spend" tap burns 10 min (v1, no PS5 integration)
@@ -158,6 +169,11 @@ export default function AnsarPage() {
   // both 100% done, then STAYS open for the rest of the day (sticky per-day flag
   // in localStorage). Never re-locks.
   const [stretchUnlocked, setStretchUnlocked] = useState(false);
+  // ── Log Work modal. Presentation only: it reads no scoring state and writes
+  // none. `embedKey` remounts the iframe to re-arm a blank form after a submit.
+  const [logOpen, setLogOpen] = useState(false);
+  const [logSaved, setLogSaved] = useState(false);
+  const [embedKey, setEmbedKey] = useState(0);
 
   const loadWeeklyData = useCallback(async () => {
     const weekStart = getWeekStart();
@@ -289,6 +305,75 @@ export default function AnsarPage() {
       localStorage.setItem(`ansar-stretch-unlocked-${getTodayDate()}`, "1");
     }
   }, [mounted, stretchUnlocked, habits, completed]);
+
+  // ── Log Work: Esc-to-close + body-scroll lock while the modal is open ──
+  // Below 1440px .ab-root scrolls, so the lock is on <body>, and the previous
+  // value is restored on close rather than assumed to be "".
+  useEffect(() => {
+    if (!logOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setLogOpen(false); };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [logOpen]);
+
+  // ── Log Work: Tally submit signal ──
+  // Origin-checked against tally.so — messages from anywhere else are ignored
+  // outright. If this event never fires nothing happens: the modal simply stays
+  // open and the X closes it. No synthetic submit signal is ever manufactured.
+  useEffect(() => {
+    if (!logOpen) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== TALLY_ORIGIN) return;
+      let payload: unknown = e.data;
+      if (typeof payload === "string") {
+        try { payload = JSON.parse(payload); } catch { return; }
+      }
+      if ((payload as { event?: string } | null)?.event === "Tally.FormSubmitted") {
+        setLogSaved(true);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [logOpen]);
+
+  // Re-arm: hold the confirmation for a beat, then remount the iframe so the
+  // form comes back blank and Ansar can log another entry without reopening.
+  // Kept out of the listener so closing mid-beat cancels the timer cleanly.
+  useEffect(() => {
+    if (!logSaved) return;
+    const t = setTimeout(() => {
+      setLogSaved(false);
+      setEmbedKey(k => k + 1);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [logSaved]);
+
+  // ── Log Work: Tally's official embed script, fetched once on first open ──
+  // loadEmbeds() promotes data-tally-src → src. The manual fallback does the
+  // same by hand, so the form still renders if the script 404s or is blocked.
+  // Re-runs on embedKey so a re-armed iframe gets promoted too.
+  useEffect(() => {
+    if (!logOpen) return;
+    const promote = () => {
+      const tally = (window as unknown as { Tally?: { loadEmbeds?: () => void } }).Tally;
+      if (tally?.loadEmbeds) { tally.loadEmbeds(); return; }
+      document.querySelectorAll<HTMLIFrameElement>("iframe[data-tally-src]").forEach(f => {
+        if (!f.getAttribute("src") && f.dataset.tallySrc) f.src = f.dataset.tallySrc;
+      });
+    };
+    if (document.querySelector(`script[src="${TALLY_EMBED_JS}"]`)) { promote(); return; }
+    const s = document.createElement("script");
+    s.src = TALLY_EMBED_JS;
+    s.async = true;
+    s.onload = promote;
+    s.onerror = promote;
+    document.body.appendChild(s);
+  }, [logOpen, embedKey]);
 
   async function toggle(id: string, state: string) {
     if (state !== "available") return;
@@ -434,6 +519,38 @@ export default function AnsarPage() {
 @media (prefers-reduced-motion:reduce){
   .ab-btn,.ab-spend{transition:none}
   .ab-btn:active,.ab-spend:active{transform:none}
+}
+
+/* ── LOG WORK MODAL ───────────────────────────────────────────────────────
+   Hand-rolled: this repo has no modal primitive and no stylesheet to reuse.
+   Chrome is lifted straight from the board's own palette (#16192d panel,
+   #1f2438 controls, #2d3543 borders) so it reads native.
+
+   z-index 1000 clears BOTH the fixed .topnav (900) and the page header (100).
+   Anything lower and the nav would sit on top of the backdrop. */
+.lw-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;
+  justify-content:center;padding:24px;background:rgba(8,11,20,0.72)}
+/* The panel sizes to the form (embed.js reports its height) and stops at 85vh,
+   past which .lw-body scrolls. No fixed height: an iframe has no intrinsic
+   height, so a short form would otherwise sit in a tall box of dead space. */
+.lw-panel{display:flex;flex-direction:column;width:min(560px,100%);max-height:85vh;
+  background:#16192d;border:1px solid #2d3543;border-radius:14px;overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,0.62)}
+.lw-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-shrink:0;padding:13px 15px;border-bottom:1px solid #2d3543}
+/* min-height is the safety net: if embed.js fails to load, no height is ever
+   reported and the iframe would fall back to its 150px default. */
+.lw-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#ffffff}
+.lw-frame{display:block;width:100%;min-height:420px;border:0}
+.lw-x{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  flex-shrink:0;border-radius:9px;border:1px solid #2d3543;background:#1f2438;
+  color:#b0b5c1;font:inherit;font-size:17px;font-weight:800;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background 180ms ease,color 180ms ease}
+.lw-x:hover{background:#2d3543;color:#ffffff}
+.lw-x:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:2px}
+@media (max-width:820px){
+  .lw-backdrop{padding:12px}
+  .lw-panel{width:100%;height:92vh;max-height:92vh}
 }`;
 
   const cardStyle: React.CSSProperties = {
@@ -724,6 +841,30 @@ export default function AnsarPage() {
             </div>
           )}
 
+          {/* LOG WORK — opens the Tally intake modal. Sits directly under the
+              +5 card because logging work IS the schoolwork action; it belongs
+              beside that habit rather than floating in the header chrome.
+              flex-shrink:0 keeps the 60px target intact — the height it needs
+              comes out of Weekly Tiers below, which is flex:1 with ~200px of
+              slack at 1440px+. Touches no scoring state: onClick only opens. */}
+          <button
+            type="button"
+            className="ab-btn"
+            onClick={() => setLogOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={logOpen}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              minHeight: 60, width: "100%", flexShrink: 0, borderRadius: 11,
+              border: "1px solid #2d3543", background: "#1f2438",
+              color: "#ffffff", font: "inherit", fontSize: 16, fontWeight: 800,
+              cursor: "pointer", WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <span aria-hidden style={{ fontSize: 21, lineHeight: 1 }}>📝</span>
+            Log Work
+          </button>
+
           {condHabits.length > 0 && (
             <div style={{ ...cardStyle, flex: "0 0 auto" }}>
               {colHead(conditional.color, conditional.label, conditional.subtitle,
@@ -890,6 +1031,57 @@ export default function AnsarPage() {
           </div>
         </div>
       </div>
+
+      {/* ── LOG WORK MODAL ────────────────────────────────────────────────
+          An overlay, not a page swap: the board stays mounted and untouched
+          underneath, so closing returns it exactly as it was. Three ways out —
+          the X, the backdrop, and Esc (listener above). */}
+      {logOpen && (
+        <div
+          className="lw-backdrop"
+          // Backdrop-to-close fires only for a press that lands on the backdrop
+          // itself — never one that bubbled up out of the panel.
+          onClick={e => { if (e.target === e.currentTarget) setLogOpen(false); }}
+        >
+          <div className="lw-panel" role="dialog" aria-modal="true" aria-label="Log Work">
+            <div className="lw-head">
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#ffffff" }}>📝 Log Work</div>
+                <div style={{
+                  fontSize: 10, marginTop: 3, fontWeight: 600,
+                  color: logSaved ? "#00ff88" : "#757f8f",
+                }}>
+                  {logSaved
+                    ? "✅ Logged — resetting for your next entry"
+                    : "Log as many entries as you need · Esc to close"}
+                </div>
+              </div>
+              {/* Focused on open so the keyboard lands inside the dialog rather
+                  than on whatever sat behind it. */}
+              <button
+                type="button"
+                className="lw-x"
+                onClick={() => setLogOpen(false)}
+                aria-label="Close Log Work"
+                autoFocus
+              >
+                ✕
+              </button>
+            </div>
+            <div className="lw-body">
+              {/* `key={embedKey}` is the re-arm: bumping it remounts the iframe,
+                  which reloads the form blank. src is left to Tally's embed.js
+                  (or the manual promotion fallback) via data-tally-src. */}
+              <iframe
+                key={embedKey}
+                className="lw-frame"
+                data-tally-src={TALLY_FORM_SRC}
+                title="Log Work form"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
