@@ -384,497 +384,510 @@ export default function AnsarPage() {
     stretchCountByItem[r.item_id] = (stretchCountByItem[r.item_id] || 0) + 1;
   });
 
-  // Renders a single habit block (header + chained habit rows). Extracted so the
-  // page can place blocks individually in the new layout order.
-  const renderBlock = (block: (typeof BLOCKS)[number]) => {
-    const blockHabits = habits.filter(h => h.block === block.id);
-    if (blockHabits.length === 0) return null;
-    const blockDone = blockHabits.filter(h => completed[h.id]).length;
-    const blockPts = mounted ? (dayScore.blocks[block.id] ?? 0) : 0;
-    const blockPct = Math.round((blockDone / blockHabits.length) * 100);
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MATCH DAY BOARD — one screen, no scroll.
+  //
+  // The page used to run 2,729px inside a 1,080px screen: 1,649px (60%) sat below
+  // the fold, and every block additionally carried `maxHeight: 400px; overflowY:
+  // auto`, so habits scrolled INSIDE a card that was itself already invisible.
+  // Both scrolls are gone. The root is a fixed-height flex column and each of the
+  // four board columns sizes itself to fit.
+  //
+  // The height came back from removing what repeated itself, not from removing
+  // anything tappable: the four 431px metric cards, the slim stat row (a verbatim
+  // duplicate of them), the standalone "on track for" card, the soccer alert (the
+  // Conditional column already says Mon & Wed) and a dead 40px spacer all collapse
+  // into the 80px scoreboard strip. Every habit, every wallet item and every
+  // control survives, larger than before.
+  //
+  // Scoring, progressive unlock and the wallet gate are untouched — this is layout.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Presses need :active / :focus-visible, which inline styles cannot express, so
+  // the interaction and the responsive grid live in one stylesheet. Everything else
+  // stays inline to match the rest of the file.
+  const BOARD_CSS = `
+/* padding-top, NOT margin-top, to clear the fixed nav. body is height:100% in
+   layout.tsx, so a top margin here collapses through it and pushes the document
+   40px taller than the viewport — a scrollbar on a page whose whole point is not
+   scrolling. Padding cannot collapse. box-sizing:border-box is already global. */
+.ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:var(--nav-h);overflow:hidden}
+.ab-board{display:grid;grid-template-columns:1fr 1fr 0.84fr 0.96fr;gap:14px;
+  padding:14px 20px 18px;flex:1;min-height:0}
+.ab-btn{transition:transform 220ms cubic-bezier(.34,1.56,.64,1),background 180ms ease,
+  border-color 180ms ease,box-shadow 180ms ease;box-shadow:0 2px 0 rgba(0,0,0,.32)}
+.ab-btn:active:not(:disabled){transform:scale(.965) translateY(1px);
+  box-shadow:0 0 0 rgba(0,0,0,.32),inset 0 2px 9px rgba(0,0,0,.34)}
+.ab-btn:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:2px}
+.ab-btn:disabled{box-shadow:none}
+.ab-spend{transition:transform 220ms cubic-bezier(.34,1.56,.64,1),box-shadow 180ms ease}
+.ab-spend:active:not(:disabled){transform:translateY(3px);box-shadow:0 0 0 #7c5fd3}
+.ab-spend:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:2px}
+/* Below the 4-column breakpoint the board reflows to 2 columns and the page is
+   allowed to scroll again — 15 habits at a usable size genuinely cannot fit an
+   iPad. The no-scroll guarantee is for the 1440px+ screens this is built for. */
+@media (max-width:1439px){
+  .ab-root{height:auto;min-height:100dvh;overflow:visible}
+  .ab-board{grid-template-columns:1fr 1fr}
+}
+@media (max-width:820px){.ab-board{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){
+  .ab-btn,.ab-spend{transition:none}
+  .ab-btn:active,.ab-spend:active{transform:none}
+}`;
+
+  const cardStyle: React.CSSProperties = {
+    background: "#16192d", border: "1px solid #2d3543", borderRadius: 12,
+    overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 0,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+  };
+
+  /** Column shell: accent rail, title/subtitle, optional right-hand count. */
+  const colHead = (color: string, title: string, subtitle: string, right?: React.ReactNode) => (
+    <>
+      <div style={{ height: 3, background: color, flexShrink: 0 }} />
+      <div style={{
+        padding: "12px 15px 11px", borderBottom: "1px solid #2d3543", flexShrink: 0,
+        display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10,
+      }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color }}>{title}</div>
+          <div style={{ fontSize: 10, color: "#757f8f", marginTop: 3, fontWeight: 500 }}>{subtitle}</div>
+        </div>
+        {right}
+      </div>
+    </>
+  );
+
+  /**
+   * One habit as a real <button>. `flex: 1` with a 56px floor lets rows share the
+   * column's height — ~105px each at 1920×1080, compressing gracefully on smaller
+   * screens rather than overflowing. It was a 48px div before.
+   */
+  const habitButton = (habit: Habit, blockHabits: Habit[], color: string) => {
+    const state = mounted ? getHabitState(habit, blockHabits, completed) : "locked";
+    const isDone = state === "done";
+    const isAvailable = state === "available";
+    const isLocked = state === "locked";
+    const isSaving = saving === habit.id;
 
     return (
-      <div key={block.id} style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)", display: "flex", flexDirection: "column" }}>
-        <div style={{ height: 3, background: block.color }} />
-        <div style={{ padding: "16px", borderBottom: "1px solid #2d3543" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: block.color }}>{block.label}</div>
-              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>{block.subtitle}</div>
+      <button
+        key={habit.id}
+        type="button"
+        className="ab-btn"
+        onClick={() => toggle(habit.id, state)}
+        disabled={!isAvailable}
+        aria-label={habit.label}
+        style={{
+          display: "flex", alignItems: "center", gap: 14, padding: "0 16px",
+          borderRadius: 11, flex: 1, minHeight: 56, width: "100%", textAlign: "left",
+          font: "inherit", color: "inherit",
+          border: `1px solid ${isDone ? color + "50" : isAvailable ? "#2d3543" : "#1f2438"}`,
+          background: isDone ? color + "0a" : isAvailable ? "#1f2438" : "#16192d",
+          opacity: isLocked ? 0.45 : 1,
+          cursor: isAvailable ? "pointer" : "default",
+          WebkitTapHighlightColor: "transparent",
+        }}
+      >
+        <span style={{
+          width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+          border: `2px solid ${isDone ? color : isAvailable ? "#2d3543" : "#1f2438"}`,
+          background: isDone ? color : "transparent",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          {isSaving ? <span style={{ fontSize: 13 }}>⏳</span> :
+           isDone ? <span style={{ fontSize: 16, color: "#000", fontWeight: 800 }}>✓</span> :
+           isLocked ? <span style={{ fontSize: 12 }}>🔒</span> : null}
+        </span>
+
+        <span aria-hidden style={{ fontSize: 24, flexShrink: 0, lineHeight: 1 }}>{habit.icon}</span>
+
+        <span style={{
+          flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, lineHeight: 1.28,
+          color: isDone ? "#757f8f" : isLocked ? "#565f70" : "#ffffff",
+          textDecoration: isDone ? "line-through" : "none",
+        }}>
+          {habit.label}
+        </span>
+
+        {habit.chip && (
+          <span style={{
+            fontSize: 11, fontWeight: 800, flexShrink: 0, padding: "5px 10px",
+            borderRadius: 7, whiteSpace: "nowrap",
+            color: isDone ? color : isLocked ? "#565f70" : "#b0b5c1",
+            background: isDone ? color + "15" : "#16192d",
+            border: `1px solid ${isDone ? color + "40" : "#2d3543"}`,
+          }}>
+            {habit.chip}
+          </span>
+        )}
+      </button>
+    );
+  };
+
+  /** A full habit column (Morning, and Afternoon/Evening). */
+  const habitColumn = (block: (typeof BLOCKS)[number]) => {
+    const blockHabits = habits.filter(h => h.block === block.id);
+    if (blockHabits.length === 0) return null;
+    const done = blockHabits.filter(h => completed[h.id]).length;
+    return (
+      <div style={cardStyle}>
+        {colHead(block.color, block.label, block.subtitle,
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <div style={{ fontSize: 19, fontWeight: 800, color: "#ffffff", fontVariantNumeric: "tabular-nums" }}>
+              {mounted ? done : 0}/{blockHabits.length}
             </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "#ffffff" }}>{blockDone}/{blockHabits.length}</div>
-              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>{blockPts} pts</div>
+            <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
+              {mounted ? (dayScore.blocks[block.id] ?? 0) : 0} pts
             </div>
-          </div>
-          <div style={{ height: 6, background: "#1f2438", borderRadius: 3, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${blockPct}%`, background: block.color, borderRadius: 3, transition: "width 200ms ease-in-out", boxShadow: `0 0 8px ${block.color}40` }} />
-          </div>
-        </div>
-
-        <div style={{ padding: "12px", flex: 1, overflowY: "auto", maxHeight: "400px" }}>
-        {blockHabits.map((habit) => {
-          const state = mounted ? getHabitState(habit, blockHabits, completed) : "locked";
-          const isDone = state === "done";
-          const isAvailable = state === "available";
-          const isLocked = state === "locked";
-          const isSaving = saving === habit.id;
-
-          return (
-            <div
-              key={habit.id}
-              onClick={() => toggle(habit.id, state)}
-              style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "12px", marginBottom: 6, borderRadius: 8,
-                border: `1px solid ${isDone ? block.color + "50" : isAvailable ? "#2d3543" : "#1f2438"}`,
-                background: isDone ? block.color + "0a" : isAvailable ? "#1f2438" : "#16192d",
-                opacity: isLocked ? 0.5 : 1,
-                cursor: isAvailable ? "pointer" : "default",
-                transition: "all 150ms ease-out",
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              <div style={{
-                width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                border: `2px solid ${isDone ? block.color : isAvailable ? "#2d3543" : "#1f2438"}`,
-                background: isDone ? block.color : "transparent",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 150ms ease-out",
-              }}>
-                {isSaving ? <span style={{ fontSize: 10 }}>⏳</span> :
-                 isDone ? <span style={{ fontSize: 12, color: "#000", fontWeight: 700 }}>✓</span> :
-                 isLocked ? <span style={{ fontSize: 9 }}>🔒</span> : null}
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 13, fontWeight: isAvailable ? 600 : 500,
-                  color: isDone ? "#757f8f" : isLocked ? "#565f70" : "#ffffff",
-                  textDecoration: isDone ? "line-through" : "none",
-                }}>
-                  {habit.icon} {habit.label}
-                </div>
-                {isLocked && <div style={{ fontSize: 10, color: "#565f70", marginTop: 2, fontWeight: 500 }}>Complete previous habits to unlock</div>}
-              </div>
-
-              {habit.chip && (
-                <div style={{
-                  fontSize: 11, fontWeight: 600, flexShrink: 0,
-                  color: isDone ? block.color : isLocked ? "#565f70" : "#b0b5c1",
-                  background: isDone ? block.color + "15" : "#1f2438",
-                  padding: "4px 8px", borderRadius: 6,
-                  border: `1px solid ${isDone ? block.color + "40" : "#2d3543"}`,
-                }}>
-                  {habit.chip}
-                </div>
-              )}
-            </div>
-          );
-        })}
+          </div>,
+        )}
+        <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0 }}>
+          {blockHabits.map(h => habitButton(h, blockHabits, block.color))}
         </div>
       </div>
     );
   };
 
-  return (
+  const morning = BLOCKS.find(b => b.id === "pre_homeschool")!;
+  const school = BLOCKS.find(b => b.id === "homeschool")!;
+  const evening = BLOCKS.find(b => b.id === "afternoon_evening")!;
+  const conditional = BLOCKS.find(b => b.id === "conditional")!;
+  const schoolHabits = habits.filter(h => h.block === "homeschool");
+  const condHabits = habits.filter(h => h.block === "conditional");
+
+  /** One scoreboard cell. */
+  const cell = (label: string, value: React.ReactNode, extra?: React.ReactNode) => (
     <div style={{
-      minHeight: "calc(100vh - var(--nav-h))",
-      marginTop: "var(--nav-h)",
-      // Decorative Bernabeu backdrop. A near-solid dark scrim (82% of the original
+      padding: "0 22px", borderRight: "1px solid rgba(212,175,55,0.16)", height: 52,
+      display: "flex", flexDirection: "column", justifyContent: "center",
+    }}>
+      <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(232,235,242,0.6)" }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 29, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1.08,
+        fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em",
+      }}>
+        {value}
+      </div>
+      {extra}
+    </div>
+  );
+
+  const sub = (t: string) => <small style={{ fontSize: 14, color: "rgba(232,235,242,0.55)", fontWeight: 600 }}>{t}</small>;
+
+  return (
+    <div className="ab-root" style={{
+      // Height and the nav offset are set in BOARD_CSS (.ab-root) — padding, not
+      // margin, so nothing collapses through body and re-introduces a scrollbar.
+      // Decorative Bernabeu backdrop. A near-solid dark scrim (92% of the original
       // #0f1419 page colour) sits on top of the photo and does ALL the work of
-      // preserving contrast — no text/card styling is changed. Bump the 0.82 alpha
-      // toward 0.9 if any section ever looks low-contrast; never lighten text.
+      // preserving contrast — no text/card styling is changed. Bump the 0.92 alpha
+      // higher if any section ever looks low-contrast; never lighten text.
       backgroundColor: "#0f1419",
       backgroundImage: "linear-gradient(rgba(15,20,25,0.92), rgba(15,20,25,0.92)), url('/bernabeu-bg.jpg')",
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
       backgroundAttachment: "fixed",
-      color: "#ffffff", fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", display: "flex", flexDirection: "column" }}>
+      color: "#ffffff",
+      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    }}>
+      <style>{BOARD_CSS}</style>
 
-      {/* HEADER */}
+      {/* HEADER — 52px. The soft-launch notice is a chip here, not a 46px band. */}
       <header style={{
-        background: "#16192d", borderBottom: "1px solid #2d3543",
-        padding: "16px 24px", display: "flex", alignItems: "center",
-        // top:var(--nav-h) — the page scrolls on the body, so sticky resolves
-        // against the viewport; top:0 would park this under the fixed nav.
-        justifyContent: "space-between", position: "sticky", top: "var(--nav-h)", zIndex: 100, flexShrink: 0,
+        background: "#16192d", borderBottom: "1px solid #2d3543", height: 52, flexShrink: 0,
+        padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
       }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "#ffffff" }}>
-            Ansar <span style={{ color: RM_GOLD, letterSpacing: "0.04em" }}>· ANSAR FC</span>
-          </div>
-          <div style={{ fontSize: 12, color: "#757f8f", marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}>
-            {mounted ? new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" }) : ""} · {time}
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: online ? "#00ff88" : "#ff4444", display: "inline-block" }} />
-              <span style={{ color: online ? "#00ff88" : "#ff4444", fontSize: 11, fontWeight: 500 }}>{online ? "Live" : "Offline"}</span>
-            </span>
-          </div>
+        <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em" }}>
+          Ansar <span style={{ color: RM_GOLD, letterSpacing: "0.04em" }}>· ANSAR FC</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "#757f8f", flexShrink: 0 }}>
+          {!POINTS_ACTIVE && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: "#ffa500", padding: "3px 9px", borderRadius: 20,
+              border: "1px solid rgba(255,165,0,0.3)", background: "rgba(255,165,0,0.1)",
+            }}>
+              Soft-launch · points preview
+            </span>
+          )}
+          <span>{mounted ? new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" }) : ""} · {time}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: online ? "#00ff88" : "#ff4444", display: "inline-block" }} />
+            <span style={{ color: online ? "#00ff88" : "#ff4444", fontSize: 11, fontWeight: 500 }}>{online ? "Live" : "Offline"}</span>
+          </span>
           <a href="/" style={{
             fontSize: 11, color: "#b0b5c1", textDecoration: "none", fontWeight: 600,
             background: "#1f2438", padding: "6px 12px", borderRadius: 6, border: "1px solid #2d3543",
-            cursor: "pointer", transition: "all 150ms ease-out",
           }}>← Back</a>
         </div>
       </header>
 
-      {/* MAIN CONTENT - SCROLLABLE. No TOP padding: the top block below supplies
-          its own top spacing via paddingTop, so the header/content gap lives in
-          one place. Everything here scrolls normally, top block included. */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px", width: "100%" }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-
-          {/* ═══ TOP BLOCK — the fuller stat block (Points / Week / Streak /
-              Progress cards + Today's Progress bar) sits FIRST, with the Stretch
-              Wallet balance bar directly beneath it. Plain wrapper: it scrolls
-              away with the rest of the page like every other section (no sticky/
-              pinned positioning). paddingTop supplies the gap under the header
-              since the scroll container has no top padding of its own. ═══ */}
-          <div style={{
-            marginBottom: 24, paddingTop: 24,
-          }}>
-
-            {/* TOP METRICS ROW — Points Today / Week Total / Day Streak / Progress */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
-              <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-                <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Points Today</div>
-                <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
-                  {mounted ? todayPts : "—"}{mounted && dayScore.perfect && <span style={{ fontSize: 20, marginLeft: 6 }}>⭐</span>}
-                </div>
-                <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
-                  <span>📊</span> {mounted ? todayDone : 0}/{habits.length} complete · max {DAILY_MAX} pts
-                </div>
-              </div>
-
-              <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-                <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Week Total</div>
-                <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</div>
-                <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
-                  <span>📈</span> /{WEEKLY_MAX} pts max
-                </div>
-              </div>
-
-              <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-                <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Day Streak</div>
-                <div style={{ fontSize: 36, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1, display: "flex", alignItems: "center", gap: 4, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
-                  {mounted && streak !== null ? streak : "—"}
-                  {mounted && streak !== null && streak > 0 && <span>🔥</span>}
-                </div>
-                <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8 }}>Consecutive days</div>
-              </div>
-
-              <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-                <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 8 }}>Progress</div>
-                <div style={{ fontSize: 36, fontWeight: 700, color: "#00d9ff", lineHeight: 1 }}>{mounted ? overallPct : 0}%</div>
-                <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 8 }}>Today&apos;s completion</div>
-              </div>
-            </div>
-
-            {/* TODAY'S PROGRESS BAR */}
-            <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, padding: "16px", marginBottom: 16, boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <span style={{ fontSize: 13, color: "#b0b5c1", fontWeight: 600 }}>Today&apos;s Progress</span>
-                <span style={{ fontSize: 13, color: "#ffffff", fontWeight: 700 }}>{mounted ? todayDone : 0} of {habits.length} habits</span>
-              </div>
-              <div style={{ height: 10, background: "#1f2438", borderRadius: 6, overflow: "hidden" }}>
-                <div style={{
-                  height: "100%", borderRadius: 6, transition: "width 200ms ease-in-out",
-                  width: mounted ? `${overallPct}%` : "0%",
-                  background: "linear-gradient(90deg, #ffa500, #00ff88)",
-                }} />
-              </div>
-              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 10, fontWeight: 500 }}>
-                ⭐ Perfect Day: tick every habit for +1 bonus pt <span style={{ color: RM_GOLD, fontWeight: 800, letterSpacing: "0.04em" }}>· ¡Vamos!</span>
-              </div>
-            </div>
-
-            {/* ═══ STRETCH WALLET BALANCE BAR — second in the top block.
-                Shows earned/cap when the wallet is unlocked, or a compact locked
-                indicator when not (the ONLY place the locked state is announced). ═══ */}
+      {/* SCOREBOARD STRIP — 80px carrying every number the four 431px metric cards,
+          the duplicate slim row and the "on track for" card used to spread between them. */}
+      <div style={{
+        height: 80, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 20px",
+        background: RM_NAVY, borderBottom: "1px solid rgba(212,175,55,0.28)",
+      }}>
+        {cell("Points today", <>{mounted ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{mounted && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
+        {cell("Week total", <>{mounted && weeklyPts !== null ? weeklyPts : "—"}{sub(` / ${WEEKLY_MAX}`)}</>)}
+        {cell("Streak", <>{mounted && streak !== null ? streak : "—"}{mounted && streak !== null && streak > 0 ? " 🔥" : ""}</>)}
+        {cell("Today", <>{mounted ? overallPct : 0}{sub("%")}</>,
+          <div style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.34)", overflow: "hidden", marginTop: 6, width: 150 }}>
             <div style={{
-              background: "#16192d", border: "1px solid #3a2d5a", borderRadius: 12,
-              overflow: "hidden", boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
-            }}>
-            <div style={{ height: 3, background: "linear-gradient(90deg, #a78bfa, #00d9ff)" }} />
-            <div style={{ padding: "16px 20px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa" }}>🎮 Stretch Wallet</div>
-                  <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>
-                    Screen-time bank · 1 stretch point = {STRETCH_MIN_PER_POINT} min · separate from ANSAR FC
-                  </div>
-                  {mounted && !walletLocked && (
-                    <div style={{ fontSize: 11, color: RM_GOLD, marginTop: 6, fontWeight: 800, letterSpacing: "0.04em" }}>
-                      ¡Vamos! · screen time unlocked
-                    </div>
-                  )}
-                </div>
-
-                {mounted && walletLocked ? (
-                  /* Compact locked indicator — replaces the balance + the old banner */
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    padding: "10px 14px", borderRadius: 8,
-                    border: "1px solid #3a2d5a", background: "rgba(167,139,250,0.10)",
-                    fontSize: 12, color: "#a78bfa", fontWeight: 700,
-                  }}>
-                    🔒 Finish Morning Habits + Homeschool to unlock
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 36, fontWeight: 800, color: "#a78bfa", lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
-                        {mounted ? stretchBalance : "—"}<span style={{ fontSize: 16, color: "#757f8f", fontWeight: 600 }}> / {STRETCH_DAILY_CAP_MIN} min</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4 }}>
-                        {mounted ? `${stretchEarned} earned · ${stretchSpent} spent today` : ""}
-                      </div>
-                    </div>
-                    <button
-                      onClick={spendStretch}
-                      disabled={!mounted || walletLocked || stretchBalance <= 0}
-                      style={{
-                        fontSize: 12, fontWeight: 700, flexShrink: 0,
-                        color: mounted && stretchBalance > 0 ? "#0f1419" : "#757f8f",
-                        background: mounted && stretchBalance > 0 ? "#a78bfa" : "#1f2438",
-                        border: `1px solid ${mounted && stretchBalance > 0 ? "#a78bfa" : "#2d3543"}`,
-                        padding: "10px 16px", borderRadius: 8,
-                        cursor: mounted && stretchBalance > 0 ? "pointer" : "not-allowed",
-                        transition: "all 150ms ease-out",
-                      }}
-                    >
-                      Spend {STRETCH_SPEND_STEP_MIN}m
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Cap progress bar — only when unlocked (locked state stays compact) */}
-              {!(mounted && walletLocked) && (
-                <>
-                  <div style={{ height: 8, background: "#1f2438", borderRadius: 4, overflow: "hidden", marginTop: 16 }}>
-                    <div style={{
-                      height: "100%", borderRadius: 4, transition: "width 200ms ease-in-out",
-                      width: mounted ? `${Math.min(100, (stretchEarned / STRETCH_DAILY_CAP_MIN) * 100)}%` : "0%",
-                      background: stretchCapReached ? "#00ff88" : "#a78bfa",
-                    }} />
-                  </div>
-                  {mounted && stretchCapReached && (
-                    <div style={{ fontSize: 11, color: "#00ff88", marginTop: 8, fontWeight: 600 }}>
-                      ✅ Daily cap reached — extra completions still log for the record but don&apos;t add minutes.
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-            </div>
+              height: "100%", borderRadius: 3, transition: "width 200ms ease-in-out",
+              width: mounted ? `${overallPct}%` : "0%",
+              background: "linear-gradient(90deg, #ffa500, #00ff88)",
+            }} />
+          </div>,
+        )}
+        <div style={{ padding: "0 22px", height: 52, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(232,235,242,0.6)" }}>
+            Screen time
           </div>
-
-          {/* SLIM STAT ROW — compact, top-of-page companion to the balance bar.
-              Reads the SAME state as the fuller row near the tier card below (no
-              extra fetch), so the two can never disagree. Kept visually quiet so
-              the balance bar stays the primary element. */}
-          <div style={{
-            display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14,
-            padding: "10px 16px", marginBottom: 24, borderRadius: 10,
-            background: RM_NAVY, border: `1px solid ${RM_GOLD}33`, fontSize: 12, color: "#e8ebf2",
-            fontVariantNumeric: "tabular-nums",
-          }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: RM_GOLD, textTransform: "uppercase", letterSpacing: "0.12em" }}>ANSAR FC</span>
-            <span><b style={{ color: RM_GOLD_BRIGHT, fontWeight: 800, letterSpacing: "0.02em" }}>{mounted ? todayPts : "—"}</b> pts today{mounted && dayScore.perfect ? " ⭐" : ""}</span>
-            <span style={{ color: `${RM_GOLD}55` }}>·</span>
-            <span><b style={{ color: RM_GOLD_BRIGHT, fontWeight: 800, letterSpacing: "0.02em" }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</b> this week</span>
-            <span style={{ color: `${RM_GOLD}55` }}>·</span>
-            <span><b style={{ color: RM_GOLD_BRIGHT, fontWeight: 800, letterSpacing: "0.02em" }}>{mounted && streak !== null ? streak : "—"}</b> day streak{mounted && streak !== null && streak > 0 ? " 🔥" : ""}</span>
+          <div style={{ fontSize: 29, fontWeight: 800, color: "#a78bfa", lineHeight: 1.08, fontVariantNumeric: "tabular-nums" }}>
+            {mounted ? (walletLocked ? "🔒" : stretchBalance) : "—"}
+            {mounted && !walletLocked && sub(` / ${STRETCH_DAILY_CAP_MIN} min`)}
           </div>
+        </div>
 
-          {/* SOFT-LAUNCH NOTICE */}
-          {!POINTS_ACTIVE && (
-            <div style={{
-              background: "rgba(255,165,0,0.1)", border: "1px solid rgba(255,165,0,0.3)",
-              borderRadius: 10, padding: "12px 16px", marginBottom: 16,
-              fontSize: 12, color: "#ffa500", fontWeight: 600, display: "flex", alignItems: "center", gap: 8,
-            }}>
-              🟡 Soft-launch week — points are tracked and shown, but rewards don&apos;t count yet. Points activate 13 Jul 2026.
-            </div>
-          )}
-
-          {/* GATE BLOCKS — Morning Habits + Homeschool must both hit 100% to open the wallet */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16, marginBottom: 16 }}>
-            {renderBlock(BLOCKS.find(b => b.id === "pre_homeschool")!)}
-            {renderBlock(BLOCKS.find(b => b.id === "homeschool")!)}
+        <div style={{
+          marginLeft: "auto", display: "flex", alignItems: "center", gap: 11,
+          border: `1px solid ${weekThreshold.color}66`, background: `${weekThreshold.color}1a`,
+          padding: "9px 16px", borderRadius: 9,
+        }}>
+          <div>
+            <b style={{ color: weekThreshold.color, fontSize: 15 }}>{weekThreshold.label}</b>
+            <i style={{ fontStyle: "normal", fontSize: 11, color: "rgba(232,235,242,0.62)", display: "block", marginTop: 2 }}>
+              {weekThreshold.desc}{!POINTS_ACTIVE && " · preview, not yet enforced"}
+            </i>
           </div>
+        </div>
+      </div>
 
-          {/* ═══ STRETCH WALLET (item list) — placed right after Homeschool, the
-              moment it becomes relevant. Dimmed + non-interactive while locked. ═══ */}
-          <div style={{ background: "#16192d", border: "1px solid #3a2d5a", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", marginBottom: 24 }}>
-            <div style={{ height: 3, background: "linear-gradient(90deg, #a78bfa, #00d9ff)" }} />
-            <div style={{ padding: "20px" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa" }}>🎮 Stretch Wallet · earn screen time</div>
-              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4, fontWeight: 500 }}>
-                Tap an item once you&apos;ve done it — each adds minutes toward today&apos;s {STRETCH_DAILY_CAP_MIN}-min cap.
-              </div>
+      {/* BOARD — four columns, no scroll on either axis at 1440px+ */}
+      <div className="ab-board">
 
-              {/* Stretch items — live from Notion (/api/stretch-items) */}
-              <div style={{
-                display: "flex", flexDirection: "column", gap: 8, marginTop: 16,
-                opacity: walletLocked ? 0.4 : 1,
-                pointerEvents: walletLocked ? "none" : "auto",
-              }}>
-                {mounted && stretchItems.length === 0 && (
-                  <div style={{ fontSize: 12, color: "#757f8f", padding: "8px 2px" }}>
-                    No stretch items available right now.
-                  </div>
-                )}
-                {stretchItems.map(item => {
-                  const earnedForItem = mounted ? (stretchByItem[item.id] || 0) : 0;
-                  const countForItem = mounted ? (stretchCountByItem[item.id] || 0) : 0;
-                  const itemMin = item.points * STRETCH_MIN_PER_POINT;
-                  const isSaving = stretchSaving === item.id;
-                  const done = countForItem > 0;
+        {/* 1 — Morning Habits */}
+        {habitColumn(morning)}
+
+        {/* 2 — Afternoon / Evening */}
+        {habitColumn(evening)}
+
+        {/* 3 — Homeschool (hero) · Conditional · Weekly Tiers */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, minHeight: 0 }}>
+          {schoolHabits.length > 0 && (
+            <div style={{ ...cardStyle, flex: "0 0 auto" }}>
+              {colHead(school.color, school.label, school.subtitle)}
+              <div style={{ padding: 11 }}>
+                {/* The single +5 habit — worth more than all seven morning habits
+                    combined, so it gets the largest target on the board rather than
+                    one line lost in a list. */}
+                {schoolHabits.map(h => {
+                  const state = mounted ? getHabitState(h, schoolHabits, completed) : "locked";
+                  const isDone = state === "done";
+                  const isSaving = saving === h.id;
                   return (
-                    <div
-                      key={item.id}
-                      onClick={() => !isSaving && !walletLocked && !done && earnStretch(item)}
+                    <button
+                      key={h.id}
+                      type="button"
+                      className="ab-btn"
+                      onClick={() => toggle(h.id, state)}
+                      disabled={state !== "available"}
+                      aria-label={h.label}
                       style={{
-                        display: "flex", alignItems: "flex-start", gap: 12, padding: "12px", borderRadius: 8,
-                        border: `1px solid ${done ? "#a78bfa50" : "#2d3543"}`,
-                        background: done ? "rgba(167,139,250,0.06)" : "#1f2438",
-                        opacity: done ? 0.55 : 1,
-                        cursor: done ? "default" : "pointer", transition: "all 150ms ease-out", WebkitTapHighlightColor: "transparent",
+                        display: "flex", flexDirection: "column", alignItems: "flex-start",
+                        justifyContent: "center", gap: 7, padding: 18, minHeight: 126, width: "100%",
+                        borderRadius: 11, textAlign: "left", font: "inherit", color: "inherit",
+                        border: `1px solid ${isDone ? school.color + "66" : "#2d3543"}`,
+                        background: isDone ? school.color + "10" : "#1f2438",
+                        cursor: state === "available" ? "pointer" : "default",
+                        WebkitTapHighlightColor: "transparent",
                       }}
                     >
-                      <div style={{
-                        width: 22, height: 22, borderRadius: 6, flexShrink: 0, marginTop: 1,
-                        border: `2px solid ${done ? "#a78bfa" : "#2d3543"}`,
-                        background: done ? "#a78bfa" : "transparent",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>
-                        {isSaving ? <span style={{ fontSize: 10 }}>⏳</span> : done ? <span style={{ fontSize: 12, color: "#0f1419", fontWeight: 700 }}>✓</span> : null}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: "#ffffff" }}>🧩 {item.name}</span>
-                          {item.category && (
-                            <span style={{ fontSize: 9, color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", background: "rgba(167,139,250,0.12)", padding: "2px 6px", borderRadius: 4 }}>{item.category}</span>
-                          )}
-                        </div>
-                        {item.whatCountsAsDone && (
-                          <div style={{ fontSize: 11, color: "#b0b5c1", marginTop: 3, lineHeight: 1.45 }}>
-                            ✅ {item.whatCountsAsDone}
-                          </div>
-                        )}
-                        <div style={{ fontSize: 11, color: "#757f8f", marginTop: 3 }}>
-                          Worth {item.points} pt · +{itemMin} min{done ? ` · earned ${earnedForItem} min today${countForItem > 1 ? ` (×${countForItem})` : ""}` : ""}
-                        </div>
-                      </div>
-                      <div style={{
-                        fontSize: 12, fontWeight: 700, flexShrink: 0,
-                        color: done ? "#a78bfa" : "#b0b5c1",
-                        background: done ? "rgba(167,139,250,0.15)" : "#16192d",
-                        padding: "4px 10px", borderRadius: 6,
-                        border: `1px solid ${done ? "#a78bfa40" : "#2d3543"}`,
-                        whiteSpace: "nowrap",
-                      }}>
-                        {done ? "✓ Done for today" : "Tap to earn"}
-                      </div>
-                    </div>
+                      <span style={{ fontSize: 36, fontWeight: 800, color: school.color, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                        {isSaving ? "⏳" : "+5"}
+                      </span>
+                      <span style={{ fontSize: 21, fontWeight: 800, lineHeight: 1.2 }}>
+                        {h.icon} {h.label}
+                      </span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: isDone ? school.color : "#757f8f" }}>
+                        {isDone ? "✓ Done — wallet unlocked" : "Tap when the day's homeschool is finished"}
+                      </span>
+                    </button>
                   );
                 })}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* AFTERNOON / EVENING (+ Conditional) — still required for FC points, but
-              NOT a gate for the wallet above. Set apart in its own outlined group so
-              it doesn't read as "blocking" the wallet. */}
-          <div style={{ border: "1px dashed #2d3543", borderRadius: 12, padding: "12px", marginBottom: 24, background: "rgba(255,255,255,0.015)" }}>
-            <div style={{ fontSize: 11, color: "#757f8f", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", padding: "4px 4px 12px" }}>
-              Still required · doesn&apos;t gate the wallet
+          {condHabits.length > 0 && (
+            <div style={{ ...cardStyle, flex: "0 0 auto" }}>
+              {colHead(conditional.color, conditional.label, conditional.subtitle,
+                <div style={{ fontSize: 19, fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+                  {mounted ? condHabits.filter(h => completed[h.id]).length : 0}/{condHabits.length}
+                </div>,
+              )}
+              <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9 }}>
+                {condHabits.map(h => habitButton(h, condHabits, conditional.color))}
+              </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16 }}>
-              {renderBlock(BLOCKS.find(b => b.id === "afternoon_evening")!)}
-              {renderBlock(BLOCKS.find(b => b.id === "conditional")!)}
+          )}
+
+          {/* Weekly tiers — the 209px reference card, now four chips filling whatever
+              height this column has left over. */}
+          <div style={{ ...cardStyle, flex: 1, minHeight: 0 }}>
+            {colHead(`linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)`, "🏆 Weekly Tiers", `5 Perfect Days Mon–Fri = +3 · max ${WEEKLY_MAX}`)}
+            <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
+              {THRESHOLDS.map((t, i) => {
+                const weekPts = weeklyPts ?? 0;
+                const isActive = mounted && weekPts >= t.min && (i === 0 || weekPts < THRESHOLDS[i - 1].min);
+                const isAchieved = mounted && weekPts >= t.min;
+                return (
+                  <div key={t.min} style={{
+                    flex: 1, minHeight: 44, display: "flex", flexDirection: "column", justifyContent: "center",
+                    padding: "8px 11px", borderRadius: 9,
+                    background: isActive ? t.color + "15" : "#1f2438",
+                    border: `1px solid ${isActive ? t.color + "50" : "#2d3543"}`,
+                    opacity: isAchieved ? 1 : 0.45,
+                    transition: "all 200ms ease-out",
+                  }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: t.color, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{
+                        width: 8, height: 8, borderRadius: "50%", background: t.color, flexShrink: 0,
+                        boxShadow: isActive ? `0 0 8px ${t.color}` : "none",
+                      }} />
+                      {t.label}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#757f8f", marginTop: 4 }}>
+                      {t.desc}{isActive ? " · you are here" : ""}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
+        </div>
 
-          {/* TOP METRICS ROW + TODAY'S PROGRESS BAR — live in the top block near
-              the top of the page (see the top block above the slim stat row),
-              first thing on the page, with the balance bar beneath. */}
+        {/* 4 — Stretch Wallet. Permanently on screen instead of below the fold. */}
+        <div style={{ ...cardStyle, border: "1px solid #3a2d5a" }}>
+          {colHead("linear-gradient(90deg, #a78bfa, #00d9ff)", "🎮 Stretch Wallet",
+            `1 point = ${STRETCH_MIN_PER_POINT} min screen time · separate from ANSAR FC`,
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 19, fontWeight: 800, color: "#a78bfa", fontVariantNumeric: "tabular-nums" }}>
+                {mounted && !walletLocked ? stretchBalance : "—"}
+                <span style={{ fontSize: 12, color: "#757f8f" }}>/{STRETCH_DAILY_CAP_MIN}</span>
+              </div>
+              <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
+                {mounted && !walletLocked ? `${stretchEarned} earned · ${stretchSpent} spent` : "min"}
+              </div>
+            </div>,
+          )}
 
-          {/* ALERTS & STATUS SECTION */}
-          <div style={{ marginBottom: 24 }}>
-            {mounted && SOCCER_DAYS.includes(dayName) && (
+          <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0 }}>
+            {mounted && walletLocked && (
               <div style={{
-                background: "rgba(255,165,0,0.1)", border: "1px solid rgba(255,165,0,0.3)",
-                borderRadius: 10, padding: "12px 16px", marginBottom: 12,
-                fontSize: 12, color: "#ffa500", fontWeight: 600, display: "flex", alignItems: "center", gap: 8,
+                display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderRadius: 9,
+                border: "1px solid #3a2d5a", background: "rgba(167,139,250,0.10)",
+                fontSize: 12, color: "#a78bfa", fontWeight: 700, flexShrink: 0,
               }}>
-                ⚽ Soccer training day — Conditional block active (+1 pt per session)
+                🔒 Finish Morning Habits + Homeschool to unlock
+              </div>
+            )}
+
+            {mounted && !walletLocked && stretchCapReached && (
+              <div style={{ fontSize: 11, color: "#00ff88", fontWeight: 600, flexShrink: 0 }}>
+                ✅ Daily cap reached — extra completions still log but don&apos;t add minutes.
               </div>
             )}
 
             <div style={{
-              background: "#16192d", border: `1px solid ${weekThreshold.color}40`,
-              borderRadius: 12, padding: "20px",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0,
+              opacity: walletLocked ? 0.4 : 1,
+              pointerEvents: walletLocked ? "none" : "auto",
             }}>
-              <div style={{ fontSize: 12, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8, fontWeight: 600 }}>
-                This week you&apos;re on track for{!POINTS_ACTIVE && " (preview — not yet enforced)"}
-              </div>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: weekThreshold.color, marginBottom: 8 }}>{weekThreshold.label}</div>
-                  <div style={{ fontSize: 13, color: "#b0b5c1", lineHeight: 1.6 }}>{weekThreshold.desc}</div>
+              {mounted && stretchItems.length === 0 && (
+                <div style={{ fontSize: 12, color: "#757f8f", padding: "8px 2px" }}>
+                  No stretch items available right now.
                 </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 32, fontWeight: 800, color: weekThreshold.color, lineHeight: 1, fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>{mounted && weeklyPts !== null ? weeklyPts : "—"}</div>
-                  <div style={{ fontSize: 11, color: "#757f8f", marginTop: 4 }}>/ {WEEKLY_MAX} pts</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* REWARD TIERS */}
-          <div style={{ background: "#16192d", border: "1px solid #2d3543", borderRadius: 12, overflow: "hidden", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)" }}>
-            <div style={{ height: 3, background: `linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)` }} />
-            <div style={{ padding: "20px" }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: RM_GOLD, marginBottom: 16, letterSpacing: "0.04em" }}>🏆 Weekly Tiers · ANSAR FC</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-                {THRESHOLDS.map((t, i) => {
-                  const weekPts = weeklyPts ?? 0;
-                  const isActive = mounted && weekPts >= t.min && (i === 0 || weekPts < THRESHOLDS[i - 1].min);
-                  const isAchieved = mounted && weekPts >= t.min;
-                  return (
-                    <div key={t.min} style={{
-                      display: "flex", flexDirection: "column", gap: 8,
-                      padding: "12px", borderRadius: 8,
-                      background: isActive ? t.color + "15" : "#1f2438",
-                      border: `1px solid ${isActive ? t.color + "50" : "#2d3543"}`,
-                      opacity: isAchieved ? 1 : 0.5,
-                      transition: "all 200ms ease-out",
+              )}
+              {stretchItems.map(item => {
+                const earnedForItem = mounted ? (stretchByItem[item.id] || 0) : 0;
+                const countForItem = mounted ? (stretchCountByItem[item.id] || 0) : 0;
+                const itemMin = item.points * STRETCH_MIN_PER_POINT;
+                const isSaving = stretchSaving === item.id;
+                const done = countForItem > 0;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="ab-btn"
+                    onClick={() => !isSaving && !walletLocked && !done && earnStretch(item)}
+                    disabled={done || isSaving || walletLocked}
+                    aria-label={item.name}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+                      borderRadius: 11, flex: 1, minHeight: 62, width: "100%", textAlign: "left",
+                      font: "inherit", color: "inherit",
+                      border: `1px solid ${done ? "#a78bfa50" : "#2d3543"}`,
+                      background: done ? "rgba(167,139,250,0.06)" : "#1f2438",
+                      opacity: done ? 0.55 : 1,
+                      cursor: done ? "default" : "pointer",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                  >
+                    <span style={{
+                      width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                      border: `2px solid ${done ? "#a78bfa" : "#2d3543"}`,
+                      background: done ? "#a78bfa" : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: t.color, flexShrink: 0, boxShadow: isActive ? `0 0 8px ${t.color}` : "none" }} />
-                        <div style={{ fontSize: 12, fontWeight: 700, color: t.color }}>{t.label}</div>
-                      </div>
-                      <div style={{ fontSize: 10, color: "#757f8f", lineHeight: 1.4 }}>{t.desc}</div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: t.color, marginTop: 4 }}>{t.min}+ pts</div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: 11, color: "#757f8f", marginTop: 14, fontWeight: 500 }}>
-                🔥 Weekly streak bonus: 5 Perfect Days Mon–Fri = +3 pts · Weekly max {WEEKLY_MAX}
-              </div>
+                      {isSaving ? <span style={{ fontSize: 11 }}>⏳</span> :
+                       done ? <span style={{ fontSize: 14, color: "#0f1419", fontWeight: 800 }}>✓</span> : null}
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>
+                        🧩 {item.name}
+                      </span>
+                      <span style={{ display: "block", fontSize: 11, color: "#757f8f", marginTop: 3 }}>
+                        {done
+                          ? `✓ earned ${earnedForItem} min today${countForItem > 1 ? ` (×${countForItem})` : ""}`
+                          : item.whatCountsAsDone || `Worth ${item.points} pt`}
+                      </span>
+                    </span>
+                    <span style={{
+                      fontSize: 12, fontWeight: 800, flexShrink: 0, color: "#a78bfa",
+                      border: "1px solid rgba(167,139,250,0.4)", background: "rgba(167,139,250,0.12)",
+                      padding: "6px 11px", borderRadius: 7, whiteSpace: "nowrap",
+                    }}>
+                      +{itemMin}m
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          </div>
 
-          <div style={{ height: 40 }} />
+            <button
+              type="button"
+              className="ab-spend"
+              onClick={spendStretch}
+              disabled={!mounted || walletLocked || stretchBalance <= 0}
+              style={{
+                minHeight: 56, borderRadius: 10, border: "none", width: "100%", flexShrink: 0,
+                fontSize: 16, fontWeight: 800, fontFamily: "inherit",
+                color: mounted && !walletLocked && stretchBalance > 0 ? "#0f1419" : "#757f8f",
+                background: mounted && !walletLocked && stretchBalance > 0 ? "#a78bfa" : "#1f2438",
+                boxShadow: mounted && !walletLocked && stretchBalance > 0 ? "0 3px 0 #7c5fd3" : "none",
+                cursor: mounted && !walletLocked && stretchBalance > 0 ? "pointer" : "not-allowed",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              Spend {STRETCH_SPEND_STEP_MIN} min →
+            </button>
+          </div>
         </div>
       </div>
     </div>
