@@ -222,11 +222,27 @@ export async function POST(request: Request) {
   if (Array.isArray((body as { purgeProbeIds?: unknown }).purgeProbeIds)) {
     const ids = ((body as { purgeProbeIds: unknown[] }).purgeProbeIds)
       .filter((x): x is string => typeof x === "string" && x.startsWith("__"));
+    // The lockout MUST gate this too. Without it the purge branch is an
+    // unthrottled oracle for a 4-digit PIN: 10,000 guesses, no rate limit, no
+    // tally — you could brute-force the parent override through the cleanup
+    // path while the override path itself stayed locked. Flagged by review
+    // after the first push; this is the fix.
+    const purgeKey = clientKey(request);
+    const purgeLock = await lockoutState(purgeKey, now.ms).catch(() => ({ remainingMs: 0 }));
+    if (purgeLock.remainingMs > 0) {
+      return NextResponse.json({
+        ok: false, reason: "locked_out",
+        message: `Too many incorrect PINs. Try again in ${Math.ceil(purgeLock.remainingMs / 60000)} min.`,
+        lockedMs: purgeLock.remainingMs,
+      }, { status: 429, headers: noStore });
+    }
     const expected = process.env.PARENT_OVERRIDE_PIN;
     if (!expected || !timingSafeEqual(overridePin, expected)) {
+      await recordFailure(purgeKey, now.ms).catch(() => {});
       return NextResponse.json({ ok: false, reason: "bad_pin", message: "Incorrect PIN." },
         { status: 403, headers: noStore });
     }
+    await clearFailures(purgeKey).catch(() => {});
     if (!hasServiceRole()) {
       return NextResponse.json({ ok: false, reason: "not_configured", message: "No service role." },
         { status: 503, headers: noStore });
