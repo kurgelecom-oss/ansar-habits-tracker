@@ -43,30 +43,16 @@ import {
 } from "../../lib/gating";
 import { getHabits, getSettings, habitsForDay, SETTINGS_FALLBACK } from "../../lib/notion";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
+import { lockoutState, recordFailure, clearFailures, lockoutBackend, LOCKOUT_MAX_FAILURES } from "../../lib/pin-lockout";
 
 // Never prerendered, never cached: the answer depends on the current second.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-/* ── Parent-override brute-force lockout ────────────────────────────────────
-   Five wrong PINs locks the override out for fifteen minutes.
-
-   State lives HERE, in the route, not in the browser — a child who refreshes
-   the page, opens a new tab or clears storage still hits the same counter,
-   which is the entire point. It is keyed by client IP so one device's failures
-   cannot lock out another.
-
-   HONEST LIMITATION: this is module scope on a serverless platform, so the
-   counter is per warm Lambda instance. A cold start resets it, and a determined
-   attacker hitting different instances would get more than five tries in total.
-   Making it truly durable means a `pin_attempts` table — deliberately not added
-   here, because that needs a schema change and the brief scoped SQL out. For a
-   4-digit PIN guarded against a 10-year-old at a keyboard this is the right
-   size; if it ever guards something that matters, move it to a table. */
-const LOCKOUT_MAX_FAILURES = 5;
-const LOCKOUT_MS = 15 * 60 * 1000;
-const pinAttempts = new Map<string, { failures: number; lockedUntil: number }>();
-
+/* ── Client identity for the lockout ────────────────────────────────────────
+   The lockout tally itself lives in Postgres (lib/pin-lockout.ts). It used to
+   be a Map right here, which is why it never fired: one Map per warm Lambda,
+   and Netlify spreads requests across them. */
 function clientKey(request: Request): string {
   const h = request.headers;
   return (
@@ -74,23 +60,6 @@ function clientKey(request: Request): string {
     (h.get("x-forwarded-for") || "").split(",")[0].trim() ||
     "unknown"
   );
-}
-
-/** Remaining lockout in ms, or 0 if not locked. Also expires stale entries. */
-function lockoutRemaining(key: string, now: number): number {
-  const rec = pinAttempts.get(key);
-  if (!rec) return 0;
-  if (rec.lockedUntil > now) return rec.lockedUntil - now;
-  if (rec.lockedUntil !== 0 && rec.lockedUntil <= now) pinAttempts.delete(key);
-  return 0;
-}
-
-function recordPinFailure(key: string, now: number): number {
-  const rec = pinAttempts.get(key) ?? { failures: 0, lockedUntil: 0 };
-  rec.failures += 1;
-  if (rec.failures >= LOCKOUT_MAX_FAILURES) rec.lockedUntil = now + LOCKOUT_MS;
-  pinAttempts.set(key, rec);
-  return rec.failures;
 }
 
 /** Read-only client. Anon is sufficient — RLS keeps SELECT open to anon. */
@@ -147,6 +116,13 @@ export async function GET(request: Request) {
     const now = sydneyNow();
     const ctx = await loadContext(fresh);
 
+    let lock = { remainingMs: 0, failures: 0 };
+    let lockBackend: string | null = null;
+    if (hasServiceRole()) {
+      lock = await lockoutState(clientKey(request), now.ms).catch(() => ({ remainingMs: 0, failures: 0 }));
+      lockBackend = await lockoutBackend().catch(() => null);
+    }
+
     let overridden: string[] = [];
     if (hasServiceRole()) {
       const { data } = await adminClient()
@@ -172,7 +148,9 @@ export async function GET(request: Request) {
       overridePinConfigured: Boolean(process.env.PARENT_OVERRIDE_PIN),
       // Lockout is reported so the dialog can show a live countdown after a
       // page refresh, not only in the response to a refused attempt.
-      overrideLockedMs: lockoutRemaining(clientKey(request), now.ms),
+      overrideLockedMs: lock.remainingMs,
+      overrideFailures: lock.failures,
+      lockoutBackend: lockBackend,
       // Habits completed by a parent override today. override_log is readable
       // only by the service role — anon sees nothing — so the server resolves
       // it and the board just renders the marker.
@@ -232,7 +210,39 @@ export async function POST(request: Request) {
   const date = typeof body.date === "string" ? body.date : "";
   const overridePin = typeof body.overridePin === "string" ? body.overridePin : "";
 
-  if (!habitId || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  /* ── TEMPORARY: probe purge ───────────────────────────────────────────────
+     Verification writes real rows, and after the RLS hardening the anon key
+     cannot delete them — so without this there is no way to leave the tables as
+     they were found. PIN-guarded, and it will only ever touch ids beginning
+     "__", which no Notion habit id can be (they are all plain slugs).
+
+     THIS IS REMOVED IN THE COMMIT IMMEDIATELY AFTER THE VERIFICATION RUN. A
+     delete path does not belong in a child's habit tracker a minute longer than
+     it takes to clean up after a test. */
+  if (Array.isArray((body as { purgeProbeIds?: unknown }).purgeProbeIds)) {
+    const ids = ((body as { purgeProbeIds: unknown[] }).purgeProbeIds)
+      .filter((x): x is string => typeof x === "string" && x.startsWith("__"));
+    const expected = process.env.PARENT_OVERRIDE_PIN;
+    if (!expected || !timingSafeEqual(overridePin, expected)) {
+      return NextResponse.json({ ok: false, reason: "bad_pin", message: "Incorrect PIN." },
+        { status: 403, headers: noStore });
+    }
+    if (!hasServiceRole()) {
+      return NextResponse.json({ ok: false, reason: "not_configured", message: "No service role." },
+        { status: 503, headers: noStore });
+    }
+    const db = adminClient();
+    const a = await db.from("habit_completions").delete().in("habit_id", ids).select();
+    const b = await db.from("override_log").delete().in("habit_id", ids).select();
+    return NextResponse.json({
+      ok: true, purged: true, ids,
+      habitCompletionsDeleted: a.data?.length ?? 0,
+      overrideLogDeleted: b.data?.length ?? 0,
+      errors: [a.error?.message, b.error?.message].filter(Boolean),
+    }, { headers: noStore });
+  }
+
+  if (!habitId || /^\d{4}-\d{2}-\d{2}$/.test(date) === false) {
     return NextResponse.json(
       { ok: false, reason: "bad_request", message: "habitId and date (YYYY-MM-DD) are required" },
       { status: 400, headers: noStore },
@@ -283,7 +293,8 @@ export async function POST(request: Request) {
   if (overridePin) {
     // Lockout is checked BEFORE the PIN is compared, so a locked-out caller
     // learns nothing about whether their guess was right.
-    const remaining = lockoutRemaining(attemptKey, now.ms);
+    const { remainingMs: remaining } = await lockoutState(attemptKey, now.ms)
+      .catch(() => ({ remainingMs: 0 }));
     if (remaining > 0) {
       return NextResponse.json({
         ok: false,
@@ -299,8 +310,11 @@ export async function POST(request: Request) {
       );
     }
     if (!timingSafeEqual(overridePin, expectedPin)) {
-      const failures = recordPinFailure(attemptKey, now.ms);
-      const nowLocked = lockoutRemaining(attemptKey, now.ms);
+      await recordFailure(attemptKey, now.ms).catch(() => {});
+      const after = await lockoutState(attemptKey, now.ms)
+        .catch(() => ({ remainingMs: 0, failures: 0 }));
+      const failures = after.failures;
+      const nowLocked = after.remainingMs;
       return NextResponse.json({
         ok: false,
         reason: nowLocked > 0 ? "locked_out" : "bad_pin",
@@ -312,7 +326,7 @@ export async function POST(request: Request) {
       }, { status: nowLocked > 0 ? 429 : 403, headers: noStore });
     }
     // A correct PIN clears the counter — the parent has proved themselves.
-    pinAttempts.delete(attemptKey);
+    await clearFailures(attemptKey).catch(() => {});
     overrideUsed = true;
   }
 
