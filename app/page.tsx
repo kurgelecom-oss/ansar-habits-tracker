@@ -519,8 +519,8 @@ export default function AnsarPage() {
    40px taller than the viewport — a scrollbar on a page whose whole point is not
    scrolling. Padding cannot collapse. box-sizing:border-box is already global. */
 .ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:var(--nav-h);overflow:hidden}
-.ab-board{display:grid;grid-template-columns:1fr 1fr 0.84fr 0.96fr;gap:14px;
-  padding:14px 20px 18px;flex:1;min-height:0}
+.ab-board{display:grid;grid-template-columns:1fr 1fr 0.84fr 0.96fr;gap:11px;
+  padding:10px 16px 11px;flex:1;min-height:0}
 .ab-btn{transition:transform 220ms cubic-bezier(.34,1.56,.64,1),background 180ms ease,
   border-color 180ms ease,box-shadow 180ms ease;box-shadow:0 2px 0 rgba(0,0,0,.32)}
 .ab-btn:active:not(:disabled){transform:scale(.965) translateY(1px);
@@ -601,7 +601,7 @@ export default function AnsarPage() {
     <>
       <div style={{ height: 3, background: color, flexShrink: 0 }} />
       <div style={{
-        padding: "12px 15px 11px", borderBottom: "1px solid #2d3543", flexShrink: 0,
+        padding: "9px 14px 8px", borderBottom: "1px solid #2d3543", flexShrink: 0,
         display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10,
       }}>
         <div>
@@ -702,6 +702,97 @@ export default function AnsarPage() {
     );
   };
 
+  /**
+   * The Homeschool hero.
+   *
+   * `homeschool_session` is worth 5 points — more than all seven Morning Habits
+   * combined — so it gets the largest target on the board rather than one 56px
+   * line lost in a list. The Stage 4 port to /api/habits dropped this treatment
+   * and rendered it with the generic row button; this restores it.
+   *
+   * It carries all four server-decided states, same vocabulary as the rows:
+   *   DONE    accent border/tint, struck through, "+5" in the block colour
+   *   LIVE    full colour, tappable, the only state with a pointer cursor
+   *   LOCKED  dimmed, 🔒, and the gate's own reason as the caption
+   *   MISSED  red tint, ✕, and a literal "0" where the "+5" was — a missed
+   *           window scores nothing, and the number should say so rather than
+   *           keep advertising five points it will never pay
+   *
+   * `flex: 1 1 auto` with a minHeight floor lets it take slack on tall screens
+   * and give it back on short ones, so it can never be the thing that pushes
+   * the column past the fold.
+   */
+  const heroButton = (h: GateHabitView, color: string) => {
+    const isDone = h.state === "DONE";
+    const isLive = h.state === "LIVE";
+    const isMissed = h.state === "MISSED";
+    const isSaving = saving === h.id;
+    const pts = pointsById[h.id] ?? 0;
+    const accent = isMissed ? "#ff4444" : color;
+
+    const caption = isDone ? "✓ Done — wallet unlocked"
+      : isLive ? "Tap when the day's homeschool is finished"
+      : isMissed ? "Missed — this scores zero"
+      : h.label || "Locked";
+
+    return (
+      <button
+        key={h.id}
+        type="button"
+        className="ab-btn"
+        onClick={() => tick(h.id, h.name)}
+        disabled={!isLive || isSaving}
+        aria-label={h.name}
+        title={h.window ? `Window ${h.window}` : undefined}
+        style={{
+          display: "flex", flexDirection: "column", alignItems: "flex-start",
+          justifyContent: "center", gap: 6, padding: "14px 16px",
+          minHeight: 112, flex: "1 1 auto", width: "100%",
+          borderRadius: 11, textAlign: "left", font: "inherit", color: "inherit",
+          border: `1px solid ${isDone ? color + "66" : isLive ? "#2d3543" : isMissed ? "#ff444440" : "#1f2438"}`,
+          background: isDone ? color + "10" : isLive ? "#1f2438" : isMissed ? "rgba(255,68,68,0.06)" : "#16192d",
+          opacity: isLive || isDone ? 1 : 0.5,
+          cursor: isLive ? "pointer" : "not-allowed",
+          WebkitTapHighlightColor: "transparent",
+        }}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
+          <span style={{
+            fontSize: 34, fontWeight: 800, color: accent, lineHeight: 1,
+            fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
+          }}>
+            {isSaving ? "⏳" : isMissed ? "0" : `+${pts}`}
+          </span>
+          <span aria-hidden style={{
+            width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+            border: `2px solid ${isDone ? color : isLive ? "#2d3543" : isMissed ? "#ff444460" : "#1f2438"}`,
+            background: isDone ? color : "transparent",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            {isDone ? <span style={{ fontSize: 14, color: "#000", fontWeight: 800 }}>✓</span> :
+             isMissed ? <span style={{ fontSize: 11 }}>✕</span> :
+             !isLive ? <span style={{ fontSize: 11 }}>🔒</span> : null}
+          </span>
+        </span>
+
+        <span style={{
+          fontSize: 18, fontWeight: 800, lineHeight: 1.2,
+          color: isDone ? "#757f8f" : isLive ? "#ffffff" : "#565f70",
+          textDecoration: isDone ? "line-through" : "none",
+        }}>
+          {HABIT_ICONS[h.id] ?? DEFAULT_ICON} {h.name}
+        </span>
+
+        <span style={{
+          fontSize: 11.5, fontWeight: 700,
+          color: isDone ? color : isMissed ? "#ff4444" : "#757f8f",
+        }}>
+          {caption}
+        </span>
+      </button>
+    );
+  };
+
   const inBlock = (blockId: string) =>
     gateHabits.filter(h => h.block === blockId).sort((a, b) => a.order - b.order);
 
@@ -722,7 +813,7 @@ export default function AnsarPage() {
             </div>
           </div>,
         )}
-        <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0 }}>
+        <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
           {bh.map(h => habitButton(h, block.color))}
         </div>
       </div>
@@ -809,7 +900,7 @@ export default function AnsarPage() {
 
       {/* SCOREBOARD STRIP */}
       <div style={{
-        height: 80, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 20px",
+        height: 66, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 16px",
         background: RM_NAVY, borderBottom: "1px solid rgba(212,175,55,0.28)",
       }}>
         {cell("Points today", <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
@@ -890,7 +981,7 @@ export default function AnsarPage() {
         {habitColumn(evening)}
 
         {/* 3 — Homeschool · Log Work · Conditional · Weekly Tiers */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14, minHeight: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, minHeight: 0 }}>
           {schoolHabits.length > 0 && (
             <div style={{ ...cardStyle, flex: "0 0 auto" }}>
               {colHead(school.color, school.label, school.subtitle,
@@ -903,8 +994,8 @@ export default function AnsarPage() {
                   </div>
                 </div>,
               )}
-              <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9 }}>
-                {schoolHabits.map(h => habitButton(h, school.color))}
+              <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 9 }}>
+                {schoolHabits.map(h => heroButton(h, school.color))}
               </div>
             </div>
           )}
@@ -918,7 +1009,7 @@ export default function AnsarPage() {
             aria-expanded={logOpen}
             style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              minHeight: 60, width: "100%", flexShrink: 0, borderRadius: 11,
+              minHeight: 52, width: "100%", flexShrink: 0, borderRadius: 11,
               border: "1px solid #2d3543", background: "#1f2438",
               color: "#ffffff", font: "inherit", fontSize: 16, fontWeight: 800,
               cursor: "pointer", WebkitTapHighlightColor: "transparent",
@@ -935,7 +1026,7 @@ export default function AnsarPage() {
                   {condHabits.filter(h => h.state === "DONE").length}/{condHabits.length}
                 </div>,
               )}
-              <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9 }}>
+              <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
                 {condHabits.map(h => habitButton(h, conditional.color))}
               </div>
             </div>
@@ -943,15 +1034,18 @@ export default function AnsarPage() {
 
           <div style={{ ...cardStyle, flex: 1, minHeight: 0 }}>
             {colHead(`linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)`, "🏆 Weekly Tiers", `5 Perfect Days Mon–Fri = +3 · max ${WEEKLY_MAX}`)}
-            <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
+            <div style={{
+              padding: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6,
+              flex: 1, minHeight: 0,
+            }}>
               {THRESHOLDS.map((t, i) => {
                 const weekPts = weeklyPts ?? 0;
                 const isActive = weeklyPts !== null && weekPts >= t.min && (i === 0 || weekPts < THRESHOLDS[i - 1].min);
                 const isAchieved = weeklyPts !== null && weekPts >= t.min;
                 return (
                   <div key={t.min} style={{
-                    flex: 1, minHeight: 44, display: "flex", flexDirection: "column", justifyContent: "center",
-                    padding: "8px 11px", borderRadius: 9,
+                    minHeight: 30, display: "flex", flexDirection: "column", justifyContent: "center",
+                    padding: "6px 10px", borderRadius: 9,
                     background: isActive ? t.color + "15" : "#1f2438",
                     border: `1px solid ${isActive ? t.color + "50" : "#2d3543"}`,
                     opacity: isAchieved ? 1 : 0.45,
@@ -989,7 +1083,7 @@ export default function AnsarPage() {
             </div>,
           )}
 
-          <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0 }}>
+          <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
             {wallet && walletLocked && (
               <div style={{
                 display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderRadius: 9,
