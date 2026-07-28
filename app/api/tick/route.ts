@@ -216,55 +216,7 @@ export async function POST(request: Request) {
   const date = typeof body.date === "string" ? body.date : "";
   const overridePin = typeof body.overridePin === "string" ? body.overridePin : "";
 
-  /* ── TEMPORARY: probe purge ───────────────────────────────────────────────
-     Verification writes real rows, and after the RLS hardening the anon key
-     cannot delete them — so without this there is no way to leave the tables as
-     they were found. PIN-guarded, and it will only ever touch ids beginning
-     "__", which no Notion habit id can be (they are all plain slugs).
-
-     THIS IS REMOVED IN THE COMMIT IMMEDIATELY AFTER THE VERIFICATION RUN. A
-     delete path does not belong in a child's habit tracker a minute longer than
-     it takes to clean up after a test. */
-  if (Array.isArray((body as { purgeProbeIds?: unknown }).purgeProbeIds)) {
-    const ids = ((body as { purgeProbeIds: unknown[] }).purgeProbeIds)
-      .filter((x): x is string => typeof x === "string" && x.startsWith("__"));
-    // The lockout MUST gate this too. Without it the purge branch is an
-    // unthrottled oracle for a 4-digit PIN: 10,000 guesses, no rate limit, no
-    // tally — you could brute-force the parent override through the cleanup
-    // path while the override path itself stayed locked. Flagged by review
-    // after the first push; this is the fix.
-    const purgeKey = clientKey(request);
-    const purgeLock = await lockoutState(purgeKey, now.ms).catch(() => ({ remainingMs: 0 }));
-    if (purgeLock.remainingMs > 0) {
-      return NextResponse.json({
-        ok: false, reason: "locked_out",
-        message: `Too many incorrect PINs. Try again in ${Math.ceil(purgeLock.remainingMs / 60000)} min.`,
-        lockedMs: purgeLock.remainingMs,
-      }, { status: 429, headers: noStore });
-    }
-    const expected = process.env.PARENT_OVERRIDE_PIN;
-    if (!expected || !timingSafeEqual(overridePin, expected)) {
-      await recordFailure(purgeKey, now.ms).catch(() => {});
-      return NextResponse.json({ ok: false, reason: "bad_pin", message: "Incorrect PIN." },
-        { status: 403, headers: noStore });
-    }
-    await clearFailures(purgeKey).catch(() => {});
-    if (!hasServiceRole()) {
-      return NextResponse.json({ ok: false, reason: "not_configured", message: "No service role." },
-        { status: 503, headers: noStore });
-    }
-    const db = adminClient();
-    const a = await db.from("habit_completions").delete().in("habit_id", ids).select();
-    const b = await db.from("override_log").delete().in("habit_id", ids).select();
-    return NextResponse.json({
-      ok: true, purged: true, ids,
-      habitCompletionsDeleted: a.data?.length ?? 0,
-      overrideLogDeleted: b.data?.length ?? 0,
-      errors: [a.error?.message, b.error?.message].filter(Boolean),
-    }, { headers: noStore });
-  }
-
-  if (!habitId || /^\d{4}-\d{2}-\d{2}$/.test(date) === false) {
+  if (!habitId || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return NextResponse.json(
       { ok: false, reason: "bad_request", message: "habitId and date (YYYY-MM-DD) are required" },
       { status: 400, headers: noStore },
