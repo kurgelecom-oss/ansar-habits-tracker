@@ -57,11 +57,24 @@ function readClient() {
   );
 }
 
+/**
+ * Why the habit list came back empty, if it did. Surfaced by the GET diagnostic
+ * because "no habits" and "Notion unreachable" look identical from outside and
+ * have completely different fixes — the second one means every habit is
+ * un-tickable until an env var is corrected.
+ */
+let lastHabitsError: string | null = null;
+
 async function loadContext(fresh: boolean): Promise<GateContext> {
   const now = sydneyNow();                       // ← the server's own clock
 
   const [habitsAll, settings] = await Promise.all([
-    getHabits(fresh).catch(() => [] as Awaited<ReturnType<typeof getHabits>>),
+    getHabits(fresh).then(h => { lastHabitsError = null; return h; }).catch((e: unknown) => {
+      // The message is Notion's status line ("Notion <id>: 401 Unauthorized") or
+      // "Missing NOTION_TOKEN". Neither contains the token itself.
+      lastHabitsError = e instanceof Error ? e.message : "habit load failed";
+      return [] as Awaited<ReturnType<typeof getHabits>>;
+    }),
     getSettings(fresh).catch(() => SETTINGS_FALLBACK),
   ]);
   const habits = habitsForDay(habitsAll, now.weekday);
@@ -102,6 +115,8 @@ export async function GET(request: Request) {
       },
       serviceRoleConfigured: hasServiceRole(),
       overridePinConfigured: Boolean(process.env.PARENT_OVERRIDE_PIN),
+      notionConfigured: Boolean(process.env.NOTION_TOKEN),
+      habitsError: lastHabitsError,
       defaultDwellSeconds: ctx.defaultDwellSeconds,
       warnings: windowWarnings(ctx.habits),
       habits: ctx.habits.map(h => {
@@ -156,14 +171,6 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!hasServiceRole()) {
-    return NextResponse.json({
-      ok: false,
-      reason: "not_configured",
-      message: "Server cannot write: SUPABASE_SERVICE_ROLE_KEY is not set for this deploy.",
-    }, { status: 503, headers: noStore });
-  }
-
   let ctx: GateContext;
   try {
     ctx = await loadContext(false);
@@ -212,6 +219,20 @@ export async function POST(request: Request) {
         { status: 409, headers: noStore },
       );
     }
+  }
+
+  // The write-capability check sits HERE, deliberately after the gates rather
+  // than before them. A refused tick must read as a refused tick — "Opens
+  // 6:30am" — not as a server misconfiguration. Only a tick that has already
+  // earned its write can be blocked by a missing key, and only then is
+  // "not_configured" the honest answer.
+  if (!hasServiceRole()) {
+    return NextResponse.json({
+      ok: false,
+      reason: "not_configured",
+      message: "Server cannot write: SUPABASE_SERVICE_ROLE_KEY is not set for this deploy.",
+      gatesPassed: true,
+    }, { status: 503, headers: noStore });
   }
 
   // The timestamp. Server clock, captured at the top of this handler, written
