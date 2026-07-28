@@ -124,12 +124,15 @@ export async function GET(request: Request) {
     }
 
     let overridden: string[] = [];
+    let overrideLogToday: unknown[] = [];
     if (hasServiceRole()) {
       const { data } = await adminClient()
         .from("override_log")
-        .select("habit_id")
+        .select("*")
         .eq("date", now.date);
-      overridden = Array.from(new Set((data ?? []).map((r: { habit_id: string }) => r.habit_id)));
+      overrideLogToday = (data ?? []).filter((r: { habit_id: string }) => r.habit_id !== "__pin_attempt__");
+      overridden = Array.from(new Set(
+        (overrideLogToday as { habit_id: string }[]).map(r => r.habit_id)));
     }
 
     return NextResponse.json({
@@ -155,6 +158,9 @@ export async function GET(request: Request) {
       // only by the service role — anon sees nothing — so the server resolves
       // it and the board just renders the marker.
       overriddenHabitIds: overridden,
+      // Full audit rows for today. override_log is service-role-only, so this
+      // is the only way to read it back without a database client.
+      overrideLogToday,
       notionConfigured: Boolean(process.env.NOTION_TOKEN),
       habitsError: lastHabitsError,
       // The three booleans above are the whole configuration story, and they
