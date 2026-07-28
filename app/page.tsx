@@ -35,10 +35,16 @@ const RM_NAVY = "#0d2350";        // deep royal navy — scoreboard bar / sectio
 // near-identical but WRONG cyan that matched none of the other five surfaces.
 const CYAN = "var(--cyan)";
 
-// ANSAR FC system — the reward gate. Notion App Settings says "Points Active"
-// is TRUE (flipped 14 Jul), but this constant is still local and still false.
-// Left deliberately unchanged rather than silently flipped — see branch report.
-const POINTS_ACTIVE = false;
+// ANSAR FC reward gate. NO LONGER A CONSTANT — it is the "Points Active"
+// checkbox on the ANSAR OS App Settings row, read through /api/settings.
+//
+// It used to be `const POINTS_ACTIVE = false` here. Notion had said true since
+// 14 Jul, so the board kept showing "Soft-launch · points preview" for two
+// weeks after the soft launch ended, and fixing that needed a deploy. It is now
+// a checkbox tk can tick.
+//
+// See `pointsActive` state below: null means "not loaded yet" and renders
+// neither state, so the chip cannot flash the wrong answer on first paint.
 
 /* ── Habits ────────────────────────────────────────────────────────────────
    The list itself is Notion's. Icons are not: Notion's Habit Blocks source has
@@ -140,6 +146,8 @@ export default function AnsarPage() {
   const [notionHabits, setNotionHabits] = useState<NotionHabit[]>([]);
   const [wallet, setWallet] = useState<WalletState | null>(null);
   const [stretchItems, setStretchItems] = useState<StretchItem[]>([]);
+  // null until /api/settings answers — see the POINTS_ACTIVE note at the top.
+  const [pointsActive, setPointsActive] = useState<boolean | null>(null);
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
@@ -196,6 +204,15 @@ export default function AnsarPage() {
       const w = (await res.json()) as WalletState;
       if (w?.ok) setWallet(w);
     } catch { /* best-effort */ }
+  }, []);
+
+  const loadSettings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/settings");
+      if (!res.ok) return;
+      const s = (await res.json()) as { pointsActive?: boolean };
+      if (typeof s?.pointsActive === "boolean") setPointsActive(s.pointsActive);
+    } catch { /* best-effort: the chip stays hidden rather than lying */ }
   }, []);
 
   const loadStretchItems = useCallback(async () => {
@@ -274,6 +291,7 @@ export default function AnsarPage() {
     loadNotionHabits();
     loadWallet();
     loadStretchItems();
+    loadSettings();
 
     // The header clock is the DEVICE's, and is labelled as such. It is display
     // only — no gate anywhere reads it. The server's Sydney clock is shown
@@ -285,7 +303,7 @@ export default function AnsarPage() {
 
     const poll = setInterval(() => { loadGate(); loadWallet(); }, 30000);
     return () => { clearInterval(t); clearInterval(poll); };
-  }, [loadGate, loadNotionHabits, loadWallet, loadStretchItems]);
+  }, [loadGate, loadNotionHabits, loadWallet, loadStretchItems, loadSettings]);
 
   // History reloads whenever the server's date or the habit list changes.
   const serverDate = gate?.serverTime.date ?? "";
@@ -764,7 +782,7 @@ export default function AnsarPage() {
           Ansar <span style={{ color: RM_GOLD, letterSpacing: "0.04em" }}>· ANSAR FC</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "#757f8f", flexShrink: 0 }}>
-          {!POINTS_ACTIVE && (
+          {pointsActive === false && (
             <span style={{
               fontSize: 10, fontWeight: 700, color: "#ffa500", padding: "3px 9px", borderRadius: 20,
               border: "1px solid rgba(255,165,0,0.3)", background: "rgba(255,165,0,0.1)",
@@ -824,7 +842,7 @@ export default function AnsarPage() {
           <div>
             <b style={{ color: weekThreshold.color, fontSize: 15 }}>{weekThreshold.label}</b>
             <i style={{ fontStyle: "normal", fontSize: 11, color: "rgba(232,235,242,0.62)", display: "block", marginTop: 2 }}>
-              {weekThreshold.desc}{!POINTS_ACTIVE && " · preview, not yet enforced"}
+              {weekThreshold.desc}{pointsActive === false && " · preview, not yet enforced"}
             </i>
           </div>
         </div>

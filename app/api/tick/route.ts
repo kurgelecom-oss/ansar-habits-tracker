@@ -117,6 +117,15 @@ export async function GET(request: Request) {
       overridePinConfigured: Boolean(process.env.PARENT_OVERRIDE_PIN),
       notionConfigured: Boolean(process.env.NOTION_TOKEN),
       habitsError: lastHabitsError,
+      // TEMPORARY. NOTION_TOKEN reached this runtime while
+      // SUPABASE_SERVICE_ROLE_KEY and PARENT_OVERRIDE_PIN did not, which is
+      // either a name typo or a Netlify variable *scope* that excludes
+      // Functions. This reports which env var NAMES the function can see —
+      // names only, never values, and only names matching the relevant
+      // prefixes. Removed once the cause is identified.
+      envNames: Object.keys(process.env)
+        .filter(k => /SUPABASE|NOTION|PARENT|OVERRIDE|PIN|SERVICE/i.test(k))
+        .sort(),
       defaultDwellSeconds: ctx.defaultDwellSeconds,
       warnings: windowWarnings(ctx.habits),
       habits: ctx.habits.map(h => {
