@@ -166,13 +166,6 @@ export async function POST(request: Request) {
       { status: 400, headers: noStore });
   }
 
-  if (!hasServiceRole()) {
-    return NextResponse.json({
-      ok: false, reason: "not_configured",
-      message: "Server cannot write: SUPABASE_SERVICE_ROLE_KEY is not set for this deploy.",
-    }, { status: 503, headers: noStore });
-  }
-
   const [ctx, settings, wallet] = await Promise.all([
     loadGateContext(now.date, now.weekday, now.minutesOfDay, now.ms),
     getSettings().catch(() => SETTINGS_FALLBACK),
@@ -187,7 +180,16 @@ export async function POST(request: Request) {
       { status: 409, headers: noStore });
   }
 
-  const db = adminClient();
+  /** Every rule has now been checked. Only a request that has earned its write
+      can be stopped by a missing key — same ordering rule as /api/tick, so a
+      refusal always reads as a refusal rather than as a broken server. */
+  function requireWriter() {
+    return hasServiceRole() ? null : NextResponse.json({
+      ok: false, reason: "not_configured",
+      message: "Server cannot write: SUPABASE_SERVICE_ROLE_KEY is not set for this deploy.",
+      gatesPassed: true,
+    }, { status: 503, headers: noStore });
+  }
 
   if (action === "earn") {
     if (!itemId || itemId === SPEND_ITEM_ID) {
@@ -200,8 +202,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, reason: "closed", message: "Already earned today" },
         { status: 409, headers: noStore });
     }
+    const blocked = requireWriter();
+    if (blocked) return blocked;
+
     const minutes = Math.max(0, Math.round(points)) * MIN_PER_POINT;
-    const { error } = await db.from("stretch_completions").insert({
+    const { error } = await adminClient().from("stretch_completions").insert({
       item_id: itemId,
       completed_date: now.date,
       minutes,
@@ -234,8 +239,11 @@ export async function POST(request: Request) {
     }, { status: 409, headers: noStore });
   }
 
+  const blockedSpend = requireWriter();
+  if (blockedSpend) return blockedSpend;
+
   const burn = Math.min(SPEND_STEP_MIN, wallet.balance, wallet.remainingToday);
-  const { error } = await db.from("stretch_completions").insert({
+  const { error } = await adminClient().from("stretch_completions").insert({
     item_id: SPEND_ITEM_ID,
     completed_date: now.date,
     minutes: -burn,
