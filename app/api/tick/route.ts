@@ -171,6 +171,22 @@ export async function POST(request: Request) {
     );
   }
 
+  /* THE ANTI-BATCHING CHECK, hoisted.
+     gateWindow() checks this too, but it is worth refusing a wrong date before
+     any habit lookup happens: a request naming yesterday is invalid whatever
+     habit it names, and hoisting it means a stale tab queued overnight gets
+     "Missed — that day is over" rather than a confusing 404 about a habit that
+     exists perfectly well. Same reason strings either way. */
+  const serverToday = now.date;
+  if (date !== serverToday) {
+    return NextResponse.json({
+      ok: false,
+      reason: date < serverToday ? "closed" : "not_open",
+      message: date < serverToday ? "Missed — that day is over" : "That day hasn't started yet",
+      serverDate: serverToday,
+    }, { status: 409, headers: noStore });
+  }
+
   let ctx: GateContext;
   try {
     ctx = await loadContext(false);

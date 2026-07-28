@@ -94,6 +94,8 @@ type GateSnapshot = {
   serverTime: { timeZone: string; date: string; weekday: string; clock: string; minutesOfDay: number; utcIso: string };
   serviceRoleConfigured: boolean;
   overridePinConfigured: boolean;
+  notionConfigured: boolean;
+  habitsError: string | null;
   warnings: string[];
   habits: GateHabitView[];
 };
@@ -836,6 +838,18 @@ export default function AnsarPage() {
           fontSize: 12, fontWeight: 700,
         }}>
           Can&apos;t reach the server — nothing is tappable until it answers. Nothing you tapped was lost.
+        </div>
+      )}
+      {/* Notion unreachable. Without the habit list there is nothing to gate and
+          nothing to show, so the board says so instead of rendering an empty
+          board that looks like a finished day. */}
+      {gate && gate.habitsError && (
+        <div style={{
+          flexShrink: 0, padding: "10px 20px", background: "rgba(255,68,68,0.12)",
+          borderBottom: "1px solid rgba(255,68,68,0.35)", color: "#ff4444",
+          fontSize: 12, fontWeight: 700,
+        }}>
+          Habit list unavailable — {gate.habitsError}. Nothing can be ticked until this is fixed.
         </div>
       )}
       {gate && gate.warnings.length > 0 && (
