@@ -1,11 +1,26 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { supabase, getTodayDate, getWeekStart, getTodayDayName } from "./lib/supabase";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase, getWeekStart } from "./lib/supabase";
 import { scoreDay, SOCCER_DAYS } from "./lib/scoring";
+import { addDays, dayNameOf } from "./lib/time";
 
-// ANSAR FC system — points are tracked from day one, but reward enforcement
-// only activates 13 Jul 2026 after a green soft-launch week.
-const POINTS_ACTIVE = false;
+/* ════════════════════════════════════════════════════════════════════════════
+   THE BOARD.
+
+   Everything below this comment is COSMETIC. It renders what the server has
+   already decided.
+
+     • The habit list comes from /api/habits (Notion). Nothing here is hardcoded
+       except icons, which Notion has no field for.
+     • Whether a button is LIVE, LOCKED, MISSED or DONE comes from /api/tick's
+       read-only diagnostic, which runs the same app/lib/gating.ts the write path
+       enforces — against the SERVER's Australia/Sydney clock, not this device's.
+     • A tap POSTs to /api/tick and takes the server's answer. If the server says
+       no, the button does not flip, whatever this file thought.
+
+   That is the point of the branch: changing the iPad's clock changes nothing
+   here, because no decision on this page is made from `new Date()`.
+   ══════════════════════════════════════════════════════════════════════════ */
 
 // Real Madrid-inspired accents. Base surfaces stay DARK on purpose: the stadium
 // background scrim was tuned for dark cards, and every text token here is
@@ -16,84 +31,100 @@ const RM_GOLD = "#D4AF37";        // CL gold — FC scoreboard, achievements, to
 const RM_GOLD_BRIGHT = "#E7C55B"; // brighter gold for large scoreboard numbers on dark
 const RM_NAVY = "#0d2350";        // deep royal navy — scoreboard bar / section accents
 
-type Habit = { id: string; block: string; label: string; icon: string; chip?: string };
+// The canonical accent, from globals.css. This repo used to carry #00d9ff — a
+// near-identical but WRONG cyan that matched none of the other five surfaces.
+const CYAN = "var(--cyan)";
 
-function buildHabits(dayName: string): Habit[] {
-  const hasSoccer = SOCCER_DAYS.includes(dayName);
-  return [
-    { id: "feet_floor",         block: "pre_homeschool",    label: "Feet on floor by 6:45am - no phone",                icon: "🌅" },
-    { id: "fajr",               block: "pre_homeschool",    label: "Fajr Namaz done",                                    icon: "🕌" },
-    { id: "bed_dressed",        block: "pre_homeschool",    label: "Bed made + dressed",                                 icon: "🛏️" },
-    { id: "movement",           block: "pre_homeschool",    label: "Morning movement - 20 min outside (ball work)",      icon: "⚽" },
-    { id: "breakfast",          block: "pre_homeschool",    label: "Breakfast done - no screens",                        icon: "🍳" },
-    { id: "quran",              block: "pre_homeschool",    label: "Qur'an recitation - 20 min",                         icon: "📖" },
-    { id: "goals",              block: "pre_homeschool",    label: "Daily goals written + Habits page reviewed",         icon: "✍️" },
-    { id: "homeschool_session", block: "homeschool",        label: "Homeschool completed",                               icon: "📚", chip: "+5 pts" },
-    { id: "btn_cornell",        block: "afternoon_evening", label: "BTN episode + Cornell notes done",                   icon: "📰", chip: "+1 pt" },
-    { id: "all_namaz",          block: "afternoon_evening", label: "All Namaz done (Fajr, Duhr, Asr, Maghrib, Isha)",    icon: "🕌", chip: "+1 pt" },
-    { id: "room_tidy",          block: "afternoon_evening", label: "Room tidy",                                          icon: "🧹" },
-    { id: "shower",             block: "afternoon_evening", label: "Shower done",                                        icon: "🚿" },
-    { id: "teeth",              block: "afternoon_evening", label: "Teeth brushed",                                      icon: "🪥" },
-    { id: "reading",            block: "afternoon_evening", label: "Reading in bed (15+ min)",                           icon: "🌙" },
-    ...(hasSoccer ? [{ id: "soccer_training", block: "conditional", label: "Soccer training attended", icon: "⚽", chip: "+1 pt" }] : []),
-  ];
-}
+// ANSAR FC system — the reward gate. Notion App Settings says "Points Active"
+// is TRUE (flipped 14 Jul), but this constant is still local and still false.
+// Left deliberately unchanged rather than silently flipped — see branch report.
+const POINTS_ACTIVE = false;
+
+/* ── Habits ────────────────────────────────────────────────────────────────
+   The list itself is Notion's. Icons are not: Notion's Habit Blocks source has
+   no icon property, and an emoji is presentation, not configuration. A habit
+   added in Notion without an entry here simply gets the default tick. */
+const HABIT_ICONS: Record<string, string> = {
+  feet_floor: "🌅", fajr: "🕌", bed_dressed: "🛏️", movement: "⚽",
+  breakfast: "🍳", quran: "📖", goals: "✍️", homeschool_session: "📚",
+  readtheory: "📘", khan: "📐", journal: "📓", btn_cornell: "📰",
+  all_namaz: "🕌", room_tidy: "🧹", shower: "🚿", teeth: "🪥",
+  reading: "🌙", soccer_training: "⚽",
+};
+const DEFAULT_ICON = "✅";
 
 const BLOCKS = [
-  { id: "pre_homeschool",    label: "🌅 Morning Habits",      subtitle: "Before 8:30am · all 7 = +2 pts", color: "#ffa500" },
-  { id: "homeschool",        label: "📚 Homeschool",           subtitle: "Daily completion · +5 pts",      color: "#00d9ff" },
-  { id: "afternoon_evening", label: "🌆 Afternoon / Evening",  subtitle: "After school",                   color: "#00ff88" },
-  { id: "conditional",       label: "⚽ Conditional",          subtitle: "Mon & Wed only",                 color: "#a78bfa" },
+  { id: "pre_homeschool",    label: "🌅 Morning Habits",      subtitle: "6:30–8:30am · all = +2 pts", color: "#ffa500" },
+  { id: "homeschool",        label: "📚 Homeschool",           subtitle: "8:30am–1:30pm · +5 pts",     color: CYAN },
+  { id: "afternoon_evening", label: "🌆 Afternoon / Evening",  subtitle: "1:30–8:30pm",                color: "#00ff88" },
+  { id: "conditional",       label: "⚽ Conditional",          subtitle: "Mon & Wed · 3:00–8:00pm",    color: "#a78bfa" },
 ];
 
-const PRE_HABIT_IDS = ["feet_floor", "fajr", "bed_dressed", "movement", "breakfast", "quran", "goals"];
+/* ── Stretch Wallet ────────────────────────────────────────────────────────
+   1 stretch point = 10 minutes. Points now BANK across the week and convert to
+   PS5 minutes on Saturday and Sunday only, capped at 75 redeemed minutes a day.
+   Both rules are enforced in /api/stretch against the server's Sydney clock —
+   the values below are for display. */
+const STRETCH_MIN_PER_POINT = 10;
+const STRETCH_DAILY_REDEEM_CAP_MIN = 75;
+const STRETCH_SPEND_STEP_MIN = 10;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STRETCH POINTS — a SEPARATE daily system from the ANSAR FC weekly scoring
-// above. 1 stretch point = 10 minutes of screen time. Daily cap = 75 earned
-// minutes (1h15m). Qur'an's daily minimum stays in the FC habit list, NOT here.
-// Items are loaded live from Notion via /api/stretch-items (Points editable in
-// Notion without a redeploy). Completions persist to the Supabase
-// `stretch_completions` table (localStorage fallback, like habit_completions).
-// ═══════════════════════════════════════════════════════════════════════════
 // ── LOG WORK ────────────────────────────────────────────────────────────────
 // Tally intake form, opened in a modal so Ansar never leaves the board. Purely
 // additive: nothing here reads or writes points, tiers, streak, screen time or
 // the Stretch Wallet. `TALLY_ORIGIN` is the postMessage allow-list of one.
 const TALLY_ORIGIN = "https://tally.so";
 const TALLY_EMBED_JS = `${TALLY_ORIGIN}/widgets/embed.js`;
-// dynamicHeight lets embed.js report the form's real height so the panel hugs
-// it instead of leaving dead space under a short form. If the script never
-// loads, .lw-frame's min-height keeps the form perfectly usable anyway.
 const TALLY_FORM_SRC = `${TALLY_ORIGIN}/embed/ODKlVa?alignLeft=1&hideTitle=1&dynamicHeight=1`;
 
-const STRETCH_MIN_PER_POINT = 10;
-const STRETCH_DAILY_CAP_MIN = 75;   // earnable screen-time minutes per day
-const STRETCH_SPEND_STEP_MIN = 10;  // each "Spend" tap burns 10 min (v1, no PS5 integration)
-const SPEND_ITEM_ID = "__spend__";  // ledger marker for spend rows (negative minutes)
+/* ── Server contracts ──────────────────────────────────────────────────────── */
 
-// Shape returned by /api/stretch-items (mapped from Notion Stretch Items source).
+type ButtonState = "DONE" | "LIVE" | "LOCKED" | "MISSED";
+
+/** One habit as /api/tick's diagnostic reports it. */
+type GateHabitView = {
+  id: string; name: string; block: string; order: number;
+  window: string | null; dwellSeconds: number | null;
+  state: ButtonState; label: string;
+  reason: string | null; message: string | null;
+};
+
+type GateSnapshot = {
+  ok: boolean;
+  serverTime: { timeZone: string; date: string; weekday: string; clock: string; minutesOfDay: number; utcIso: string };
+  serviceRoleConfigured: boolean;
+  overridePinConfigured: boolean;
+  warnings: string[];
+  habits: GateHabitView[];
+};
+
+/** Notion habit, from /api/habits. Supplies the point values the chips show. */
+type NotionHabit = {
+  id: string; name: string; block: string; order: number; points: number;
+  pointType: string; days: string[];
+  windowStart: string | null; windowEnd: string | null; dwellSeconds: number | null;
+};
+
 type StretchItem = { id: string; name: string; category: string; points: number; whatCountsAsDone: string };
-type StretchRow = { item_id: string; minutes: number };
 
-// Block-based scoring — NOT per-habit sums.
-// Daily max = 10 on a non-training day, 11 on a training day (Mon/Wed).
-//
-// The arithmetic lives in app/lib/scoring.ts, mirrored into family-dashboard so
-// both surfaces score the same Supabase rows identically. This adapter supplies
-// the habit-id sets, which this app builds locally while family-dashboard reads
-// them from Notion.
-function scoreLocal(completedIds: Set<string>, dayName: string) {
-  const baseIds = buildHabits(dayName).filter(h => h.block !== "conditional").map(h => h.id);
-  return scoreDay(completedIds, dayName, PRE_HABIT_IDS, baseIds);
-}
+type WalletState = {
+  ok: boolean; serverDate: string; weekday: string; weekStart: string;
+  balance: number; earnedWeek: number; spentWeek: number; spentToday: number;
+  remainingToday: number; dailyRedeemCapMin: number; minPerPoint: number;
+  earnedItemIds: string[];
+  unlocked: boolean; lockMessage: string | null;
+  weekendRedemptionOnly: boolean; redemptionOpen: boolean; redemptionMessage: string | null;
+};
+
+/** What a refused tap left on screen. */
+type Rejection = { habitId: string; habitName: string; reason: string; message: string };
 
 // ANSAR FC weekly tiers. Weekly max = 56 (incl. +3 streak bonus for 5 Perfect Days Mon–Fri).
 const WEEKLY_MAX = 56;
 
 const THRESHOLDS = [
   { min: 42, label: "First Team 🏆",      desc: "42+ pts",   color: RM_GOLD },
-  { min: 34, label: "Bench ✅",           desc: "34–41 pts", color: "#00d9ff" },
+  { min: 34, label: "Bench ✅",           desc: "34–41 pts", color: CYAN },
   { min: 26, label: "Reserves ⚠️",        desc: "26–33 pts", color: "#ffa500" },
   { min: 0,  label: "Training Ground ❌", desc: "0–25 pts",  color: "#ff4444" },
 ];
@@ -102,221 +133,168 @@ function getThreshold(pts: number) {
   return THRESHOLDS.find(t => pts >= t.min) || THRESHOLDS[THRESHOLDS.length - 1];
 }
 
-function dayNameOf(dateStr: string) {
-  return new Date(dateStr + "T12:00:00").toLocaleDateString("en-AU", { weekday: "long" });
-}
-
-function addDays(dateStr: string, n: number) {
-  const d = new Date(dateStr + "T12:00:00");
-  d.setDate(d.getDate() + n);
-  return d.toISOString().split("T")[0];
-}
-
-function getHabitState(habit: Habit, blockHabits: Habit[], completed: Record<string, boolean>): "done" | "available" | "locked" {
-  if (completed[habit.id]) return "done";
-  const idx = blockHabits.findIndex(h => h.id === habit.id);
-  const incompleteBefore = blockHabits.slice(0, idx).filter(h => !completed[h.id]).length;
-  return incompleteBefore < 2 ? "available" : "locked";
-}
-
-async function calculateStreak(): Promise<number> {
-  const today = getTodayDate();
-  const cutoffStr = addDays(today, -60);
-
-  const { data, error } = await supabase
-    .from("habit_completions")
-    .select("habit_id, completed_date")
-    .gte("completed_date", cutoffStr)
-    .order("completed_date", { ascending: false });
-
-  if (error || !data) return 0;
-
-  const byDate: Record<string, number> = {};
-  data.forEach((r: { habit_id: string; completed_date: string }) => {
-    byDate[r.completed_date] = (byDate[r.completed_date] || 0) + 1;
-  });
-
-  let streak = 0;
-  for (let i = 0; i <= 60; i++) {
-    const ds = addDays(today, -i);
-    if ((byDate[ds] || 0) >= 5) {
-      streak++;
-    } else if (i === 0) {
-      continue;
-    } else {
-      break;
-    }
-  }
-  return streak;
-}
-
 export default function AnsarPage() {
-  const [dayName, setDayName] = useState("");
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [completed, setCompleted] = useState<Record<string, boolean>>({});
+  const [gate, setGate] = useState<GateSnapshot | null>(null);
+  const [notionHabits, setNotionHabits] = useState<NotionHabit[]>([]);
+  const [wallet, setWallet] = useState<WalletState | null>(null);
+  const [stretchItems, setStretchItems] = useState<StretchItem[]>([]);
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
   const [weeklyPts, setWeeklyPts] = useState<number | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
-  // Stretch wallet (separate from FC): today's ledger rows + in-flight marker
-  const [stretchLog, setStretchLog] = useState<StretchRow[]>([]);
-  const [stretchSaving, setStretchSaving] = useState<string | null>(null);
-  // Stretch item definitions loaded live from Notion (/api/stretch-items)
-  const [stretchItems, setStretchItems] = useState<StretchItem[]>([]);
-  // Stretch Wallet daily unlock gate. Opens once Morning Habits + Homeschool are
-  // both 100% done, then STAYS open for the rest of the day (sticky per-day flag
-  // in localStorage). Never re-locks.
-  const [stretchUnlocked, setStretchUnlocked] = useState(false);
-  // ── Log Work modal. Presentation only: it reads no scoring state and writes
-  // none. `embedKey` remounts the iframe to re-arm a blank form after a submit.
+  const [reject, setReject] = useState<Rejection | null>(null);
+
+  // Parent override. The PIN is typed here and sent to the server; it is never
+  // compared here and never stored. The server holds PARENT_OVERRIDE_PIN.
+  const [overrideFor, setOverrideFor] = useState<Rejection | null>(null);
+  const [pin, setPin] = useState("");
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overrideError, setOverrideError] = useState("");
+  const [overrideBusy, setOverrideBusy] = useState(false);
+
+  // ── Log Work modal (unchanged behaviour) ──
   const [logOpen, setLogOpen] = useState(false);
   const [logSaved, setLogSaved] = useState(false);
   const [embedKey, setEmbedKey] = useState(0);
 
-  const loadWeeklyData = useCallback(async () => {
-    const weekStart = getWeekStart();
-    const today = getTodayDate();
+  const rejectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const { data, error } = await supabase
-      .from("habit_completions")
-      .select("habit_id, completed_date")
-      .gte("completed_date", weekStart)
-      .lte("completed_date", today);
+  /* ── Loads ──────────────────────────────────────────────────────────────── */
 
-    if (!error && data) {
-      const byDate: Record<string, Set<string>> = {};
-      data.forEach((r: { habit_id: string; completed_date: string }) => {
-        if (!byDate[r.completed_date]) byDate[r.completed_date] = new Set();
-        byDate[r.completed_date].add(r.habit_id);
-      });
-
-      let total = 0;
-      Object.keys(byDate).forEach(ds => {
-        total += scoreLocal(byDate[ds], dayNameOf(ds)).total;
-      });
-
-      // Weekly streak bonus: 5 Perfect Days Mon–Fri = +3 to weekly total.
-      const weekdayDates = [0, 1, 2, 3, 4].map(i => addDays(weekStart, i));
-      const allWeekdaysPerfect = weekdayDates.every(
-        ds => byDate[ds] && scoreLocal(byDate[ds], dayNameOf(ds)).perfect
-      );
-      if (allWeekdaysPerfect) total += 3;
-
-      setWeeklyPts(total);
-    }
-  }, []);
-
-  const loadFromSupabase = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("habit_completions")
-      .select("habit_id")
-      .eq("completed_date", getTodayDate());
-    if (!error && data) {
-      const map: Record<string, boolean> = {};
-      data.forEach((r: { habit_id: string }) => { map[r.habit_id] = true; });
-      setCompleted(map);
-      localStorage.setItem(`ansar-habits-${getTodayDate()}`, JSON.stringify(map));
-      setOnline(true);
-    } else {
-      const saved = localStorage.getItem(`ansar-habits-${getTodayDate()}`);
-      if (saved) setCompleted(JSON.parse(saved));
+  // The single source of truth for today. Fails CLOSED: if this cannot be
+  // reached, `gate` stays null and every button renders non-tappable, because a
+  // board that guesses LIVE while the server is unreachable is a board that
+  // teaches Ansar to tap and hope.
+  const loadGate = useCallback(async () => {
+    try {
+      const res = await fetch("/api/tick", { cache: "no-store" });
+      if (!res.ok) { setOnline(false); return; }
+      const snap = (await res.json()) as GateSnapshot;
+      if (snap?.ok) { setGate(snap); setOnline(true); } else { setOnline(false); }
+    } catch {
       setOnline(false);
     }
   }, []);
 
-  // Stretch ledger load — independent of the FC `online` badge. If the Supabase
-  // table is missing/unreachable, it silently falls back to localStorage so the
-  // wallet still works and the FC status indicator is unaffected.
-  const loadStretch = useCallback(async () => {
-    const today = getTodayDate();
-    const { data, error } = await supabase
-      .from("stretch_completions")
-      .select("item_id, minutes")
-      .eq("completed_date", today);
-    if (!error && data) {
-      const rows = data as StretchRow[];
-      setStretchLog(rows);
-      localStorage.setItem(`ansar-stretch-${today}`, JSON.stringify(rows));
-    } else {
-      const saved = localStorage.getItem(`ansar-stretch-${today}`);
-      setStretchLog(saved ? JSON.parse(saved) : []);
-    }
+  const loadNotionHabits = useCallback(async () => {
+    try {
+      const res = await fetch("/api/habits");
+      if (!res.ok) return;
+      const list = (await res.json()) as NotionHabit[];
+      if (Array.isArray(list)) setNotionHabits(list);
+    } catch { /* best-effort: chips degrade, gating does not */ }
   }, []);
 
-  // Stretch item definitions from Notion (server-cached 5 min). Best-effort:
-  // if it fails, the wallet shows its "no items" empty state rather than erroring.
+  const loadWallet = useCallback(async () => {
+    try {
+      const res = await fetch("/api/stretch", { cache: "no-store" });
+      if (!res.ok) return;
+      const w = (await res.json()) as WalletState;
+      if (w?.ok) setWallet(w);
+    } catch { /* best-effort */ }
+  }, []);
+
   const loadStretchItems = useCallback(async () => {
     try {
       const res = await fetch("/api/stretch-items");
       if (!res.ok) return;
       const items = (await res.json()) as StretchItem[];
       if (Array.isArray(items)) setStretchItems(items);
-    } catch {
-      // best-effort; leaves the last-known (or empty) item list in place
+    } catch { /* best-effort */ }
+  }, []);
+
+  // Weekly total and streak are read-only history. They still read Supabase
+  // directly with the anon key — SELECT stays open to anon after the RLS
+  // hardening; only writes moved to the server.
+  const loadWeeklyData = useCallback(async (today: string) => {
+    const weekStart = getWeekStart();
+    const { data, error } = await supabase
+      .from("habit_completions")
+      .select("habit_id, completed_date")
+      .gte("completed_date", weekStart)
+      .lte("completed_date", today);
+    if (error || !data) return;
+
+    const byDate: Record<string, Set<string>> = {};
+    data.forEach((r: { habit_id: string; completed_date: string }) => {
+      if (!byDate[r.completed_date]) byDate[r.completed_date] = new Set();
+      byDate[r.completed_date].add(r.habit_id);
+    });
+
+    // preIds/baseIds come from the live Notion list, not a hardcoded array.
+    const preIds = notionHabits.filter(h => h.block === "pre_homeschool").map(h => h.id);
+    const baseIds = notionHabits.filter(h => h.block !== "conditional").map(h => h.id);
+    if (preIds.length === 0) return;   // habits not loaded yet — don't score a blank list
+
+    let total = 0;
+    Object.keys(byDate).forEach(ds => {
+      total += scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).total;
+    });
+
+    const weekdayDates = [0, 1, 2, 3, 4].map(i => addDays(weekStart, i));
+    const allWeekdaysPerfect = weekdayDates.every(
+      ds => byDate[ds] && scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).perfect,
+    );
+    if (allWeekdaysPerfect) total += 3;
+
+    setWeeklyPts(total);
+  }, [notionHabits]);
+
+  const calculateStreak = useCallback(async (today: string) => {
+    const cutoffStr = addDays(today, -60);
+    const { data, error } = await supabase
+      .from("habit_completions")
+      .select("habit_id, completed_date")
+      .gte("completed_date", cutoffStr)
+      .order("completed_date", { ascending: false });
+    if (error || !data) return;
+
+    const byDate: Record<string, number> = {};
+    data.forEach((r: { completed_date: string }) => {
+      byDate[r.completed_date] = (byDate[r.completed_date] || 0) + 1;
+    });
+
+    let s = 0;
+    for (let i = 0; i <= 60; i++) {
+      const ds = addDays(today, -i);
+      if ((byDate[ds] || 0) >= 5) s++;
+      else if (i === 0) continue;
+      else break;
     }
+    setStreak(s);
   }, []);
 
   useEffect(() => {
-    const dn = getTodayDayName();
-    setDayName(dn);
-    setHabits(buildHabits(dn));
     setMounted(true);
-    // Restore today's sticky Stretch-Wallet unlock flag (set once Morning Habits +
-    // Homeschool were both cleared earlier today) so a reload doesn't re-lock it.
-    if (localStorage.getItem(`ansar-stretch-unlocked-${getTodayDate()}`) === "1") {
-      setStretchUnlocked(true);
-    }
-    loadFromSupabase();
-    loadWeeklyData();
-    loadStretch();
+    loadGate();
+    loadNotionHabits();
+    loadWallet();
     loadStretchItems();
-    calculateStreak().then(setStreak);
 
-    const tick = setInterval(() => {
+    // The header clock is the DEVICE's, and is labelled as such. It is display
+    // only — no gate anywhere reads it. The server's Sydney clock is shown
+    // beside it so a mismatch is visible rather than silent.
+    const t = setInterval(() => {
       setTime(new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" }));
     }, 1000);
     setTime(new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" }));
 
-    const poll = setInterval(() => {
-      loadFromSupabase();
-      loadWeeklyData();
-      loadStretch();
-    }, 30000);
+    const poll = setInterval(() => { loadGate(); loadWallet(); }, 30000);
+    return () => { clearInterval(t); clearInterval(poll); };
+  }, [loadGate, loadNotionHabits, loadWallet, loadStretchItems]);
 
-    return () => { clearInterval(tick); clearInterval(poll); };
-  }, [loadFromSupabase, loadWeeklyData, loadStretch, loadStretchItems]);
-
-  // Stretch-Wallet unlock gate. Opens once BOTH the Morning Habits block AND the
-  // Homeschool block are 100% complete — the Afternoon/Evening (and Conditional)
-  // blocks are still required for FC points but do NOT gate stretch access.
-  // Once opened it's sticky for the day (never re-locks): the early-return on
-  // `stretchUnlocked` guarantees we only ever flip false→true. Keeping it sticky
-  // matters if Morning/Homeschool habits are ever time-gated later.
+  // History reloads whenever the server's date or the habit list changes.
+  const serverDate = gate?.serverTime.date ?? "";
   useEffect(() => {
-    if (!mounted || stretchUnlocked || habits.length === 0) return;
-    const blockComplete = (blockId: string) => {
-      const bh = habits.filter(h => h.block === blockId);
-      return bh.length > 0 && bh.every(h => completed[h.id]);
-    };
-    if (blockComplete("pre_homeschool") && blockComplete("homeschool")) {
-      setStretchUnlocked(true);
-      localStorage.setItem(`ansar-stretch-unlocked-${getTodayDate()}`, "1");
-    }
-  }, [mounted, stretchUnlocked, habits, completed]);
+    if (!serverDate || notionHabits.length === 0) return;
+    loadWeeklyData(serverDate);
+    calculateStreak(serverDate);
+  }, [serverDate, notionHabits, loadWeeklyData, calculateStreak]);
 
-  // ── Log Work: Esc-to-close + body-scroll lock while the modal is open ──
-  // Below 1440px .ab-root scrolls, so the lock is on <body>, and the previous
-  // value is restored on close rather than assumed to be "".
-  //
-  // KNOWN LIMIT, verified in production: once the user clicks into the Tally
-  // form, document.activeElement becomes the iframe and keystrokes go to a
-  // cross-origin document this listener can never see — so Esc stops working
-  // mid-form. That is a browser security boundary, not something a handler can
-  // work around. Esc still fires whenever focus is in the parent (right after
-  // opening, or after clicking the panel chrome). The ✕ and the backdrop work
-  // unconditionally, which is why the subtitle points at ✕ and not at Esc.
+  /* ── Log Work effects (unchanged) ───────────────────────────────────────── */
+
   useEffect(() => {
     if (!logOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setLogOpen(false); };
@@ -329,10 +307,6 @@ export default function AnsarPage() {
     };
   }, [logOpen]);
 
-  // ── Log Work: Tally submit signal ──
-  // Origin-checked against tally.so — messages from anywhere else are ignored
-  // outright. If this event never fires nothing happens: the modal simply stays
-  // open and the X closes it. No synthetic submit signal is ever manufactured.
   useEffect(() => {
     if (!logOpen) return;
     const onMessage = (e: MessageEvent) => {
@@ -341,30 +315,18 @@ export default function AnsarPage() {
       if (typeof payload === "string") {
         try { payload = JSON.parse(payload); } catch { return; }
       }
-      if ((payload as { event?: string } | null)?.event === "Tally.FormSubmitted") {
-        setLogSaved(true);
-      }
+      if ((payload as { event?: string } | null)?.event === "Tally.FormSubmitted") setLogSaved(true);
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [logOpen]);
 
-  // Re-arm: hold the confirmation for a beat, then remount the iframe so the
-  // form comes back blank and Ansar can log another entry without reopening.
-  // Kept out of the listener so closing mid-beat cancels the timer cleanly.
   useEffect(() => {
     if (!logSaved) return;
-    const t = setTimeout(() => {
-      setLogSaved(false);
-      setEmbedKey(k => k + 1);
-    }, 1500);
+    const t = setTimeout(() => { setLogSaved(false); setEmbedKey(k => k + 1); }, 1500);
     return () => clearTimeout(t);
   }, [logSaved]);
 
-  // ── Log Work: Tally's official embed script, fetched once on first open ──
-  // loadEmbeds() promotes data-tally-src → src. The manual fallback does the
-  // same by hand, so the form still renders if the script 404s or is blocked.
-  // Re-runs on embedKey so a re-armed iframe gets promoted too.
   useEffect(() => {
     if (!logOpen) return;
     const promote = () => {
@@ -383,125 +345,157 @@ export default function AnsarPage() {
     document.body.appendChild(s);
   }, [logOpen, embedKey]);
 
-  async function toggle(id: string, state: string) {
-    if (state !== "available") return;
-    setSaving(id);
-    setCompleted(prev => {
-      const next = { ...prev, [id]: true };
-      localStorage.setItem(`ansar-habits-${getTodayDate()}`, JSON.stringify(next));
-      return next;
-    });
-    const { error } = await supabase
-      .from("habit_completions")
-      .upsert({ habit_id: id, completed_date: getTodayDate() }, { onConflict: "habit_id,completed_date" });
-    if (error) {
-      setOnline(false);
-    } else {
-      setOnline(true);
-      loadWeeklyData();
-    }
-    setSaving(null);
+  useEffect(() => () => { if (rejectTimer.current) clearTimeout(rejectTimer.current); }, []);
+
+  /* ── Actions ────────────────────────────────────────────────────────────── */
+
+  function showRejection(r: Rejection) {
+    setReject(r);
+    if (rejectTimer.current) clearTimeout(rejectTimer.current);
+    rejectTimer.current = setTimeout(() => setReject(null), 8000);
   }
 
-  // ── Stretch wallet handlers (append-only ledger, separate from FC toggle) ──
-  // Cap is enforced on cumulative EARNED minutes per day (independent of spend),
-  // so a completion past the 75-min cap still logs a row (minutes: 0) for the
-  // record but adds nothing to the balance.
-  function stretchEarnedMinutes(rows: StretchRow[]): number {
-    return rows.filter(r => r.item_id !== SPEND_ITEM_ID && r.minutes > 0).reduce((s, r) => s + r.minutes, 0);
+  /**
+   * Tap a habit.
+   *
+   * Sends { habitId, date } and NOTHING ELSE. No timestamp is attached, because
+   * the server would ignore it — the recorded time is the server's own clock.
+   * The optimistic update this function used to do is gone: the button only
+   * changes after the server has agreed.
+   */
+  async function tick(habitId: string, habitName: string) {
+    if (saving || !gate) return;
+    setSaving(habitId);
+    setReject(null);
+    try {
+      const res = await fetch("/api/tick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ habitId, date: gate.serverTime.date }),
+      });
+      const body = await res.json();
+      if (res.ok && body?.ok) {
+        await loadGate();
+        await loadWallet();
+        if (serverDate) loadWeeklyData(serverDate);
+      } else {
+        showRejection({
+          habitId, habitName,
+          reason: body?.reason ?? "error",
+          message: body?.message ?? "That didn't work — try again",
+        });
+        await loadGate();
+      }
+    } catch {
+      showRejection({ habitId, habitName, reason: "offline", message: "No connection — nothing was recorded" });
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  /** Parent override. Correct PIN bypasses gates 1–4 and writes to override_log. */
+  async function submitOverride() {
+    if (!overrideFor || !gate || overrideBusy) return;
+    setOverrideBusy(true);
+    setOverrideError("");
+    try {
+      const res = await fetch("/api/tick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          habitId: overrideFor.habitId,
+          date: gate.serverTime.date,
+          overridePin: pin,
+          reason: overrideReason,
+        }),
+      });
+      const body = await res.json();
+      if (res.ok && body?.ok) {
+        setOverrideFor(null);
+        setPin("");
+        setOverrideReason("");
+        setReject(null);
+        await loadGate();
+        await loadWallet();
+        if (serverDate) loadWeeklyData(serverDate);
+      } else {
+        setOverrideError(body?.message ?? "Override refused");
+      }
+    } catch {
+      setOverrideError("No connection");
+    } finally {
+      setOverrideBusy(false);
+    }
   }
 
   async function earnStretch(item: StretchItem) {
-    if (stretchSaving) return;
-    // One earn per item per calendar day. stretchLog mirrors stretch_completions
-    // for completed_date=today (loaded from Supabase + polled + refreshed after
-    // each earn), so an existing row for this item_id means it's already done —
-    // block regardless of the 75-min cap. Resets naturally at the next day's date.
-    if (stretchLog.some(r => r.item_id === item.id)) return;
-    const today = getTodayDate();
-    const itemMin = item.points * STRETCH_MIN_PER_POINT;
-    const alreadyEarned = stretchEarnedMinutes(stretchLog);
-    const credited = Math.max(0, Math.min(itemMin, STRETCH_DAILY_CAP_MIN - alreadyEarned));
-    const row: StretchRow = { item_id: item.id, minutes: credited };
-    setStretchSaving(item.id);
-    setStretchLog(prev => {
-      const next = [...prev, row];
-      localStorage.setItem(`ansar-stretch-${today}`, JSON.stringify(next));
-      return next;
-    });
-    await supabase.from("stretch_completions").insert({ item_id: item.id, completed_date: today, minutes: credited });
-    setStretchSaving(null);
-    loadStretch();
+    if (saving) return;
+    setSaving(item.id);
+    try {
+      const res = await fetch("/api/stretch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "earn", itemId: item.id, points: item.points }),
+      });
+      const body = await res.json();
+      if (!res.ok || !body?.ok) {
+        showRejection({ habitId: item.id, habitName: item.name, reason: body?.reason ?? "error", message: body?.message ?? "Not right now" });
+      }
+      await loadWallet();
+    } catch {
+      showRejection({ habitId: item.id, habitName: item.name, reason: "offline", message: "No connection" });
+    } finally {
+      setSaving(null);
+    }
   }
 
   async function spendStretch() {
-    if (stretchSaving) return;
-    const today = getTodayDate();
-    const earned = stretchEarnedMinutes(stretchLog);
-    const spent = stretchLog.filter(r => r.item_id === SPEND_ITEM_ID).reduce((s, r) => s + Math.abs(r.minutes), 0);
-    const balance = earned - spent;
-    if (balance <= 0) return;
-    const burn = Math.min(STRETCH_SPEND_STEP_MIN, balance);
-    const row: StretchRow = { item_id: SPEND_ITEM_ID, minutes: -burn };
-    setStretchSaving(SPEND_ITEM_ID);
-    setStretchLog(prev => {
-      const next = [...prev, row];
-      localStorage.setItem(`ansar-stretch-${today}`, JSON.stringify(next));
-      return next;
-    });
-    await supabase.from("stretch_completions").insert({ item_id: SPEND_ITEM_ID, completed_date: today, minutes: -burn });
-    setStretchSaving(null);
-    loadStretch();
+    if (saving) return;
+    setSaving("__spend__");
+    try {
+      const res = await fetch("/api/stretch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "spend" }),
+      });
+      const body = await res.json();
+      if (!res.ok || !body?.ok) {
+        showRejection({ habitId: "__spend__", habitName: "PS5 minutes", reason: body?.reason ?? "error", message: body?.message ?? "Not right now" });
+      }
+      await loadWallet();
+    } catch {
+      showRejection({ habitId: "__spend__", habitName: "PS5 minutes", reason: "offline", message: "No connection" });
+    } finally {
+      setSaving(null);
+    }
   }
 
-  const completedSet = new Set(Object.keys(completed).filter(k => completed[k]));
-  const dayScore = scoreLocal(completedSet, dayName);
+  /* ── Derived ────────────────────────────────────────────────────────────── */
+
+  const gateHabits = gate?.habits ?? [];
+  const dayName = gate?.serverTime.weekday ?? "";
+  const completedIds = new Set(gateHabits.filter(h => h.state === "DONE").map(h => h.id));
+  const pointsById: Record<string, number> = {};
+  notionHabits.forEach(h => { pointsById[h.id] = h.points; });
+
+  const preIds = gateHabits.filter(h => h.block === "pre_homeschool").map(h => h.id);
+  const baseIds = gateHabits.filter(h => h.block !== "conditional").map(h => h.id);
+  const dayScore = scoreDay(completedIds, dayName, preIds, baseIds);
   const todayPts = dayScore.total;
-  const todayDone = habits.filter(h => completed[h.id]).length;
-  const overallPct = habits.length > 0 ? Math.round((todayDone / habits.length) * 100) : 0;
+  const todayDone = gateHabits.filter(h => h.state === "DONE").length;
+  const overallPct = gateHabits.length > 0 ? Math.round((todayDone / gateHabits.length) * 100) : 0;
   const weekThreshold = getThreshold(weeklyPts ?? 0);
   const DAILY_MAX = SOCCER_DAYS.includes(dayName) ? 11 : 10;
 
-  // ── Stretch wallet derived values (today) ──
-  const stretchEarned = stretchEarnedMinutes(stretchLog);           // capped ≤ 75
-  const stretchSpent = stretchLog.filter(r => r.item_id === SPEND_ITEM_ID).reduce((s, r) => s + Math.abs(r.minutes), 0);
-  const stretchBalance = Math.max(0, stretchEarned - stretchSpent);
-  const stretchCapReached = stretchEarned >= STRETCH_DAILY_CAP_MIN;
-  // Wallet is locked until Morning Habits + Homeschool are cleared (sticky once opened).
-  const walletLocked = mounted && !stretchUnlocked;
-  const stretchByItem: Record<string, number> = {};
-  const stretchCountByItem: Record<string, number> = {};
-  stretchLog.forEach(r => {
-    if (r.item_id === SPEND_ITEM_ID) return;
-    stretchByItem[r.item_id] = (stretchByItem[r.item_id] || 0) + r.minutes;
-    stretchCountByItem[r.item_id] = (stretchCountByItem[r.item_id] || 0) + 1;
-  });
+  const walletLocked = !wallet?.unlocked;
+  const stretchBalance = wallet?.balance ?? 0;
+  const earnedItemIds = new Set(wallet?.earnedItemIds ?? []);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MATCH DAY BOARD — one screen, no scroll.
-  //
-  // The page used to run 2,729px inside a 1,080px screen: 1,649px (60%) sat below
-  // the fold, and every block additionally carried `maxHeight: 400px; overflowY:
-  // auto`, so habits scrolled INSIDE a card that was itself already invisible.
-  // Both scrolls are gone. The root is a fixed-height flex column and each of the
-  // four board columns sizes itself to fit.
-  //
-  // The height came back from removing what repeated itself, not from removing
-  // anything tappable: the four 431px metric cards, the slim stat row (a verbatim
-  // duplicate of them), the standalone "on track for" card, the soccer alert (the
-  // Conditional column already says Mon & Wed) and a dead 40px spacer all collapse
-  // into the 80px scoreboard strip. Every habit, every wallet item and every
-  // control survives, larger than before.
-  //
-  // Scoring, progressive unlock and the wallet gate are untouched — this is layout.
-  // ═══════════════════════════════════════════════════════════════════════════
+  /* ── Styles ─────────────────────────────────────────────────────────────── */
 
-  // Presses need :active / :focus-visible, which inline styles cannot express, so
-  // the interaction and the responsive grid live in one stylesheet. Everything else
-  // stays inline to match the rest of the file.
   const BOARD_CSS = `
 /* padding-top, NOT margin-top, to clear the fixed nav. body is height:100% in
-   layout.tsx, so a top margin here collapses through it and pushes the document
+   globals.css, so a top margin here collapses through it and pushes the document
    40px taller than the viewport — a scrollbar on a page whose whole point is not
    scrolling. Padding cannot collapse. box-sizing:border-box is already global. */
 .ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:var(--nav-h);overflow:hidden}
@@ -517,7 +511,7 @@ export default function AnsarPage() {
 .ab-spend:active:not(:disabled){transform:translateY(3px);box-shadow:0 0 0 #7c5fd3}
 .ab-spend:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:2px}
 /* Below the 4-column breakpoint the board reflows to 2 columns and the page is
-   allowed to scroll again — 15 habits at a usable size genuinely cannot fit an
+   allowed to scroll again — the habits at a usable size genuinely cannot fit an
    iPad. The no-scroll guarantee is for the 1440px+ screens this is built for. */
 @media (max-width:1439px){
   .ab-root{height:auto;min-height:100dvh;overflow:visible}
@@ -529,25 +523,40 @@ export default function AnsarPage() {
   .ab-btn:active,.ab-spend:active{transform:none}
 }
 
-/* ── LOG WORK MODAL ───────────────────────────────────────────────────────
-   Hand-rolled: this repo has no modal primitive and no stylesheet to reuse.
-   Chrome is lifted straight from the board's own palette (#16192d panel,
-   #1f2438 controls, #2d3543 borders) so it reads native.
+/* ── GATE REJECTION TOAST ─────────────────────────────────────────────────
+   The server's own words, verbatim. Chrome uses the canonical --bg-card so it
+   reads as system feedback rather than as part of the stadium board. */
+.ab-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1100;
+  display:flex;align-items:center;gap:14px;max-width:min(640px,92vw);
+  padding:14px 18px;border-radius:12px;background:var(--bg-card);
+  border:1px solid #ff4444;box-shadow:0 18px 44px rgba(0,0,0,.6)}
+.ab-toast-x{flex-shrink:0;width:32px;height:32px;border-radius:8px;border:1px solid #2d3543;
+  background:var(--bg-base);color:#b0b5c1;font:inherit;font-weight:800;cursor:pointer}
+.ab-toast-act{flex-shrink:0;padding:8px 14px;border-radius:8px;border:1px solid ${RM_GOLD}66;
+  background:${RM_GOLD}1a;color:${RM_GOLD};font:inherit;font-size:12px;font-weight:800;cursor:pointer}
 
-   z-index 1000 clears BOTH the fixed .topnav (900) and the page header (100).
-   Anything lower and the nav would sit on top of the backdrop. */
+/* ── PARENT OVERRIDE DIALOG ───────────────────────────────────────────────── */
+.ab-ov-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;
+  justify-content:center;padding:24px;background:rgba(8,11,20,.75)}
+.ab-ov{width:min(420px,100%);padding:22px;border-radius:14px;background:var(--bg-card);
+  border:1px solid #3a4170;box-shadow:0 24px 64px rgba(0,0,0,.62)}
+.ab-ov input{width:100%;margin-top:6px;padding:11px 13px;border-radius:9px;
+  border:1px solid #3a4170;background:var(--bg-base);color:#ffffff;font:inherit;font-size:15px}
+.ab-ov input:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:1px}
+.ab-ov-row{display:flex;gap:10px;margin-top:18px}
+.ab-ov-row button{flex:1;padding:12px;border-radius:9px;font:inherit;font-size:14px;
+  font-weight:800;cursor:pointer;border:1px solid #3a4170;background:var(--bg-base);color:#b0b5c1}
+.ab-ov-row button.primary{background:${RM_GOLD};border-color:${RM_GOLD};color:#0f1419}
+.ab-ov-row button:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── LOG WORK MODAL ──────────────────────────────────────────────────────── */
 .lw-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;
   justify-content:center;padding:24px;background:rgba(8,11,20,0.72)}
-/* The panel sizes to the form (embed.js reports its height) and stops at 85vh,
-   past which .lw-body scrolls. No fixed height: an iframe has no intrinsic
-   height, so a short form would otherwise sit in a tall box of dead space. */
 .lw-panel{display:flex;flex-direction:column;width:min(560px,100%);max-height:85vh;
   background:#16192d;border:1px solid #2d3543;border-radius:14px;overflow:hidden;
   box-shadow:0 24px 64px rgba(0,0,0,0.62)}
 .lw-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
   flex-shrink:0;padding:13px 15px;border-bottom:1px solid #2d3543}
-/* min-height is the safety net: if embed.js fails to load, no height is ever
-   reported and the iframe would fall back to its 150px default. */
 .lw-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#ffffff}
 .lw-frame{display:block;width:100%;min-height:420px;border:0}
 .lw-x{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
@@ -585,91 +594,116 @@ export default function AnsarPage() {
   );
 
   /**
-   * One habit as a real <button>. `flex: 1` with a 56px floor lets rows share the
-   * column's height — ~105px each at 1920×1080, compressing gracefully on smaller
-   * screens rather than overflowing. It was a 48px div before.
+   * One habit as a real <button>, in one of four server-decided states.
+   *
+   *   DONE    ticked, struck through
+   *   LIVE    full colour, tappable
+   *   LOCKED  greyed, non-tappable, says when it opens ("Opens 6:30am")
+   *   MISSED  greyed, non-tappable, says "Missed" — this one scores zero
+   *
+   * MISSED is tinted red rather than merely dimmed: a missed window is a
+   * different fact from a not-yet-open one, and the board should not make them
+   * look the same.
    */
-  const habitButton = (habit: Habit, blockHabits: Habit[], color: string) => {
-    const state = mounted ? getHabitState(habit, blockHabits, completed) : "locked";
-    const isDone = state === "done";
-    const isAvailable = state === "available";
-    const isLocked = state === "locked";
-    const isSaving = saving === habit.id;
+  const habitButton = (h: GateHabitView, color: string) => {
+    const isDone = h.state === "DONE";
+    const isLive = h.state === "LIVE";
+    const isMissed = h.state === "MISSED";
+    const isSaving = saving === h.id;
+    const pts = pointsById[h.id] ?? 0;
+    const chip = pts > 0 ? `+${pts} pt${pts === 1 ? "" : "s"}` : "";
 
     return (
       <button
-        key={habit.id}
+        key={h.id}
         type="button"
         className="ab-btn"
-        onClick={() => toggle(habit.id, state)}
-        disabled={!isAvailable}
-        aria-label={habit.label}
+        onClick={() => tick(h.id, h.name)}
+        disabled={!isLive || isSaving}
+        aria-label={h.name}
+        title={h.window ? `Window ${h.window}` : undefined}
         style={{
           display: "flex", alignItems: "center", gap: 14, padding: "0 16px",
           borderRadius: 11, flex: 1, minHeight: 56, width: "100%", textAlign: "left",
           font: "inherit", color: "inherit",
-          border: `1px solid ${isDone ? color + "50" : isAvailable ? "#2d3543" : "#1f2438"}`,
-          background: isDone ? color + "0a" : isAvailable ? "#1f2438" : "#16192d",
-          opacity: isLocked ? 0.45 : 1,
-          cursor: isAvailable ? "pointer" : "default",
+          border: `1px solid ${isDone ? color + "50" : isLive ? "#2d3543" : isMissed ? "#ff444440" : "#1f2438"}`,
+          background: isDone ? color + "0a" : isLive ? "#1f2438" : isMissed ? "rgba(255,68,68,0.06)" : "#16192d",
+          opacity: isLive || isDone ? 1 : 0.5,
+          cursor: isLive ? "pointer" : "not-allowed",
           WebkitTapHighlightColor: "transparent",
         }}
       >
         <span style={{
           width: 30, height: 30, borderRadius: 9, flexShrink: 0,
-          border: `2px solid ${isDone ? color : isAvailable ? "#2d3543" : "#1f2438"}`,
+          border: `2px solid ${isDone ? color : isLive ? "#2d3543" : isMissed ? "#ff444460" : "#1f2438"}`,
           background: isDone ? color : "transparent",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           {isSaving ? <span style={{ fontSize: 13 }}>⏳</span> :
            isDone ? <span style={{ fontSize: 16, color: "#000", fontWeight: 800 }}>✓</span> :
-           isLocked ? <span style={{ fontSize: 12 }}>🔒</span> : null}
+           isMissed ? <span style={{ fontSize: 12 }}>✕</span> :
+           !isLive ? <span style={{ fontSize: 12 }}>🔒</span> : null}
         </span>
 
-        <span aria-hidden style={{ fontSize: 24, flexShrink: 0, lineHeight: 1 }}>{habit.icon}</span>
-
-        <span style={{
-          flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, lineHeight: 1.28,
-          color: isDone ? "#757f8f" : isLocked ? "#565f70" : "#ffffff",
-          textDecoration: isDone ? "line-through" : "none",
-        }}>
-          {habit.label}
+        <span aria-hidden style={{ fontSize: 24, flexShrink: 0, lineHeight: 1 }}>
+          {HABIT_ICONS[h.id] ?? DEFAULT_ICON}
         </span>
 
-        {habit.chip && (
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{
+            display: "block", fontSize: 15, fontWeight: 600, lineHeight: 1.28,
+            color: isDone ? "#757f8f" : isLive ? "#ffffff" : "#565f70",
+            textDecoration: isDone ? "line-through" : "none",
+          }}>
+            {h.name}
+          </span>
+          {!isDone && !isLive && h.label && (
+            <span style={{
+              display: "block", fontSize: 11, fontWeight: 700, marginTop: 3,
+              color: isMissed ? "#ff4444" : "#757f8f",
+            }}>
+              {h.label}
+            </span>
+          )}
+        </span>
+
+        {chip && (
           <span style={{
             fontSize: 11, fontWeight: 800, flexShrink: 0, padding: "5px 10px",
             borderRadius: 7, whiteSpace: "nowrap",
-            color: isDone ? color : isLocked ? "#565f70" : "#b0b5c1",
+            color: isDone ? color : isLive ? "#b0b5c1" : "#565f70",
             background: isDone ? color + "15" : "#16192d",
             border: `1px solid ${isDone ? color + "40" : "#2d3543"}`,
           }}>
-            {habit.chip}
+            {chip}
           </span>
         )}
       </button>
     );
   };
 
+  const inBlock = (blockId: string) =>
+    gateHabits.filter(h => h.block === blockId).sort((a, b) => a.order - b.order);
+
   /** A full habit column (Morning, and Afternoon/Evening). */
   const habitColumn = (block: (typeof BLOCKS)[number]) => {
-    const blockHabits = habits.filter(h => h.block === block.id);
-    if (blockHabits.length === 0) return null;
-    const done = blockHabits.filter(h => completed[h.id]).length;
+    const bh = inBlock(block.id);
+    if (bh.length === 0) return null;
+    const done = bh.filter(h => h.state === "DONE").length;
     return (
       <div style={cardStyle}>
         {colHead(block.color, block.label, block.subtitle,
           <div style={{ textAlign: "right", flexShrink: 0 }}>
             <div style={{ fontSize: 19, fontWeight: 800, color: "#ffffff", fontVariantNumeric: "tabular-nums" }}>
-              {mounted ? done : 0}/{blockHabits.length}
+              {done}/{bh.length}
             </div>
             <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
-              {mounted ? (dayScore.blocks[block.id] ?? 0) : 0} pts
+              {dayScore.blocks[block.id] ?? 0} pts
             </div>
           </div>,
         )}
         <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0 }}>
-          {blockHabits.map(h => habitButton(h, blockHabits, block.color))}
+          {bh.map(h => habitButton(h, block.color))}
         </div>
       </div>
     );
@@ -679,8 +713,8 @@ export default function AnsarPage() {
   const school = BLOCKS.find(b => b.id === "homeschool")!;
   const evening = BLOCKS.find(b => b.id === "afternoon_evening")!;
   const conditional = BLOCKS.find(b => b.id === "conditional")!;
-  const schoolHabits = habits.filter(h => h.block === "homeschool");
-  const condHabits = habits.filter(h => h.block === "conditional");
+  const schoolHabits = inBlock("homeschool");
+  const condHabits = inBlock("conditional");
 
   /** One scoreboard cell. */
   const cell = (label: string, value: React.ReactNode, extra?: React.ReactNode) => (
@@ -705,12 +739,9 @@ export default function AnsarPage() {
 
   return (
     <div className="ab-root" style={{
-      // Height and the nav offset are set in BOARD_CSS (.ab-root) — padding, not
-      // margin, so nothing collapses through body and re-introduces a scrollbar.
       // Decorative Bernabeu backdrop. A near-solid dark scrim (92% of the original
       // #0f1419 page colour) sits on top of the photo and does ALL the work of
-      // preserving contrast — no text/card styling is changed. Bump the 0.92 alpha
-      // higher if any section ever looks low-contrast; never lighten text.
+      // preserving contrast — no text/card styling is changed.
       backgroundColor: "#0f1419",
       backgroundImage: "linear-gradient(rgba(15,20,25,0.92), rgba(15,20,25,0.92)), url('/bernabeu-bg.jpg')",
       backgroundSize: "cover",
@@ -722,7 +753,7 @@ export default function AnsarPage() {
     }}>
       <style>{BOARD_CSS}</style>
 
-      {/* HEADER — 52px. The soft-launch notice is a chip here, not a 46px band. */}
+      {/* HEADER */}
       <header style={{
         background: "#16192d", borderBottom: "1px solid #2d3543", height: 52, flexShrink: 0,
         padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
@@ -739,43 +770,47 @@ export default function AnsarPage() {
               Soft-launch · points preview
             </span>
           )}
-          <span>{mounted ? new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" }) : ""} · {time}</span>
+          {/* The SERVER's clock — the one every gate is decided against. Shown
+              first, and labelled, so it is obvious which clock is authoritative. */}
+          {gate && (
+            <span style={{ color: RM_GOLD_BRIGHT, fontWeight: 700 }} title="Server clock — every gate uses this">
+              🕒 {gate.serverTime.clock} {gate.serverTime.weekday} · Sydney
+            </span>
+          )}
+          <span style={{ opacity: 0.7 }} title="This device's clock — display only, no gate reads it">
+            device {mounted ? time : ""}
+          </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: online ? "#00ff88" : "#ff4444", display: "inline-block" }} />
             <span style={{ color: online ? "#00ff88" : "#ff4444", fontSize: 11, fontWeight: 500 }}>{online ? "Live" : "Offline"}</span>
           </span>
-          <a href="/" style={{
-            fontSize: 11, color: "#b0b5c1", textDecoration: "none", fontWeight: 600,
-            background: "#1f2438", padding: "6px 12px", borderRadius: 6, border: "1px solid #2d3543",
-          }}>← Back</a>
         </div>
       </header>
 
-      {/* SCOREBOARD STRIP — 80px carrying every number the four 431px metric cards,
-          the duplicate slim row and the "on track for" card used to spread between them. */}
+      {/* SCOREBOARD STRIP */}
       <div style={{
         height: 80, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 20px",
         background: RM_NAVY, borderBottom: "1px solid rgba(212,175,55,0.28)",
       }}>
-        {cell("Points today", <>{mounted ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{mounted && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
-        {cell("Week total", <>{mounted && weeklyPts !== null ? weeklyPts : "—"}{sub(` / ${WEEKLY_MAX}`)}</>)}
-        {cell("Streak", <>{mounted && streak !== null ? streak : "—"}{mounted && streak !== null && streak > 0 ? " 🔥" : ""}</>)}
-        {cell("Today", <>{mounted ? overallPct : 0}{sub("%")}</>,
+        {cell("Points today", <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
+        {cell("Week total", <>{weeklyPts !== null ? weeklyPts : "—"}{sub(` / ${WEEKLY_MAX}`)}</>)}
+        {cell("Streak", <>{streak !== null ? streak : "—"}{streak !== null && streak > 0 ? " 🔥" : ""}</>)}
+        {cell("Today", <>{gate ? overallPct : 0}{sub("%")}</>,
           <div style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.34)", overflow: "hidden", marginTop: 6, width: 150 }}>
             <div style={{
               height: "100%", borderRadius: 3, transition: "width 200ms ease-in-out",
-              width: mounted ? `${overallPct}%` : "0%",
+              width: gate ? `${overallPct}%` : "0%",
               background: "linear-gradient(90deg, #ffa500, #00ff88)",
             }} />
           </div>,
         )}
         <div style={{ padding: "0 22px", height: 52, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(232,235,242,0.6)" }}>
-            Screen time
+            Banked
           </div>
           <div style={{ fontSize: 29, fontWeight: 800, color: "#a78bfa", lineHeight: 1.08, fontVariantNumeric: "tabular-nums" }}>
-            {mounted ? (walletLocked ? "🔒" : stretchBalance) : "—"}
-            {mounted && !walletLocked && sub(` / ${STRETCH_DAILY_CAP_MIN} min`)}
+            {!wallet ? "—" : walletLocked ? "🔒" : stretchBalance}
+            {wallet && !walletLocked && sub(" min")}
           </div>
         </div>
 
@@ -793,6 +828,26 @@ export default function AnsarPage() {
         </div>
       </div>
 
+      {/* Server-unreachable banner. The board fails closed, and says so. */}
+      {mounted && !gate && (
+        <div style={{
+          flexShrink: 0, padding: "10px 20px", background: "rgba(255,68,68,0.12)",
+          borderBottom: "1px solid rgba(255,68,68,0.35)", color: "#ff4444",
+          fontSize: 12, fontWeight: 700,
+        }}>
+          Can&apos;t reach the server — nothing is tappable until it answers. Nothing you tapped was lost.
+        </div>
+      )}
+      {gate && gate.warnings.length > 0 && (
+        <div style={{
+          flexShrink: 0, padding: "8px 20px", background: "rgba(255,165,0,0.10)",
+          borderBottom: "1px solid rgba(255,165,0,0.30)", color: "#ffa500",
+          fontSize: 11, fontWeight: 600,
+        }}>
+          ⚠ {gate.warnings.length} habit{gate.warnings.length === 1 ? " has" : "s have"} no usable window in Notion and {gate.warnings.length === 1 ? "is" : "are"} ungated.
+        </div>
+      )}
+
       {/* BOARD — four columns, no scroll on either axis at 1440px+ */}
       <div className="ab-board">
 
@@ -802,59 +857,27 @@ export default function AnsarPage() {
         {/* 2 — Afternoon / Evening */}
         {habitColumn(evening)}
 
-        {/* 3 — Homeschool (hero) · Conditional · Weekly Tiers */}
+        {/* 3 — Homeschool · Log Work · Conditional · Weekly Tiers */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14, minHeight: 0 }}>
           {schoolHabits.length > 0 && (
             <div style={{ ...cardStyle, flex: "0 0 auto" }}>
-              {colHead(school.color, school.label, school.subtitle)}
-              <div style={{ padding: 11 }}>
-                {/* The single +5 habit — worth more than all seven morning habits
-                    combined, so it gets the largest target on the board rather than
-                    one line lost in a list. */}
-                {schoolHabits.map(h => {
-                  const state = mounted ? getHabitState(h, schoolHabits, completed) : "locked";
-                  const isDone = state === "done";
-                  const isSaving = saving === h.id;
-                  return (
-                    <button
-                      key={h.id}
-                      type="button"
-                      className="ab-btn"
-                      onClick={() => toggle(h.id, state)}
-                      disabled={state !== "available"}
-                      aria-label={h.label}
-                      style={{
-                        display: "flex", flexDirection: "column", alignItems: "flex-start",
-                        justifyContent: "center", gap: 7, padding: 18, minHeight: 126, width: "100%",
-                        borderRadius: 11, textAlign: "left", font: "inherit", color: "inherit",
-                        border: `1px solid ${isDone ? school.color + "66" : "#2d3543"}`,
-                        background: isDone ? school.color + "10" : "#1f2438",
-                        cursor: state === "available" ? "pointer" : "default",
-                        WebkitTapHighlightColor: "transparent",
-                      }}
-                    >
-                      <span style={{ fontSize: 36, fontWeight: 800, color: school.color, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
-                        {isSaving ? "⏳" : "+5"}
-                      </span>
-                      <span style={{ fontSize: 21, fontWeight: 800, lineHeight: 1.2 }}>
-                        {h.icon} {h.label}
-                      </span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: isDone ? school.color : "#757f8f" }}>
-                        {isDone ? "✓ Done — wallet unlocked" : "Tap when the day's homeschool is finished"}
-                      </span>
-                    </button>
-                  );
-                })}
+              {colHead(school.color, school.label, school.subtitle,
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontSize: 19, fontWeight: 800, color: "#ffffff", fontVariantNumeric: "tabular-nums" }}>
+                    {schoolHabits.filter(h => h.state === "DONE").length}/{schoolHabits.length}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
+                    {dayScore.blocks.homeschool ?? 0} pts
+                  </div>
+                </div>,
+              )}
+              <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9 }}>
+                {schoolHabits.map(h => habitButton(h, school.color))}
               </div>
             </div>
           )}
 
-          {/* LOG WORK — opens the Tally intake modal. Sits directly under the
-              +5 card because logging work IS the schoolwork action; it belongs
-              beside that habit rather than floating in the header chrome.
-              flex-shrink:0 keeps the 60px target intact — the height it needs
-              comes out of Weekly Tiers below, which is flex:1 with ~200px of
-              slack at 1440px+. Touches no scoring state: onClick only opens. */}
+          {/* LOG WORK — opens the Tally intake modal. Touches no scoring state. */}
           <button
             type="button"
             className="ab-btn"
@@ -877,24 +900,22 @@ export default function AnsarPage() {
             <div style={{ ...cardStyle, flex: "0 0 auto" }}>
               {colHead(conditional.color, conditional.label, conditional.subtitle,
                 <div style={{ fontSize: 19, fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
-                  {mounted ? condHabits.filter(h => completed[h.id]).length : 0}/{condHabits.length}
+                  {condHabits.filter(h => h.state === "DONE").length}/{condHabits.length}
                 </div>,
               )}
               <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9 }}>
-                {condHabits.map(h => habitButton(h, condHabits, conditional.color))}
+                {condHabits.map(h => habitButton(h, conditional.color))}
               </div>
             </div>
           )}
 
-          {/* Weekly tiers — the 209px reference card, now four chips filling whatever
-              height this column has left over. */}
           <div style={{ ...cardStyle, flex: 1, minHeight: 0 }}>
             {colHead(`linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)`, "🏆 Weekly Tiers", `5 Perfect Days Mon–Fri = +3 · max ${WEEKLY_MAX}`)}
             <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
               {THRESHOLDS.map((t, i) => {
                 const weekPts = weeklyPts ?? 0;
-                const isActive = mounted && weekPts >= t.min && (i === 0 || weekPts < THRESHOLDS[i - 1].min);
-                const isAchieved = mounted && weekPts >= t.min;
+                const isActive = weeklyPts !== null && weekPts >= t.min && (i === 0 || weekPts < THRESHOLDS[i - 1].min);
+                const isAchieved = weeklyPts !== null && weekPts >= t.min;
                 return (
                   <div key={t.min} style={{
                     flex: 1, minHeight: 44, display: "flex", flexDirection: "column", justifyContent: "center",
@@ -921,35 +942,35 @@ export default function AnsarPage() {
           </div>
         </div>
 
-        {/* 4 — Stretch Wallet. Permanently on screen instead of below the fold. */}
+        {/* 4 — Stretch Wallet */}
         <div style={{ ...cardStyle, border: "1px solid #3a2d5a" }}>
-          {colHead("linear-gradient(90deg, #a78bfa, #00d9ff)", "🎮 Stretch Wallet",
-            `1 point = ${STRETCH_MIN_PER_POINT} min screen time · separate from ANSAR FC`,
+          {colHead(`linear-gradient(90deg, #a78bfa, ${CYAN})`, "🎮 Stretch Wallet",
+            `Banks all week · converts Sat & Sun · ${STRETCH_DAILY_REDEEM_CAP_MIN} min/day cap`,
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontSize: 19, fontWeight: 800, color: "#a78bfa", fontVariantNumeric: "tabular-nums" }}>
-                {mounted && !walletLocked ? stretchBalance : "—"}
-                <span style={{ fontSize: 12, color: "#757f8f" }}>/{STRETCH_DAILY_CAP_MIN}</span>
+                {wallet && !walletLocked ? stretchBalance : "—"}
+                <span style={{ fontSize: 12, color: "#757f8f" }}> min</span>
               </div>
               <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
-                {mounted && !walletLocked ? `${stretchEarned} earned · ${stretchSpent} spent` : "min"}
+                {wallet && !walletLocked ? `${wallet.earnedWeek} earned · ${wallet.spentWeek} spent` : "locked"}
               </div>
             </div>,
           )}
 
           <div style={{ padding: 11, display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0 }}>
-            {mounted && walletLocked && (
+            {wallet && walletLocked && (
               <div style={{
                 display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderRadius: 9,
                 border: "1px solid #3a2d5a", background: "rgba(167,139,250,0.10)",
                 fontSize: 12, color: "#a78bfa", fontWeight: 700, flexShrink: 0,
               }}>
-                🔒 Finish Morning Habits + Homeschool to unlock
+                🔒 {wallet.lockMessage ?? "Finish Morning Habits + Homeschool to unlock"}
               </div>
             )}
 
-            {mounted && !walletLocked && stretchCapReached && (
-              <div style={{ fontSize: 11, color: "#00ff88", fontWeight: 600, flexShrink: 0 }}>
-                ✅ Daily cap reached — extra completions still log but don&apos;t add minutes.
+            {wallet && !walletLocked && wallet.redemptionMessage && (
+              <div style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600, flexShrink: 0 }}>
+                {wallet.redemptionMessage}
               </div>
             )}
 
@@ -958,23 +979,21 @@ export default function AnsarPage() {
               opacity: walletLocked ? 0.4 : 1,
               pointerEvents: walletLocked ? "none" : "auto",
             }}>
-              {mounted && stretchItems.length === 0 && (
+              {stretchItems.length === 0 && (
                 <div style={{ fontSize: 12, color: "#757f8f", padding: "8px 2px" }}>
                   No stretch items available right now.
                 </div>
               )}
               {stretchItems.map(item => {
-                const earnedForItem = mounted ? (stretchByItem[item.id] || 0) : 0;
-                const countForItem = mounted ? (stretchCountByItem[item.id] || 0) : 0;
                 const itemMin = item.points * STRETCH_MIN_PER_POINT;
-                const isSaving = stretchSaving === item.id;
-                const done = countForItem > 0;
+                const isSaving = saving === item.id;
+                const done = earnedItemIds.has(item.id);
                 return (
                   <button
                     key={item.id}
                     type="button"
                     className="ab-btn"
-                    onClick={() => !isSaving && !walletLocked && !done && earnStretch(item)}
+                    onClick={() => earnStretch(item)}
                     disabled={done || isSaving || walletLocked}
                     aria-label={item.name}
                     style={{
@@ -1002,9 +1021,7 @@ export default function AnsarPage() {
                         🧩 {item.name}
                       </span>
                       <span style={{ display: "block", fontSize: 11, color: "#757f8f", marginTop: 3 }}>
-                        {done
-                          ? `✓ earned ${earnedForItem} min today${countForItem > 1 ? ` (×${countForItem})` : ""}`
-                          : item.whatCountsAsDone || `Worth ${item.points} pt`}
+                        {done ? "✓ banked today" : item.whatCountsAsDone || `Worth ${item.points} pt`}
                       </span>
                     </span>
                     <span style={{
@@ -1023,32 +1040,112 @@ export default function AnsarPage() {
               type="button"
               className="ab-spend"
               onClick={spendStretch}
-              disabled={!mounted || walletLocked || stretchBalance <= 0}
+              disabled={!wallet?.redemptionOpen || saving === "__spend__"}
               style={{
                 minHeight: 56, borderRadius: 10, border: "none", width: "100%", flexShrink: 0,
                 fontSize: 16, fontWeight: 800, fontFamily: "inherit",
-                color: mounted && !walletLocked && stretchBalance > 0 ? "#0f1419" : "#757f8f",
-                background: mounted && !walletLocked && stretchBalance > 0 ? "#a78bfa" : "#1f2438",
-                boxShadow: mounted && !walletLocked && stretchBalance > 0 ? "0 3px 0 #7c5fd3" : "none",
-                cursor: mounted && !walletLocked && stretchBalance > 0 ? "pointer" : "not-allowed",
+                color: wallet?.redemptionOpen ? "#0f1419" : "#757f8f",
+                background: wallet?.redemptionOpen ? "#a78bfa" : "#1f2438",
+                boxShadow: wallet?.redemptionOpen ? "0 3px 0 #7c5fd3" : "none",
+                cursor: wallet?.redemptionOpen ? "pointer" : "not-allowed",
                 WebkitTapHighlightColor: "transparent",
               }}
             >
-              Spend {STRETCH_SPEND_STEP_MIN} min →
+              {wallet && wallet.weekendRedemptionOnly && !["Saturday", "Sunday"].includes(wallet.weekday)
+                ? "Converts Sat & Sun"
+                : `Convert ${STRETCH_SPEND_STEP_MIN} min →`}
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── LOG WORK MODAL ────────────────────────────────────────────────
-          An overlay, not a page swap: the board stays mounted and untouched
-          underneath, so closing returns it exactly as it was. Three ways out —
-          the X, the backdrop, and Esc (listener above). */}
+      {/* ── GATE REJECTION TOAST ────────────────────────────────────────────
+          The server's own message, shown plainly. "too_fast" carries the exact
+          wording the brief specified, which /api/tick returns verbatim. */}
+      {reject && (
+        <div className="ab-toast" role="status" aria-live="polite">
+          <span aria-hidden style={{ fontSize: 22, flexShrink: 0 }}>
+            {reject.reason === "too_fast" ? "⏱️" : reject.reason === "locked" ? "🔒" : "🚫"}
+          </span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 14, fontWeight: 800, color: "#ffffff" }}>
+              {reject.message}
+            </span>
+            <span style={{ display: "block", fontSize: 11, color: "#b0b5c1", marginTop: 3 }}>
+              {reject.habitName}
+            </span>
+          </span>
+          {gate?.overridePinConfigured && (
+            <button
+              type="button"
+              className="ab-toast-act"
+              onClick={() => { setOverrideFor(reject); setReject(null); setOverrideError(""); }}
+            >
+              Parent override
+            </button>
+          )}
+          <button type="button" className="ab-toast-x" onClick={() => setReject(null)} aria-label="Dismiss">✕</button>
+        </div>
+      )}
+
+      {/* ── PARENT OVERRIDE ─────────────────────────────────────────────────
+          Nihal's escape hatch for a legitimately missed tick. The PIN is never
+          compared in this file and never stored — it is posted to /api/tick,
+          which holds PARENT_OVERRIDE_PIN as a Netlify env var. Every accepted
+          override writes a row to override_log with the server's timestamp. */}
+      {overrideFor && (
+        <div className="ab-ov-backdrop" onClick={e => { if (e.target === e.currentTarget) setOverrideFor(null); }}>
+          <div className="ab-ov" role="dialog" aria-modal="true" aria-label="Parent override">
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#ffffff" }}>Parent override</div>
+            <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 6, lineHeight: 1.45 }}>
+              Restore <b style={{ color: "#ffffff" }}>{overrideFor.habitName}</b> for today.
+              This bypasses the window, dwell, order and cascade gates, and is recorded.
+            </div>
+
+            <label style={{ display: "block", marginTop: 16, fontSize: 11, fontWeight: 800, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              PIN
+              <input
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                value={pin}
+                onChange={e => setPin(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") submitOverride(); }}
+                autoFocus
+              />
+            </label>
+
+            <label style={{ display: "block", marginTop: 12, fontSize: 11, fontWeight: 800, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Reason
+              <input
+                type="text"
+                value={overrideReason}
+                onChange={e => setOverrideReason(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") submitOverride(); }}
+                placeholder="e.g. did it, forgot to tick"
+              />
+            </label>
+
+            {overrideError && (
+              <div style={{ marginTop: 12, fontSize: 12, fontWeight: 700, color: "#ff4444" }}>{overrideError}</div>
+            )}
+
+            <div className="ab-ov-row">
+              <button type="button" onClick={() => { setOverrideFor(null); setPin(""); setOverrideError(""); }}>
+                Cancel
+              </button>
+              <button type="button" className="primary" onClick={submitOverride} disabled={!pin || overrideBusy}>
+                {overrideBusy ? "Working…" : "Restore tick"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── LOG WORK MODAL ─────────────────────────────────────────────────── */}
       {logOpen && (
         <div
           className="lw-backdrop"
-          // Backdrop-to-close fires only for a press that lands on the backdrop
-          // itself — never one that bubbled up out of the panel.
           onClick={e => { if (e.target === e.currentTarget) setLogOpen(false); }}
         >
           <div className="lw-panel" role="dialog" aria-modal="true" aria-label="Log Work">
@@ -1064,8 +1161,6 @@ export default function AnsarPage() {
                     : "Log as many entries as you need · tap ✕ to close"}
                 </div>
               </div>
-              {/* Focused on open so the keyboard lands inside the dialog rather
-                  than on whatever sat behind it. */}
               <button
                 type="button"
                 className="lw-x"
@@ -1077,9 +1172,6 @@ export default function AnsarPage() {
               </button>
             </div>
             <div className="lw-body">
-              {/* `key={embedKey}` is the re-arm: bumping it remounts the iframe,
-                  which reloads the form blank. src is left to Tally's embed.js
-                  (or the manual promotion fallback) via data-tally-src. */}
               <iframe
                 key={embedKey}
                 className="lw-frame"
