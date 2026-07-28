@@ -102,6 +102,8 @@ type GateSnapshot = {
   overridePinConfigured: boolean;
   notionConfigured: boolean;
   habitsError: string | null;
+  overrideLockedMs: number;
+  overriddenHabitIds: string[];
   warnings: string[];
   habits: GateHabitView[];
 };
@@ -163,6 +165,12 @@ export default function AnsarPage() {
   const [overrideReason, setOverrideReason] = useState("");
   const [overrideError, setOverrideError] = useState("");
   const [overrideBusy, setOverrideBusy] = useState(false);
+  // Long-press: which habit is being held, and the live countdown of the
+  // lockout when one is in force. `lockedMs` is seeded from the server on every
+  // poll so a refresh cannot clear it.
+  const [holdId, setHoldId] = useState<string | null>(null);
+  const [lockedMs, setLockedMs] = useState(0);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Log Work modal (unchanged behaviour) ──
   const [logOpen, setLogOpen] = useState(false);
@@ -182,7 +190,11 @@ export default function AnsarPage() {
       const res = await fetch("/api/tick", { cache: "no-store" });
       if (!res.ok) { setOnline(false); return; }
       const snap = (await res.json()) as GateSnapshot;
-      if (snap?.ok) { setGate(snap); setOnline(true); } else { setOnline(false); }
+      if (snap?.ok) {
+        setGate(snap);
+        setOnline(true);
+        if (typeof snap.overrideLockedMs === "number") setLockedMs(snap.overrideLockedMs);
+      } else { setOnline(false); }
     } catch {
       setOnline(false);
     }
@@ -367,7 +379,57 @@ export default function AnsarPage() {
 
   useEffect(() => () => { if (rejectTimer.current) clearTimeout(rejectTimer.current); }, []);
 
+  // Escape cancels the override dialog. Backdrop click is handled on the
+  // element itself; between them there are three ways out and no trap.
+  useEffect(() => {
+    if (!overrideFor) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeOverride(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [overrideFor]);
+
   /* ── Actions ────────────────────────────────────────────────────────────── */
+
+  /* ── Long-press to reach the parent override ───────────────────────────
+     A CLICK is the first thing a child tries, so a click on a refused habit
+     stays inert. Two seconds of sustained hold — mouse or touch — is the door,
+     and the ring filling around the button is the only hint that it exists.
+     Releasing early cancels silently and leaves nothing on screen. */
+  const HOLD_MS = 2000;
+
+  function beginHold(h: GateHabitView) {
+    if (h.state !== "MISSED" && h.state !== "LOCKED") return;
+    if (!gate?.overridePinConfigured) return;
+    setHoldId(h.id);
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = setTimeout(() => {
+      setHoldId(null);
+      setOverrideFor({
+        habitId: h.id,
+        habitName: h.name,
+        reason: h.reason ?? "closed",
+        message: h.message || h.label || "Refused",
+      });
+      setPin("");
+      setOverrideReason("");
+      setOverrideError("");
+    }, HOLD_MS);
+  }
+
+  function cancelHold() {
+    if (holdTimer.current) { clearTimeout(holdTimer.current); holdTimer.current = null; }
+    setHoldId(null);
+  }
+
+  useEffect(() => () => { if (holdTimer.current) clearTimeout(holdTimer.current); }, []);
+
+  // Countdown for the brute-force lockout. Purely a display tick — the server
+  // re-asserts the real remaining time on every poll and on every attempt.
+  useEffect(() => {
+    if (lockedMs <= 0) return;
+    const t = setInterval(() => setLockedMs(ms => Math.max(0, ms - 1000)), 1000);
+    return () => clearInterval(t);
+  }, [lockedMs]);
 
   function showRejection(r: Rejection) {
     setReject(r);
@@ -385,6 +447,11 @@ export default function AnsarPage() {
    */
   async function tick(habitId: string, habitName: string) {
     if (saving || !gate) return;
+    // Refused habits are aria-disabled rather than disabled, so that a pointer
+    // hold can still reach the parent override. A plain click must therefore be
+    // rejected here instead of relying on the button being inert.
+    const view = gate.habits.find(h => h.id === habitId);
+    if (view && view.state !== "LIVE") return;
     setSaving(habitId);
     setReject(null);
     try {
@@ -413,6 +480,13 @@ export default function AnsarPage() {
     }
   }
 
+  function closeOverride() {
+    setOverrideFor(null);
+    setPin("");
+    setOverrideReason("");
+    setOverrideError("");
+  }
+
   /** Parent override. Correct PIN bypasses gates 1–4 and writes to override_log. */
   async function submitOverride() {
     if (!overrideFor || !gate || overrideBusy) return;
@@ -431,15 +505,19 @@ export default function AnsarPage() {
       });
       const body = await res.json();
       if (res.ok && body?.ok) {
-        setOverrideFor(null);
-        setPin("");
-        setOverrideReason("");
+        closeOverride();
+        setLockedMs(0);
         setReject(null);
         await loadGate();
         await loadWallet();
         if (serverDate) loadWeeklyData(serverDate);
       } else {
+        // bad_pin clears the field and keeps the dialog open so Nihal can
+        // simply retype. Anything else is surfaced verbatim — the one thing
+        // this must never do is fail silently.
         setOverrideError(body?.message ?? "Override refused");
+        if (body?.reason === "bad_pin" || body?.reason === "locked_out") setPin("");
+        if (typeof body?.lockedMs === "number" && body.lockedMs > 0) setLockedMs(body.lockedMs);
       }
     } catch {
       setOverrideError("No connection");
@@ -495,6 +573,7 @@ export default function AnsarPage() {
   const gateHabits = gate?.habits ?? [];
   const dayName = gate?.serverTime.weekday ?? "";
   const completedIds = new Set(gateHabits.filter(h => h.state === "DONE").map(h => h.id));
+  const overriddenIds = new Set(gate?.overriddenHabitIds ?? []);
   const pointsById: Record<string, number> = {};
   notionHabits.forEach(h => { pointsById[h.id] = h.points; });
 
@@ -542,6 +621,29 @@ export default function AnsarPage() {
   .ab-btn,.ab-spend{transition:none}
   .ab-btn:active,.ab-spend:active{transform:none}
 }
+
+/* ── LONG-PRESS HOLD INDICATOR ────────────────────────────────────────────
+   Fills left-to-right over the two seconds of the hold. It is the only visible
+   hint that a refused habit can be opened at all — deliberately quiet, so a
+   child mashing buttons never discovers it by accident, while a parent who
+   holds sees immediate feedback that something is happening. */
+.ab-hold{position:absolute;left:0;top:0;bottom:0;width:100%;pointer-events:none;
+  transform-origin:left center;transform:scaleX(0);border-radius:11px;
+  background:linear-gradient(90deg,${RM_GOLD}26,${RM_GOLD}12);
+  border-right:2px solid ${RM_GOLD}aa;
+  animation:ab-hold-fill 2000ms linear forwards}
+@keyframes ab-hold-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){
+  .ab-hold{animation-duration:2000ms}
+}
+
+/* ── PARENT OVERRIDE DIALOG ───────────────────────────────────────────────── */
+.ab-ov-pin{letter-spacing:0.5em;font-size:22px!important;text-align:center;
+  font-variant-numeric:tabular-nums}
+.ab-ov-note{font-size:11.5px;line-height:1.45;color:#b0b5c1;margin-top:8px}
+.ab-ov-lock{margin-top:12px;padding:10px 12px;border-radius:9px;
+  border:1px solid #ff444455;background:rgba(255,68,68,0.10);
+  color:#ff4444;font-size:12px;font-weight:800}
 
 /* ── GATE REJECTION TOAST ─────────────────────────────────────────────────
    The server's own words, verbatim. Chrome uses the canonical --bg-card so it
@@ -632,6 +734,8 @@ export default function AnsarPage() {
     const isSaving = saving === h.id;
     const pts = pointsById[h.id] ?? 0;
     const chip = pts > 0 ? `+${pts} pt${pts === 1 ? "" : "s"}` : "";
+    const wasOverridden = overriddenIds.has(h.id);
+    const holding = holdId === h.id;
 
     return (
       <button
@@ -639,10 +743,17 @@ export default function AnsarPage() {
         type="button"
         className="ab-btn"
         onClick={() => tick(h.id, h.name)}
-        disabled={!isLive || isSaving}
-        aria-label={h.name}
-        title={h.window ? `Window ${h.window}` : undefined}
+        disabled={isSaving}
+        aria-disabled={!isLive}
+        onPointerDown={() => beginHold(h)}
+        onPointerUp={cancelHold}
+        onPointerLeave={cancelHold}
+        onPointerCancel={cancelHold}
+        onContextMenu={e => e.preventDefault()}
+        aria-label={wasOverridden ? `${h.name} — restored by parent override` : h.name}
+        title={wasOverridden ? "Parent override" : h.window ? `Window ${h.window}` : undefined}
         style={{
+          position: "relative", overflow: "hidden",
           display: "flex", alignItems: "center", gap: 14, padding: "0 16px",
           borderRadius: 11, flex: 1, minHeight: 56, width: "100%", textAlign: "left",
           font: "inherit", color: "inherit",
@@ -653,6 +764,8 @@ export default function AnsarPage() {
           WebkitTapHighlightColor: "transparent",
         }}
       >
+        {holding && <span aria-hidden className="ab-hold" />}
+
         <span style={{
           width: 30, height: 30, borderRadius: 9, flexShrink: 0,
           border: `2px solid ${isDone ? color : isLive ? "#2d3543" : isMissed ? "#ff444460" : "#1f2438"}`,
@@ -686,6 +799,16 @@ export default function AnsarPage() {
             </span>
           )}
         </span>
+
+        {wasOverridden && (
+          <span aria-hidden title="Parent override" style={{
+            fontSize: 10, fontWeight: 800, flexShrink: 0, padding: "4px 7px",
+            borderRadius: 6, whiteSpace: "nowrap", letterSpacing: "0.04em",
+            color: RM_GOLD, background: `${RM_GOLD}14`, border: `1px solid ${RM_GOLD}44`,
+          }}>
+            ⟲ OVERRIDE
+          </span>
+        )}
 
         {chip && (
           <span style={{
@@ -729,6 +852,8 @@ export default function AnsarPage() {
     const isSaving = saving === h.id;
     const pts = pointsById[h.id] ?? 0;
     const accent = isMissed ? "#ff4444" : color;
+    const wasOverridden = overriddenIds.has(h.id);
+    const holding = holdId === h.id;
 
     const caption = isDone ? "✓ Done — wallet unlocked"
       : isLive ? "Tap when the day's homeschool is finished"
@@ -741,10 +866,17 @@ export default function AnsarPage() {
         type="button"
         className="ab-btn"
         onClick={() => tick(h.id, h.name)}
-        disabled={!isLive || isSaving}
-        aria-label={h.name}
-        title={h.window ? `Window ${h.window}` : undefined}
+        disabled={isSaving}
+        aria-disabled={!isLive}
+        onPointerDown={() => beginHold(h)}
+        onPointerUp={cancelHold}
+        onPointerLeave={cancelHold}
+        onPointerCancel={cancelHold}
+        onContextMenu={e => e.preventDefault()}
+        aria-label={wasOverridden ? `${h.name} — restored by parent override` : h.name}
+        title={wasOverridden ? "Parent override" : h.window ? `Window ${h.window}` : undefined}
         style={{
+          position: "relative", overflow: "hidden",
           display: "flex", flexDirection: "column", alignItems: "flex-start",
           justifyContent: "center", gap: 6, padding: "14px 16px",
           minHeight: 112, flex: "1 1 auto", width: "100%",
@@ -756,6 +888,8 @@ export default function AnsarPage() {
           WebkitTapHighlightColor: "transparent",
         }}
       >
+        {holding && <span aria-hidden className="ab-hold" />}
+
         <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
           <span style={{
             fontSize: 34, fontWeight: 800, color: accent, lineHeight: 1,
@@ -787,7 +921,7 @@ export default function AnsarPage() {
           fontSize: 11.5, fontWeight: 700,
           color: isDone ? color : isMissed ? "#ff4444" : "#757f8f",
         }}>
-          {caption}
+          {wasOverridden ? "⟲ Restored by parent override" : caption}
         </span>
       </button>
     );
@@ -1215,53 +1349,90 @@ export default function AnsarPage() {
       )}
 
       {/* ── PARENT OVERRIDE ─────────────────────────────────────────────────
-          Nihal's escape hatch for a legitimately missed tick. The PIN is never
-          compared in this file and never stored — it is posted to /api/tick,
-          which holds PARENT_OVERRIDE_PIN as a Netlify env var. Every accepted
-          override writes a row to override_log with the server's timestamp. */}
+          Nihal's escape hatch for a legitimately missed tick, reached by a
+          two-second hold on any refused habit.
+
+          The PIN is never compared in this file, never stored, and never lands
+          in the bundle — it is posted to /api/tick, which holds
+          PARENT_OVERRIDE_PIN as a Netlify environment variable. Every accepted
+          override writes a row to override_log stamped with the server's clock,
+          and the board then renders that habit with an OVERRIDE marker so a
+          restored tick never reads as work Ansar actually did. */}
       {overrideFor && (
-        <div className="ab-ov-backdrop" onClick={e => { if (e.target === e.currentTarget) setOverrideFor(null); }}>
-          <div className="ab-ov" role="dialog" aria-modal="true" aria-label="Parent override">
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#ffffff" }}>Parent override</div>
-            <div style={{ fontSize: 12, color: "#b0b5c1", marginTop: 6, lineHeight: 1.45 }}>
-              Restore <b style={{ color: "#ffffff" }}>{overrideFor.habitName}</b> for today.
-              This bypasses the window, dwell, order and cascade gates, and is recorded.
+        <div
+          className="ab-ov-backdrop"
+          onClick={e => { if (e.target === e.currentTarget) closeOverride(); }}
+        >
+          <div className="ab-ov" role="dialog" aria-modal="true" aria-labelledby="ab-ov-title">
+            <div id="ab-ov-title" style={{ fontSize: 16, fontWeight: 800, color: "#ffffff" }}>
+              Parent override
+            </div>
+            <div style={{ fontSize: 13, color: "#ffffff", marginTop: 10, fontWeight: 700 }}>
+              {overrideFor.habitName}
+            </div>
+            {/* The server's own refusal, quoted back, so Nihal can see what she
+                is overriding rather than taking it on trust. */}
+            <div style={{ fontSize: 12, color: "#ff4444", marginTop: 4, fontWeight: 600 }}>
+              {overrideFor.message}
+            </div>
+            <div className="ab-ov-note">
+              Unlocking marks this done for today and bypasses the window, dwell,
+              order and cascade checks. It is recorded.
             </div>
 
-            <label style={{ display: "block", marginTop: 16, fontSize: 11, fontWeight: 800, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              PIN
-              <input
-                type="password"
-                inputMode="numeric"
-                autoComplete="off"
-                value={pin}
-                onChange={e => setPin(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") submitOverride(); }}
-                autoFocus
-              />
-            </label>
+            {lockedMs > 0 ? (
+              <div className="ab-ov-lock">
+                Locked — too many incorrect PINs. Try again in{" "}
+                {Math.floor(lockedMs / 60000)}:{String(Math.floor((lockedMs % 60000) / 1000)).padStart(2, "0")}
+              </div>
+            ) : (
+              <>
+                <label style={{ display: "block", marginTop: 16, fontSize: 11, fontWeight: 800, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  PIN
+                  <input
+                    className="ab-ov-pin"
+                    type="password"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={4}
+                    value={pin}
+                    // Digits only, four of them. Stripping here rather than
+                    // validating on submit means the field simply cannot hold
+                    // anything the server would reject as malformed.
+                    onChange={e => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    onKeyDown={e => { if (e.key === "Enter" && pin.length === 4) submitOverride(); }}
+                    autoFocus
+                  />
+                </label>
 
-            <label style={{ display: "block", marginTop: 12, fontSize: 11, fontWeight: 800, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Reason
-              <input
-                type="text"
-                value={overrideReason}
-                onChange={e => setOverrideReason(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") submitOverride(); }}
-                placeholder="e.g. did it, forgot to tick"
-              />
-            </label>
+                <label style={{ display: "block", marginTop: 12, fontSize: 11, fontWeight: 800, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Reason <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 600, color: "#565f70" }}>· optional</span>
+                  <input
+                    type="text"
+                    value={overrideReason}
+                    onChange={e => setOverrideReason(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && pin.length === 4) submitOverride(); }}
+                    placeholder="Sick, travelling, power out…"
+                  />
+                </label>
+              </>
+            )}
 
             {overrideError && (
-              <div style={{ marginTop: 12, fontSize: 12, fontWeight: 700, color: "#ff4444" }}>{overrideError}</div>
+              <div style={{ marginTop: 12, fontSize: 12, fontWeight: 700, color: "#ff4444" }}>
+                {overrideError}
+              </div>
             )}
 
             <div className="ab-ov-row">
-              <button type="button" onClick={() => { setOverrideFor(null); setPin(""); setOverrideError(""); }}>
-                Cancel
-              </button>
-              <button type="button" className="primary" onClick={submitOverride} disabled={!pin || overrideBusy}>
-                {overrideBusy ? "Working…" : "Restore tick"}
+              <button type="button" onClick={closeOverride}>Cancel</button>
+              <button
+                type="button"
+                className="primary"
+                onClick={submitOverride}
+                disabled={pin.length !== 4 || overrideBusy || lockedMs > 0}
+              >
+                {overrideBusy ? "Working…" : "Unlock"}
               </button>
             </div>
           </div>
