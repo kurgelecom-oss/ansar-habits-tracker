@@ -352,10 +352,17 @@ export async function POST(request: Request) {
     );
 
   if (error) {
-    return NextResponse.json(
-      { ok: false, reason: "write_failed", message: error.message },
-      { status: 500, headers: noStore },
-    );
+    // PostgREST's hint names the role it actually resolved the request to
+    // ("GRANT INSERT ... TO anon"), which is the difference between "the
+    // service-role key is wrong" and "the grant was revoked". Both produce an
+    // identical message, so the hint is the only thing that tells them apart.
+    return NextResponse.json({
+      ok: false,
+      reason: "write_failed",
+      message: error.message,
+      hint: (error as { hint?: string }).hint ?? null,
+      code: (error as { code?: string }).code ?? null,
+    }, { status: 500, headers: noStore });
   }
 
   if (overrideUsed) {
