@@ -28,6 +28,20 @@
 -- ════════════════════════════════════════════════════════════════════════════
 
 
+-- ── 0. Clean up one test row ────────────────────────────────────────────────
+-- Proving anon could still write left a probe row behind in each table. The
+-- habit_completions one deleted cleanly; the stretch_completions one did not,
+-- because that table has a SELECT and an INSERT policy but no DELETE policy —
+-- so the DELETE returned HTTP 200 having matched zero rows. (A 200 from
+-- PostgREST means "the statement ran", not "a row went away". Always re-SELECT.)
+--
+-- The surviving row is inert: item_id '__rls_probe__', completed_date
+-- '2000-01-01', minutes 0. The wallet only ever sums the current Mon–Sun week,
+-- so it has never been included in a balance. Removing it anyway.
+delete from public.stretch_completions where item_id = '__rls_probe__';
+delete from public.habit_completions  where habit_id = '__rls_probe__';
+
+
 -- ── 1. override_log ─────────────────────────────────────────────────────────
 -- Every parent override, permanently. `created_at` is the SERVER's timestamp,
 -- written explicitly by /api/tick from its own clock rather than taken from the
