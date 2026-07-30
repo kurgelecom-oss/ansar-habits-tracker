@@ -622,6 +622,31 @@ export default function AnsarPage() {
   .ab-btn:active,.ab-spend:active{transform:none}
 }
 
+/* ── NOTION SOURCE STRIP ──────────────────────────────────────────────────
+   Links to the three Notion databases this board reads from, for a parent who
+   needs to edit a window or a point value. Faint on purpose: a tool for Nihal,
+   not something for Ansar to notice mid-tick.
+
+   The 0.45 sits on the CHILDREN, not on .ab-src. Opacity on the container would
+   open a stacking context and multiply through, so a:hover could only ever
+   reach 0.45 x 1 = 0.45 and the hover cue would silently do nothing. Every
+   child is an element (the middots are spans) so the > * selector reaches all
+   of them — a bare text node could not be targeted.
+
+   flex-shrink:0 keeps the strip off .ab-board's flex:1 growth path, so at the
+   1440px+ height:100dvh / overflow:hidden layout the board yields the ~34px
+   rather than the strip being squeezed to nothing. */
+.ab-src{display:flex;align-items:center;justify-content:center;gap:8px;
+  flex-shrink:0;padding:14px 0 20px;font-size:10px;letter-spacing:0.04em;
+  color:#565f70}
+.ab-src > *{opacity:0.45;transition:opacity 180ms ease,color 180ms ease}
+.ab-src a{color:#565f70;text-decoration:none}
+.ab-src a:hover{opacity:1;color:var(--cyan)}
+.ab-src a:focus-visible{opacity:1;outline:2px solid ${RM_GOLD};outline-offset:2px}
+@media (prefers-reduced-motion:reduce){
+  .ab-src > *{transition:none}
+}
+
 /* ── LONG-PRESS HOLD INDICATOR ────────────────────────────────────────────
    Fills left-to-right over the two seconds of the hold. It is the only visible
    hint that a refused habit can be opened at all — deliberately quiet, so a
@@ -1317,6 +1342,25 @@ export default function AnsarPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ── NOTION SOURCE STRIP ─────────────────────────────────────────────
+          The three Notion databases behind this board, one click away for a
+          parent mid-edit. In normal flow at the bottom of .ab-root, below the
+          board and above the fixed overlays.
+
+          These are the human-facing database URLs, which are NOT the
+          data_source ids lib/notion.ts queries (a database and its data source
+          carry different ids under Notion-Version 2025-09-03). Changing one
+          does not change the other — editing a link here does not repoint the
+          board, and repointing the board does not update these links. */}
+      <div className="ab-src">
+        <span>Notion:</span>
+        <a href="https://www.notion.so/060adb487ef5451b8fdccaa95f60514c" target="_blank" rel="noopener noreferrer">Habits</a>
+        <span aria-hidden>·</span>
+        <a href="https://www.notion.so/f4d6ca41a1a24e08b597abfd77d1e78e" target="_blank" rel="noopener noreferrer">Settings</a>
+        <span aria-hidden>·</span>
+        <a href="https://www.notion.so/3dacc9966756478db29604840c39c08a" target="_blank" rel="noopener noreferrer">Stretch</a>
       </div>
 
       {/* ── GATE REJECTION TOAST ────────────────────────────────────────────
