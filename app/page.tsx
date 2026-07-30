@@ -1059,7 +1059,7 @@ export default function AnsarPage() {
 
       {/* SCOREBOARD STRIP */}
       <div style={{
-        height: 66, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 16px",
+        height: 120, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 16px",
         background: RM_NAVY, borderBottom: "1px solid rgba(212,175,55,0.28)",
       }}>
         {/* Crest. The divider lives on this wrapper rather than on the <img>
@@ -1074,7 +1074,7 @@ export default function AnsarPage() {
           <img
             src="/real-madrid.png"
             alt="Real Madrid"
-            style={{ height: 58, width: "auto", display: "block", objectFit: "contain" }}
+            style={{ height: 112, width: "auto", display: "block", objectFit: "contain" }}
           />
         </div>
         {cell("Points today", <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
