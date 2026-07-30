@@ -1062,6 +1062,21 @@ export default function AnsarPage() {
         height: 66, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 16px",
         background: RM_NAVY, borderBottom: "1px solid rgba(212,175,55,0.28)",
       }}>
+        {/* Crest. The divider lives on this wrapper rather than on the <img>
+            because the cells to the right draw theirs at height 52 (see cell()),
+            and a border on a 42px-tall image would render a short line against
+            four full-height neighbours. Wrapper matches; the img does not. */}
+        <div style={{
+          height: 52, display: "flex", alignItems: "center", flexShrink: 0,
+          paddingRight: 18, marginRight: 18,
+          borderRight: "1px solid rgba(212,175,55,0.16)",
+        }}>
+          <img
+            src="/real-madrid.png"
+            alt="Real Madrid"
+            style={{ height: 42, width: "auto", display: "block", objectFit: "contain" }}
+          />
+        </div>
         {cell("Points today", <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
         {cell("Week total", <>{weeklyPts !== null ? weeklyPts : "—"}{sub(` / ${WEEKLY_MAX}`)}</>)}
         {cell("Streak", <>{streak !== null ? streak : "—"}{streak !== null && streak > 0 ? " 🔥" : ""}</>)}
