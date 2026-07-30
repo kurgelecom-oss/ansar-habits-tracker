@@ -1074,7 +1074,7 @@ export default function AnsarPage() {
           <img
             src="/real-madrid.png"
             alt="Real Madrid"
-            style={{ height: 42, width: "auto", display: "block", objectFit: "contain" }}
+            style={{ height: 58, width: "auto", display: "block", objectFit: "contain" }}
           />
         </div>
         {cell("Points today", <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
