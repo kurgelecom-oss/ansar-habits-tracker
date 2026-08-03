@@ -81,8 +81,15 @@ async function loadWallet(date: string) {
 }
 
 async function loadGateContext(date: string, weekday: string, nowMinutes: number, nowMs: number): Promise<GateContext> {
+  // Tracked, not inferred from habitsAll.length: on a weekend the list is
+  // legitimately empty, and gateWallet must be able to tell that apart from
+  // Notion being unreachable. See blockSatisfied() in lib/gating.ts.
+  let habitsLoaded = true;
   const [habitsAll, settings] = await Promise.all([
-    getHabits().catch(() => [] as Awaited<ReturnType<typeof getHabits>>),
+    getHabits().catch(() => {
+      habitsLoaded = false;
+      return [] as Awaited<ReturnType<typeof getHabits>>;
+    }),
     getSettings().catch(() => SETTINGS_FALLBACK),
   ]);
   const { data } = await readClient()
@@ -96,6 +103,7 @@ async function loadGateContext(date: string, weekday: string, nowMinutes: number
     nowMinutes,
     nowMs,
     defaultDwellSeconds: settings.defaultDwellSeconds,
+    habitsLoaded,
   };
 }
 

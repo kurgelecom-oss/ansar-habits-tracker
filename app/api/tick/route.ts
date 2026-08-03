@@ -105,6 +105,10 @@ async function loadContext(fresh: boolean): Promise<GateContext> {
     nowMinutes: now.minutesOfDay,
     nowMs: now.ms,
     defaultDwellSeconds: settings.defaultDwellSeconds,
+    // Distinguishes "Saturday schedules nothing" from "Notion is down" — both
+    // produce an empty habits array. lastHabitsError is cleared on success and
+    // set by the catch above, so it is the honest signal. See blockSatisfied().
+    habitsLoaded: lastHabitsError === null,
   };
 }
 

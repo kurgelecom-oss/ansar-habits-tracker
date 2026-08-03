@@ -80,6 +80,17 @@ export interface GateContext {
   nowMs: number;
   /** Fallback dwell when a habit has no per-habit override. From Notion. */
   defaultDwellSeconds: number;
+  /**
+   * Did the habit list actually load? An EMPTY `habits` is ambiguous on its own:
+   * it means either "Notion is unreachable" or "nothing is scheduled today" —
+   * and those must not be treated alike. Saturday legitimately schedules zero
+   * habits (every habit is Mon–Fri in Notion); a 401 from Notion also yields
+   * zero. The first should satisfy a cascade, the second must never.
+   *
+   * Optional and FAIL-CLOSED: an omitted flag reads as "not loaded", so a caller
+   * that forgets to set it locks the wallet rather than opening it.
+   */
+  habitsLoaded?: boolean;
 }
 
 export type GateVerdict =
@@ -110,6 +121,27 @@ export function blockComplete(ctx: GateContext, block: string): boolean {
   // The length guard matters: an empty block is not a complete one. Without it a
   // failed habit load would report every block complete and open every cascade.
   return bh.length > 0 && bh.every(h => isDone(ctx, h.id));
+}
+
+/**
+ * Is a block's precondition met — either because every habit in it is done, or
+ * because it schedules nothing today?
+ *
+ * The second clause is what makes the weekend work. Every habit is Mon–Fri in
+ * Notion, so on a Saturday `blockHabits()` returns [] for every block, and
+ * blockComplete() reports false for all of them (its length guard is deliberate
+ * — see above). Without this, "finish Morning Habits first" would be
+ * unsatisfiable on a day that schedules no morning habits, and the Stretch
+ * Wallet — the one thing a weekend is *for* — would be permanently locked.
+ *
+ * `habitsLoaded` is what keeps that from becoming the hole blockComplete()'s
+ * guard exists to plug: a Notion outage also produces an empty block, and an
+ * outage must not unlock anything. Vacuous satisfaction requires a habit list
+ * that is known-good AND genuinely empty for this block.
+ */
+export function blockSatisfied(ctx: GateContext, block: string): boolean {
+  if (blockComplete(ctx, block)) return true;
+  return ctx.habitsLoaded === true && blockHabits(ctx.habits, block).length === 0;
 }
 
 /** Effective dwell for a habit, in seconds. */
@@ -217,13 +249,21 @@ export function gateOrder(habit: GateHabit, ctx: GateContext): GateVerdict {
    it deliberately, which is exactly the escape hatch overrides are for. */
 export function gateCascade(habit: GateHabit, ctx: GateContext): GateVerdict {
   if (habit.block !== BLOCK_SCHOOL) return allow;
-  if (blockComplete(ctx, BLOCK_PRE)) return allow;
+  // blockSatisfied, not blockComplete: a day that schedules a homeschool habit
+  // but no morning habits has nothing to cascade over. Unreachable with the
+  // current Mon–Fri configuration (the two blocks share the same days), and it
+  // stays correct if that ever stops being true.
+  if (blockSatisfied(ctx, BLOCK_PRE)) return allow;
   return deny("locked", "Locked — finish Morning Habits first");
 }
 
 /**
  * The Stretch Wallet cascade. Stretch points stay locked until pre_homeschool
- * AND homeschool are both 100% complete.
+ * AND homeschool are both 100% complete — or, on a day that schedules neither,
+ * are vacuously satisfied. That second case is the weekend: Saturday and Sunday
+ * have no habits at all, so there is nothing to finish, and the wallet is the
+ * only thing on the board. See blockSatisfied() for why a Notion outage does
+ * NOT get the same treatment.
  *
  * The Qur'an daily minimum is an ungamified gate: it earns nothing and is worth
  * zero points, it only unlocks. It sits in pre_homeschool, so requiring that
@@ -237,10 +277,10 @@ export function gateWallet(ctx: GateContext): GateVerdict {
   if (quranExists && !isDone(ctx, QURAN_HABIT_ID)) {
     return deny("locked", "Locked — Qur'an recitation first");
   }
-  if (!blockComplete(ctx, BLOCK_PRE)) {
+  if (!blockSatisfied(ctx, BLOCK_PRE)) {
     return deny("locked", "Locked — finish Morning Habits first");
   }
-  if (!blockComplete(ctx, BLOCK_SCHOOL)) {
+  if (!blockSatisfied(ctx, BLOCK_SCHOOL)) {
     return deny("locked", "Locked — finish Homeschool first");
   }
   return allow;

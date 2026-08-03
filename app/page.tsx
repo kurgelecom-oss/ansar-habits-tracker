@@ -3,6 +3,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, getWeekStart } from "./lib/supabase";
 import { scoreDay, SOCCER_DAYS } from "./lib/scoring";
 import { addDays, dayNameOf } from "./lib/time";
+// Pure day rule, shared with the server's habitsForDay(). lib/days.ts imports no
+// Notion code, so nothing server-only reaches this bundle.
+import { habitsOnDay } from "./lib/days";
 
 /* ════════════════════════════════════════════════════════════════════════════
    THE BOARD.
@@ -254,20 +257,37 @@ export default function AnsarPage() {
       byDate[r.completed_date].add(r.habit_id);
     });
 
-    // preIds/baseIds come from the live Notion list, not a hardcoded array.
-    const preIds = notionHabits.filter(h => h.block === "pre_homeschool").map(h => h.id);
-    const baseIds = notionHabits.filter(h => h.block !== "conditional").map(h => h.id);
-    if (preIds.length === 0) return;   // habits not loaded yet — don't score a blank list
+    if (notionHabits.length === 0) return;   // habits not loaded yet — don't score a blank list
+
+    // Resolved PER DATE, not once for the week. Habits carry Notion "Days"
+    // (Mon–Fri for the weekday routine), so Saturday and Sunday have no
+    // applicable habits and contribute nothing — which is what stops a stale
+    // weekend completion row from still earning points on a day the board
+    // schedules nothing. habitsOnDay() is the same rule the server applies in
+    // habitsForDay(); it is imported from lib/days.ts precisely so there is one
+    // copy of it rather than a client one that can drift.
+    const idsFor = (ds: string) => {
+      const applicable = habitsOnDay(notionHabits, dayNameOf(ds));
+      return {
+        applicable,
+        preIds: applicable.filter(h => h.block === "pre_homeschool").map(h => h.id),
+        baseIds: applicable.filter(h => h.block !== "conditional").map(h => h.id),
+      };
+    };
 
     let total = 0;
     Object.keys(byDate).forEach(ds => {
+      const { applicable, preIds, baseIds } = idsFor(ds);
+      if (applicable.length === 0) return;   // nothing scheduled that day → 0
       total += scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).total;
     });
 
     const weekdayDates = [0, 1, 2, 3, 4].map(i => addDays(weekStart, i));
-    const allWeekdaysPerfect = weekdayDates.every(
-      ds => byDate[ds] && scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).perfect,
-    );
+    const allWeekdaysPerfect = weekdayDates.every(ds => {
+      if (!byDate[ds]) return false;
+      const { applicable, preIds, baseIds } = idsFor(ds);
+      return applicable.length > 0 && scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).perfect;
+    });
     if (allWeekdaysPerfect) total += 3;
 
     setWeeklyPts(total);
@@ -585,6 +605,13 @@ export default function AnsarPage() {
   const overallPct = gateHabits.length > 0 ? Math.round((todayDone / gateHabits.length) * 100) : 0;
   const weekThreshold = getThreshold(weeklyPts ?? 0);
   const DAILY_MAX = SOCCER_DAYS.includes(dayName) ? 11 : 10;
+
+  // Weekend is read from the SERVER's Sydney weekday, never `new Date()` — same
+  // rule as every gate on this page. Empty until /api/tick answers, so the
+  // scoreboard cannot flash the weekday cell on a Saturday before the server
+  // has spoken. With every habit now scoped Mon–Fri in Notion, `gateHabits` is
+  // already empty on a weekend; this only changes what the header says about it.
+  const isWeekend = dayName === "Saturday" || dayName === "Sunday";
 
   const walletLocked = !wallet?.unlocked;
   const stretchBalance = wallet?.balance ?? 0;
@@ -1077,7 +1104,16 @@ export default function AnsarPage() {
             style={{ height: 112, width: "auto", display: "block", objectFit: "contain" }}
           />
         </div>
-        {cell("Points today", <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
+        {/* Saturday and Sunday schedule no habits, so "Points today 0 / 10" would
+            be reporting a failure that never had a chance to happen. The weekend
+            reports the week that was earned instead: the tier of the Mon–Fri
+            total, which is exactly what `weekThreshold` already holds now that
+            weekend dates contribute nothing to weeklyPts. */}
+        {isWeekend
+          ? cell("Weekend", <span style={{ fontSize: 21, color: weekThreshold.color }}>
+              {weeklyPts === null ? "—" : weekThreshold.label}
+            </span>)
+          : cell("Points today", <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
         {cell("Week total", <>{weeklyPts !== null ? weeklyPts : "—"}{sub(` / ${WEEKLY_MAX}`)}</>)}
         {cell("Streak", <>{streak !== null ? streak : "—"}{streak !== null && streak > 0 ? " 🔥" : ""}</>)}
         {cell("Today", <>{gate ? overallPct : 0}{sub("%")}</>,

@@ -13,10 +13,10 @@
    repos.
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { NOTION_BLOCK_MAP, BLOCK_PRE, BLOCK_CONDITIONAL, type GateHabit } from "./gating";
-// SOCCER_DAYS only. scoring.ts is hash-synced with family-dashboard and is read
-// here, never modified.
-import { SOCCER_DAYS } from "./scoring";
+import { NOTION_BLOCK_MAP, BLOCK_PRE, type GateHabit } from "./gating";
+// The weekday rule lives in lib/days.ts because the board needs it too — see
+// habitsForDay() at the bottom of this file.
+import { habitsOnDay } from "./days";
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_VERSION = "2025-09-03";
@@ -144,24 +144,14 @@ export async function getSettings(fresh = false): Promise<AppSettings> {
 /**
  * The habits that apply on a given weekday.
  *
- * A habit with "Days" set applies only on those days; one with Days empty
- * applies every day.
- *
- * THE CONDITIONAL EXCEPTION. Every row in Notion currently has Days empty,
- * including `soccer_training` — so the plain rule above would put soccer
- * training on the board seven days a week, and scoring.ts (which awards it only
- * on SOCCER_DAYS) would score a tick that the board offered. Rather than trust
- * an unset field, a conditional-block habit with no Days falls back to
- * SOCCER_DAYS, the same constant scoring.ts uses.
- *
- * This fallback is a safety net, not the intended configuration: filling in
- * Days on the Notion row takes precedence over it the moment it is set.
+ * A thin server-side alias for habitsOnDay(). The rule itself moved to
+ * lib/days.ts so the board can apply the SAME rule when it scores past dates —
+ * this module cannot be imported from a client component without dragging
+ * NOTION_TOKEN into the bundle, and two copies of the rule is how a habit ends
+ * up rendered on a day it does not score (or scored on a day it is not
+ * rendered). See lib/days.ts for the rule and why the conditional fallback
+ * still exists.
  */
 export function habitsForDay(habits: Habit[], weekday: string): Habit[] {
-  const short = weekday.slice(0, 3);   // "Monday" → "Mon"
-  return habits.filter(h => {
-    if (h.days.length > 0) return h.days.includes(short);
-    if (h.block === BLOCK_CONDITIONAL) return SOCCER_DAYS.includes(weekday);
-    return true;
-  });
+  return habitsOnDay(habits, weekday);
 }
