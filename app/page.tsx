@@ -135,8 +135,12 @@ type WalletState = {
 /** What a refused tap left on screen. */
 type Rejection = { habitId: string; habitName: string; reason: string; message: string };
 
-// ANSAR FC weekly tiers. Weekly max = 56 (incl. +3 streak bonus for 5 Perfect Days Mon–Fri).
-const WEEKLY_MAX = 56;
+// ANSAR FC weekly tiers. Weekly max = 55 (incl. +3 streak bonus for 5 Perfect
+// Days Mon–Fri): Mon 11 + Tue 10 + Wed 11 + Thu 10 + Fri 10 = 52, plus 3. It was
+// 56, which no combination of ticks could reach. Kept in step with
+// lib/scoring.ts's WEEKLY_MAX by hand — this file declares its own copy rather
+// than importing it, as the dashboard's two surfaces also do.
+const WEEKLY_MAX = 55;
 
 const THRESHOLDS = [
   { min: 42, label: "First Team 🏆",      desc: "42+ pts",   color: RM_GOLD },
