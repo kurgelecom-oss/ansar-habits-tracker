@@ -307,12 +307,39 @@ export default function AnsarPage() {
       byDate[r.completed_date] = (byDate[r.completed_date] || 0) + 1;
     });
 
+    // WEEKDAY-ONLY, WEEKEND-NEUTRAL.
+    //
+    // Habits are Mon–Fri in Notion, so a weekend records zero completions and
+    // can never clear the ≥5 bar. Counting calendar days would therefore break
+    // the streak every Saturday and cap it at 5 forever. Sat/Sun are skipped
+    // outright instead: they neither add to the streak nor reset it, and a
+    // historical weekend row cannot inflate it either, because a skipped day is
+    // never counted whatever it contains.
+    //
+    // The ≥5 bar itself is deliberately unchanged.
+    //
+    // The grace that used to be spelled `i === 0` now belongs to the most recent
+    // WEEKDAY rather than to today: a day still in progress should not read as a
+    // broken streak. On a weekend that most recent weekday is Friday, which is
+    // what makes Saturday report the same number Friday did — with or without
+    // Friday having been completed.
     let s = 0;
+    let graceAvailable = true;
     for (let i = 0; i <= 60; i++) {
       const ds = addDays(today, -i);
-      if ((byDate[ds] || 0) >= 5) s++;
-      else if (i === 0) continue;
-      else break;
+      const dn = dayNameOf(ds);
+      if (dn === "Saturday" || dn === "Sunday") continue;   // neither adds nor resets
+
+      if ((byDate[ds] || 0) >= 5) {
+        s++;
+        graceAvailable = false;
+        continue;
+      }
+      if (graceAvailable) {       // most recent weekday, still in progress
+        graceAvailable = false;
+        continue;
+      }
+      break;                      // a finished weekday that missed the bar
     }
     setStreak(s);
   }, []);
@@ -1116,11 +1143,15 @@ export default function AnsarPage() {
           : cell("Points today", <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
         {cell("Week total", <>{weeklyPts !== null ? weeklyPts : "—"}{sub(` / ${WEEKLY_MAX}`)}</>)}
         {cell("Streak", <>{streak !== null ? streak : "—"}{streak !== null && streak > 0 ? " 🔥" : ""}</>)}
-        {cell("Today", <>{gate ? overallPct : 0}{sub("%")}</>,
+        {/* "0%" on a weekend reads as a failed day. Nothing is scheduled Sat/Sun,
+            so there is no proportion to report — an em dash says "not applicable"
+            where a zero says "you did none of it". The empty track is kept rather
+            than dropped so the scoreboard geometry is identical all week. */}
+        {cell("Today", isWeekend ? <>—</> : <>{gate ? overallPct : 0}{sub("%")}</>,
           <div style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.34)", overflow: "hidden", marginTop: 6, width: 150 }}>
             <div style={{
               height: "100%", borderRadius: 3, transition: "width 200ms ease-in-out",
-              width: gate ? `${overallPct}%` : "0%",
+              width: gate && !isWeekend ? `${overallPct}%` : "0%",
               background: "linear-gradient(90deg, #ffa500, #00ff88)",
             }} />
           </div>,
