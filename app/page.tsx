@@ -6,6 +6,9 @@ import { addDays, dayNameOf } from "./lib/time";
 // Pure day rule, shared with the server's habitsForDay(). lib/days.ts imports no
 // Notion code, so nothing server-only reaches this bundle.
 import { habitsOnDay } from "./lib/days";
+// Mirrored byte-for-byte with family-dashboard/app/lib/streak.ts — see the
+// header there, and scripts/check-scoring-sync.sh which guards the pair.
+import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
 
 /* ════════════════════════════════════════════════════════════════════════════
    THE BOARD.
@@ -293,8 +296,15 @@ export default function AnsarPage() {
     setWeeklyPts(total);
   }, [notionHabits]);
 
-  const calculateStreak = useCallback(async (today: string) => {
-    const cutoffStr = addDays(today, -60);
+  /**
+   * Fetches the history and hands it to the shared rule. Named loadStreak, not
+   * calculateStreak, because calculateStreak is now the imported pure function —
+   * one name for the I/O, another for the arithmetic.
+   */
+  const loadStreak = useCallback(async (today: string) => {
+    // Window tied to the constant the walk uses, so the query can never fetch
+    // less history than lib/streak.ts is willing to walk through.
+    const cutoffStr = addDays(today, -STREAK_LOOKBACK_DAYS);
     const { data, error } = await supabase
       .from("habit_completions")
       .select("habit_id, completed_date")
@@ -307,41 +317,12 @@ export default function AnsarPage() {
       byDate[r.completed_date] = (byDate[r.completed_date] || 0) + 1;
     });
 
-    // WEEKDAY-ONLY, WEEKEND-NEUTRAL.
-    //
-    // Habits are Mon–Fri in Notion, so a weekend records zero completions and
-    // can never clear the ≥5 bar. Counting calendar days would therefore break
-    // the streak every Saturday and cap it at 5 forever. Sat/Sun are skipped
-    // outright instead: they neither add to the streak nor reset it, and a
-    // historical weekend row cannot inflate it either, because a skipped day is
-    // never counted whatever it contains.
-    //
-    // The ≥5 bar itself is deliberately unchanged.
-    //
-    // The grace that used to be spelled `i === 0` now belongs to the most recent
-    // WEEKDAY rather than to today: a day still in progress should not read as a
-    // broken streak. On a weekend that most recent weekday is Friday, which is
-    // what makes Saturday report the same number Friday did — with or without
-    // Friday having been completed.
-    let s = 0;
-    let graceAvailable = true;
-    for (let i = 0; i <= 60; i++) {
-      const ds = addDays(today, -i);
-      const dn = dayNameOf(ds);
-      if (dn === "Saturday" || dn === "Sunday") continue;   // neither adds nor resets
-
-      if ((byDate[ds] || 0) >= 5) {
-        s++;
-        graceAvailable = false;
-        continue;
-      }
-      if (graceAvailable) {       // most recent weekday, still in progress
-        graceAvailable = false;
-        continue;
-      }
-      break;                      // a finished weekday that missed the bar
-    }
-    setStreak(s);
+    // The rule itself lives in lib/streak.ts, mirrored byte-for-byte with
+    // family-dashboard. It used to sit inline here, and the dashboard's two
+    // copies drifted the moment this one changed — reporting 8 where this
+    // reported 14 off the same rows. `today` is the SERVER's Sydney date, so no
+    // clock is read inside the calculation.
+    setStreak(calculateStreak(byDate, today));
   }, []);
 
   useEffect(() => {
@@ -369,8 +350,8 @@ export default function AnsarPage() {
   useEffect(() => {
     if (!serverDate || notionHabits.length === 0) return;
     loadWeeklyData(serverDate);
-    calculateStreak(serverDate);
-  }, [serverDate, notionHabits, loadWeeklyData, calculateStreak]);
+    loadStreak(serverDate);
+  }, [serverDate, notionHabits, loadWeeklyData, loadStreak]);
 
   /* ── Log Work effects (unchanged) ───────────────────────────────────────── */
 
