@@ -38,13 +38,17 @@ import { addDays, dayNameOf, weekStartOf } from "./time";
 /**
  * The days a squad week is made of. Mon–Fri, and nothing else, ever.
  *
- * DUPLICATED, knowingly: app/page.tsx declares its own SQUAD_DAYS for the live
- * board. That copy is display-side, this one is record-keeping side, and they
- * must agree — if they ever disagree, the number Ansar watches during the week
- * is not the number written down at the end of it. The verification harness
- * asserts both files carry the same list. Collapse them into one import when the
- * Golden Boot UI lands and page.tsx is being edited anyway; doing it now would
- * mean touching page.tsx for a release that ships no UI.
+ * NO LONGER DUPLICATED. app/page.tsx used to declare its own copy for the live
+ * board — display-side there, record-keeping side here — and the two had to be
+ * kept in agreement by hand, because if they ever disagreed the number Ansar
+ * watches during the week would not be the number written down at the end of
+ * it. The collapse was deferred until page.tsx was being edited anyway, and the
+ * Golden Boot cell was that edit: page.tsx now imports this list.
+ *
+ * Keep this module client-importable. page.tsx is a "use client" file, so
+ * nothing server-only may be imported at the top of this one — the Supabase
+ * import here is type-only and erases, and every persisted helper below takes
+ * its client as an argument rather than constructing one.
  */
 export const SQUAD_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 

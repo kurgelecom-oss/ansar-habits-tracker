@@ -9,6 +9,12 @@ import { habitsOnDay } from "./lib/days";
 // Mirrored byte-for-byte with family-dashboard/app/lib/streak.ts — see the
 // header there, and scripts/check-scoring-sync.sh which guards the pair.
 import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
+// The squad week, Mon–Fri. This file used to declare its own copy beside the
+// /55 note below; lib/goldenBoot.ts asked for the collapse the moment page.tsx
+// was next edited, and the Golden Boot cell is that edit. Nothing server-only
+// arrives with it: goldenBoot.ts imports only scoring/days/time — all three
+// already in this bundle — plus a type-only Supabase import that erases.
+import { SQUAD_DAYS } from "./lib/goldenBoot";
 
 /* ════════════════════════════════════════════════════════════════════════════
    THE BOARD.
@@ -132,6 +138,17 @@ type WalletState = {
   weekendRedemptionOnly: boolean; redemptionOpen: boolean; redemptionMessage: string | null;
 };
 
+/**
+ * /api/golden-boot's GET, narrowed to what the scoreboard cell reads.
+ *
+ * `progress` is the position within the CURRENT run of four and is computed by
+ * the route, not here — a streak of 4 arrives as 4, a streak of 5 arrives as 1.
+ * The cell prints it verbatim so this file and the ledger cannot disagree about
+ * what "X / 4" means. The route's other fields (weeks, awards, writeConfigured)
+ * are deliberately absent: the strip has no use for them.
+ */
+type GoldenBootState = { ok: boolean; target: number; streak: number; progress: number };
+
 /** What a refused tap left on screen. */
 type Rejection = { habitId: string; habitName: string; reason: string; message: string };
 
@@ -157,8 +174,12 @@ const WEEKLY_MAX = 55;
  * Weekend effort is not discarded, it is reported elsewhere: the weekend daily
  * rating on the scoreboard (see WEEKEND_MAX) and the Stretch Wallet, which is
  * what a weekend actually earns.
+ *
+ * The list itself is no longer declared here. It is imported at the top of this
+ * file from lib/goldenBoot.ts, which is the record-keeping side of the same
+ * rule — the display copy and the written-down copy cannot drift if there is
+ * only one of them. This note stays because the reasoning is the board's.
  */
-const SQUAD_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 /**
  * The weekend daily ceiling: the weekday ceiling minus the 5 the Homeschool
@@ -196,6 +217,7 @@ export default function AnsarPage() {
   const [online, setOnline] = useState(true);
   const [weeklyPts, setWeeklyPts] = useState<number | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
+  const [goldenBoot, setGoldenBoot] = useState<GoldenBootState | null>(null);
   const [reject, setReject] = useState<Rejection | null>(null);
 
   // Parent override. The PIN is typed here and sent to the server; it is never
@@ -274,6 +296,22 @@ export default function AnsarPage() {
       const items = (await res.json()) as StretchItem[];
       if (Array.isArray(items)) setStretchItems(items);
     } catch { /* best-effort */ }
+  }, []);
+
+  // The Golden Boot run, read from the finalised-week ledger.
+  //
+  // FAILS TO NOTHING, DELIBERATELY. /api/golden-boot answers 503 while
+  // db/week_results.sql has not been run, and that window is a real state this
+  // board can be in. `goldenBoot` staying null renders no cell at all — the
+  // other five keep their places and the strip keeps its height. A cell reading
+  // "—/4" would be worse than absent: it would claim a run of zero.
+  const loadGoldenBoot = useCallback(async () => {
+    try {
+      const res = await fetch("/api/golden-boot", { cache: "no-store" });
+      if (!res.ok) { setGoldenBoot(null); return; }
+      const g = (await res.json()) as GoldenBootState;
+      setGoldenBoot(g?.ok ? g : null);
+    } catch { setGoldenBoot(null); }
   }, []);
 
   // Weekly total and streak are read-only history. They still read Supabase
@@ -391,6 +429,18 @@ export default function AnsarPage() {
     loadWeeklyData(serverDate);
     loadStreak(serverDate);
   }, [serverDate, notionHabits, loadWeeklyData, loadStreak]);
+
+  // The Golden Boot is keyed on the SERVER's date and nothing else. It is not on
+  // the 30-second poll beside gate and wallet: a finalised week changes at most
+  // once a week, and polling it would spend ~2,900 function calls a day on a
+  // number that moves four times a month. `serverDate` first becomes non-empty
+  // when the gate lands, which is what loads it, and changes again at the Sydney
+  // date rollover, which is what keeps a board left running for days honest. No
+  // habit-roster guard here — the ledger is already finalised and needs none.
+  useEffect(() => {
+    if (!serverDate) return;
+    loadGoldenBoot();
+  }, [serverDate, loadGoldenBoot]);
 
   /* ── Log Work effects (unchanged) ───────────────────────────────────────── */
 
@@ -1067,17 +1117,37 @@ export default function AnsarPage() {
   const schoolHabits = inBlock("homeschool");
   const condHabits = inBlock("conditional");
 
-  /** One scoreboard cell. */
-  const cell = (label: string, value: React.ReactNode, extra?: React.ReactNode) => (
+  /**
+   * One scoreboard cell. `opts` is additive and defaulted, so the four calls
+   * that predate it render byte-identically to before.
+   *
+   *   color  the value's colour. Gold is the scoreboard default; the Golden Boot
+   *          takes CYAN, the same var(--cyan) every other surface uses.
+   *   side   which edge carries the divider. Every cell has drawn it on the
+   *          RIGHT, because every cell had a neighbour to its right. The Golden
+   *          Boot sits last, after Banked and before the right-aligned tier
+   *          badge — a right-hand rule there would hang in the gap with nothing
+   *          after it, so it draws on the LEFT instead and separates itself from
+   *          Banked, which has never drawn one of its own.
+   */
+  const cell = (
+    label: string,
+    value: React.ReactNode,
+    extra?: React.ReactNode,
+    opts?: { color?: string; side?: "left" | "right" },
+  ) => (
     <div style={{
-      padding: "0 22px", borderRight: "1px solid rgba(212,175,55,0.16)", height: 52,
+      padding: "0 22px", height: 52,
+      ...(opts?.side === "left"
+        ? { borderLeft: "1px solid rgba(212,175,55,0.16)" }
+        : { borderRight: "1px solid rgba(212,175,55,0.16)" }),
       display: "flex", flexDirection: "column", justifyContent: "center",
     }}>
       <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(232,235,242,0.6)" }}>
         {label}
       </div>
       <div style={{
-        fontSize: 29, fontWeight: 800, color: RM_GOLD_BRIGHT, lineHeight: 1.08,
+        fontSize: 29, fontWeight: 800, color: opts?.color ?? RM_GOLD_BRIGHT, lineHeight: 1.08,
         fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em",
       }}>
         {value}
@@ -1192,6 +1262,22 @@ export default function AnsarPage() {
             {wallet && !walletLocked && sub(" min")}
           </div>
         </div>
+
+        {/* GOLDEN BOOT — consecutive First Team weeks, out of four.
+            Rendered only when the ledger answered. While db/week_results.sql is
+            unrun the route 503s, `goldenBoot` is null and this cell is absent
+            entirely; the five cells to its left and the badge to its right are
+            untouched, and the strip keeps its 120px. At a full run of four the
+            fraction gives way to the boot itself — the number stops being the
+            point once it has been earned. */}
+        {goldenBoot && cell(
+          "Golden Boot",
+          goldenBoot.progress >= goldenBoot.target
+            ? <span style={{ fontSize: 26 }}>🏆</span>
+            : <>{goldenBoot.progress}{sub(` / ${goldenBoot.target}`)}</>,
+          undefined,
+          { color: CYAN, side: "left" },
+        )}
 
         <div style={{
           marginLeft: "auto", display: "flex", alignItems: "center", gap: 11,
