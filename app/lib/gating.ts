@@ -19,7 +19,7 @@
    already happened is worth. They never call each other.
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { formatClock, parseHHMM } from "./time";
+import { dayNameOf, formatClock, parseHHMM } from "./time";
 
 /** Local block ids. These are the ids scoring.ts already keys its subtotals on. */
 export const BLOCK_PRE = "pre_homeschool";
@@ -258,28 +258,42 @@ export function gateCascade(habit: GateHabit, ctx: GateContext): GateVerdict {
 }
 
 /**
- * The Stretch Wallet cascade. Stretch points stay locked until pre_homeschool,
- * homeschool AND afternoon_evening are each 100% complete — or, for a block that
- * schedules nothing today, are vacuously satisfied. See blockSatisfied() for why
- * a Notion outage does NOT get the same treatment.
+ * Is `date` a Saturday or Sunday?
  *
- * THE WEEKEND IS NO LONGER A FREE PASS. It used to be: every habit was Mon–Fri,
- * so on a Saturday every block was empty, every block was vacuously satisfied,
- * and the wallet simply hung open. Morning Habits and Afternoon/Evening are now
- * scheduled seven days a week, so on a weekend those two blocks are REAL and
- * have to actually be finished. Only Homeschool stays Mon–Fri, so only
- * Homeschool is still vacuously satisfied on a Saturday — which is exactly the
- * intended shape:
+ * Derived from the calendar date the context already carries, NOT from a clock.
+ * ctx.serverDate is produced by sydneyNow().date, so dayNameOf() of it is the
+ * server's own Sydney weekday by construction — it cannot disagree with the
+ * clock every other gate is decided against, and it keeps this module pure. A
+ * `new Date()` here would read the machine's zone and put the whole weekend rule
+ * an entire day out for ten hours of every Sydney day.
+ */
+const WEEKEND_DAYS = ["Saturday", "Sunday"];
+export function isWeekendDate(date: string): boolean {
+  return WEEKEND_DAYS.includes(dayNameOf(date));
+}
+
+/**
+ * The Stretch Wallet cascade. What has to be finished before PS5 minutes exist:
  *
- *     weekday  →  Morning + Homeschool + Afternoon/Evening
- *     weekend  →  Morning + Afternoon/Evening   (Homeschool schedules nothing)
+ *     weekday (Mon–Fri)  →  Morning + Homeschool
+ *     weekend (Sat/Sun)  →  Morning + Afternoon/Evening
  *
- * afternoon_evening is checked on ALL days, not behind a weekend branch. A rule
- * that reads the calendar is a rule with two behaviours to keep in step, and
- * blockSatisfied() already derives the weekend case from the data. Note the
- * weekday consequence, which is deliberate: room_tidy, teeth and reading sit in
- * a 21:00–21:30 window, so on a school day the wallet now opens after the
- * evening block rather than straight after homeschool.
+ * Homeschool is listed for both because on a weekend it schedules nothing and
+ * blockSatisfied() reports it vacuously satisfied — the check costs nothing and
+ * stays correct if Homeschool is ever given a weekend day. See blockSatisfied()
+ * for why a Notion outage does NOT get that same free pass.
+ *
+ * THE AFTERNOON/EVENING REQUIREMENT IS WEEKEND-ONLY, AND THAT IS THE POINT.
+ * A weekend used to be a free pass: every habit was Mon–Fri, so on a Saturday
+ * every block was empty, every block was vacuously satisfied, and the wallet
+ * hung open for nothing. Morning Habits and Afternoon/Evening are now scheduled
+ * seven days a week, so a weekend has two real blocks to finish.
+ *
+ * It is NOT applied on a school day. Requiring it there was tried and reverted:
+ * room_tidy, teeth and reading sit in a 21:00–21:30 window, so a weekday wallet
+ * that waited on the evening block could not open until 9pm — it stopped Ansar
+ * banking anything during the day he had actually earned it. Weekdays keep the
+ * original rule: finish the morning, finish homeschool, the wallet is open.
  *
  * The Qur'an daily minimum is an ungamified gate: it earns nothing and is worth
  * zero points, it only unlocks. It sits in pre_homeschool, so requiring that
@@ -299,7 +313,7 @@ export function gateWallet(ctx: GateContext): GateVerdict {
   if (!blockSatisfied(ctx, BLOCK_SCHOOL)) {
     return deny("locked", "Locked — finish Homeschool first");
   }
-  if (!blockSatisfied(ctx, BLOCK_ARVO)) {
+  if (isWeekendDate(ctx.serverDate) && !blockSatisfied(ctx, BLOCK_ARVO)) {
     return deny("locked", "Locked — finish Afternoon/Evening first");
   }
   return allow;
