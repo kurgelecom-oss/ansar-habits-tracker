@@ -258,12 +258,28 @@ export function gateCascade(habit: GateHabit, ctx: GateContext): GateVerdict {
 }
 
 /**
- * The Stretch Wallet cascade. Stretch points stay locked until pre_homeschool
- * AND homeschool are both 100% complete — or, on a day that schedules neither,
- * are vacuously satisfied. That second case is the weekend: Saturday and Sunday
- * have no habits at all, so there is nothing to finish, and the wallet is the
- * only thing on the board. See blockSatisfied() for why a Notion outage does
- * NOT get the same treatment.
+ * The Stretch Wallet cascade. Stretch points stay locked until pre_homeschool,
+ * homeschool AND afternoon_evening are each 100% complete — or, for a block that
+ * schedules nothing today, are vacuously satisfied. See blockSatisfied() for why
+ * a Notion outage does NOT get the same treatment.
+ *
+ * THE WEEKEND IS NO LONGER A FREE PASS. It used to be: every habit was Mon–Fri,
+ * so on a Saturday every block was empty, every block was vacuously satisfied,
+ * and the wallet simply hung open. Morning Habits and Afternoon/Evening are now
+ * scheduled seven days a week, so on a weekend those two blocks are REAL and
+ * have to actually be finished. Only Homeschool stays Mon–Fri, so only
+ * Homeschool is still vacuously satisfied on a Saturday — which is exactly the
+ * intended shape:
+ *
+ *     weekday  →  Morning + Homeschool + Afternoon/Evening
+ *     weekend  →  Morning + Afternoon/Evening   (Homeschool schedules nothing)
+ *
+ * afternoon_evening is checked on ALL days, not behind a weekend branch. A rule
+ * that reads the calendar is a rule with two behaviours to keep in step, and
+ * blockSatisfied() already derives the weekend case from the data. Note the
+ * weekday consequence, which is deliberate: room_tidy, teeth and reading sit in
+ * a 21:00–21:30 window, so on a school day the wallet now opens after the
+ * evening block rather than straight after homeschool.
  *
  * The Qur'an daily minimum is an ungamified gate: it earns nothing and is worth
  * zero points, it only unlocks. It sits in pre_homeschool, so requiring that
@@ -282,6 +298,9 @@ export function gateWallet(ctx: GateContext): GateVerdict {
   }
   if (!blockSatisfied(ctx, BLOCK_SCHOOL)) {
     return deny("locked", "Locked — finish Homeschool first");
+  }
+  if (!blockSatisfied(ctx, BLOCK_ARVO)) {
+    return deny("locked", "Locked — finish Afternoon/Evening first");
   }
   return allow;
 }

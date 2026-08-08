@@ -142,6 +142,36 @@ type Rejection = { habitId: string; habitName: string; reason: string; message: 
 // than importing it, as the dashboard's two surfaces also do.
 const WEEKLY_MAX = 55;
 
+/**
+ * The days the squad total is made of. Mon–Fri, and nothing else, ever.
+ *
+ * This is a HARD filter, not a consequence of the habit schedule. It used to be
+ * the latter: every habit was Mon–Fri, so a Saturday resolved to zero applicable
+ * habits and scored nothing, and the /55 came out right as a side effect.
+ * Morning Habits and Afternoon/Evening are now scheduled seven days a week, so
+ * that side effect is gone — a fully-ticked Saturday resolves 13 applicable
+ * habits and would score 5 straight into a ceiling with no room for it.
+ * WEEKLY_MAX is 52 + 3 of strictly weekday points; anything a weekend adds is
+ * overflow, and "Week total 60 / 55" is how that overflow would show up.
+ *
+ * Weekend effort is not discarded, it is reported elsewhere: the weekend daily
+ * rating on the scoreboard (see WEEKEND_MAX) and the Stretch Wallet, which is
+ * what a weekend actually earns.
+ */
+const SQUAD_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+/**
+ * The weekend daily ceiling: the weekday ceiling minus the 5 the Homeschool
+ * block pays, because Homeschool is the one block that stays Mon–Fri.
+ *
+ * 10 − 5 = 5, and it reconciles against scoreDay() term by term: 2 for the
+ * all-or-nothing Morning block, 1 for btn_cornell, 1 for all_namaz, 1 for a
+ * perfect day. There is no conditional term — SOCCER_DAYS is Mon/Wed, so nothing
+ * on a weekend can reach the 11 a training day allows.
+ */
+const HOMESCHOOL_PTS = 5;
+const WEEKEND_MAX = 10 - HOMESCHOOL_PTS;
+
 const THRESHOLDS = [
   { min: 42, label: "First Team 🏆",      desc: "42+ pts",   color: RM_GOLD },
   { min: 34, label: "Bench ✅",           desc: "34–41 pts", color: CYAN },
@@ -266,13 +296,12 @@ export default function AnsarPage() {
 
     if (notionHabits.length === 0) return;   // habits not loaded yet — don't score a blank list
 
-    // Resolved PER DATE, not once for the week. Habits carry Notion "Days"
-    // (Mon–Fri for the weekday routine), so Saturday and Sunday have no
-    // applicable habits and contribute nothing — which is what stops a stale
-    // weekend completion row from still earning points on a day the board
-    // schedules nothing. habitsOnDay() is the same rule the server applies in
-    // habitsForDay(); it is imported from lib/days.ts precisely so there is one
-    // copy of it rather than a client one that can drift.
+    // Resolved PER DATE, not once for the week. Habits carry Notion "Days", and
+    // the weekday and weekend rosters are no longer the same list — Homeschool
+    // is Mon–Fri, soccer is Mon/Wed, everything else is all seven days.
+    // habitsOnDay() is the same rule the server applies in habitsForDay(); it is
+    // imported from lib/days.ts precisely so there is one copy of it rather than
+    // a client one that can drift.
     const idsFor = (ds: string) => {
       const applicable = habitsOnDay(notionHabits, dayNameOf(ds));
       return {
@@ -284,6 +313,12 @@ export default function AnsarPage() {
 
     let total = 0;
     Object.keys(byDate).forEach(ds => {
+      // THE WEEKDAY FILTER, and it is deliberately the first thing here.
+      // Weekend rows are skipped because of the DATE, never because the day
+      // happened to schedule nothing — that used to be the mechanism, and it
+      // stopped being true the moment weekend habits were restored. A Saturday
+      // with all 13 of its habits ticked contributes exactly 0 to the /55.
+      if (!SQUAD_DAYS.includes(dayNameOf(ds))) return;
       const { applicable, preIds, baseIds } = idsFor(ds);
       if (applicable.length === 0) return;   // nothing scheduled that day → 0
       total += scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).total;
@@ -616,14 +651,21 @@ export default function AnsarPage() {
   const todayDone = gateHabits.filter(h => h.state === "DONE").length;
   const overallPct = gateHabits.length > 0 ? Math.round((todayDone / gateHabits.length) * 100) : 0;
   const weekThreshold = getThreshold(weeklyPts ?? 0);
-  const DAILY_MAX = SOCCER_DAYS.includes(dayName) ? 11 : 10;
 
   // Weekend is read from the SERVER's Sydney weekday, never `new Date()` — same
   // rule as every gate on this page. Empty until /api/tick answers, so the
-  // scoreboard cannot flash the weekday cell on a Saturday before the server
-  // has spoken. With every habit now scoped Mon–Fri in Notion, `gateHabits` is
-  // already empty on a weekend; this only changes what the header says about it.
+  // scoreboard cannot flash the weekday cell on a Saturday before the server has
+  // spoken. It is declared BEFORE DAILY_MAX because the ceiling now depends on
+  // it: a weekend day is a real scoring day with a real, lower ceiling, not a
+  // blank one.
   const isWeekend = dayName === "Saturday" || dayName === "Sunday";
+
+  // Three ceilings, one expression. 11 on a training day, 10 on a school day, 5
+  // on a weekend — see WEEKEND_MAX for why the weekend number is 10 minus the
+  // Homeschool block's 5. `todayPts` needs no branch at all: it comes from
+  // scoreDay() over the habits the SERVER says apply today, so a weekend already
+  // scores itself correctly out of this ceiling.
+  const DAILY_MAX = isWeekend ? WEEKEND_MAX : SOCCER_DAYS.includes(dayName) ? 11 : 10;
 
   const walletLocked = !wallet?.unlocked;
   const stretchBalance = wallet?.balance ?? 0;
@@ -1116,27 +1158,27 @@ export default function AnsarPage() {
             style={{ height: 112, width: "auto", display: "block", objectFit: "contain" }}
           />
         </div>
-        {/* Saturday and Sunday schedule no habits, so "Points today 0 / 10" would
-            be reporting a failure that never had a chance to happen. The weekend
-            reports the week that was earned instead: the tier of the Mon–Fri
-            total, which is exactly what `weekThreshold` already holds now that
-            weekend dates contribute nothing to weeklyPts. */}
-        {isWeekend
-          ? cell("Weekend", <span style={{ fontSize: 21, color: weekThreshold.color }}>
-              {weeklyPts === null ? "—" : weekThreshold.label}
-            </span>)
-          : cell("Points today", <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
+        {/* One cell, both kinds of day. The weekend used to borrow this slot to
+            re-print the week's tier, because Saturday scheduled nothing and
+            "Points today 0 / 10" would have reported a failure that never had a
+            chance to happen. A weekend now has 13 real habits and a real ceiling
+            of its own, so it gets a real score out of WEEKEND_MAX — only the
+            label changes. The tier it used to show has not gone anywhere: it is
+            the badge at the right-hand end of this same strip, all week. */}
+        {cell(isWeekend ? "Weekend pts" : "Points today",
+          <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
         {cell("Week total", <>{weeklyPts !== null ? weeklyPts : "—"}{sub(` / ${WEEKLY_MAX}`)}</>)}
         {cell("Streak", <>{streak !== null ? streak : "—"}{streak !== null && streak > 0 ? " 🔥" : ""}</>)}
-        {/* "0%" on a weekend reads as a failed day. Nothing is scheduled Sat/Sun,
-            so there is no proportion to report — an em dash says "not applicable"
-            where a zero says "you did none of it". The empty track is kept rather
-            than dropped so the scoreboard geometry is identical all week. */}
-        {cell("Today", isWeekend ? <>—</> : <>{gate ? overallPct : 0}{sub("%")}</>,
+        {/* This cell read "—" on Sat/Sun, because a weekend scheduled nothing and
+            a 0% would have said "you did none of it" about a day with nothing to
+            do. There are 13 weekend habits now, so there is a real proportion to
+            report and it is reported — `overallPct` is already computed over
+            whatever the SERVER says applies today, weekday or weekend. */}
+        {cell("Today", <>{gate ? overallPct : 0}{sub("%")}</>,
           <div style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.34)", overflow: "hidden", marginTop: 6, width: 150 }}>
             <div style={{
               height: "100%", borderRadius: 3, transition: "width 200ms ease-in-out",
-              width: gate && !isWeekend ? `${overallPct}%` : "0%",
+              width: gate ? `${overallPct}%` : "0%",
               background: "linear-gradient(90deg, #ffa500, #00ff88)",
             }} />
           </div>,
@@ -1158,8 +1200,12 @@ export default function AnsarPage() {
         }}>
           <div>
             <b style={{ color: weekThreshold.color, fontSize: 15 }}>{weekThreshold.label}</b>
+            {/* "Mon–Fri" is stated, not implied. This badge is the squad tier and
+                the squad total is a weekday number, which is invisible on a
+                Monday and confusing on a Saturday — where a full weekend of
+                ticks deliberately moves nothing here. */}
             <i style={{ fontStyle: "normal", fontSize: 11, color: "rgba(232,235,242,0.62)", display: "block", marginTop: 2 }}>
-              {weekThreshold.desc}{pointsActive === false && " · preview, not yet enforced"}
+              {weekThreshold.desc} · Mon–Fri{pointsActive === false && " · preview, not yet enforced"}
             </i>
           </div>
         </div>
