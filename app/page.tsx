@@ -1560,6 +1560,18 @@ export default function AnsarPage() {
         <a href="https://www.notion.so/f4d6ca41a1a24e08b597abfd77d1e78e" target="_blank" rel="noopener noreferrer">Settings</a>
         <span aria-hidden>·</span>
         <a href="https://www.notion.so/3dacc9966756478db29604840c39c08a" target="_blank" rel="noopener noreferrer">Stretch</a>
+        {/* The monthly record. It rides in THIS strip rather than the scoreboard
+            because the strip is a horizontal flex row — one more child costs no
+            height at all, and .ab-root is 100dvh with overflow:hidden, so any
+            height added here comes straight out of the board.
+
+            It is a link, not a button: /export is a real page that opens in its
+            own tab and prints itself, so the board never leaves the screen and
+            nothing on it has to wait for a report to render. */}
+        <span aria-hidden>·</span>
+        <a href="/export" target="_blank" rel="noopener noreferrer" title="Last month's record, ready to print or save as PDF">
+          Month PDF
+        </a>
       </div>
 
       {/* ── GATE REJECTION TOAST ────────────────────────────────────────────
