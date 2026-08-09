@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="ansarGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFB81C;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background (amber/gold - unique to Ansar) -->
+  <rect width="128" height="128" rx="20" fill="url(#ansarGrad)"/>
+  <!-- Trophy icon in white, centered -->
+  <g transform="translate(64, 64)">
+    <!-- Cup body -->
+    <path d="M -20 -15 L -14 20 Q 0 28 14 20 L 20 -15 Z" fill="white" stroke="none"/>
+    <!-- Left handle -->
+    <path d="M -20 -8 Q -28 -5 -24 10" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Right handle -->
+    <path d="M 20 -8 Q 28 -5 24 10" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Base stem -->
+    <rect x="-6" y="20" width="12" height="8" fill="white"/>
+    <!-- Base plate -->
+    <ellipse cx="0" cy="30" rx="18" ry="5" fill="white"/>
+  </g>
+</svg>

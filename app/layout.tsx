@@ -5,6 +5,9 @@ import TopNav from "./components/TopNav";
 export const metadata: Metadata = {
   title: "Ansar · Daily Habits Tracker",
   description: "Track your daily habits and earn rewards",
+  icons: {
+    icon: [{ url: "/ansar-favicon.svg", type: "image/svg+xml" }],
+  },
 };
 
 // The reset, the --bg-base/--bg-card/--cyan tokens and the shared TopNav chrome
