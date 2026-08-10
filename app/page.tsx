@@ -764,8 +764,11 @@ export default function AnsarPage() {
    40px taller than the viewport — a scrollbar on a page whose whole point is not
    scrolling. Padding cannot collapse. box-sizing:border-box is already global. */
 .ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:var(--nav-h);overflow:hidden}
+/* Outer padding trimmed 10/11 -> 6/7. Cheapest 8px on the board: it costs no
+   information and every column gains it. One-page dashboard — nothing here ever
+   scrolls, so vertical space goes to content rather than to margins. */
 .ab-board{display:grid;grid-template-columns:1fr 1fr 0.84fr 0.96fr;gap:11px;
-  padding:10px 16px 11px;flex:1;min-height:0}
+  padding:6px 16px 7px;flex:1;min-height:0}
 .ab-btn{transition:transform 220ms cubic-bezier(.34,1.56,.64,1),background 180ms ease,
   border-color 180ms ease,box-shadow 180ms ease;box-shadow:0 2px 0 rgba(0,0,0,.32)}
 .ab-btn:active:not(:disabled){transform:scale(.965) translateY(1px);
@@ -1191,6 +1194,7 @@ export default function AnsarPage() {
     if (bh.length === 0) return null;
     const done = bh.filter(h => h.state === "DONE").length;
     return (
+      // no scroll — one-page dashboard, overflow-y is banned here
       <div style={cardStyle}>
         {colHead(block.color, block.label, block.subtitle,
           <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -1471,15 +1475,9 @@ export default function AnsarPage() {
         {/* 2 — Afternoon / Evening */}
         {habitColumn(evening)}
 
-        {/* 3 — Homeschool · Log Work · Conditional · Weekly Tiers
-            overflow-y:auto is the release valve. Everything above Weekly Tiers is
-            flex:0 0 auto, so once Weekly Tiers is floored at its content height this
-            stack can exceed the board on a short window. Without a scroll here that
-            overflow just lands on .ab-root's overflow:hidden and clips the same two
-            tiers one level up — measured 12px past the root at 900px tall, 112px at
-            800px. .ab-root's rule stays untouched; the column yields instead. It
-            shows no scrollbar at all above ~945px, where nothing overflows. */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, minHeight: 0, overflowY: "auto" }}>
+        {/* 3 — Homeschool · Log Work · Conditional · Weekly Tiers */}
+        {/* no scroll — one-page dashboard, overflow-y is banned here */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, minHeight: 0 }}>
           {schoolHabits.length > 0 && (
             <div style={{ ...cardStyle, flex: "0 0 auto" }}>
               {colHead(school.color, school.label, school.subtitle,
@@ -1491,8 +1489,9 @@ export default function AnsarPage() {
                     {dayScore.blocks.homeschool ?? 0} pts
                   </div>
                 </div>,
+                true,
               )}
-              <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 9 }}>
+              <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 9 }}>
                 {schoolHabits.map(h => heroButton(h, school.color))}
               </div>
             </div>
@@ -1507,7 +1506,7 @@ export default function AnsarPage() {
             aria-expanded={logOpen}
             style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              minHeight: 52, width: "100%", flexShrink: 0, borderRadius: 11,
+              minHeight: 44, width: "100%", flexShrink: 0, borderRadius: 11,
               border: "1px solid #2d3543", background: "#1f2438",
               color: "#ffffff", font: "inherit", fontSize: 16, fontWeight: 800,
               cursor: "pointer", WebkitTapHighlightColor: "transparent",
@@ -1523,8 +1522,9 @@ export default function AnsarPage() {
                 <div style={{ fontSize: 19, fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
                   {condHabits.filter(h => h.state === "DONE").length}/{condHabits.length}
                 </div>,
+                true,
               )}
-              <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 8 }}>
                 {condHabits.map(h => habitButton(h, conditional.color))}
               </div>
             </div>
@@ -1600,6 +1600,7 @@ export default function AnsarPage() {
         </div>
 
         {/* 4 — Stretch Wallet */}
+        {/* no scroll — one-page dashboard, overflow-y is banned here */}
         <div style={{ ...cardStyle, border: "1px solid #3a2d5a" }}>
           {colHead(`linear-gradient(90deg, #a78bfa, ${CYAN})`, "🎮 Stretch Wallet",
             `Banks all week · converts Sat & Sun · ${STRETCH_DAILY_REDEEM_CAP_MIN} min/day cap`,
