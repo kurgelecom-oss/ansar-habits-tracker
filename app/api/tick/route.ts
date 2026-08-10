@@ -79,6 +79,54 @@ function readClient() {
  */
 let lastHabitsError: string | null = null;
 
+/* ── The rejection ledger ────────────────────────────────────────────────────
+   Every 409 this route returns is also written to public.tick_rejections.
+
+   WHY. Until now a refusal existed only as an HTTP response. "Did he tap and
+   get bounced, or never tap at all?" was unanswerable the next morning, because
+   habit_completions records successes and nothing records failures — a missing
+   row looks identical either way. The two habits missed on 2026-08-10 are the
+   case in point: the rows are absent, and nothing in the database says whether
+   the child tapped into a closed window or never reached for it.
+
+   BEST-EFFORT, ALWAYS. A refusal is already the answer to the request; the log
+   is bookkeeping layered behind it. Nothing in here may change a status code, a
+   reason string or a response body, and a broken ledger must never turn a plain
+   "Opens 6:30am" into a 500. Hence: awaited, so the row lands before the
+   response is sent, but wrapped so nothing it does can escape.
+
+   NOT SILENT, THOUGH. A swallowed error nobody surfaces is how a log quietly
+   stops logging for a month. The failure is parked in lastRejectionLogError and
+   reported by the GET diagnostic, exactly as lastHabitsError above already is. */
+let lastRejectionLogError: string | null = null;
+
+async function logRejection(row: {
+  habitId: string;
+  serverDate: string;
+  reason: string;
+  detail: string;
+  nowMinutes: number;
+}): Promise<void> {
+  try {
+    // The same service-role client that writes habit_completions. anon holds no
+    // grant on tick_rejections, so nothing else on earth can reach this table.
+    if (!hasServiceRole()) {
+      lastRejectionLogError = "no service role — rejection not logged";
+      return;
+    }
+    const { error } = await adminClient().from("tick_rejections").insert({
+      habit_id: row.habitId,
+      rejected_date: row.serverDate,
+      reason: row.reason,
+      detail: row.detail,
+      now_minutes: row.nowMinutes,
+    });
+    lastRejectionLogError = error ? error.message : null;
+  } catch (e) {
+    lastRejectionLogError = e instanceof Error ? e.message : "rejection log failed";
+  }
+}
+
 async function loadContext(fresh: boolean): Promise<GateContext> {
   const now = sydneyNow();                       // ← the server's own clock
 
@@ -129,6 +177,12 @@ export async function GET(request: Request) {
 
     let overridden: string[] = [];
     let overrideLogToday: unknown[] = [];
+    // Refusals recorded today. Read back here for the same reason overrideLogToday
+    // is: tick_rejections is service-role-only, so this endpoint is the only way
+    // to see it without a database client. It is also how a broken ledger is
+    // caught — rejectionLogError below reports an insert that did not land.
+    let rejectionsToday: unknown[] = [];
+    let rejectionLogReadError: string | null = null;
     if (hasServiceRole()) {
       const { data } = await adminClient()
         .from("override_log")
@@ -137,6 +191,15 @@ export async function GET(request: Request) {
       overrideLogToday = (data ?? []).filter((r: { habit_id: string }) => r.habit_id !== "__pin_attempt__");
       overridden = Array.from(new Set(
         (overrideLogToday as { habit_id: string }[]).map(r => r.habit_id)));
+
+      const rej = await adminClient()
+        .from("tick_rejections")
+        .select("*")
+        .eq("rejected_date", now.date)
+        .order("rejected_at", { ascending: false })
+        .limit(20);
+      rejectionsToday = rej.data ?? [];
+      rejectionLogReadError = rej.error ? rej.error.message : null;
     }
 
     return NextResponse.json({
@@ -165,6 +228,12 @@ export async function GET(request: Request) {
       // Full audit rows for today. override_log is service-role-only, so this
       // is the only way to read it back without a database client.
       overrideLogToday,
+      // The rejection ledger, today only, newest first. Empty is a real answer:
+      // it means nothing was refused, not that logging is broken — the two error
+      // fields below are what tell those apart.
+      rejectionsToday,
+      rejectionLogError: lastRejectionLogError,
+      rejectionLogReadError,
       notionConfigured: Boolean(process.env.NOTION_TOKEN),
       habitsError: lastHabitsError,
       // The three booleans above are the whole configuration story, and they
@@ -235,10 +304,21 @@ export async function POST(request: Request) {
      exists perfectly well. Same reason strings either way. */
   const serverToday = now.date;
   if (date !== serverToday) {
+    const reason = date < serverToday ? "closed" : "not_open";
+    const message = date < serverToday ? "Missed — that day is over" : "That day hasn't started yet";
+    // Logged against the SERVER's date, not the stale one the request carried —
+    // the interesting fact is "a tap arrived today naming another day", and
+    // filing it under the wrong day would hide it from the day it happened on.
+    // ctx does not exist yet here (this check is hoisted above loadContext), so
+    // the clock comes from `now`, which is the same instant ctx would carry.
+    await logRejection({
+      habitId, serverDate: serverToday, reason, detail: message,
+      nowMinutes: now.minutesOfDay,
+    });
     return NextResponse.json({
       ok: false,
-      reason: date < serverToday ? "closed" : "not_open",
-      message: date < serverToday ? "Missed — that day is over" : "That day hasn't started yet",
+      reason,
+      message,
       serverDate: serverToday,
     }, { status: 409, headers: noStore });
   }
@@ -311,6 +391,14 @@ export async function POST(request: Request) {
   if (!overrideUsed) {
     const verdict = evaluateGates(habit, ctx, date);
     if (!verdict.allowed) {
+      // The gauntlet's own verdict, recorded verbatim. `reason` is whichever of
+      // not_open / closed / too_fast / out_of_order / locked gating.ts returned
+      // — this route invents nothing and re-words nothing, so the ledger and the
+      // response always agree about why a tap was refused.
+      await logRejection({
+        habitId, serverDate: ctx.serverDate, reason: verdict.reason,
+        detail: verdict.message, nowMinutes: ctx.nowMinutes,
+      });
       return NextResponse.json(
         { ok: false, reason: verdict.reason, message: verdict.message, serverDate: ctx.serverDate },
         { status: 409, headers: noStore },

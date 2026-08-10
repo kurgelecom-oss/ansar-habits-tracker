@@ -2,7 +2,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, getWeekStart } from "./lib/supabase";
 import { scoreDay, SOCCER_DAYS } from "./lib/scoring";
-import { addDays, dayNameOf } from "./lib/time";
+// sydneyMinutesOfDay/parseHHMM feed the morning feasibility banner. Both are the
+// SAME primitives the server gates against — time.ts is Intl.DateTimeFormat with
+// timeZone "Australia/Sydney" throughout and holds no hardcoded offset, so the
+// banner cannot disagree with gateWindow() about what minute it is.
+import { addDays, dayNameOf, sydneyMinutesOfDay, parseHHMM } from "./lib/time";
 // Pure day rule, shared with the server's habitsForDay(). lib/days.ts imports no
 // Notion code, so nothing server-only reaches this bundle.
 import { habitsOnDay } from "./lib/days";
@@ -118,6 +122,11 @@ type GateSnapshot = {
   overriddenHabitIds: string[];
   warnings: string[];
   habits: GateHabitView[];
+  // The dwell the gates actually use, from Notion App Settings. The route has
+  // always returned it; this type simply never declared it. The banner needs it
+  // rather than a literal 90 so that retuning the dwell in Notion moves the
+  // warning at the same moment it moves gateDwell().
+  defaultDwellSeconds?: number;
 };
 
 /** Notion habit, from /api/habits. Supplies the point values the chips show. */
@@ -213,6 +222,18 @@ export default function AnsarPage() {
   const [pointsActive, setPointsActive] = useState<boolean | null>(null);
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState("");
+  /**
+   * Minutes since Sydney midnight, for the morning feasibility banner.
+   *
+   * NULL UNTIL MOUNTED, deliberately. A clock read during the server render and
+   * again on the client is the classic hydration mismatch, and this one would
+   * flash a red "can't finish in time" banner on a page that had not yet decided
+   * it. Null renders no banner at all.
+   *
+   * Separate from `time` above, which is the DEVICE's clock and is display-only.
+   * This one is Sydney via lib/time.ts — the zone the gates are decided in.
+   */
+  const [nowMin, setNowMin] = useState<number | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
   const [weeklyPts, setWeeklyPts] = useState<number | null>(null);
@@ -419,7 +440,16 @@ export default function AnsarPage() {
     setTime(new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" }));
 
     const poll = setInterval(() => { loadGate(); loadWallet(); }, 30000);
-    return () => { clearInterval(t); clearInterval(poll); };
+
+    // The feasibility clock. 15s rather than the 1s above, because the banner
+    // only ever changes on a minute boundary and a per-second re-render of the
+    // whole board to redraw the same sentence is waste. It is also faster than
+    // the 30s gate poll on purpose: the deadline moves on its own even when
+    // nothing is tapped, so the warning must not wait for a refetch to appear.
+    const feas = setInterval(() => setNowMin(sydneyMinutesOfDay()), 15000);
+    setNowMin(sydneyMinutesOfDay());
+
+    return () => { clearInterval(t); clearInterval(poll); clearInterval(feas); };
   }, [loadGate, loadNotionHabits, loadWallet, loadStretchItems, loadSettings]);
 
   // History reloads whenever the server's date or the habit list changes.
@@ -579,6 +609,11 @@ export default function AnsarPage() {
       });
       const body = await res.json();
       if (res.ok && body?.ok) {
+        // Re-read the clock before the reload, not on the next 15s edge. A tick
+        // removes one habit from R and so pushes latestSafeNextTick 90s later;
+        // leaving the banner on stale minutes would keep an amber warning up for
+        // a quarter-minute after the tap that already resolved it.
+        setNowMin(sydneyMinutesOfDay());
         await loadGate();
         await loadWallet();
         if (serverDate) loadWeeklyData(serverDate);
@@ -1086,6 +1121,60 @@ export default function AnsarPage() {
   const inBlock = (blockId: string) =>
     gateHabits.filter(h => h.block === blockId).sort((a, b) => a.order - b.order);
 
+  /* ── MORNING FEASIBILITY ────────────────────────────────────────────────────
+     Can the morning block still be finished before its window shuts?
+
+     THE ARITHMETIC. R habits remain. Gate 2 forces `dwell` seconds between
+     consecutive ticks in a block, so clearing R of them takes (R−1) gaps — the
+     first is free, every one after it waits. Working backwards from the close:
+
+         latestSafeNextTick = windowEnd − (R−1) × dwell
+
+     Past that minute the chain no longer fits and the last habit is arithmetically
+     unreachable however fast the tapping goes. That is not a hypothetical: on
+     2026-08-10 `movement` landed at 08:29:01 against an 08:30 close with two
+     habits left, which needed 3 minutes of dwell and had 2 — `goals` was already
+     impossible and nothing on screen said so.
+
+     WHY IT READS `> latestSafeNextTick` AND NOT `>=`. gateWindow() compares whole
+     minutes and denies only on `nowMinutes > end`, so the final minute of the
+     window is still live. Mirroring the operator keeps the banner from calling a
+     morning dead while the server would still accept the tap.
+
+     ADVISORY ONLY. Nothing here can allow or refuse anything — the server re-runs
+     evaluateGates() on every POST regardless of what this computes. It exists to
+     make a deadline visible before it passes, not to enforce one. */
+  const morningFeasibility = (() => {
+    if (nowMin === null) return null;                 // pre-mount, no clock yet
+    const bh = inBlock("pre_homeschool");
+    if (bh.length === 0) return null;
+
+    const remaining = bh.filter(h => h.state !== "DONE");
+    if (remaining.length === 0) return null;          // block finished, nothing to warn about
+
+    // The window is read off the habits themselves, so it stays whatever Notion
+    // says. `window` arrives as "HH:MM-HH:MM"; an unset or unparseable one means
+    // the habit is UNGATED, and an ungated habit has no deadline to miss.
+    const end = parseHHMM(remaining[0].window?.split("-")[1] ?? null);
+    if (end === null) return null;
+
+    const dwellMin = (gate?.defaultDwellSeconds ?? 90) / 60;
+    const latestSafeNextTick = end - (remaining.length - 1) * dwellMin;
+    const minsLeft = latestSafeNextTick - nowMin;
+
+    if (nowMin > latestSafeNextTick) {
+      return { level: "red" as const, latestSafeNextTick, remaining: remaining.length,
+        text: "⚠️ Morning can't finish in time — needs a parent override" };
+    }
+    // The last three minutes of viability. Ceil, not round: with 0.5 minutes left
+    // "1m left" is honest and "0m left" reads as already-lost.
+    if (minsLeft <= 3) {
+      return { level: "amber" as const, latestSafeNextTick, remaining: remaining.length,
+        text: `⏳ ${Math.max(1, Math.ceil(minsLeft))}m left to finish morning — keep tapping` };
+    }
+    return null;
+  })();
+
   /** A full habit column (Morning, and Afternoon/Evening). */
   const habitColumn = (block: (typeof BLOCKS)[number]) => {
     const bh = inBlock(block.id);
@@ -1102,6 +1191,40 @@ export default function AnsarPage() {
               {dayScore.blocks[block.id] ?? 0} pts
             </div>
           </div>,
+        )}
+        {/* The feasibility warning. Morning only — it is the one block whose
+            dwell chain can outrun its own window, because it is the only one
+            with seven habits inside two hours. Rendered above the buttons so it
+            is read before the next tap, not after it. Colours are the amber and
+            red this file already uses for Reserves and Training Ground; no token
+            is added and globals.css is untouched. */}
+        {block.id === "pre_homeschool" && morningFeasibility && (
+          <div
+            role="status"
+            aria-live="polite"
+            data-testid="morning-feasibility"
+            data-level={morningFeasibility.level}
+            data-latest-safe-next-tick={morningFeasibility.latestSafeNextTick}
+            data-remaining={morningFeasibility.remaining}
+            style={{
+              margin: "0 10px 0",
+              marginTop: 10,
+              padding: "7px 10px",
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 700,
+              lineHeight: 1.35,
+              color: morningFeasibility.level === "red" ? "#ff4444" : "#ffa500",
+              background: morningFeasibility.level === "red"
+                ? "rgba(255, 68, 68, 0.10)"
+                : "rgba(255, 165, 0, 0.10)",
+              border: `1px solid ${morningFeasibility.level === "red"
+                ? "rgba(255, 68, 68, 0.35)"
+                : "rgba(255, 165, 0, 0.35)"}`,
+            }}
+          >
+            {morningFeasibility.text}
+          </div>
         )}
         <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
           {bh.map(h => habitButton(h, block.color))}
