@@ -889,17 +889,27 @@ export default function AnsarPage() {
     boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
   };
 
-  /** Column shell: accent rail, title/subtitle, optional right-hand count. */
-  const colHead = (color: string, title: string, subtitle: string, right?: React.ReactNode) => (
+  /**
+   * Column shell: accent rail, title/subtitle, optional right-hand count.
+   *
+   * `compact` is opt-in and only Weekly Tiers passes it. It buys back 11px of
+   * header (61 -> 50) by thinning the rail, halving the block padding, and
+   * dropping the static subline to 9px with a 1px gap — the title keeps its 15px.
+   * The other four callers (Morning/Evening, Homeschool, Conditional, Stretch
+   * Wallet) omit the flag and render byte-identically, which is why the tightening
+   * lives here as a parameter rather than in the shared style: editing the base
+   * would have restyled every card on the board.
+   */
+  const colHead = (color: string, title: string, subtitle: string, right?: React.ReactNode, compact = false) => (
     <>
-      <div style={{ height: 3, background: color, flexShrink: 0 }} />
+      <div style={{ height: compact ? 2 : 3, background: color, flexShrink: 0 }} />
       <div style={{
-        padding: "9px 14px 8px", borderBottom: "1px solid #2d3543", flexShrink: 0,
+        padding: compact ? "5px 10px" : "9px 14px 8px", borderBottom: "1px solid #2d3543", flexShrink: 0,
         display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10,
       }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color }}>{title}</div>
-          <div style={{ fontSize: 10, color: "#757f8f", marginTop: 3, fontWeight: 500 }}>{subtitle}</div>
+          <div style={{ fontSize: compact ? 9 : 10, color: "#757f8f", marginTop: compact ? 1 : 3, fontWeight: 500 }}>{subtitle}</div>
         </div>
         {right}
       </div>
@@ -1528,23 +1538,24 @@ export default function AnsarPage() {
               rows; flex:1 still lets it stretch on tall screens, so nothing changes
               above ~945px of viewport height. */}
           <div style={{ ...cardStyle, flex: 1, minHeight: "min-content" }}>
-            {colHead(`linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)`, "🏆 Weekly Tiers", `5 Perfect Days Mon–Fri = +3 · max ${WEEKLY_MAX}`)}
-            {/* Single row of four. minmax(0,1fr), NOT plain 1fr: a bare 1fr is
-                minmax(auto,1fr), whose auto floor is the track's min-content width,
-                so the four tracks blow out to fit their labels and the row overflows
-                this 304px card horizontally — measured 173px on the Training Ground
-                track, clipped off the right edge by cardStyle's overflow:hidden.
-                minmax(0,·) lets the tracks actually divide the width equally.
+            {colHead(`linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)`, "🏆 Weekly Tiers", `5 Perfect Days Mon–Fri = +3 · max ${WEEKLY_MAX}`, undefined, true)}
+            {/* 2x2, one line per tile, everything at 11.5px.
+                minmax(0,·) stays: a bare 1fr is minmax(auto,1fr), and that auto floor
+                is the track's min-content width, so the tracks grow to fit their
+                labels and the row overflows this 304px card horizontally — clipped
+                off the right edge by cardStyle's overflow:hidden.
 
-                Type is 9/8px with lineHeight 1.05 because that is the largest scale
-                that lands the card at 127px, which is exactly the height column 3 has
-                spare at 1440x900 — one step up (9.5px) measures 128px and reintroduces
-                1px of column scroll. Tier names wrap to two lines inside the tile:
-                at a 68.5px track "Training Ground ❌ 0–25" needs 119px on one line and
-                has 67px, and it is still 21px short at a 6px font, so a genuine
-                single-line tile is only reachable by truncating the names away. */}
+                The columns are deliberately UNEQUAL. Measured one-line widths at
+                11.5px are First Team 126, Reserves 130, Bench 100, Training Ground
+                163 — and because THRESHOLDS order puts Reserves in column 1 and
+                Training Ground in column 2, the two columns need 130 and 163, a
+                1:1.254 split. Equal tracks give both 144, which fits Reserves and
+                leaves Training Ground 21px short; 1fr/1.26fr fits all four with zero
+                clipping. Total need is 293px against 297px of track, so the slack is
+                only a few px — a longer tier name would need the ratio revisited. */}
             <div style={{
-              padding: 6, display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 3,
+              padding: 3, display: "grid",
+              gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.26fr)", gap: 3,
               flex: 1, minHeight: "min-content",
             }}>
               {THRESHOLDS.map((t, i) => {
@@ -1553,29 +1564,32 @@ export default function AnsarPage() {
                 const isAchieved = weeklyPts !== null && weekPts >= t.min;
                 return (
                   <div key={t.min} style={{
-                    display: "flex", flexDirection: "column", justifyContent: "center",
-                    padding: "3px 4px", borderRadius: 9, overflow: "hidden",
+                    display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                    gap: 3, padding: "4px 4px", borderRadius: 9, overflow: "hidden",
                     background: isActive ? t.color + "15" : "#1f2438",
                     border: `1px solid ${isActive ? t.color + "50" : "#2d3543"}`,
                     opacity: isAchieved ? 1 : 0.45,
                     transition: "all 200ms ease-out",
                   }}>
                     <div style={{
-                      fontSize: 9, fontWeight: 800, color: t.color, lineHeight: 1.05,
-                      display: "flex", alignItems: "center", gap: 3, minWidth: 0,
+                      fontSize: 11.5, fontWeight: 800, color: t.color, lineHeight: 1.15,
+                      display: "flex", alignItems: "center", gap: 3, minWidth: 0, whiteSpace: "nowrap",
                     }}>
                       <span style={{
-                        width: 6, height: 6, borderRadius: "50%", background: t.color, flexShrink: 0,
+                        width: 7, height: 7, borderRadius: "50%", background: t.color, flexShrink: 0,
                         boxShadow: isActive ? `0 0 8px ${t.color}` : "none",
                       }} />
                       {t.label}
                     </div>
-                    {/* " pts" is dropped for width, and the active tier loses its
-                        "· you are here" tail — at 67px of track neither fits, and the
-                        active cue is already carried by the glowing dot, the tinted
-                        fill and the full-opacity border. THRESHOLDS itself is not
-                        edited; the suffix is stripped here at the render site. */}
-                    <div style={{ fontSize: 8, color: "#757f8f", lineHeight: 1.05, whiteSpace: "nowrap" }}>
+                    {/* " pts" is stripped so the threshold shares the row, and the
+                        active tier's "· you are here" tail stays dropped — there is no
+                        width for it at 11.5px. The active cue is the glowing dot, the
+                        tinted fill and the full-opacity border, all still applied.
+                        THRESHOLDS is not edited; the suffix goes at the render site. */}
+                    <div style={{
+                      fontSize: 11.5, color: "#757f8f", lineHeight: 1.15,
+                      whiteSpace: "nowrap", flexShrink: 0,
+                    }}>
                       {t.desc.replace(" pts", "")}
                     </div>
                   </div>
