@@ -1461,8 +1461,15 @@ export default function AnsarPage() {
         {/* 2 — Afternoon / Evening */}
         {habitColumn(evening)}
 
-        {/* 3 — Homeschool · Log Work · Conditional · Weekly Tiers */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, minHeight: 0 }}>
+        {/* 3 — Homeschool · Log Work · Conditional · Weekly Tiers
+            overflow-y:auto is the release valve. Everything above Weekly Tiers is
+            flex:0 0 auto, so once Weekly Tiers is floored at its content height this
+            stack can exceed the board on a short window. Without a scroll here that
+            overflow just lands on .ab-root's overflow:hidden and clips the same two
+            tiers one level up — measured 12px past the root at 900px tall, 112px at
+            800px. .ab-root's rule stays untouched; the column yields instead. It
+            shows no scrollbar at all above ~945px, where nothing overflows. */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, minHeight: 0, overflowY: "auto" }}>
           {schoolHabits.length > 0 && (
             <div style={{ ...cardStyle, flex: "0 0 auto" }}>
               {colHead(school.color, school.label, school.subtitle,
@@ -1513,11 +1520,18 @@ export default function AnsarPage() {
             </div>
           )}
 
-          <div style={{ ...cardStyle, flex: 1, minHeight: 0 }}>
+          {/* min-height:min-content, NOT 0. cardStyle carries overflow:hidden, and
+              flex:1 + min-height:0 licensed this card to be squeezed below its own
+              content. It is the only elastic member of this column, so it absorbed
+              the entire shortfall on short viewports and clipped its second grid row
+              — Reserves and Training Ground. min-content floors it at header + both
+              rows; flex:1 still lets it stretch on tall screens, so nothing changes
+              above ~945px of viewport height. */}
+          <div style={{ ...cardStyle, flex: 1, minHeight: "min-content" }}>
             {colHead(`linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)`, "🏆 Weekly Tiers", `5 Perfect Days Mon–Fri = +3 · max ${WEEKLY_MAX}`)}
             <div style={{
               padding: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6,
-              flex: 1, minHeight: 0,
+              flex: 1, minHeight: "min-content",
             }}>
               {THRESHOLDS.map((t, i) => {
                 const weekPts = weeklyPts ?? 0;
