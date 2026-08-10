@@ -1529,8 +1529,22 @@ export default function AnsarPage() {
               above ~945px of viewport height. */}
           <div style={{ ...cardStyle, flex: 1, minHeight: "min-content" }}>
             {colHead(`linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)`, "🏆 Weekly Tiers", `5 Perfect Days Mon–Fri = +3 · max ${WEEKLY_MAX}`)}
+            {/* Single row of four. minmax(0,1fr), NOT plain 1fr: a bare 1fr is
+                minmax(auto,1fr), whose auto floor is the track's min-content width,
+                so the four tracks blow out to fit their labels and the row overflows
+                this 304px card horizontally — measured 173px on the Training Ground
+                track, clipped off the right edge by cardStyle's overflow:hidden.
+                minmax(0,·) lets the tracks actually divide the width equally.
+
+                Type is 9/8px with lineHeight 1.05 because that is the largest scale
+                that lands the card at 127px, which is exactly the height column 3 has
+                spare at 1440x900 — one step up (9.5px) measures 128px and reintroduces
+                1px of column scroll. Tier names wrap to two lines inside the tile:
+                at a 68.5px track "Training Ground ❌ 0–25" needs 119px on one line and
+                has 67px, and it is still 21px short at a 6px font, so a genuine
+                single-line tile is only reachable by truncating the names away. */}
             <div style={{
-              padding: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6,
+              padding: 6, display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 3,
               flex: 1, minHeight: "min-content",
             }}>
               {THRESHOLDS.map((t, i) => {
@@ -1539,22 +1553,30 @@ export default function AnsarPage() {
                 const isAchieved = weeklyPts !== null && weekPts >= t.min;
                 return (
                   <div key={t.min} style={{
-                    minHeight: 30, display: "flex", flexDirection: "column", justifyContent: "center",
-                    padding: "6px 10px", borderRadius: 9,
+                    display: "flex", flexDirection: "column", justifyContent: "center",
+                    padding: "3px 4px", borderRadius: 9, overflow: "hidden",
                     background: isActive ? t.color + "15" : "#1f2438",
                     border: `1px solid ${isActive ? t.color + "50" : "#2d3543"}`,
                     opacity: isAchieved ? 1 : 0.45,
                     transition: "all 200ms ease-out",
                   }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 800, color: t.color, display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{
+                      fontSize: 9, fontWeight: 800, color: t.color, lineHeight: 1.05,
+                      display: "flex", alignItems: "center", gap: 3, minWidth: 0,
+                    }}>
                       <span style={{
-                        width: 8, height: 8, borderRadius: "50%", background: t.color, flexShrink: 0,
+                        width: 6, height: 6, borderRadius: "50%", background: t.color, flexShrink: 0,
                         boxShadow: isActive ? `0 0 8px ${t.color}` : "none",
                       }} />
                       {t.label}
                     </div>
-                    <div style={{ fontSize: 10, color: "#757f8f", marginTop: 4 }}>
-                      {t.desc}{isActive ? " · you are here" : ""}
+                    {/* " pts" is dropped for width, and the active tier loses its
+                        "· you are here" tail — at 67px of track neither fits, and the
+                        active cue is already carried by the glowing dot, the tinted
+                        fill and the full-opacity border. THRESHOLDS itself is not
+                        edited; the suffix is stripped here at the render site. */}
+                    <div style={{ fontSize: 8, color: "#757f8f", lineHeight: 1.05, whiteSpace: "nowrap" }}>
+                      {t.desc.replace(" pts", "")}
                     </div>
                   </div>
                 );
