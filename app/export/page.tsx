@@ -112,7 +112,11 @@ export default async function ExportPage(
 
   const report = buildMonthReport({
     month,
-    roster: roster.map(h => ({ id: h.id, name: h.name, block: h.block, days: h.days })),
+    // pointType rides along so an unlock-only prerequisite stays out of the
+    // month's points and Perfect Day count. See lib/days.ts.
+    roster: roster.map(h => ({
+      id: h.id, name: h.name, block: h.block, days: h.days, pointType: h.pointType,
+    })),
     completions,
     weekRows,
     earliest,

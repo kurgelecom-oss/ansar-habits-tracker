@@ -20,7 +20,7 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 import { scoreDay } from "./scoring";
-import { habitsOnDay } from "./days";
+import { habitsOnDay, scoringHabits } from "./days";
 import { TZ, sydneyDateKey, addDays, dayNameOf, weekStartOf } from "./time";
 
 /* ── shapes ───────────────────────────────────────────────────────────────── */
@@ -47,6 +47,10 @@ export interface RosterHabit {
   name: string;
   block: string;
   days: string[];
+  /** Notion "Point Type". `prerequisite` unlocks and scores nothing — it is
+   *  still shown as a ✓/✗ on the day, but it is not part of the points or of
+   *  the Perfect Day. See lib/days.ts. */
+  pointType?: string | null;
 }
 
 export interface DayRow {
@@ -211,8 +215,13 @@ export function buildMonthReport(input: MonthReportInput): MonthReport {
     // is what makes a ✗ meaningful: an absent row for a habit that never applied
     // on a Saturday is not a miss, and is not shown as one.
     const applicable = habitsOnDay(roster, weekday);
-    const preIds = applicable.filter(h => h.block === "pre_homeschool").map(h => h.id);
-    const baseIds = applicable.filter(h => h.block !== "conditional").map(h => h.id);
+    // The same split the board and the ledger apply: a prerequisite is still
+    // "applicable" — it belongs in the ✓/✗ grid, and a missed one is a real
+    // miss — but it is not in preIds or baseIds, so it moves neither the points
+    // nor the Perfect Day. Three surfaces, one rule. See lib/days.ts.
+    const scored = scoringHabits(applicable);
+    const preIds = scored.filter(h => h.block === "pre_homeschool").map(h => h.id);
+    const baseIds = scored.filter(h => h.block !== "conditional").map(h => h.id);
 
     const score = scoreDay(completedIds, weekday, preIds, baseIds);
     // The ceiling is asked of scoring.ts rather than restated here: a day where

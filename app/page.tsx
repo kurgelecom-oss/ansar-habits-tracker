@@ -9,7 +9,10 @@ import { scoreDay, SOCCER_DAYS } from "./lib/scoring";
 import { addDays, dayNameOf, sydneyMinutesOfDay, parseHHMM } from "./lib/time";
 // Pure day rule, shared with the server's habitsForDay(). lib/days.ts imports no
 // Notion code, so nothing server-only reaches this bundle.
-import { habitsOnDay } from "./lib/days";
+// scoringHabits/isPrerequisite are the second rule in the same pure module: a
+// habit whose Notion "Point Type" is `prerequisite` unlocks and scores nothing,
+// so it is stripped out of every count before any total is taken.
+import { habitsOnDay, scoringHabits, isPrerequisite } from "./lib/days";
 // Mirrored byte-for-byte with family-dashboard/app/lib/streak.ts — see the
 // header there, and scripts/check-scoring-sync.sh which guards the pair.
 import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
@@ -106,6 +109,9 @@ type ButtonState = "DONE" | "LIVE" | "LOCKED" | "MISSED";
 /** One habit as /api/tick's diagnostic reports it. */
 type GateHabitView = {
   id: string; name: string; block: string; order: number;
+  /** Notion "Point Type". `prerequisite` means unlocks-only — see lib/days.ts.
+   *  Optional so a response from an older deploy still parses as "scores". */
+  pointType?: string | null;
   window: string | null; dwellSeconds: number | null;
   state: ButtonState; label: string;
   reason: string | null; message: string | null;
@@ -363,10 +369,15 @@ export default function AnsarPage() {
     // a client one that can drift.
     const idsFor = (ds: string) => {
       const applicable = habitsOnDay(notionHabits, dayNameOf(ds));
+      // `applicable` stays UNFILTERED — it is only used for the "was anything
+      // scheduled at all" guard below, and a day that scheduled nothing but a
+      // prerequisite still scheduled something. Only the two id lists that feed
+      // scoreDay() drop prerequisites, so the /55 cannot move when one is added.
+      const scored = scoringHabits(applicable);
       return {
         applicable,
-        preIds: applicable.filter(h => h.block === "pre_homeschool").map(h => h.id),
-        baseIds: applicable.filter(h => h.block !== "conditional").map(h => h.id),
+        preIds: scored.filter(h => h.block === "pre_homeschool").map(h => h.id),
+        baseIds: scored.filter(h => h.block !== "conditional").map(h => h.id),
       };
     };
 
@@ -729,12 +740,22 @@ export default function AnsarPage() {
   const pointsById: Record<string, number> = {};
   notionHabits.forEach(h => { pointsById[h.id] = h.points; });
 
-  const preIds = gateHabits.filter(h => h.block === "pre_homeschool").map(h => h.id);
-  const baseIds = gateHabits.filter(h => h.block !== "conditional").map(h => h.id);
+  /* Prerequisites are stripped BEFORE anything is counted.
+     A `prerequisite` habit is worth no points, is not part of the all-or-nothing
+     morning block, is not required for a Perfect Day, and is not in the Today %
+     denominator. Adding one in Notion therefore moves nothing on this strip —
+     it only decides what is tappable. See lib/days.ts for why the flag is Point
+     Type and not Points == 0 (eleven live habits already score zero).
+
+     `completedIds` above is deliberately left over ALL habits: scoreDay() only
+     ever looks up specific ids, and baseIds is what decides the perfect day. */
+  const scored = scoringHabits(gateHabits);
+  const preIds = scored.filter(h => h.block === "pre_homeschool").map(h => h.id);
+  const baseIds = scored.filter(h => h.block !== "conditional").map(h => h.id);
   const dayScore = scoreDay(completedIds, dayName, preIds, baseIds);
   const todayPts = dayScore.total;
-  const todayDone = gateHabits.filter(h => h.state === "DONE").length;
-  const overallPct = gateHabits.length > 0 ? Math.round((todayDone / gateHabits.length) * 100) : 0;
+  const todayDone = scored.filter(h => h.state === "DONE").length;
+  const overallPct = scored.length > 0 ? Math.round((todayDone / scored.length) * 100) : 0;
   const weekThreshold = getThreshold(weeklyPts ?? 0);
 
   // Weekend is read from the SERVER's Sydney weekday, never `new Date()` — same
@@ -1491,8 +1512,16 @@ export default function AnsarPage() {
                 </div>,
                 true,
               )}
+              {/* The hero treatment is for the habit that pays 5. A prerequisite
+                  pays nothing and only unlocks, so it renders as the SAME 56px
+                  row button every other column uses — no new component, no new
+                  style, and it carries the existing LOCKED/DONE lock chrome the
+                  cascade gate already draws. It also keeps column 3 inside the
+                  no-scroll budget: a second 112px hero would not fit. */}
               <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 9 }}>
-                {schoolHabits.map(h => heroButton(h, school.color))}
+                {schoolHabits.map(h =>
+                  isPrerequisite(h) ? habitButton(h, school.color) : heroButton(h, school.color),
+                )}
               </div>
             </div>
           )}

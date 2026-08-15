@@ -41,7 +41,8 @@ import {
   type GateContext,
   type GateCompletion,
 } from "../../lib/gating";
-import { getHabits, getSettings, habitsForDay, SETTINGS_FALLBACK } from "../../lib/notion";
+import { getHabits, getSettings, habitsForDay, SETTINGS_FALLBACK, type Habit } from "../../lib/notion";
+import { isPrerequisite } from "../../lib/days";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
 import { lockoutState, recordFailure, clearFailures, lockoutBackend, LOCKOUT_MAX_FAILURES } from "../../lib/pin-lockout";
 
@@ -127,7 +128,50 @@ async function logRejection(row: {
   }
 }
 
-async function loadContext(fresh: boolean): Promise<GateContext> {
+/* ── GATE 5 — PREREQUISITE ───────────────────────────────────────────────────
+   A habit whose Notion "Point Type" is `prerequisite` earns nothing and counts
+   toward nothing (see lib/days.ts). It only unlocks: every prerequisite in a
+   block must be recorded before any scoring habit in that same block may be
+   ticked.
+
+   WHY IT IS HERE AND NOT IN lib/gating.ts. That file is frozen — it is the
+   four-gate contract and its GateReason union is part of the API. This gate
+   needs a reason string of its own, so it layers in front rather than editing
+   the gauntlet. Same shape as the four: pure, no I/O, decided against the
+   server's own clock via the ctx it is handed.
+
+   It is DATA-DRIVEN, not a hardcoded id. Nothing here names "journal" or
+   "homeschool_session"; marking a different row in Notion moves the gate. */
+function gatePrerequisite(
+  habit: Habit,
+  habits: Habit[],
+  ctx: GateContext,
+): { reason: string; message: string } | null {
+  // A prerequisite does not gate itself, or the other prerequisites beside it.
+  if (isPrerequisite(habit)) return null;
+
+  const done = new Set(ctx.completions.map(c => c.habit_id));
+  // Lowest Order first, so the message names the one to do next rather than an
+  // arbitrary member of the set — the same courtesy gateOrder extends.
+  const blocking = habits
+    .filter(h => h.block === habit.block && isPrerequisite(h) && !done.has(h.id))
+    .sort((a, b) => a.order - b.order)[0];
+
+  if (!blocking) return null;
+  // The wording and the curly quotes match gateOrder's, because to a child this
+  // is the same sentence — only the ledger needs to tell the two apart.
+  return { reason: "journal_required", message: `Do “${blocking.name}” first` };
+}
+
+/**
+ * Today's context, plus the RICH habit rows it was built from.
+ *
+ * GateContext narrows habits to GateHabit, which carries no `pointType` — and
+ * gate 5 is decided on exactly that field. The rows are already full Habit
+ * objects at runtime (habitsForDay returns them), so this hands both views back
+ * rather than casting the narrow one back up somewhere less visible.
+ */
+async function loadContext(fresh: boolean): Promise<{ ctx: GateContext; habits: Habit[] }> {
   const now = sydneyNow();                       // ← the server's own clock
 
   const [habitsAll, settings] = await Promise.all([
@@ -147,16 +191,19 @@ async function loadContext(fresh: boolean): Promise<GateContext> {
     .eq("completed_date", now.date);
 
   return {
+    ctx: {
+      habits,
+      completions: (data ?? []) as GateCompletion[],
+      serverDate: now.date,
+      nowMinutes: now.minutesOfDay,
+      nowMs: now.ms,
+      defaultDwellSeconds: settings.defaultDwellSeconds,
+      // Distinguishes "Saturday schedules nothing" from "Notion is down" — both
+      // produce an empty habits array. lastHabitsError is cleared on success and
+      // set by the catch above, so it is the honest signal. See blockSatisfied().
+      habitsLoaded: lastHabitsError === null,
+    },
     habits,
-    completions: (data ?? []) as GateCompletion[],
-    serverDate: now.date,
-    nowMinutes: now.minutesOfDay,
-    nowMs: now.ms,
-    defaultDwellSeconds: settings.defaultDwellSeconds,
-    // Distinguishes "Saturday schedules nothing" from "Notion is down" — both
-    // produce an empty habits array. lastHabitsError is cleared on success and
-    // set by the catch above, so it is the honest signal. See blockSatisfied().
-    habitsLoaded: lastHabitsError === null,
   };
 }
 
@@ -166,7 +213,7 @@ export async function GET(request: Request) {
   const fresh = new URL(request.url).searchParams.get("fresh") === "1";
   try {
     const now = sydneyNow();
-    const ctx = await loadContext(fresh);
+    const { ctx, habits: richHabits } = await loadContext(fresh);
 
     let lock = { remainingMs: 0, failures: 0 };
     let lockBackend: string | null = null;
@@ -244,19 +291,44 @@ export async function GET(request: Request) {
       // never the key's existence.
       defaultDwellSeconds: ctx.defaultDwellSeconds,
       warnings: windowWarnings(ctx.habits),
-      habits: ctx.habits.map(h => {
+      habits: richHabits.map(h => {
         const verdict = evaluateGates(h, ctx, ctx.serverDate);
+        let state: string = buttonState(h, ctx);
+        let label = buttonLabel(h, ctx);
+        let reason: string | null = verdict.allowed ? null : verdict.reason;
+        let message: string | null = verdict.allowed ? null : verdict.message;
+
+        /* Gate 5, folded in on exactly the same precedence the POST applies, so
+           the button the board draws and the answer a tap gets cannot disagree.
+
+           It overrides LIVE (nothing else refused this, but a prerequisite does)
+           and out_of_order (the Order field expresses the same refusal, and
+           journal_required is the reason worth recording). It deliberately does
+           NOT override DONE, MISSED, or a window/dwell/cascade LOCKED: "Opens
+           8:30am" is the more useful thing to say at 7am, and a habit already
+           ticked is not waiting on anything. */
+        const prereq = gatePrerequisite(h, richHabits, ctx);
+        if (prereq && (state === "LIVE" || reason === "out_of_order")) {
+          state = "LOCKED";
+          label = prereq.message;
+          reason = prereq.reason;
+          message = prereq.message;
+        }
+
         return {
           id: h.id,
           name: h.name,
           block: h.block,
           order: h.order,
+          // The board needs this to keep a prerequisite out of the Today %
+          // denominator and out of the perfect-day set. See lib/days.ts.
+          pointType: h.pointType,
           window: h.windowStart && h.windowEnd ? `${h.windowStart}-${h.windowEnd}` : null,
           dwellSeconds: h.dwellSeconds,
-          state: buttonState(h, ctx),
-          label: buttonLabel(h, ctx),
-          reason: verdict.allowed ? null : verdict.reason,
-          message: verdict.allowed ? null : verdict.message,
+          state,
+          label,
+          reason,
+          message,
         };
       }),
     }, { headers: { "Cache-Control": "no-store" } });
@@ -324,8 +396,9 @@ export async function POST(request: Request) {
   }
 
   let ctx: GateContext;
+  let richHabits: Habit[];
   try {
-    ctx = await loadContext(false);
+    ({ ctx, habits: richHabits } = await loadContext(false));
   } catch (err) {
     return NextResponse.json(
       { ok: false, reason: "unavailable", message: err instanceof Error ? err.message : "load failed" },
@@ -333,7 +406,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const habit = ctx.habits.find(h => h.id === habitId);
+  // The rich row, not ctx.habits' narrowed view — gate 5 reads `pointType`.
+  const habit = richHabits.find(h => h.id === habitId);
   if (!habit) {
     return NextResponse.json(
       { ok: false, reason: "unknown_habit", message: `No active habit "${habitId}" for ${ctx.serverDate}` },
@@ -389,18 +463,31 @@ export async function POST(request: Request) {
   }
 
   if (!overrideUsed) {
+    // The gauntlet's own verdict, recorded verbatim. `reason` is whichever of
+    // not_open / closed / too_fast / out_of_order / locked gating.ts returned
+    // — this route invents nothing and re-words nothing, so the ledger and the
+    // response always agree about why a tap was refused.
     const verdict = evaluateGates(habit, ctx, date);
-    if (!verdict.allowed) {
-      // The gauntlet's own verdict, recorded verbatim. `reason` is whichever of
-      // not_open / closed / too_fast / out_of_order / locked gating.ts returned
-      // — this route invents nothing and re-words nothing, so the ledger and the
-      // response always agree about why a tap was refused.
+    let refusal: { reason: string; message: string } | null =
+      verdict.allowed ? null : { reason: verdict.reason, message: verdict.message };
+
+    /* Gate 5 outranks out_of_order and nothing else.
+       If the prerequisite sits earlier in the block's Order — which is how it is
+       configured in Notion — then gate 3 has already refused this tap as
+       "out_of_order", with the same sentence. Both are true; only one is worth
+       recording, because "journal_required" is the question the ledger will
+       actually be asked. Window, dwell and cascade still win: "Opens 8:30am" is
+       the more useful answer at 7am, whatever else is also unfinished. */
+    const prereq = gatePrerequisite(habit, richHabits, ctx);
+    if (prereq && (!refusal || refusal.reason === "out_of_order")) refusal = prereq;
+
+    if (refusal) {
       await logRejection({
-        habitId, serverDate: ctx.serverDate, reason: verdict.reason,
-        detail: verdict.message, nowMinutes: ctx.nowMinutes,
+        habitId, serverDate: ctx.serverDate, reason: refusal.reason,
+        detail: refusal.message, nowMinutes: ctx.nowMinutes,
       });
       return NextResponse.json(
-        { ok: false, reason: verdict.reason, message: verdict.message, serverDate: ctx.serverDate },
+        { ok: false, reason: refusal.reason, message: refusal.message, serverDate: ctx.serverDate },
         { status: 409, headers: noStore },
       );
     }

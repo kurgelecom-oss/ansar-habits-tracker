@@ -32,7 +32,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // READ-ONLY imports from the mirrored module. getThreshold is the single source
 // of the 42/34/26/0 boundaries; WEEKLY_MAX is used only as a sanity ceiling.
 import { scoreDay, getThreshold, WEEKLY_MAX } from "./scoring";
-import { habitsOnDay, type DayScoped } from "./days";
+import { habitsOnDay, scoringHabits, type DayScoped, type PointTyped } from "./days";
 import { addDays, dayNameOf, weekStartOf } from "./time";
 
 /**
@@ -58,8 +58,9 @@ export const FIRST_TEAM = "First Team";
 /** Consecutive First Team weeks that earn a Golden Boot. */
 export const GOLDEN_BOOT_TARGET = 4;
 
-/** A habit as far as week scoring is concerned — Notion's block + days. */
-export type RosterHabit = DayScoped & { id: string };
+/** A habit as far as week scoring is concerned — Notion's block + days, plus
+ *  Point Type so an unlock-only prerequisite can be left out of the totals. */
+export type RosterHabit = DayScoped & PointTyped & { id: string };
 
 /** Completions grouped by calendar date, the shape scoreDay() consumes. */
 export type CompletionsByDate = Record<string, Set<string>>;
@@ -97,10 +98,15 @@ export function computeWeek(
 ): WeekComputation {
   const idsFor = (ds: string) => {
     const applicable = habitsOnDay(roster, dayNameOf(ds));
+    // Identical to the board's idsFor, deliberately — the /55 Ansar watches
+    // during the week and the /55 written into week_results at the end of it
+    // must be the same number. Prerequisites drop out of both id lists and out
+    // of neither `applicable` guard. See lib/days.ts.
+    const scored = scoringHabits(applicable);
     return {
       applicable,
-      preIds: applicable.filter(h => h.block === "pre_homeschool").map(h => h.id),
-      baseIds: applicable.filter(h => h.block !== "conditional").map(h => h.id),
+      preIds: scored.filter(h => h.block === "pre_homeschool").map(h => h.id),
+      baseIds: scored.filter(h => h.block !== "conditional").map(h => h.id),
     };
   };
 

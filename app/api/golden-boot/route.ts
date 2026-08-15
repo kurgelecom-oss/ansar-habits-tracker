@@ -91,7 +91,10 @@ function timingSafeEqual(a: string, b: string): boolean {
  */
 async function loadRoster(): Promise<RosterHabit[]> {
   const habits = await getHabits();
-  return habits.map(h => ({ id: h.id, block: h.block, days: h.days }));
+  // pointType rides along so computeWeek() can drop unlock-only prerequisites
+  // from preIds/baseIds — without it a prerequisite would silently become a
+  // Perfect Day requirement in the permanent ledger. See lib/days.ts.
+  return habits.map(h => ({ id: h.id, block: h.block, days: h.days, pointType: h.pointType }));
 }
 
 /* ── GET — state ─────────────────────────────────────────────────────────── */
