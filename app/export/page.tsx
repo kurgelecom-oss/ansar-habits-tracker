@@ -348,6 +348,11 @@ const CSS = `
     border-radius: 4px; box-shadow: 0 18px 60px rgba(0,0,0,0.45);
   }
 }
+/* Phone screen: the A4 sheet yields to the viewport. Screen-only — the
+   @media print rules and the @page A4 box above are untouched. */
+@media screen and (max-width: 820px) {
+  .rp { width: 100%; max-width: 100%; margin: 10px auto 40px; }
+}
 .rp h1, .rp h2 { margin: 0; font-weight: 800; }
 .rp p { margin: 0; }
 .rp ul { list-style: none; margin: 0; padding: 0; }

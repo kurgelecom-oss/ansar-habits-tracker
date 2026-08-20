@@ -460,7 +460,18 @@ export default function AnsarPage() {
     const feas = setInterval(() => setNowMin(sydneyMinutesOfDay()), 15000);
     setNowMin(sydneyMinutesOfDay());
 
-    return () => { clearInterval(t); clearInterval(poll); clearInterval(feas); };
+    // A phone that slept through the 30s poll would show stale gates until the
+    // next tick; refetch the same pair the poll fetches the moment the tab is
+    // visible again. Intervals themselves are untouched.
+    const onVis = () => {
+      if (document.visibilityState === "visible") { loadGate(); loadWallet(); }
+    };
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      clearInterval(t); clearInterval(poll); clearInterval(feas);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [loadGate, loadNotionHabits, loadWallet, loadStretchItems, loadSettings]);
 
   // History reloads whenever the server's date or the habit list changes.
@@ -905,6 +916,22 @@ export default function AnsarPage() {
 @media (max-width:820px){
   .lw-backdrop{padding:12px}
   .lw-panel{width:100%;height:92vh;max-height:92vh}
+}
+
+/* ── PHONE (max-width:640px) ──────────────────────────────────────────────
+   Additive only. The header, scoreboard strip and its cells carry inline
+   styles, so the size overrides here need !important; nothing at or above
+   641px can see this block, and the >=1440px no-scroll contract is untouched. */
+@media (max-width:640px){
+  .ab-head{height:auto!important;min-height:52px;flex-wrap:wrap;row-gap:2px;padding:6px 12px!important}
+  .ab-head > div{flex-wrap:wrap}
+  .ab-score{height:auto!important;flex-wrap:wrap;row-gap:6px;padding:8px 8px!important}
+  .ab-cell{height:auto!important;min-height:52px;padding:0 12px!important}
+  .ab-crest{height:auto!important;max-width:64px}
+  .ab-meter{width:auto!important;flex:1 1 auto;min-width:90px}
+  /* Bottom-most fixed element on the board: keep the toast above the iOS
+     home-indicator safe area. */
+  .ab-toast{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
 }`;
 
   const cardStyle: React.CSSProperties = {
@@ -1294,7 +1321,7 @@ export default function AnsarPage() {
     extra?: React.ReactNode,
     opts?: { color?: string; side?: "left" | "right" },
   ) => (
-    <div style={{
+    <div className="ab-cell" style={{
       padding: "0 22px", height: 52,
       ...(opts?.side === "left"
         ? { borderLeft: "1px solid rgba(212,175,55,0.16)" }
@@ -1333,7 +1360,7 @@ export default function AnsarPage() {
       <style>{BOARD_CSS}</style>
 
       {/* HEADER */}
-      <header style={{
+      <header className="ab-head" style={{
         background: "#16192d", borderBottom: "1px solid #2d3543", height: 52, flexShrink: 0,
         padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
       }}>
@@ -1367,7 +1394,7 @@ export default function AnsarPage() {
       </header>
 
       {/* SCOREBOARD STRIP */}
-      <div style={{
+      <div className="ab-score" style={{
         height: 120, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 16px",
         background: RM_NAVY, borderBottom: "1px solid rgba(212,175,55,0.28)",
       }}>
@@ -1375,12 +1402,13 @@ export default function AnsarPage() {
             because the cells to the right draw theirs at height 52 (see cell()),
             and a border on a 42px-tall image would render a short line against
             four full-height neighbours. Wrapper matches; the img does not. */}
-        <div style={{
+        <div className="ab-cell" style={{
           height: 52, display: "flex", alignItems: "center", flexShrink: 0,
           paddingRight: 18, marginRight: 18,
           borderRight: "1px solid rgba(212,175,55,0.16)",
         }}>
           <img
+            className="ab-crest"
             src="/real-madrid.png"
             alt="Real Madrid"
             style={{ height: 112, width: "auto", display: "block", objectFit: "contain" }}
@@ -1403,7 +1431,7 @@ export default function AnsarPage() {
             report and it is reported — `overallPct` is already computed over
             whatever the SERVER says applies today, weekday or weekend. */}
         {cell("Today", <>{gate ? overallPct : 0}{sub("%")}</>,
-          <div style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.34)", overflow: "hidden", marginTop: 6, width: 150 }}>
+          <div className="ab-meter" style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.34)", overflow: "hidden", marginTop: 6, width: 150 }}>
             <div style={{
               height: "100%", borderRadius: 3, transition: "width 200ms ease-in-out",
               width: gate ? `${overallPct}%` : "0%",
@@ -1411,7 +1439,7 @@ export default function AnsarPage() {
             }} />
           </div>,
         )}
-        <div style={{ padding: "0 22px", height: 52, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div className="ab-cell" style={{ padding: "0 22px", height: 52, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(232,235,242,0.6)" }}>
             Banked
           </div>
