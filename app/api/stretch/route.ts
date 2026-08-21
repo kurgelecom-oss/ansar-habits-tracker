@@ -8,7 +8,14 @@
      • EARN   — any day, any time the wallet cascade is open. Points bank.
                 Uncapped at earn time; banking all week is the point.
      • SPEND  — Saturday and Sunday only, checked against Australia/Sydney on
-                THIS server, and capped at 75 redeemed minutes per day.
+                THIS server, and capped at 75 redeemed minutes per day —
+                EXCEPT: earning EVERY active stretch item on a weekend day
+                raises that day's cap by 30 (75 → 105). That is the weekend
+                loop (tk, 21 Aug): the items are all open all weekend (see
+                gateWallet), and clearing the full set is worth an extra half
+                hour of PS5 the same day. The bonus is per-day, server-decided,
+                and FAIL-CLOSED — if the item roster can't be read from Notion,
+                the cap stays 75; an outage must never mint minutes.
 
    The ledger table is unchanged (`stretch_completions`, signed `minutes`), so
    nothing already recorded needs migrating. What changed is the balance window:
@@ -22,7 +29,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sydneyNow, isSydneyWeekend, weekStartOf, addDays } from "../../lib/time";
 import { gateWallet, type GateContext, type GateCompletion } from "../../lib/gating";
-import { getHabits, getSettings, habitsForDay, SETTINGS_FALLBACK } from "../../lib/notion";
+import { getHabits, getSettings, getStretchItems, habitsForDay, SETTINGS_FALLBACK } from "../../lib/notion";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +42,8 @@ const MIN_PER_POINT = 10;
 const DAILY_REDEEM_CAP_MIN = 75;
 const SPEND_ITEM_ID = "__spend__";
 const SPEND_STEP_MIN = 10;
+/** Extra redeemable minutes on a weekend day once EVERY active item is earned. */
+const WEEKEND_ALL_ITEMS_BONUS_MIN = 30;
 
 const noStore = { "Cache-Control": "no-store" };
 
@@ -67,6 +76,10 @@ async function loadWallet(date: string) {
   const spentToday = rows
     .filter(r => r.item_id === SPEND_ITEM_ID && r.completed_date === date)
     .reduce((s, r) => s + Math.abs(r.minutes), 0);
+  const earnedTodayIds = new Set(
+    rows.filter(r => r.item_id !== SPEND_ITEM_ID && r.completed_date === date)
+      .map(r => r.item_id),
+  );
 
   return {
     weekStart,
@@ -75,8 +88,31 @@ async function loadWallet(date: string) {
     earnedWeek,
     spentWeek,
     spentToday,
+    earnedTodayIds,
     balance: Math.max(0, earnedWeek - spentWeek),
-    remainingToday: Math.max(0, DAILY_REDEEM_CAP_MIN - spentToday),
+  };
+}
+
+/**
+ * The weekend all-items bonus. Active only when today is a Sydney weekend day
+ * AND every active stretch item has an earn row for today. Fail-closed twice
+ * over: a Notion failure reads as an empty roster, and an empty roster can
+ * never activate the bonus — `itemsTotal > 0` is required, or four earned
+ * items against an unreadable list would count as "all of them".
+ */
+async function weekendBonusFor(earnedTodayIds: Set<string>, isWeekend: boolean) {
+  if (!isWeekend) return { active: false, itemsDone: 0, itemsTotal: 0 };
+  let items: { id: string }[] = [];
+  try {
+    items = await getStretchItems();
+  } catch {
+    items = [];
+  }
+  const itemsDone = items.filter(i => earnedTodayIds.has(i.id)).length;
+  return {
+    active: items.length > 0 && itemsDone === items.length,
+    itemsDone,
+    itemsTotal: items.length,
   };
 }
 
@@ -119,6 +155,9 @@ export async function GET() {
   const unlock = gateWallet(ctx);
   const weekendOnly = settings.weekendRedemptionOnly;
   const isWeekend = isSydneyWeekend();
+  const bonus = await weekendBonusFor(wallet.earnedTodayIds, isWeekend);
+  const capToday = DAILY_REDEEM_CAP_MIN + (bonus.active ? WEEKEND_ALL_ITEMS_BONUS_MIN : 0);
+  const remainingToday = Math.max(0, capToday - wallet.spentToday);
 
   return NextResponse.json({
     ok: true,
@@ -130,25 +169,26 @@ export async function GET() {
     earnedWeek: wallet.earnedWeek,
     spentWeek: wallet.spentWeek,
     spentToday: wallet.spentToday,
-    remainingToday: wallet.remainingToday,
-    dailyRedeemCapMin: DAILY_REDEEM_CAP_MIN,
+    remainingToday,
+    dailyRedeemCapMin: capToday,
     minPerPoint: MIN_PER_POINT,
-    earnedItemIds: Array.from(new Set(
-      wallet.rows.filter(r => r.item_id !== SPEND_ITEM_ID && r.completed_date === now.date)
-        .map(r => r.item_id),
-    )),
+    weekendBonusMin: WEEKEND_ALL_ITEMS_BONUS_MIN,
+    weekendBonusActive: bonus.active,
+    weekendBonusItemsDone: bonus.itemsDone,
+    weekendBonusItemsTotal: bonus.itemsTotal,
+    earnedItemIds: Array.from(wallet.earnedTodayIds),
     unlocked: unlock.allowed,
     lockMessage: unlock.allowed ? null : unlock.message,
     weekendRedemptionOnly: weekendOnly,
-    redemptionOpen: unlock.allowed && (!weekendOnly || isWeekend) && wallet.balance > 0 && wallet.remainingToday > 0,
+    redemptionOpen: unlock.allowed && (!weekendOnly || isWeekend) && wallet.balance > 0 && remainingToday > 0,
     redemptionMessage: !unlock.allowed
       ? unlock.message
       : weekendOnly && !isWeekend
         ? "PS5 minutes unlock Saturday and Sunday — keep banking"
         : wallet.balance <= 0
           ? "Nothing banked yet"
-          : wallet.remainingToday <= 0
-            ? `Daily cap reached — ${DAILY_REDEEM_CAP_MIN} min redeemed today`
+          : remainingToday <= 0
+            ? `Daily cap reached — ${capToday} min redeemed today`
             : null,
   }, { headers: noStore });
 }
@@ -229,7 +269,8 @@ export async function POST(request: Request) {
   }
 
   /* SPEND — the weekend till. */
-  if (settings.weekendRedemptionOnly && !isSydneyWeekend()) {
+  const spendIsWeekend = isSydneyWeekend();
+  if (settings.weekendRedemptionOnly && !spendIsWeekend) {
     return NextResponse.json({
       ok: false,
       reason: "closed",
@@ -240,17 +281,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "closed", message: "Nothing banked to spend" },
       { status: 409, headers: noStore });
   }
-  if (wallet.remainingToday <= 0) {
+  // The cap is re-derived on every spend, so the +30 appears the moment the
+  // fourth item's earn row lands — no refresh or cache expiry involved.
+  const bonus = await weekendBonusFor(wallet.earnedTodayIds, spendIsWeekend);
+  const capToday = DAILY_REDEEM_CAP_MIN + (bonus.active ? WEEKEND_ALL_ITEMS_BONUS_MIN : 0);
+  const remainingToday = Math.max(0, capToday - wallet.spentToday);
+  if (remainingToday <= 0) {
     return NextResponse.json({
       ok: false, reason: "closed",
-      message: `Daily cap reached — ${DAILY_REDEEM_CAP_MIN} min already redeemed today`,
+      message: `Daily cap reached — ${capToday} min already redeemed today`,
     }, { status: 409, headers: noStore });
   }
 
   const blockedSpend = requireWriter();
   if (blockedSpend) return blockedSpend;
 
-  const burn = Math.min(SPEND_STEP_MIN, wallet.balance, wallet.remainingToday);
+  const burn = Math.min(SPEND_STEP_MIN, wallet.balance, remainingToday);
   const { error } = await adminClient().from("stretch_completions").insert({
     item_id: SPEND_ITEM_ID,
     completed_date: now.date,
@@ -264,6 +310,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true, action: "spend", minutes: burn,
     balance: wallet.balance - burn,
-    remainingToday: wallet.remainingToday - burn,
+    remainingToday: remainingToday - burn,
   }, { headers: noStore });
 }

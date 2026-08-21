@@ -21,10 +21,11 @@ import { habitsOnDay } from "./days";
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_VERSION = "2025-09-03";
 
-// Data sources. Both are query-only: GET /v1/databases/{id} 404s for a
+// Data sources. All query-only: GET /v1/databases/{id} 404s for a
 // data_source id, only the POST .../query endpoint works.
 const HABITS_DS = "470a7eba-f14b-42c5-92fb-79a006720240";  // ANSAR OS — Habit Blocks
 const SETTINGS_DS = "0415a499-d4ee-49e8-baf6-a3f38ec27235"; // ANSAR OS — App Settings
+const STRETCH_DS = "11bea89f-f327-4cf7-9a13-dafc9211d86d"; // ANSAR OS — Stretch Items
 
 /** Five minutes, matching family-dashboard's /api/habits revalidate window. */
 const CACHE_MS = 5 * 60 * 1000;
@@ -41,6 +42,14 @@ export interface AppSettings {
   pointsActive: boolean;
   defaultDwellSeconds: number;
   weekendRedemptionOnly: boolean;
+}
+
+export interface StretchItem {
+  id: string;               // Notion "Item ID" — permanent, Supabase keys off this
+  name: string;
+  category: string;
+  points: number;           // 1 point = 10 min screen time (edit in Notion to retune)
+  whatCountsAsDone: string;
 }
 
 /** Used when App Settings is unreachable. Matches the seeded Notion values. */
@@ -100,6 +109,7 @@ function mapHabit(page: any): Habit {
 
 let habitsCache: { at: number; value: Habit[] } | null = null;
 let settingsCache: { at: number; value: AppSettings } | null = null;
+let stretchCache: { at: number; value: StretchItem[] } | null = null;
 
 /**
  * Active habits, ordered. `fresh` bypasses the 5-minute cache — used by the
@@ -139,6 +149,37 @@ export async function getSettings(fresh = false): Promise<AppSettings> {
   };
   settingsCache = { at: Date.now(), value };
   return value;
+}
+
+/**
+ * Active stretch items, 5-minute cached like the other two sources. Shared by
+ * /api/stretch-items (the wallet's item list) and /api/stretch (the weekend
+ * all-items cap bonus) so both are counting the SAME roster — two separate
+ * fetches of "all items" is how the bonus ends up requiring an item the board
+ * doesn't show. Throws on failure; each caller decides its own degraded shape.
+ */
+export async function getStretchItems(fresh = false): Promise<StretchItem[]> {
+  if (!fresh && stretchCache && Date.now() - stretchCache.at < CACHE_MS) {
+    return stretchCache.value;
+  }
+  const data = await queryDataSource(STRETCH_DS, {
+    filter: { property: "Active", checkbox: { equals: true } },
+  });
+  const items: StretchItem[] = data.results
+    .map((page: any) => {
+      const p = page.properties;
+      return {
+        id: text(p, "Item ID"),
+        name: title(p, "Name") || "Untitled",
+        category: p?.Category?.select?.name ?? "",
+        points: p?.Points?.number ?? 0,
+        whatCountsAsDone: text(p, "What counts as done"),
+      };
+    })
+    // Drop rows without a stable Item ID — the ledger keys off it.
+    .filter((item: StretchItem) => item.id);
+  stretchCache = { at: Date.now(), value: items };
+  return items;
 }
 
 /**

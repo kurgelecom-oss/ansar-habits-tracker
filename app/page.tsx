@@ -86,10 +86,12 @@ const BLOCKS = [
 ];
 
 /* ── Stretch Wallet ────────────────────────────────────────────────────────
-   1 stretch point = 10 minutes. Points now BANK across the week and convert to
-   PS5 minutes on Saturday and Sunday only, capped at 75 redeemed minutes a day.
-   Both rules are enforced in /api/stretch against the server's Sydney clock —
-   the values below are for display. */
+   1 stretch point = 10 minutes. Points BANK across the week and convert to
+   PS5 minutes on Saturday and Sunday only, capped at 75 redeemed minutes a day
+   — except that earning EVERY active item on a weekend day lifts that day's
+   cap by 30 (the server reports the lifted cap in dailyRedeemCapMin). All
+   rules are enforced in /api/stretch against the server's Sydney clock — the
+   values below are display fallbacks only. */
 const STRETCH_MIN_PER_POINT = 10;
 const STRETCH_DAILY_REDEEM_CAP_MIN = 75;
 const STRETCH_SPEND_STEP_MIN = 10;
@@ -151,6 +153,10 @@ type WalletState = {
   earnedItemIds: string[];
   unlocked: boolean; lockMessage: string | null;
   weekendRedemptionOnly: boolean; redemptionOpen: boolean; redemptionMessage: string | null;
+  // Weekend all-items bonus. Optional so a board served ahead of a stale
+  // function deploy renders the card without the bonus line instead of crashing.
+  weekendBonusMin?: number; weekendBonusActive?: boolean;
+  weekendBonusItemsDone?: number; weekendBonusItemsTotal?: number;
 };
 
 /**
@@ -1660,7 +1666,7 @@ export default function AnsarPage() {
         {/* no scroll — one-page dashboard, overflow-y is banned here */}
         <div style={{ ...cardStyle, border: "1px solid #3a2d5a" }}>
           {colHead(`linear-gradient(90deg, #a78bfa, ${CYAN})`, "🎮 Stretch Wallet",
-            `Banks all week · converts Sat & Sun · ${STRETCH_DAILY_REDEEM_CAP_MIN} min/day cap`,
+            `Banks all week · converts Sat & Sun · ${wallet?.dailyRedeemCapMin ?? STRETCH_DAILY_REDEEM_CAP_MIN} min/day cap`,
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontSize: 19, fontWeight: 800, color: "#a78bfa", fontVariantNumeric: "tabular-nums" }}>
                 {wallet && !walletLocked ? stretchBalance : "—"}
@@ -1686,6 +1692,24 @@ export default function AnsarPage() {
             {wallet && !walletLocked && wallet.redemptionMessage && (
               <div style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600, flexShrink: 0 }}>
                 {wallet.redemptionMessage}
+              </div>
+            )}
+
+            {/* Weekend all-items bonus strip. Weekend only (the server sends
+                itemsTotal 0 on a weekday), sits above the item list so the
+                deal is visible before the first tap: clear every item today
+                and the day's PS5 cap rises by weekendBonusMin. State is the
+                server's — this line renders what /api/stretch decided. */}
+            {wallet && !walletLocked && (wallet.weekendBonusItemsTotal ?? 0) > 0 && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9,
+                border: `1px solid ${wallet.weekendBonusActive ? "#a78bfa" : "rgba(167,139,250,0.35)"}`,
+                background: wallet.weekendBonusActive ? "rgba(167,139,250,0.18)" : "rgba(167,139,250,0.07)",
+                fontSize: 11.5, color: "#a78bfa", fontWeight: 700, flexShrink: 0,
+              }}>
+                {wallet.weekendBonusActive
+                  ? `🏆 Weekend bonus ON — all ${wallet.weekendBonusItemsTotal} done, +${wallet.weekendBonusMin ?? 30} min PS5 today`
+                  : `🎯 Weekend bonus: ${wallet.weekendBonusItemsDone ?? 0}/${wallet.weekendBonusItemsTotal} — do them all for +${wallet.weekendBonusMin ?? 30} min PS5 today`}
               </div>
             )}
 
