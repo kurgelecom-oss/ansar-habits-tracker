@@ -141,7 +141,11 @@ export default function StretchWalletPanel({
                   : done ? <span className={styles.walletTick}>✓</span>
                   : null}
               </span>
-              <span className={styles.habitText}>
+              {/* Its own wrapper, not .habitText: a habit row is one line with
+                  the name and its note side by side, a wallet item stacks the
+                  name over what counts as doing it. Sharing the class squeezed
+                  these names into a column narrow enough to wrap to three. */}
+              <span className={styles.walletText}>
                 <span className={styles.walletItemName}>🧩 {item.name}</span>
                 <span className={styles.walletItemNote}>
                   {done ? "✓ banked today" : item.whatCountsAsDone || `Worth ${item.points} pt`}

@@ -629,7 +629,7 @@
   line-height: 1.25;
   color: #ffffff;
 }
-.habitRowDone .habitName { color: var(--ansar-muted); text-decoration: line-through; }
+.habitRowDone .habitName { color: var(--ansar-muted); }
 .habitRowLocked .habitName { color: #b0b5c1; }
 .habitRowMissed .habitName { color: #b0b5c1; }
 
@@ -955,6 +955,15 @@
   border-radius: var(--ansar-radius-row);
   -webkit-tap-highlight-color: transparent;
 }
+.walletText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
 .walletItem {
   border: 1px solid var(--ansar-border);
   background: var(--ansar-row);
