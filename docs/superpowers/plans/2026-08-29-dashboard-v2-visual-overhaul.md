@@ -143,7 +143,8 @@ git commit -m "docs: capture Dashboard V2 production baseline"
 ### Task 2: Add tests and lock the display model
 
 **Files:**
-- Modify: \`package.json\`, \`package-lock.json\`, \`app/page.tsx\` imports only.
+- Modify: \`package.json\`. The repository intentionally ignores
+  \`package-lock.json\`; Task 2 does not reverse that standing policy.
 - Create: \`vitest.config.ts\`, \`vitest.setup.ts\`
 - Create: \`app/dashboard/types.ts\`, \`model.ts\`, \`model.test.ts\`
 
@@ -174,6 +175,9 @@ import { defineConfig } from "vitest/config";
 import path from "node:path";
 
 export default defineConfig({
+  // Required because the app preserves JSX for Next while Vitest needs the
+  // automatic runtime for TSX component tests. This affects tests only.
+  esbuild: { jsx: "automatic" },
   test: { environment: "jsdom", setupFiles: ["./vitest.setup.ts"], include: ["app/**/*.test.ts", "app/**/*.test.tsx"] },
   resolve: { alias: { "@": path.resolve(__dirname, ".") } },
 });
@@ -242,7 +246,7 @@ This is display-only and must never be imported by scoring, gates, or rewards.
 \`\`\`bash
 npm test -- app/dashboard/model.test.ts
 npm run build
-git add package.json package-lock.json vitest.config.ts vitest.setup.ts app/dashboard app/page.tsx
+git add package.json vitest.config.ts vitest.setup.ts app/dashboard
 git commit -m "test: lock Dashboard V2 display contracts"
 \`\`\`
 
