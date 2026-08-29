@@ -1110,7 +1110,9 @@
    spare and keeps the roomier spacing. */
 @media (min-width: 1440px) and (max-height: 900px) {
   .shell {
-    padding: 6px 10px;
+    /* 4px, not 6: the board's own footer strip sits below the panel grid and
+       was the last 6px hanging outside the fold. */
+    padding: 4px 10px;
     gap: 6px;
   }
 
@@ -1171,5 +1173,5 @@
   .panelProgress { height: 4px; margin: 0 13px 7px; }
   .panelFooter { padding: 7px 13px 8px; }
   .panelScore { font-size: 12px; }
-  .panelBody { padding: 2px 11px 8px; gap: 5px; }
+  .panelBody { padding: 2px 11px 6px; gap: 5px; }
 }
