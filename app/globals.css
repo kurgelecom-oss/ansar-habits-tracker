@@ -33,6 +33,35 @@
 
   /* Height of the fixed TopNav. Layouts subtract this from the viewport. */
   --nav-h: 40px;
+
+  /* ── Dashboard V2 (ANSAR FC) ──────────────────────────────────────────────
+     The board's stadium palette, written down as tokens.
+
+     These are NOT a second opinion on --bg-base/--bg-card. The header note
+     above settles that: shared and new chrome uses the canonical three, and
+     the Real Madrid board keeps the stadium surfaces the 92% #0f1419 scrim
+     was tuned for. Every value below is one of those already-settled hexes,
+     collected out of inline styles so a panel can reference a token instead
+     of re-typing a hex — spec §11.2.
+
+     The accent stays var(--cyan). There is deliberately no --ansar-cyan:
+     a second cyan token is exactly how #00d9ff got in last time. */
+  --ansar-base: #0f1419;         /* page ground, under the stadium scrim */
+  --ansar-card: #16192d;         /* panel surface */
+  --ansar-row: #1f2438;          /* row surface inside a panel */
+  --ansar-border: #2d3543;       /* hairline, same value the TopNav uses */
+  --ansar-muted: #757f8f;        /* secondary text, same as .topnav-link */
+  --ansar-navy: #0d2350;         /* Real Madrid royal navy */
+  --ansar-gold: #d4af37;         /* Champions League gold — override marker */
+  --ansar-gold-bright: #e7c55b;  /* gold, lifted for text on dark surfaces */
+  --ansar-success: #00ff88;      /* DONE */
+  --ansar-warning: #ffa500;      /* Reserves tier, caution */
+  --ansar-danger: #ff4444;       /* MISSED, Training Ground tier */
+  --ansar-wallet: #a78bfa;       /* reserved for wallet value and reward actions */
+
+  --ansar-radius-panel: 14px;
+  --ansar-radius-row: 10px;
+  --ansar-gap: 12px;
 }
 
 * {

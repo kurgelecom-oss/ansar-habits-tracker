@@ -1,4 +1,16 @@
+import { afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+
+/**
+ * Unmount between tests.
+ *
+ * Testing Library registers this itself, but only when Vitest runs with
+ * `globals: true`. This project does not, so without an explicit hook every
+ * render stacks up in the same document and the second test in a file starts
+ * finding two of everything.
+ */
+afterEach(cleanup);
 
 /**
  * jsdom does not implement matchMedia, and the dashboard's reduced-motion and
