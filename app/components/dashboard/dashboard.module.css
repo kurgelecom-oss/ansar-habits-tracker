@@ -1454,11 +1454,11 @@
      whole weekday programme has to fit at once. */
   .habitRow { min-height: 44px; }
 
-  .panelHead { padding: 9px 13px 7px; }
+  .panelHead { padding: 7px 13px 5px; }
   .panelTitle { font-size: 16px; }
   .panelSubtitle { font-size: 12px; }
-  .panelProgress { height: 4px; margin: 0 13px 7px; }
-  .panelFooter { padding: 7px 13px 8px; }
+  .panelProgress { height: 4px; margin: 0 13px 5px; }
+  .panelFooter { padding: 5px 13px 6px; }
   .panelScore { font-size: 12px; }
-  .panelBody { padding: 2px 11px 6px; gap: 5px; }
+  .panelBody { padding: 1px 11px 5px; gap: 4px; }
 }
