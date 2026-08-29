@@ -34,13 +34,20 @@ type HabitRowProps = {
   /** True while the parent's hold is running on this row. */
   holding?: boolean;
   icon?: string;
+  /**
+   * A caption that shows regardless of state, for evidence language the gate
+   * does not supply — currently only the journal's "Recorded". `label` is the
+   * gate's own reason and only shows on rows that are not actionable; this is
+   * additive and never overwrites it.
+   */
+  note?: string;
   onTick: (id: string, name: string) => void;
   onHoldStart: (habit: DashboardHabit) => void;
   onHoldCancel: () => void;
 };
 
 export default function HabitRow({
-  habit, accent, saving = false, holding = false, icon,
+  habit, accent, saving = false, holding = false, icon, note,
   onTick, onHoldStart, onHoldCancel,
 }: HabitRowProps) {
   const isDone = habit.state === "DONE";
@@ -90,6 +97,7 @@ export default function HabitRow({
             {habit.label}
           </span>
         ) : null}
+        {note ? <span className={styles.habitNote}>{note}</span> : null}
       </span>
 
       {/* The audit marker. aria-hidden because the button's accessible name

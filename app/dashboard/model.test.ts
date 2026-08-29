@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupHabitsByBlock, getTier, deriveMatchReadiness } from "./model";
+import { groupHabitsByBlock, getTier, deriveMatchReadiness, journalEvidenceState } from "./model";
 import type { DashboardHabit } from "./types";
 
 /**
@@ -152,5 +152,40 @@ describe("deriveMatchReadiness", () => {
       morningDone: 0, morningTotal: 7, homeschoolDone: false,
       journalState: "OVERRIDE", workSubmissionCount: 0,
     }).journalState).toBe("OVERRIDE");
+  });
+});
+
+describe("journalEvidenceState", () => {
+  const journal = (over: Partial<DashboardHabit> = {}) =>
+    habit({ id: "journal", block: "homeschool", order: 7.5, pointType: "prerequisite", ...over });
+
+  it("reports NOT_REQUIRED when the day schedules no journal", () => {
+    expect(journalEvidenceState(undefined)).toBe("NOT_REQUIRED");
+  });
+
+  /**
+   * The whole point of this function. A self-certified tick is RECORDED, never
+   * VERIFIED — nothing in this plan matches a Tally journal entry, so claiming
+   * verification would be a lie the spec explicitly forbids.
+   */
+  it("calls a completed journal RECORDED, never VERIFIED", () => {
+    expect(journalEvidenceState(journal({ state: "DONE" }))).toBe("RECORDED");
+  });
+
+  it("distinguishes a parent override from an earned entry", () => {
+    expect(journalEvidenceState(journal({ state: "DONE", overridden: true }))).toBe("OVERRIDE");
+  });
+
+  it.each(["LIVE", "LOCKED", "MISSED"] as const)("reports MISSING while %s", state => {
+    expect(journalEvidenceState(journal({ state }))).toBe("MISSING");
+  });
+
+  it("never returns VERIFIED for any state this plan can produce", () => {
+    const states = ["DONE", "LIVE", "LOCKED", "MISSED"] as const;
+    for (const state of states) {
+      for (const overridden of [true, false]) {
+        expect(journalEvidenceState(journal({ state, overridden }))).not.toBe("VERIFIED");
+      }
+    }
   });
 });

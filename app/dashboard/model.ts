@@ -14,6 +14,7 @@ import {
   HABIT_BLOCKS,
   type DashboardHabit,
   type HabitBlockGroups,
+  type JournalEvidenceState,
   type MatchReadiness,
   type ReadinessInput,
   type Tier,
@@ -123,4 +124,24 @@ export function deriveMatchReadiness(input: ReadinessInput): MatchReadiness {
       + journal * 20 + Math.min(input.workSubmissionCount, 1) * 10),
     journalState: input.journalState,
   };
+}
+
+/**
+ * How much evidence stands behind today's journal.
+ *
+ * RECORDED, NEVER VERIFIED. A ticked journal is the child's own word for it,
+ * and nothing in this plan reads a Tally record to check. Spec §10.3 and §13
+ * are explicit that the two must not be described in the same language, so the
+ * VERIFIED branch is deliberately unreachable here — it exists in the type for
+ * the future evidence-matching phase to fill in, not for this one to claim.
+ *
+ * An override is its own answer rather than a kind of completion: a parent
+ * restored it, and the board says so.
+ */
+export function journalEvidenceState(
+  journal: DashboardHabit | undefined,
+): JournalEvidenceState {
+  if (!journal) return "NOT_REQUIRED";
+  if (journal.overridden) return "OVERRIDE";
+  return journal.state === "DONE" ? "RECORDED" : "MISSING";
 }

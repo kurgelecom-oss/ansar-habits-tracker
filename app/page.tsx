@@ -12,12 +12,12 @@ import { addDays, dayNameOf, sydneyMinutesOfDay, parseHHMM } from "./lib/time";
 // scoringHabits/isPrerequisite are the second rule in the same pure module: a
 // habit whose Notion "Point Type" is `prerequisite` unlocks and scores nothing,
 // so it is stripped out of every count before any total is taken.
-import { habitsOnDay, scoringHabits, isPrerequisite } from "./lib/days";
+import { habitsOnDay, scoringHabits } from "./lib/days";
 // Mirrored byte-for-byte with family-dashboard/app/lib/streak.ts — see the
 // header there, and scripts/check-scoring-sync.sh which guards the pair.
 import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
+import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
 import HabitPanel from "./components/dashboard/HabitPanel";
-import { HABIT_ICONS, DEFAULT_ICON } from "./dashboard/icons";
 import type { DashboardHabit } from "./dashboard/types";
 // The squad week, Mon–Fri. This file used to declare its own copy beside the
 // /55 note below; lib/goldenBoot.ts asked for the collapse the moment page.tsx
@@ -73,9 +73,9 @@ const CYAN = "var(--cyan)";
    no icon property, and an emoji is presentation, not configuration. A habit
    added in Notion without an entry here simply gets the default tick.
 
-   The map itself moved to app/dashboard/icons.ts so the board and the Dashboard
-   V2 rows cannot drift onto two different emoji for the same habit. It is
-   imported above; habitButton and HabitPanel read the same copy. */
+   The map itself lives in app/dashboard/icons.ts. This file no longer reads it
+   at all: every habit now renders through HabitRow, which looks its own icon
+   up, so there is exactly one copy and nothing here to drift from it. */
 
 const BLOCKS = [
   { id: "pre_homeschool",    label: "🌅 Morning Habits",      subtitle: "6:30–8:30am · all = +2 pts", color: "#ffa500" },
@@ -972,217 +972,13 @@ export default function AnsarPage() {
     </>
   );
 
-  /**
-   * One habit as a real <button>, in one of four server-decided states.
-   *
-   *   DONE    ticked, struck through
-   *   LIVE    full colour, tappable
-   *   LOCKED  greyed, non-tappable, says when it opens ("Opens 6:30am")
-   *   MISSED  greyed, non-tappable, says "Missed" — this one scores zero
-   *
-   * MISSED is tinted red rather than merely dimmed: a missed window is a
-   * different fact from a not-yet-open one, and the board should not make them
-   * look the same.
-   */
-  const habitButton = (h: GateHabitView, color: string) => {
-    const isDone = h.state === "DONE";
-    const isLive = h.state === "LIVE";
-    const isMissed = h.state === "MISSED";
-    const isSaving = saving === h.id;
-    const pts = pointsById[h.id] ?? 0;
-    const chip = pts > 0 ? `+${pts} pt${pts === 1 ? "" : "s"}` : "";
-    const wasOverridden = overriddenIds.has(h.id);
-    const holding = holdId === h.id;
 
-    return (
-      <button
-        key={h.id}
-        type="button"
-        className="ab-btn"
-        onClick={() => tick(h.id, h.name)}
-        disabled={isSaving}
-        aria-disabled={!isLive}
-        onPointerDown={() => beginHold(h)}
-        onPointerUp={cancelHold}
-        onPointerLeave={cancelHold}
-        onPointerCancel={cancelHold}
-        onContextMenu={e => e.preventDefault()}
-        aria-label={wasOverridden ? `${h.name} — restored by parent override` : h.name}
-        title={wasOverridden ? "Parent override" : h.window ? `Window ${h.window}` : undefined}
-        style={{
-          position: "relative", overflow: "hidden",
-          display: "flex", alignItems: "center", gap: 14, padding: "0 16px",
-          borderRadius: 11, flex: 1, minHeight: 56, width: "100%", textAlign: "left",
-          font: "inherit", color: "inherit",
-          border: `1px solid ${isDone ? color + "50" : isLive ? "#2d3543" : isMissed ? "#ff444440" : "#1f2438"}`,
-          background: isDone ? color + "0a" : isLive ? "#1f2438" : isMissed ? "rgba(255,68,68,0.06)" : "#16192d",
-          opacity: isLive || isDone ? 1 : 0.5,
-          cursor: isLive ? "pointer" : "not-allowed",
-          WebkitTapHighlightColor: "transparent",
-        }}
-      >
-        {holding && <span aria-hidden className="ab-hold" />}
-
-        <span style={{
-          width: 30, height: 30, borderRadius: 9, flexShrink: 0,
-          border: `2px solid ${isDone ? color : isLive ? "#2d3543" : isMissed ? "#ff444460" : "#1f2438"}`,
-          background: isDone ? color : "transparent",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {isSaving ? <span style={{ fontSize: 13 }}>⏳</span> :
-           isDone ? <span style={{ fontSize: 16, color: "#000", fontWeight: 800 }}>✓</span> :
-           isMissed ? <span style={{ fontSize: 12 }}>✕</span> :
-           !isLive ? <span style={{ fontSize: 12 }}>🔒</span> : null}
-        </span>
-
-        <span aria-hidden style={{ fontSize: 24, flexShrink: 0, lineHeight: 1 }}>
-          {HABIT_ICONS[h.id] ?? DEFAULT_ICON}
-        </span>
-
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{
-            display: "block", fontSize: 15, fontWeight: 600, lineHeight: 1.28,
-            color: isDone ? "#757f8f" : isLive ? "#ffffff" : "#565f70",
-            textDecoration: isDone ? "line-through" : "none",
-          }}>
-            {h.name}
-          </span>
-          {!isDone && !isLive && h.label && (
-            <span style={{
-              display: "block", fontSize: 11, fontWeight: 700, marginTop: 3,
-              color: isMissed ? "#ff4444" : "#757f8f",
-            }}>
-              {h.label}
-            </span>
-          )}
-        </span>
-
-        {wasOverridden && (
-          <span aria-hidden title="Parent override" style={{
-            fontSize: 10, fontWeight: 800, flexShrink: 0, padding: "4px 7px",
-            borderRadius: 6, whiteSpace: "nowrap", letterSpacing: "0.04em",
-            color: RM_GOLD, background: `${RM_GOLD}14`, border: `1px solid ${RM_GOLD}44`,
-          }}>
-            ⟲ OVERRIDE
-          </span>
-        )}
-
-        {chip && (
-          <span style={{
-            fontSize: 11, fontWeight: 800, flexShrink: 0, padding: "5px 10px",
-            borderRadius: 7, whiteSpace: "nowrap",
-            color: isDone ? color : isLive ? "#b0b5c1" : "#565f70",
-            background: isDone ? color + "15" : "#16192d",
-            border: `1px solid ${isDone ? color + "40" : "#2d3543"}`,
-          }}>
-            {chip}
-          </span>
-        )}
-      </button>
-    );
-  };
-
-  /**
-   * The Homeschool hero.
-   *
-   * `homeschool_session` is worth 5 points — more than all seven Morning Habits
-   * combined — so it gets the largest target on the board rather than one 56px
-   * line lost in a list. The Stage 4 port to /api/habits dropped this treatment
-   * and rendered it with the generic row button; this restores it.
-   *
-   * It carries all four server-decided states, same vocabulary as the rows:
-   *   DONE    accent border/tint, struck through, "+5" in the block colour
-   *   LIVE    full colour, tappable, the only state with a pointer cursor
-   *   LOCKED  dimmed, 🔒, and the gate's own reason as the caption
-   *   MISSED  red tint, ✕, and a literal "0" where the "+5" was — a missed
-   *           window scores nothing, and the number should say so rather than
-   *           keep advertising five points it will never pay
-   *
-   * `flex: 1 1 auto` with a minHeight floor lets it take slack on tall screens
-   * and give it back on short ones, so it can never be the thing that pushes
-   * the column past the fold.
-   */
-  const heroButton = (h: GateHabitView, color: string) => {
-    const isDone = h.state === "DONE";
-    const isLive = h.state === "LIVE";
-    const isMissed = h.state === "MISSED";
-    const isSaving = saving === h.id;
-    const pts = pointsById[h.id] ?? 0;
-    const accent = isMissed ? "#ff4444" : color;
-    const wasOverridden = overriddenIds.has(h.id);
-    const holding = holdId === h.id;
-
-    const caption = isDone ? "✓ Done — wallet unlocked"
-      : isLive ? "Tap when the day's homeschool is finished"
-      : isMissed ? "Missed — this scores zero"
-      : h.label || "Locked";
-
-    return (
-      <button
-        key={h.id}
-        type="button"
-        className="ab-btn"
-        onClick={() => tick(h.id, h.name)}
-        disabled={isSaving}
-        aria-disabled={!isLive}
-        onPointerDown={() => beginHold(h)}
-        onPointerUp={cancelHold}
-        onPointerLeave={cancelHold}
-        onPointerCancel={cancelHold}
-        onContextMenu={e => e.preventDefault()}
-        aria-label={wasOverridden ? `${h.name} — restored by parent override` : h.name}
-        title={wasOverridden ? "Parent override" : h.window ? `Window ${h.window}` : undefined}
-        style={{
-          position: "relative", overflow: "hidden",
-          display: "flex", flexDirection: "column", alignItems: "flex-start",
-          justifyContent: "center", gap: 6, padding: "14px 16px",
-          minHeight: 112, flex: "1 1 auto", width: "100%",
-          borderRadius: 11, textAlign: "left", font: "inherit", color: "inherit",
-          border: `1px solid ${isDone ? color + "66" : isLive ? "#2d3543" : isMissed ? "#ff444440" : "#1f2438"}`,
-          background: isDone ? color + "10" : isLive ? "#1f2438" : isMissed ? "rgba(255,68,68,0.06)" : "#16192d",
-          opacity: isLive || isDone ? 1 : 0.5,
-          cursor: isLive ? "pointer" : "not-allowed",
-          WebkitTapHighlightColor: "transparent",
-        }}
-      >
-        {holding && <span aria-hidden className="ab-hold" />}
-
-        <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
-          <span style={{
-            fontSize: 34, fontWeight: 800, color: accent, lineHeight: 1,
-            fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
-          }}>
-            {isSaving ? "⏳" : isMissed ? "0" : `+${pts}`}
-          </span>
-          <span aria-hidden style={{
-            width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-            border: `2px solid ${isDone ? color : isLive ? "#2d3543" : isMissed ? "#ff444460" : "#1f2438"}`,
-            background: isDone ? color : "transparent",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {isDone ? <span style={{ fontSize: 14, color: "#000", fontWeight: 800 }}>✓</span> :
-             isMissed ? <span style={{ fontSize: 11 }}>✕</span> :
-             !isLive ? <span style={{ fontSize: 11 }}>🔒</span> : null}
-          </span>
-        </span>
-
-        <span style={{
-          fontSize: 18, fontWeight: 800, lineHeight: 1.2,
-          color: isDone ? "#757f8f" : isLive ? "#ffffff" : "#565f70",
-          textDecoration: isDone ? "line-through" : "none",
-        }}>
-          {HABIT_ICONS[h.id] ?? DEFAULT_ICON} {h.name}
-        </span>
-
-        <span style={{
-          fontSize: 11.5, fontWeight: 700,
-          color: isDone ? color : isMissed ? "#ff4444" : "#757f8f",
-        }}>
-          {wasOverridden ? "⟲ Restored by parent override" : caption}
-        </span>
-      </button>
-    );
-  };
+  /* habitButton, heroButton and habitColumn were the inline presentation for
+     Morning, Afternoon/Evening, Homeschool and Conditional. Every one of those
+     blocks now renders through HabitPanel or DayProgrammePanel, so the closures
+     are gone rather than left to rot beside their replacements. The behaviour
+     they carried - the four states, the point chip, the override marker, the
+     tick and long-hold wiring - moved into HabitRow unchanged. */
 
   const inBlock = (blockId: string) =>
     gateHabits.filter(h => h.block === blockId).sort((a, b) => a.order - b.order);
@@ -1241,64 +1037,6 @@ export default function AnsarPage() {
     return null;
   })();
 
-  /** A full habit column (Morning, and Afternoon/Evening). */
-  const habitColumn = (block: (typeof BLOCKS)[number]) => {
-    const bh = inBlock(block.id);
-    if (bh.length === 0) return null;
-    const done = bh.filter(h => h.state === "DONE").length;
-    return (
-      // no scroll — one-page dashboard, overflow-y is banned here
-      <div style={cardStyle}>
-        {colHead(block.color, block.label, block.subtitle,
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: 19, fontWeight: 800, color: "#ffffff", fontVariantNumeric: "tabular-nums" }}>
-              {done}/{bh.length}
-            </div>
-            <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
-              {dayScore.blocks[block.id] ?? 0} pts
-            </div>
-          </div>,
-        )}
-        {/* The feasibility warning. Morning only — it is the one block whose
-            dwell chain can outrun its own window, because it is the only one
-            with seven habits inside two hours. Rendered above the buttons so it
-            is read before the next tap, not after it. Colours are the amber and
-            red this file already uses for Reserves and Training Ground; no token
-            is added and globals.css is untouched. */}
-        {block.id === "pre_homeschool" && morningFeasibility && (
-          <div
-            role="status"
-            aria-live="polite"
-            data-testid="morning-feasibility"
-            data-level={morningFeasibility.level}
-            data-latest-safe-next-tick={morningFeasibility.latestSafeNextTick}
-            data-remaining={morningFeasibility.remaining}
-            style={{
-              margin: "0 10px 0",
-              marginTop: 10,
-              padding: "7px 10px",
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              lineHeight: 1.35,
-              color: morningFeasibility.level === "red" ? "#ff4444" : "#ffa500",
-              background: morningFeasibility.level === "red"
-                ? "rgba(255, 68, 68, 0.10)"
-                : "rgba(255, 165, 0, 0.10)",
-              border: `1px solid ${morningFeasibility.level === "red"
-                ? "rgba(255, 68, 68, 0.35)"
-                : "rgba(255, 165, 0, 0.35)"}`,
-            }}
-          >
-            {morningFeasibility.text}
-          </div>
-        )}
-        <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
-          {bh.map(h => habitButton(h, block.color))}
-        </div>
-      </div>
-    );
-  };
 
   const morning = BLOCKS.find(b => b.id === "pre_homeschool")!;
   /**
@@ -1308,16 +1046,13 @@ export default function AnsarPage() {
    * the same `pointsById` and `overriddenIds` the rest of this file uses, so
    * the panel cannot disagree with the board about either.
    */
-  const morningRows: DashboardHabit[] = inBlock("pre_homeschool").map(h => ({
-    ...h,
-    points: pointsById[h.id] ?? 0,
-    overridden: overriddenIds.has(h.id),
-  }));
-  const school = BLOCKS.find(b => b.id === "homeschool")!;
-  const evening = BLOCKS.find(b => b.id === "afternoon_evening")!;
-  const conditional = BLOCKS.find(b => b.id === "conditional")!;
-  const schoolHabits = inBlock("homeschool");
-  const condHabits = inBlock("conditional");
+  const rowsFor = (blockId: string): DashboardHabit[] =>
+    inBlock(blockId).map(h => ({
+      ...h,
+      points: pointsById[h.id] ?? 0,
+      overridden: overriddenIds.has(h.id),
+    }));
+  const morningRows = rowsFor("pre_homeschool");
 
   /**
    * One scoreboard cell. `opts` is additive and defaulted, so the four calls
@@ -1538,9 +1273,7 @@ export default function AnsarPage() {
         {/* 1 — Morning Habits */}
         {/* MORNING — Dashboard V2 rows. Behaviour-preserving: the same tick,
             beginHold, cancelHold, saving, holdId and morningFeasibility this
-            column always used, handed to a component instead of a closure.
-            Afternoon/Evening below still renders through habitColumn until
-            Task 6. */}
+            column always used, handed to a component instead of a closure. */}
         <HabitPanel
           title={morning.label}
           subtitle={morning.subtitle}
@@ -1556,38 +1289,25 @@ export default function AnsarPage() {
           onHoldCancel={cancelHold}
         />
 
-        {/* 2 — Afternoon / Evening */}
-        {habitColumn(evening)}
+        {/* 2 — TODAY'S PROGRAMME. Homeschool, Afternoon/Evening and Conditional
+            in one panel. Amendment 8027d53: the weekend removes only the
+            Homeschool subsection; nothing else is allowed to disappear. */}
+        <DayProgrammePanel
+          homeschool={rowsFor("homeschool")}
+          afternoonEvening={rowsFor("afternoon_evening")}
+          conditional={rowsFor("conditional")}
+          savingId={saving}
+          holdId={holdId}
+          onTick={tick}
+          onHoldStart={beginHold}
+          onHoldCancel={cancelHold}
+        />
 
-        {/* 3 — Homeschool · Log Work · Conditional · Weekly Tiers */}
+        {/* 3 — Log Work · Weekly Tiers */}
         {/* no scroll — one-page dashboard, overflow-y is banned here */}
         <div style={{ display: "flex", flexDirection: "column", gap: 4, minHeight: 0 }}>
-          {schoolHabits.length > 0 && (
-            <div style={{ ...cardStyle, flex: "0 0 auto" }}>
-              {colHead(school.color, school.label, school.subtitle,
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 19, fontWeight: 800, color: "#ffffff", fontVariantNumeric: "tabular-nums" }}>
-                    {schoolHabits.filter(h => h.state === "DONE").length}/{schoolHabits.length}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
-                    {dayScore.blocks.homeschool ?? 0} pts
-                  </div>
-                </div>,
-                true,
-              )}
-              {/* The hero treatment is for the habit that pays 5. A prerequisite
-                  pays nothing and only unlocks, so it renders as the SAME 56px
-                  row button every other column uses — no new component, no new
-                  style, and it carries the existing LOCKED/DONE lock chrome the
-                  cascade gate already draws. It also keeps column 3 inside the
-                  no-scroll budget: a second 112px hero would not fit. */}
-              <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 9 }}>
-                {schoolHabits.map(h =>
-                  isPrerequisite(h) ? habitButton(h, school.color) : heroButton(h, school.color),
-                )}
-              </div>
-            </div>
-          )}
+          {/* Homeschool moved to Today's Programme (column 2), journal first.
+              Rendering it here as well would show the same two habits twice. */}
 
           {/* LOG WORK — opens the Tally intake modal. Touches no scoring state. */}
           <button
@@ -1608,19 +1328,8 @@ export default function AnsarPage() {
             Log Work
           </button>
 
-          {condHabits.length > 0 && (
-            <div style={{ ...cardStyle, flex: "0 0 auto" }}>
-              {colHead(conditional.color, conditional.label, conditional.subtitle,
-                <div style={{ fontSize: 19, fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
-                  {condHabits.filter(h => h.state === "DONE").length}/{condHabits.length}
-                </div>,
-                true,
-              )}
-              <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 8 }}>
-                {condHabits.map(h => habitButton(h, conditional.color))}
-              </div>
-            </div>
-          )}
+          {/* Conditional moved to Today's Programme (column 2), where it
+              appears only on the days that actually schedule it. */}
 
           {/* min-height:min-content, NOT 0. cardStyle carries overflow:hidden, and
               flex:1 + min-height:0 licensed this card to be squeezed below its own

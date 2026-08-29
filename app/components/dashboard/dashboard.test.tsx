@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import ClubHeader from "./ClubHeader";
 import ClubNavigation from "./ClubNavigation";
+import DayProgrammePanel from "./DayProgrammePanel";
 import HabitPanel from "./HabitPanel";
 import HabitRow from "./HabitRow";
 import MatchCentrePlaceholder from "./MatchCentrePlaceholder";
@@ -506,5 +507,132 @@ describe("HabitPanel", () => {
       doneCount={6} blockPoints={2} {...rowHandlers} />);
     expect(screen.getAllByText("Parent override")).toHaveLength(1);
     expect(screen.getByRole("button", { name: /Feet on floor.*restored by parent override/ })).toBeInTheDocument();
+  });
+});
+
+/* ── Task 6: Today's Programme ──────────────────────────────────────────────*/
+
+const SECTION_TITLES = ["Homeschool", "Afternoon / Evening", "Conditional"];
+
+function programme(fixture: typeof weekdayFixture) {
+  const grouped = groupHabitsByBlock(fixture.gate.habits);
+  return {
+    homeschool: grouped.homeschool,
+    afternoonEvening: grouped.afternoon_evening,
+    conditional: grouped.conditional,
+  };
+}
+
+describe("DayProgrammePanel", () => {
+  it("puts the journal first and the session second", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    const items = screen.getAllByTestId("homeschool-item");
+    expect(items[0]).toHaveTextContent("Daily learning journal entry written");
+    expect(items[1]).toHaveTextContent("Homeschool session completed");
+  });
+
+  /**
+   * The journal is DONE in the weekday fixture. It is a self-certified tick, so
+   * the only honest word for it is Recorded. "Verified" must not appear
+   * anywhere until a real Tally record is matched against it.
+   */
+  it("calls a completed journal Recorded and never Verified", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    expect(screen.getByText("Recorded")).toBeInTheDocument();
+    expect(screen.queryByText("Verified")).not.toBeInTheDocument();
+  });
+
+  /** Amendment 8027d53: no configured habit may vanish to protect the layout. */
+  it("renders every non-morning habit the day configures", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    for (const id of ["btn_cornell", "shower", "all_namaz", "room_tidy", "teeth", "reading", "soccer_training"]) {
+      expect(screen.getByTestId(`programme-${id}`)).toBeInTheDocument();
+    }
+    expect(screen.getAllByTestId("homeschool-item")).toHaveLength(2);
+  });
+
+  it("orders the subsections Homeschool, Afternoon / Evening, Conditional", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    expect(screen.getAllByTestId("programme-section").map(el => el.getAttribute("data-section")))
+      .toEqual(SECTION_TITLES);
+  });
+
+  it("keeps each subsection in Notion order", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    const evening = screen.getAllByTestId("programme-section")[1];
+    const names = within(evening).getAllByRole("button").map(b => b.textContent ?? "");
+    expect(names[0]).toContain("BTN episode");
+    expect(names[5]).toContain("Reading in bed");
+  });
+
+  /* ── Weekend: only Homeschool goes ────────────────────────────────────────*/
+
+  it("omits only the Homeschool subsection on a weekend", () => {
+    render(<DayProgrammePanel {...programme(weekendFixture)} {...rowHandlers} />);
+    expect(screen.queryByTestId("homeschool-item")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("programme-section").map(el => el.getAttribute("data-section")))
+      .toEqual(["Afternoon / Evening"]);
+  });
+
+  it("still renders all six Afternoon / Evening habits on a weekend", () => {
+    render(<DayProgrammePanel {...programme(weekendFixture)} {...rowHandlers} />);
+    for (const id of ["btn_cornell", "shower", "all_namaz", "room_tidy", "teeth", "reading"]) {
+      expect(screen.getByTestId(`programme-${id}`)).toBeInTheDocument();
+    }
+  });
+
+  it("drops the Conditional subsection when nothing is scheduled", () => {
+    render(<DayProgrammePanel {...programme(weekendFixture)} {...rowHandlers} />);
+    expect(screen.queryByTestId("programme-soccer_training")).not.toBeInTheDocument();
+  });
+
+  /* ── Shared row behaviour must survive the reuse ──────────────────────────*/
+
+  it("reuses HabitRow, so refused rows stay pointer-reachable here too", () => {
+    const holds: string[] = [];
+    render(<DayProgrammePanel {...programme(weekdayFixture)}
+      onTick={noop} onHoldStart={h => holds.push(h.id)} onHoldCancel={noop} />);
+    const locked = within(screen.getByTestId("programme-room_tidy")).getByRole("button");
+    expect(locked).toBeEnabled();
+    expect(locked).toHaveAttribute("aria-disabled", "true");
+    fireEvent.pointerDown(locked);
+    expect(holds).toEqual(["room_tidy"]);
+  });
+
+  it("forwards ticks from any subsection", () => {
+    const ticks: string[] = [];
+    render(<DayProgrammePanel {...programme(weekdayFixture)}
+      onTick={id => ticks.push(id)} onHoldStart={noop} onHoldCancel={noop} />);
+    fireEvent.click(within(screen.getByTestId("programme-soccer_training")).getByRole("button"));
+    fireEvent.click(screen.getAllByTestId("homeschool-item")[1].querySelector("button")!);
+    expect(ticks).toEqual(["soccer_training", "homeschool_session"]);
+  });
+
+  it("summarises completion across the whole programme", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    // Weekday fixture: journal DONE, session LIVE, six evening rows, soccer LIVE.
+    expect(screen.getByText("1/9")).toBeVisible();
+  });
+
+  it("renders nothing when the day configures no programme at all", () => {
+    const { container } = render(<DayProgrammePanel homeschool={[]} afternoonEvening={[]} conditional={[]} {...rowHandlers} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  /** Spec §10.3: subsection dividers, not a second card border inside a card. */
+  it("uses one outer panel, not nested cards", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    expect(screen.getAllByTestId("panel-accent")).toHaveLength(1);
+    expect(screen.getByRole("heading", { name: "Today's Programme" })).toBeInTheDocument();
+  });
+
+  it("marks an overridden journal without claiming it was earned", () => {
+    const grouped = programme(weekdayFixture);
+    const overridden = grouped.homeschool.map(h =>
+      h.id === "journal" ? { ...h, overridden: true } : h);
+    render(<DayProgrammePanel {...grouped} homeschool={overridden} {...rowHandlers} />);
+    expect(screen.getByText("Parent override")).toBeVisible();
+    expect(screen.queryByText("Recorded")).not.toBeInTheDocument();
+    expect(screen.queryByText("Verified")).not.toBeInTheDocument();
   });
 });
