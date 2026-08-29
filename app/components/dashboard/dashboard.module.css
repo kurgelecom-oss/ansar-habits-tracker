@@ -501,17 +501,18 @@
    `max-height` rather than `height`: this frame gets shorter, never taller,
    when a real provider replaces the placeholder copy. */
 .matchCentre {
+  /* The fixture is centred on the PANEL. Readiness is taken out of flow so its
+     width cannot push the score off centre — the same trick the masthead uses
+     to keep the wordmark honest. */
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  height: 112px;
-  max-height: 112px;
-  padding: 10px 42px;
+  justify-content: center;
+  max-height: 128px;
+  padding: 12px 18px;
   flex-shrink: 0;
-  /* The reference reads this band as one lit royal-blue plate, not a card that
-     happens to be bluish. The navy is carried nearly full strength across the
-     middle and only falls away at the ends. */
+  /* One lit royal-blue plate: the navy at near full strength across the middle,
+     falling away only at the ends. */
   background:
     radial-gradient(ellipse at 50% -20%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 62%),
     linear-gradient(100deg,
@@ -519,76 +520,124 @@
       var(--ansar-navy) 42%,
       color-mix(in srgb, var(--ansar-navy) 86%, #000000));
   border: 1px solid color-mix(in srgb, var(--ansar-gold) 34%, transparent);
-  margin: 0 6.75%;
-  border-radius: 10px;
+  border-radius: var(--ansar-radius-panel);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--cyan) 16%, transparent),
     0 10px 30px rgba(0, 0, 0, 0.32);
   overflow: hidden;
 }
 
-/* The frame a real fixture will eventually occupy. Readiness is deliberately
-   NOT inside it. */
+/* The score below is dummy preview data. This tag is the visible half of
+   saying so; the region's accessible name is the other half. Both go when a
+   real provider lands. */
+.matchPreviewTag {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ansar-gold-bright);
+  background: color-mix(in srgb, var(--ansar-gold) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 34%, transparent);
+}
+
 .matchFixture {
   display: flex;
   align-items: center;
-  gap: 24px;
-  flex: 1;
+  justify-content: center;
+  gap: 34px;
   min-width: 0;
+  width: 100%;
 }
 
+/* Equal flex on both sides is what actually centres the score: the two teams
+   claim the same width whatever their names are, so "REAL SOCIEDAD" being
+   longer than "REAL MADRID" cannot shift the middle. */
+.matchTeam {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.matchTeamHome { justify-content: flex-end; }
+.matchTeamAway { justify-content: flex-start; }
+
+.matchTeamText { min-width: 0; }
+.matchTeamAway .matchTeamText { text-align: right; }
+
 .matchCrest {
-  height: 88px;
+  height: 68px;
   width: auto;
   display: block;
   object-fit: contain;
   flex-shrink: 0;
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.45));
 }
 
-.matchTeamCopy { min-width: 0; }
-
-.matchCopy {
-  min-width: 360px;
-  flex: 1.15;
-  text-align: center;
-}
-
-.matchTitle {
-  font-family: Georgia, 'Times New Roman', serif;
+.matchTeamName {
   font-size: 21px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  color: #ffffff;
-}
-
-.matchTeamNote {
-  margin-top: 5px;
-  font-size: 13px;
-  color: #ffffff;
-}
-
-/* Calm, not an error. A missing provider is not a fault the child caused, and
-   it has no bearing on whether today's habits can be ticked (spec §8.2). */
-.matchUnavailable {
-  margin-top: 0;
-  font-size: 20px;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.03em;
   color: #ffffff;
+  white-space: nowrap;
 }
 
-.matchNote {
-  margin-top: 7px;
-  font-size: 12px;
-  color: var(--ansar-muted);
+.matchTeamMeta {
+  margin-top: 2px;
+  font-size: 14px;
+  color: color-mix(in srgb, #ffffff 62%, transparent);
+  white-space: nowrap;
 }
 
-/* Visually related to the fixture, semantically separate — its own boxed
-   region with its own label, off to the side rather than between two teams. */
-.matchReadiness {
+.matchScore {
   flex-shrink: 0;
-  min-width: 230px;
-  padding: 8px 0 8px 28px;
+  text-align: center;
+  min-width: 128px;
+}
+
+.matchScoreLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14px;
+  line-height: 1;
+}
+
+.matchGoals {
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ansar-gold-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.matchScoreDash {
+  font-size: 34px;
+  font-weight: 700;
+  color: color-mix(in srgb, #ffffff 55%, transparent);
+}
+
+.matchStatus {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: color-mix(in srgb, #ffffff 68%, transparent);
+  white-space: nowrap;
+}
+
+/* Its own labelled region, off to the side — never between the two teams. */
+.matchReadiness {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 152px;
+  padding: 8px 12px;
   border-left: 1px solid color-mix(in srgb, var(--ansar-gold) 16%, transparent);
 }
 
@@ -1227,10 +1276,23 @@
     padding: 12px 14px;
     margin: 0 10px;
   }
-  .matchCrest { height: 56px; }
-  .matchCopy { min-width: 0; }
+  /* A phone cannot hold crest + name + score + name + crest on one line, so
+     the fixture wraps to two: the teams share a row and the score sits under
+     them. Readiness comes back into flow at the bottom — it is only taken out
+     of it on desktop to keep the score centred on the plate. */
+  .matchFixture { flex-wrap: wrap; gap: 10px 14px; }
+  .matchTeam { flex: 1 1 40%; gap: 9px; }
+  .matchScore { order: 3; flex: 1 1 100%; min-width: 0; }
+  .matchCrest { height: 44px; }
+  .matchTeamName { font-size: 15px; white-space: normal; }
+  .matchTeamMeta { font-size: 12px; }
+  .matchGoals { font-size: 34px; }
+  .matchScoreDash { font-size: 26px; }
+  .matchPreviewTag { position: static; align-self: flex-start; }
 
   .matchReadiness {
+    position: static;
+    transform: none;
     min-width: 0;
     padding: 8px 0 0;
     border-left: none;
@@ -1319,25 +1381,22 @@
     gap: 6px;
   }
 
-  /* This block was cut to 56px with its third line hidden when every pixel
-     above the panels was owed to the nine-row weekday programme. That debt is
-     paid: the shared 40px nav is gone from this route, and the full weekday
-     roster measured on the preview leaves the grid bottom at 683 of 820. The
-     spec asks for a substantial Match Centre, so it gets 104px and its
-     explanatory line back — still 89px clear of the fold, and not one pixel
-     taken from a habit row. Restore the 56px cut only if a real weekday is
-     ever measured tighter than this. */
+  /* The reference's Match Centre, scaled to this viewport: a real fixture
+     band, not a strip. Measured against the reference at 1440 wide, its plate
+     is ~97px tall with a ~62px crest, and that is what this is. */
   .matchCentre {
-    max-height: 78px;
-    padding: 10px 20px;
-    gap: 16px;
+    max-height: 104px;
+    padding: 10px 18px;
   }
-  .matchCrest { height: 50px; }
-  .matchCopy { min-width: 280px; }
-  .matchTeamNote { margin-top: 2px; font-size: 10px; }
-  .matchTitle { font-size: 11px; }
-  .matchUnavailable { font-size: 19px; margin-top: 3px; }
-  .matchNote { font-size: 12px; margin-top: 3px; }
+  .matchFixture { gap: 26px; }
+  .matchTeam { gap: 13px; }
+  .matchCrest { height: 60px; }
+  .matchTeamName { font-size: 19px; }
+  .matchTeamMeta { font-size: 13px; }
+  .matchGoals { font-size: 40px; }
+  .matchScoreDash { font-size: 30px; }
+  .matchStatus { font-size: 13px; margin-top: 4px; }
+  .matchScore { min-width: 112px; }
   /* Readiness goes two-up instead of four-deep. Stacked, its label, figure,
      track and journal note came to 58px inside a 54px content box, and
      .matchCentre is overflow:hidden — the journal note was being cut off.

@@ -2,53 +2,74 @@ import type { MatchReadiness } from "../../dashboard/types";
 import styles from "./dashboard.module.css";
 
 /**
- * The Match Centre frame, before any football provider exists.
+ * The Match Centre, showing a PREVIEW fixture.
  *
- * IT INVENTS NOTHING. No opponent, no score, no competition, no kickoff, no
- * countdown — not even a plausible-looking placeholder one. Spec §5 is blunt
- * about it: a fabricated football result is a different category of truth
- * masquerading as fact, and a dash between two numbers is all it takes to read
- * as a scoreline. The frame says plainly that the data is not connected.
+ * ── READ THIS BEFORE CONNECTING A REAL PROVIDER ──────────────────────────────
+ * The score below is DUMMY DATA, requested by the owner so the finished
+ * composition can be judged before a football provider exists. It is not a real
+ * result and must never reach production as-is. The frame carries a small
+ * PREVIEW tag and the region's accessible name says "Preview fixture" so the
+ * numbers cannot be mistaken for fact by eye or by screen reader.
  *
- * Real Madrid's own crest is the one club asset shown, because it is the team
- * this board follows. There is no second crest, since inventing an opponent's
- * identity is exactly what §11.5 forbids.
+ * When the provider lands, delete PREVIEW_FIXTURE and take the same fields from
+ * the API. The layout does not change — that is the point of building it now.
  *
- * Match Readiness sits alongside, in its own labelled region — NEVER in the
- * space between two teams where a score will eventually go (spec §8.4). It
- * summarises learning state that the server already approved; it is not a
- * result, and it awards nothing.
+ * Match Readiness sits in its own labelled region, pinned to the right edge and
+ * NEVER in the space between the two teams where the score goes (spec §8.4). It
+ * is absolutely positioned so the fixture centres on the PANEL rather than on
+ * the space left over beside it.
  */
+const PREVIEW_FIXTURE = {
+  home: { name: "REAL MADRID", competition: "La Liga", crest: "/real-madrid.png", goals: 2 },
+  away: { name: "REAL SOCIEDAD", competition: "La Liga", crest: "/real-sociedad.png", goals: 0 },
+  status: "Full Time",
+} as const;
+
 const JOURNAL_NOTE: Record<MatchReadiness["journalState"], string> = {
   NOT_REQUIRED: "No journal scheduled today",
   MISSING: "Journal not written yet",
   RECORDED: "Journal recorded",
-  // Reachable only once real Tally evidence is matched. Nothing in this plan
-  // produces it; the wording exists so the future phase has somewhere to land.
   VERIFIED: "Journal verified",
   OVERRIDE: "Journal — parent override",
 };
 
 export default function MatchCentrePlaceholder({ readiness }: { readiness: MatchReadiness }) {
-  return (
-    <section className={styles.matchCentre} aria-label="Real Madrid Match Centre">
-      <div className={styles.matchFixture} data-testid="match-fixture">
-        <img
-          className={styles.matchCrest}
-          src="/real-madrid.png"
-          alt="Real Madrid"
-        />
-        <div className={styles.matchTeamCopy}>
-          <p className={styles.matchTitle}>REAL MADRID</p>
-          <p className={styles.matchTeamNote}>MATCH CENTRE</p>
-        </div>
-      </div>
+  const { home, away, status } = PREVIEW_FIXTURE;
 
-      <div className={styles.matchCopy}>
-        <p className={styles.matchUnavailable}>Fixture data not connected yet</p>
-        <p className={styles.matchNote}>
-          Real data will appear here after the football provider is approved.
-        </p>
+  return (
+    <section
+      className={styles.matchCentre}
+      aria-label={`Preview fixture — Real Madrid ${home.goals}, Real Sociedad ${away.goals}`}
+    >
+      <span className={styles.matchPreviewTag}>Preview</span>
+
+      <div className={styles.matchFixture} data-testid="match-fixture">
+        {/* Home: crest outermost, name reading in toward the score. */}
+        <div className={`${styles.matchTeam} ${styles.matchTeamHome}`}>
+          <img className={styles.matchCrest} src={home.crest} alt="Real Madrid" />
+          <div className={styles.matchTeamText}>
+            <p className={styles.matchTeamName}>{home.name}</p>
+            <p className={styles.matchTeamMeta}>{home.competition}</p>
+          </div>
+        </div>
+
+        <div className={styles.matchScore}>
+          <p className={styles.matchScoreLine} data-testid="match-score">
+            <span className={styles.matchGoals}>{home.goals}</span>
+            <span className={styles.matchScoreDash}>-</span>
+            <span className={styles.matchGoals}>{away.goals}</span>
+          </p>
+          <p className={styles.matchStatus}>{status}</p>
+        </div>
+
+        {/* Away: mirrored — name first, crest outermost. */}
+        <div className={`${styles.matchTeam} ${styles.matchTeamAway}`}>
+          <div className={styles.matchTeamText}>
+            <p className={styles.matchTeamName}>{away.name}</p>
+            <p className={styles.matchTeamMeta}>{away.competition}</p>
+          </div>
+          <img className={styles.matchCrest} src={away.crest} alt="Real Sociedad" />
+        </div>
       </div>
 
       <div className={styles.matchReadiness} data-testid="match-readiness">
