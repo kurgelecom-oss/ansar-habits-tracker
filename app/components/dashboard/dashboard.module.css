@@ -949,10 +949,24 @@
   .matchTitle { font-size: 10px; }
   .matchUnavailable { font-size: 12px; margin-top: 1px; }
   .matchNote { display: none; }
-  .matchReadiness { min-width: 140px; padding: 3px 9px; }
-  .readinessValue { font-size: 15px; margin-top: 0; }
-  .readinessTrack { margin-top: 4px; }
-  .readinessNote { font-size: 10px; margin-top: 2px; }
+  /* Readiness goes two-up instead of four-deep. Stacked, its label, figure,
+     track and journal note came to 58px inside a 54px content box, and
+     .matchCentre is overflow:hidden — the journal note was being cut off.
+     Pairing the label with the figure costs nothing and hides nothing. */
+  .matchReadiness {
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 8px;
+    row-gap: 2px;
+    align-items: baseline;
+    align-content: center;
+    min-width: 168px;
+    padding: 3px 9px;
+  }
+  .readinessLabel { grid-column: 1; }
+  .readinessValue { grid-column: 2; justify-self: end; font-size: 16px; margin-top: 0; }
+  .readinessTrack { grid-column: 1 / -1; margin-top: 0; }
+  .readinessNote { grid-column: 1 / -1; font-size: 10px; margin-top: 0; }
 
   .clubNav { height: 40px; }
   .clubHeader { height: 36px; }

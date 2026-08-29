@@ -420,6 +420,16 @@ describe("height defences at 1440 x 820", () => {
     expect(shortDesktop).not.toMatch(/\.readinessValue[^{]*\{[^}]*display:\s*none/);
   });
 
+  /**
+   * .matchCentre is overflow:hidden, so anything taller than its cap is cut
+   * silently. The readiness block is laid out two-up at this size for exactly
+   * that reason; stacked, it overran the frame and clipped the journal note.
+   */
+  it("lays readiness out to fit the compacted frame rather than overflow it", () => {
+    expect(shortDesktop).toMatch(/\.matchReadiness[^{]*\{[^}]*display:\s*grid/);
+    expect(shortDesktop).toMatch(/\.readinessNote[^{]*\{[^}]*grid-column/);
+  });
+
   it("keeps the habit row target at 44px everywhere", () => {
     expect(base("habitRow")).toMatch(/min-height:\s*44px/);
     expect(css).not.toMatch(/\.habitRow[^{]*\{[^}]*min-height:\s*(?!44px)\d+px/);
