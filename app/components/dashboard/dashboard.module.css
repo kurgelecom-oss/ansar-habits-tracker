@@ -207,8 +207,12 @@
   height: 64px;
   padding: 0 20px;
   flex-shrink: 0;
+  /* Measured on the preview at 1440 x 820: at a 0.52 centre stop the seating
+     read as the subject and the status row (Today / Streak / server clock) sat
+     on bright blue plastic. The photo is atmosphere, not content — it stays
+     under a floor dark enough for white text everywhere it lands. */
   background-image:
-    linear-gradient(90deg, rgba(4, 10, 22, 0.76), rgba(8, 18, 39, 0.52), rgba(4, 10, 22, 0.84)),
+    linear-gradient(90deg, rgba(4, 10, 22, 0.93), rgba(6, 14, 30, 0.84) 42%, rgba(4, 10, 22, 0.95)),
     url('/bernabeu-bg.jpg');
   background-size: cover;
   background-position: center 42%;
@@ -984,20 +988,23 @@
     gap: 6px;
   }
 
-  /* The largest non-learning block on the board, and the one showing no real
-     information at all: a crest and a sentence saying no fixture is connected.
-     128px to say that is height the nine-row weekday programme needs. The
-     headline stays — the frame is still truthful, and Match Readiness is still
-     shown — only the explanatory third line goes. */
+  /* This block was cut to 56px with its third line hidden when every pixel
+     above the panels was owed to the nine-row weekday programme. That debt is
+     paid: the shared 40px nav is gone from this route, and the full weekday
+     roster measured on the preview leaves the grid bottom at 683 of 820. The
+     spec asks for a substantial Match Centre, so it gets 104px and its
+     explanatory line back — still 89px clear of the fold, and not one pixel
+     taken from a habit row. Restore the 56px cut only if a real weekday is
+     ever measured tighter than this. */
   .matchCentre {
-    max-height: 56px;
-    padding: 5px 14px;
-    gap: 12px;
+    max-height: 104px;
+    padding: 10px 16px;
+    gap: 14px;
   }
-  .matchCrest { height: 30px; }
-  .matchTitle { font-size: 10px; }
-  .matchUnavailable { font-size: 12px; margin-top: 1px; }
-  .matchNote { display: none; }
+  .matchCrest { height: 44px; }
+  .matchTitle { font-size: 11px; }
+  .matchUnavailable { font-size: 14px; margin-top: 2px; }
+  .matchNote { font-size: 11px; margin-top: 3px; }
   /* Readiness goes two-up instead of four-deep. Stacked, its label, figure,
      track and journal note came to 58px inside a 54px content box, and
      .matchCentre is overflow:hidden — the journal note was being cut off.

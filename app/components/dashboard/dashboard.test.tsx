@@ -408,9 +408,18 @@ describe("height defences at 1440 x 820", () => {
    * a row past the fold is unreachable, not merely below it. Height is
    * recovered from chrome only.
    */
-  it("recovers height from the placeholder Match Centre, not from habit rows", () => {
-    expect(shortDesktop).toMatch(/\.matchCentre[^{]*\{[^}]*max-height:\s*56px/);
+  /**
+   * This once pinned the Match Centre at 56px. That number was a symptom of a
+   * height shortage, not a contract — the shared 40px nav has since left this
+   * route and a measured weekday board at 1440 x 820 ends 137px clear. The cap
+   * moved to 104px so the frame can be substantial, and what actually mattered
+   * is asserted directly instead: whatever the frame costs, it is never paid
+   * for out of a habit row.
+   */
+  it("never recovers height from habit rows", () => {
     expect(shortDesktop).not.toMatch(/\.habitRow[^{]*\{[^}]*min-height/);
+    expect(shortDesktop).not.toMatch(/\.habitRow[^{]*\{[^}]*height/);
+    expect(css).toMatch(/\.habitRow\s*\{[^}]*min-height:\s*44px/);
   });
 
   /** The frame may get shorter, but it must not stop telling the truth. */
@@ -510,11 +519,19 @@ describe("vertical budget before the panels", () => {
   /**
    * The binding constraint is not the block above but the short-desktop
    * override, because 1440 × 820 matches @media (min-width:1440px) and
-   * (max-height:900px). Measured there the stack is 40 + 62 + 56 + two 6px
-   * gaps = 170, against 144 before the masthead grew — 26px spent out of the
-   * 40px recovered, so the nine-row weekday programme ends up 14px better off.
+   * (max-height:900px).
+   *
+   * The ceiling here is measured, not derived. On deploy-preview-2 at exactly
+   * 1440 × 820, carrying the full weekday roster (the Saturday board plus
+   * `journal` and `homeschool_session`, 15 rows), the panel grid ended at 683
+   * with the stack at 170 — 137px of clear air under it. 232 spends 62 of that
+   * and keeps 75 in hand, which is what lets the Match Centre be substantial
+   * without touching a habit row. Re-measure before raising it again; do not
+   * reason the number upward from this comment alone.
    */
-  it("keeps the short-desktop stack inside what the hidden bar paid for", () => {
+  const SHORT_DESKTOP_CEILING = 232;
+
+  it("keeps the short-desktop stack inside the measured ceiling", () => {
     const shortDesktop = /@media \(min-width: 1440px\) and \(max-height: 900px\) \{[\s\S]*?\n\}/.exec(css)?.[0] ?? "";
     expect(shortDesktop, "short-desktop block must exist").not.toBe("");
     const at = (selector: string, property: string): number => {
@@ -526,8 +543,19 @@ describe("vertical budget before the panels", () => {
     const gap = at("shell", "gap");
     const stack = at("clubNav", "height") + at("clubHeader", "height")
       + at("matchCentre", "max-height") + gap * 2;
-    expect(stack).toBe(170);
-    expect(stack).toBeLessThanOrEqual(144 + RECOVERED_NAV_PX);
+    expect(stack).toBe(218);
+    expect(stack).toBeLessThanOrEqual(SHORT_DESKTOP_CEILING);
+  });
+
+  /**
+   * The Match Centre frame the spec asks for, guarded at the viewport that
+   * nearly cost it: nothing here may quietly shrink back to the 56px strip
+   * with its explanatory line hidden.
+   */
+  it("keeps the short-desktop Match Centre substantial", () => {
+    const shortDesktop = /@media \(min-width: 1440px\) and \(max-height: 900px\) \{[\s\S]*?\n\}/.exec(css)?.[0] ?? "";
+    expect(/\.matchCentre\s*\{[^}]*max-height:\s*104px/.test(shortDesktop)).toBe(true);
+    expect(/\.matchNote\s*\{[^}]*display:\s*none/.test(shortDesktop)).toBe(false);
   });
 });
 
