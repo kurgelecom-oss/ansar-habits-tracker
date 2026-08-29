@@ -1111,7 +1111,14 @@
 @media (min-width: 1440px) and (max-height: 900px) {
   .shell {
     /* Asymmetric on purpose: the board's own footer strip sits below the panel
-       grid, and the last 2px of it was hanging outside the fold. */
+       grid, and the last of it was hanging outside the fold.
+
+       min-height:0 matters as much as the padding. The base rule asks for a
+       full 100vh, but .ab-root is 100dvh MINUS this padding, so demanding the
+       whole viewport inside a box smaller than it pushed the strip out by the
+       exact height of the padding. The shell is a flex child here; let it be
+       the size of its container instead of the size of the screen. */
+    min-height: 0;
     padding: 4px 10px 2px;
     gap: 6px;
   }
