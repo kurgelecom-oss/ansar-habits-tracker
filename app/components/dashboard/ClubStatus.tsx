@@ -43,42 +43,52 @@ export default function ClubStatus({
   todayPercent = null, streak = null,
 }: ClubStatusProps) {
   return (
-      <div className={styles.clubStatus}>
+    <div className={styles.clubStatus}>
       {pointsActive === false ? (
         <span className={styles.softLaunch}>Soft-launch · points preview</span>
       ) : null}
 
-      {todayPercent === null ? null : (
-        <span className={styles.headerStat} title="Today's applicable habits completed">
-          Today {todayPercent}%
-        </span>
-      )}
+      {todayPercent !== null || streak !== null ? (
+        <div className={styles.progressCard} role="group" aria-label="Daily progress">
+          {todayPercent === null ? null : (
+            <span className={styles.statusMetric} title="Today's applicable habits completed">
+              <span aria-hidden className={styles.statusMetricIcon}>★</span>
+              <span><strong>{todayPercent}%</strong><small> today</small></span>
+            </span>
+          )}
 
-      {streak === null ? null : (
-        <span className={styles.headerStat} title="Consecutive qualifying days">
-          Streak {streak}{streak > 0 ? " 🔥" : ""}
-        </span>
-      )}
-
-      {serverTime ? (
-        <span className={styles.serverClock} title="Server clock — every gate uses this">
-          🕒 {serverTime.clock} {serverTime.weekday} · Sydney
-        </span>
+          {streak === null ? null : (
+            <span className={styles.statusMetric} title="Consecutive qualifying days">
+              <span aria-hidden className={styles.statusMetricIcon}>🔥</span>
+              <span><strong>{streak}</strong><small> day streak</small></span>
+            </span>
+          )}
+        </div>
       ) : null}
 
-      <span className={styles.deviceClock} title="This device's clock — display only, no gate reads it">
-        device {deviceTime}
-      </span>
+      {serverTime ? (
+        <div className={styles.clockCard} role="group" aria-label="Sydney time">
+          <span className={styles.serverClock} title="Server clock — every gate uses this">
+            {serverTime.clock}<br />{serverTime.weekday} · Sydney
+          </span>
+        </div>
+      ) : null}
 
-      {/* Colour alone is not a status (spec §13), so the word is always there
-          and the dot is decorative. */}
-      <span className={styles.connection}>
-        <span
-          className={online ? styles.connectionDotLive : styles.connectionDotOffline}
-          aria-hidden="true"
-        />
-        <span className={online ? styles.connectionTextLive : styles.connectionTextOffline}>
-          {online ? "Live" : "Offline"}
+      <span className={styles.statusMeta}>
+        <span className={styles.deviceClock} title="This device's clock — display only, no gate reads it">
+          device {deviceTime}
+        </span>
+
+        {/* Colour alone is not a status (spec §13), so the word is always there
+            and the dot is decorative. */}
+        <span className={styles.connection}>
+          <span
+            className={online ? styles.connectionDotLive : styles.connectionDotOffline}
+            aria-hidden="true"
+          />
+          <span className={online ? styles.connectionTextLive : styles.connectionTextOffline}>
+            {online ? "Live" : "Offline"}
+          </span>
         </span>
       </span>
     </div>

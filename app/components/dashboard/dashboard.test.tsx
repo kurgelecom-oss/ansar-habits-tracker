@@ -214,6 +214,28 @@ describe("ClubHeader", () => {
 describe("ClubStatus", () => {
   const serverTime = weekdayFixture.gate.serverTime;
 
+  it("groups real progress into a summary card and Sydney time into its own clock card", () => {
+    render(
+      <ClubStatus
+        serverTime={serverTime}
+        deviceTime="1:47pm"
+        online
+        pointsActive
+        todayPercent={93}
+        streak={33}
+      />
+    );
+
+    const summary = screen.getByRole("group", { name: "Daily progress" });
+    expect(within(summary).getByText("93%", { exact: false })).toBeInTheDocument();
+    expect(within(summary).getByText("33", { exact: false })).toBeInTheDocument();
+
+    const clock = screen.getByRole("group", { name: "Sydney time" });
+    expect(within(clock).getByText(/1:45pm/)).toBeInTheDocument();
+    expect(within(clock).getByText(/Wednesday/)).toBeInTheDocument();
+    expect(clock).not.toContainElement(screen.getByText(/device/));
+  });
+
   it("labels the server clock as the one every gate uses", () => {
     render(<ClubStatus serverTime={serverTime} deviceTime="1:47pm" online pointsActive />);
     expect(screen.getByText(/Sydney/)).toHaveAttribute("title", "Server clock — every gate uses this");
@@ -394,6 +416,12 @@ describe("responsive rules for the header and Match Centre", () => {
     expect(rule("clubHeader")).toMatch(/flex-wrap:\s*wrap/);
     expect(rule("clubHeader")).toMatch(/height:\s*auto/);
     expect(rule("clubStatus")).toMatch(/flex-wrap:\s*wrap/);
+  });
+
+  it("keeps the status cards visible instead of leaving them beyond the nav scroller", () => {
+    expect(rule("clubNav")).toMatch(/flex-wrap:\s*wrap/);
+    expect(rule("clubNavStatus")).toMatch(/width:\s*100%/);
+    expect(rule("clubNavStatus")).toMatch(/margin-left:\s*0/);
   });
 
   /**

@@ -23,14 +23,14 @@
      longer reserves --nav-h for it, so the shell owns the whole viewport. The
      old calc() subtracted a 40px strip that is no longer drawn here. */
   min-height: 100vh;
-  padding: var(--ansar-gap);
+  padding: 0;
   display: flex;
   flex-direction: column;
   /* 10px, not the 12px grid token, and written as a literal so the vertical
      budget below can be read straight out of this file. The stack above the
      panels is measured in whole pixels against a hard 234px ceiling; two 12px
      gaps would spend 24 of them on air. */
-  gap: 10px;
+  gap: 0px;
   color: #ffffff;
 }
 
@@ -47,10 +47,11 @@
      viewport — it collapsed from 44px to 18.8px at 1440x820, squashing the
      crest and the section links. */
   flex-shrink: 0;
-  padding: 0 16px;
+  padding: 0 20px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 92%, #000000), var(--ansar-base));
-  border: 1px solid color-mix(in srgb, var(--ansar-gold) 22%, var(--ansar-border));
-  border-radius: var(--ansar-radius-panel);
+  border: 0;
+  border-bottom: 1px solid var(--ansar-border);
+  border-radius: 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -67,9 +68,9 @@
    Madrid asset belongs to the Match Centre and must not be borrowed as a
    general logo (spec §11.5). */
 .clubCrest {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  width: 44px;
+  height: 48px;
+  border-radius: 48% 48% 55% 55%;
   border: 2px solid var(--ansar-gold);
   background:
     radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--ansar-gold) 26%, transparent), transparent 58%),
@@ -105,7 +106,7 @@
   align-items: center;
   gap: 10px;
   margin-left: auto;
-  padding-left: 14px;
+  padding-left: 10px;
   flex-shrink: 0;
 }
 
@@ -123,9 +124,9 @@
   align-items: center;
   gap: 7px;
   flex-shrink: 0;
-  padding: 9px 14px;
-  border-radius: 10px;
-  font-size: 13px;
+  padding: 11px 15px;
+  border-radius: 7px;
+  font-size: 14px;
   font-weight: 650;
   white-space: nowrap;
   text-decoration: none;
@@ -168,15 +169,15 @@
   min-width: 0;
   /* Near-black plates, the way the reference reads them — the rows inside are
      the lighter surface, so the panel has to sit under them, not beside them. */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-base) 82%, var(--ansar-card)), var(--ansar-base));
-  border: 1px solid color-mix(in srgb, var(--ansar-border) 88%, #000000);
-  border-radius: var(--ansar-radius-panel);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 84%, var(--ansar-base)), color-mix(in srgb, var(--ansar-base) 78%, var(--ansar-card)));
+  border: 1px solid var(--ansar-border);
+  border-radius: 7px;
   overflow: hidden;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .panelAccent {
-  height: 3px;
+  height: 1px;
   width: 100%;
   flex-shrink: 0;
 }
@@ -266,7 +267,12 @@
    Four columns at the 1440 × 820 acceptance viewport, two below it, one on a
    phone. The uneven tracks are deliberate: Morning and Today's Programme carry
    the habit rows and need the width; Work + Week and the Wallet are summaries. */
-.grid { display:grid; grid-template-columns:1fr 1fr .84fr .96fr; gap:var(--ansar-gap); }
+.grid {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  gap:16px;
+  padding: 10px 20px 0;
+}
 @media (max-width:1439px) { .grid { grid-template-columns:1fr 1fr; } }
 @media (max-width:820px) { .grid { grid-template-columns:1fr; } }
 @media (prefers-reduced-motion:reduce) {
@@ -297,11 +303,11 @@
     url('/bernabeu-bg.jpg');
   background-size: cover;
   background-position: center 42%;
-  border: 1px solid color-mix(in srgb, var(--ansar-gold) 28%, var(--ansar-border));
+  border: 0;
   /* The gold identity rides on this rule rather than on a span inside the
      wordmark, so the wordmark stays one text node. */
   border-bottom: 2px solid var(--ansar-gold);
-  border-radius: var(--ansar-radius-panel);
+  border-radius: 0;
 }
 
 .clubIdentity {
@@ -355,19 +361,78 @@
   background: color-mix(in srgb, var(--ansar-warning) 10%, transparent);
 }
 
-.headerStat {
+.progressCard,
+.clockCard {
+  display: flex;
+  align-items: stretch;
   flex-shrink: 0;
-  font-weight: 700;
-  color: #b0b5c1;
+  min-height: 46px;
+  border: 1px solid color-mix(in srgb, var(--ansar-border) 88%, #ffffff);
+  border-radius: 9px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 92%, #000000), color-mix(in srgb, var(--ansar-base) 90%, #000000));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.progressCard { padding: 0 4px; }
+
+.statusMetric {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
   white-space: nowrap;
+}
+.statusMetric + .statusMetric {
+  border-left: 1px solid color-mix(in srgb, var(--ansar-border) 75%, transparent);
+}
+.statusMetricIcon {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ansar-gold-bright);
+}
+.statusMetric strong {
+  display: block;
+  color: var(--ansar-gold-bright);
+  font-size: 14px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.statusMetric small {
+  display: block;
+  margin-top: 3px;
+  color: var(--ansar-muted);
+  font-size: 9px;
+  line-height: 1;
+}
+
+.clockCard {
+  min-width: 112px;
+  justify-content: center;
+  padding: 6px 13px;
 }
 
 /* The authoritative clock: brighter, heavier, and first. */
 .serverClock {
+  display: block;
   flex-shrink: 0;
-  font-weight: 700;
-  color: var(--ansar-gold-bright);
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--ansar-muted);
   white-space: nowrap;
+}
+.serverClock::first-line {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.statusMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Display only. Quieter on purpose — it must never read as the deciding clock. */
@@ -420,7 +485,8 @@
       var(--ansar-navy) 42%,
       color-mix(in srgb, var(--ansar-navy) 86%, #000000));
   border: 1px solid color-mix(in srgb, var(--ansar-gold) 34%, transparent);
-  border-radius: var(--ansar-radius-panel);
+  margin: 0 7%;
+  border-radius: 9px;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--cyan) 16%, transparent),
     0 10px 30px rgba(0, 0, 0, 0.32);
@@ -531,7 +597,7 @@
   text-align: left;
   font: inherit;
   color: inherit;
-  border-radius: var(--ansar-radius-row);
+  border-radius: 7px;
   border: 1px solid var(--ansar-border);
   background: var(--ansar-row);
   -webkit-tap-highlight-color: transparent;
@@ -559,8 +625,8 @@
 
 .habitRowDone {
   cursor: not-allowed;
-  border-color: color-mix(in srgb, var(--row-accent) 32%, transparent);
-  background: color-mix(in srgb, var(--row-accent) 4%, var(--ansar-card));
+  border-color: var(--ansar-border);
+  background: var(--ansar-row);
 }
 
 /* Muted, but deliberately not faded out. Spec §13 forbids unreadable disabled
@@ -568,7 +634,7 @@
 .habitRowLocked {
   cursor: not-allowed;
   border-color: color-mix(in srgb, var(--ansar-border) 60%, transparent);
-  background: color-mix(in srgb, var(--ansar-row) 60%, var(--ansar-base));
+  background: var(--ansar-row);
 }
 
 /* A missed window is a different fact from a not-yet-open one. Restrained —
@@ -884,7 +950,7 @@
 
 /* ── Stretch Wallet ─────────────────────────────────────────────────────────
    Purple is reserved for wallet value and reward actions. */
-.walletPanel { border-color: color-mix(in srgb, var(--ansar-wallet) 30%, var(--ansar-border)); }
+.walletPanel { border-color: var(--ansar-border); }
 
 .walletBalance {
   display: block;
@@ -1079,6 +1145,27 @@
     gap: 8px;
   }
 
+  .clubNav {
+    height: auto;
+    min-height: 44px;
+    padding: 6px 10px;
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  .clubNavStatus {
+    order: 2;
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+    justify-content: center;
+  }
+  .clubNavList {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
   .deviceClock { display: none; }
 
   .matchCentre {
@@ -1099,7 +1186,6 @@
     border-top: 1px solid color-mix(in srgb, var(--ansar-gold) 16%, transparent);
   }
 
-  .clubNav { height: auto; min-height: 44px; padding: 6px 10px; }
 }
 
 
@@ -1128,7 +1214,7 @@
        exact height of the padding. The shell is a flex child here; let it be
        the size of its container instead of the size of the screen. */
     min-height: 0;
-    padding: 4px 10px 2px;
+    padding: 0;
     gap: 6px;
   }
 
