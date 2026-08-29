@@ -18,6 +18,7 @@ import { habitsOnDay, scoringHabits } from "./lib/days";
 import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
 import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
 import HabitPanel from "./components/dashboard/HabitPanel";
+import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import type { DashboardHabit } from "./dashboard/types";
 // The squad week, Mon–Fri. This file used to declare its own copy beside the
 // /55 note below; lib/goldenBoot.ts asked for the collapse the moment page.tsx
@@ -1303,102 +1304,17 @@ export default function AnsarPage() {
           onHoldCancel={cancelHold}
         />
 
-        {/* 3 — Log Work · Weekly Tiers */}
-        {/* no scroll — one-page dashboard, overflow-y is banned here */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, minHeight: 0 }}>
-          {/* Homeschool moved to Today's Programme (column 2), journal first.
-              Rendering it here as well would show the same two habits twice. */}
-
-          {/* LOG WORK — opens the Tally intake modal. Touches no scoring state. */}
-          <button
-            type="button"
-            className="ab-btn"
-            onClick={() => setLogOpen(true)}
-            aria-haspopup="dialog"
-            aria-expanded={logOpen}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              minHeight: 44, width: "100%", flexShrink: 0, borderRadius: 11,
-              border: "1px solid #2d3543", background: "#1f2438",
-              color: "#ffffff", font: "inherit", fontSize: 16, fontWeight: 800,
-              cursor: "pointer", WebkitTapHighlightColor: "transparent",
-            }}
-          >
-            <span aria-hidden style={{ fontSize: 21, lineHeight: 1 }}>📝</span>
-            Log Work
-          </button>
-
-          {/* Conditional moved to Today's Programme (column 2), where it
-              appears only on the days that actually schedule it. */}
-
-          {/* min-height:min-content, NOT 0. cardStyle carries overflow:hidden, and
-              flex:1 + min-height:0 licensed this card to be squeezed below its own
-              content. It is the only elastic member of this column, so it absorbed
-              the entire shortfall on short viewports and clipped its second grid row
-              — Reserves and Training Ground. min-content floors it at header + both
-              rows; flex:1 still lets it stretch on tall screens, so nothing changes
-              above ~945px of viewport height. */}
-          <div style={{ ...cardStyle, flex: 1, minHeight: "min-content" }}>
-            {colHead(`linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)`, "🏆 Weekly Tiers", `5 Perfect Days Mon–Fri = +3 · max ${WEEKLY_MAX}`, undefined, true)}
-            {/* 2x2, one line per tile, everything at 11.5px.
-                minmax(0,·) stays: a bare 1fr is minmax(auto,1fr), and that auto floor
-                is the track's min-content width, so the tracks grow to fit their
-                labels and the row overflows this 304px card horizontally — clipped
-                off the right edge by cardStyle's overflow:hidden.
-
-                The columns are deliberately UNEQUAL. Measured one-line widths at
-                11.5px are First Team 126, Reserves 130, Bench 100, Training Ground
-                163 — and because THRESHOLDS order puts Reserves in column 1 and
-                Training Ground in column 2, the two columns need 130 and 163, a
-                1:1.254 split. Equal tracks give both 144, which fits Reserves and
-                leaves Training Ground 21px short; 1fr/1.26fr fits all four with zero
-                clipping. Total need is 293px against 297px of track, so the slack is
-                only a few px — a longer tier name would need the ratio revisited. */}
-            <div style={{
-              padding: 3, display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.26fr)", gap: 3,
-              flex: 1, minHeight: "min-content",
-            }}>
-              {THRESHOLDS.map((t, i) => {
-                const weekPts = weeklyPts ?? 0;
-                const isActive = weeklyPts !== null && weekPts >= t.min && (i === 0 || weekPts < THRESHOLDS[i - 1].min);
-                const isAchieved = weeklyPts !== null && weekPts >= t.min;
-                return (
-                  <div key={t.min} style={{
-                    display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-                    gap: 3, padding: "4px 4px", borderRadius: 9, overflow: "hidden",
-                    background: isActive ? t.color + "15" : "#1f2438",
-                    border: `1px solid ${isActive ? t.color + "50" : "#2d3543"}`,
-                    opacity: isAchieved ? 1 : 0.45,
-                    transition: "all 200ms ease-out",
-                  }}>
-                    <div style={{
-                      fontSize: 11.5, fontWeight: 800, color: t.color, lineHeight: 1.15,
-                      display: "flex", alignItems: "center", gap: 3, minWidth: 0, whiteSpace: "nowrap",
-                    }}>
-                      <span style={{
-                        width: 7, height: 7, borderRadius: "50%", background: t.color, flexShrink: 0,
-                        boxShadow: isActive ? `0 0 8px ${t.color}` : "none",
-                      }} />
-                      {t.label}
-                    </div>
-                    {/* " pts" is stripped so the threshold shares the row, and the
-                        active tier's "· you are here" tail stays dropped — there is no
-                        width for it at 11.5px. The active cue is the glowing dot, the
-                        tinted fill and the full-opacity border, all still applied.
-                        THRESHOLDS is not edited; the suffix goes at the render site. */}
-                    <div style={{
-                      fontSize: 11.5, color: "#757f8f", lineHeight: 1.15,
-                      whiteSpace: "nowrap", flexShrink: 0,
-                    }}>
-                      {t.desc.replace(" pts", "")}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        {/* 3 — WORK + WEEK. The Log Work button only opens the modal; every
+            piece of Tally wiring (origin allow-list, form URL, embed script,
+            submitted message, reset) stays in this file, untouched. */}
+        <WorkWeekPanel
+          weekPoints={weeklyPts}
+          weekMax={WEEKLY_MAX}
+          goldenBoot={goldenBoot}
+          submissionCount={null}
+          logOpen={logOpen}
+          onOpenLogWork={() => setLogOpen(true)}
+        />
 
         {/* 4 — Stretch Wallet */}
         {/* no scroll — one-page dashboard, overflow-y is banned here */}

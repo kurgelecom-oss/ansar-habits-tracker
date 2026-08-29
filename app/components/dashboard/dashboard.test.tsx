@@ -8,6 +8,8 @@ import DayProgrammePanel from "./DayProgrammePanel";
 import HabitPanel from "./HabitPanel";
 import HabitRow from "./HabitRow";
 import MatchCentrePlaceholder from "./MatchCentrePlaceholder";
+import WeeklyTierProgress from "./WeeklyTierProgress";
+import WorkWeekPanel from "./WorkWeekPanel";
 import DashboardShell from "./DashboardShell";
 import Panel from "./Panel";
 import { weekdayFixture, weekendFixture } from "../../dashboard/fixtures";
@@ -634,5 +636,171 @@ describe("DayProgrammePanel", () => {
     expect(screen.getByText("Parent override")).toBeVisible();
     expect(screen.queryByText("Recorded")).not.toBeInTheDocument();
     expect(screen.queryByText("Verified")).not.toBeInTheDocument();
+  });
+});
+
+/* ── Task 7: Work + Week ────────────────────────────────────────────────────*/
+
+const workProps = {
+  weekPoints: 46,
+  weekMax: 55,
+  goldenBoot: { ok: true, target: 4, streak: 3, progress: 3 },
+  submissionCount: null,
+  onOpenLogWork: noop,
+};
+
+describe("WorkWeekPanel", () => {
+  it("shows the week, the tier, the Golden Boot and a working Log Work", () => {
+    render(<WorkWeekPanel {...workProps} />);
+    expect(screen.getByRole("button", { name: "Log Work" })).toBeEnabled();
+    expect(screen.getByText("46 / 55")).toBeVisible();
+    expect(screen.getByText(/First Team/)).toBeVisible();
+    expect(screen.getByText("Golden Boot 3 / 4")).toBeVisible();
+    expect(screen.getAllByTestId("tier-threshold")).toHaveLength(4);
+  });
+
+  it("opens the existing Tally modal exactly once per click", () => {
+    let opened = 0;
+    render(<WorkWeekPanel {...workProps} onOpenLogWork={() => { opened += 1; }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Log Work" }));
+    expect(opened).toBe(1);
+  });
+
+  /** The panel triggers the modal; it must not own any Tally wiring itself. */
+  it("embeds no Tally form or origin of its own", () => {
+    const { container } = render(<WorkWeekPanel {...workProps} />);
+    expect(container.querySelector("iframe")).toBeNull();
+    expect(container.innerHTML).not.toMatch(/tally\.so|ODKlVa/i);
+  });
+
+  it("declares the Log Work button as opening a dialog", () => {
+    render(<WorkWeekPanel {...workProps} />);
+    const button = screen.getByRole("button", { name: "Log Work" });
+    expect(button).toHaveAttribute("aria-haspopup", "dialog");
+    expect(button).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("reflects the open modal in aria-expanded", () => {
+    render(<WorkWeekPanel {...workProps} logOpen />);
+    expect(screen.getByRole("button", { name: "Log Work" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  /* ── Truthfulness ─────────────────────────────────────────────────────────*/
+
+  it("renders no week total before the score has loaded", () => {
+    render(<WorkWeekPanel {...workProps} weekPoints={null} />);
+    expect(screen.getByText("— / 55")).toBeVisible();
+    expect(screen.queryByText("0 / 55")).not.toBeInTheDocument();
+  });
+
+  /**
+   * There is no submission count anywhere in the app yet. Spec §10.4 asks for
+   * one "when safely available"; it is not, so the panel says so rather than
+   * printing a zero that would read as "you have logged nothing today".
+   */
+  it("says the submission count is not connected rather than showing zero", () => {
+    render(<WorkWeekPanel {...workProps} />);
+    expect(screen.getByText("Submission count not connected yet")).toBeVisible();
+    expect(screen.queryByText(/^0 (submission|today)/i)).not.toBeInTheDocument();
+  });
+
+  it("shows a real submission count once one exists", () => {
+    render(<WorkWeekPanel {...workProps} submissionCount={2} />);
+    expect(screen.getByText("2 logged today")).toBeVisible();
+    expect(screen.queryByText("Submission count not connected yet")).not.toBeInTheDocument();
+  });
+
+  it("says one logged today in the singular", () => {
+    render(<WorkWeekPanel {...workProps} submissionCount={1} />);
+    expect(screen.getByText("1 logged today")).toBeVisible();
+  });
+
+  /** The ledger 503s while db/week_results.sql is unrun; the cell disappears. */
+  it("omits Golden Boot entirely when the ledger has not answered", () => {
+    render(<WorkWeekPanel {...workProps} goldenBoot={null} />);
+    expect(screen.queryByText(/Golden Boot/)).not.toBeInTheDocument();
+  });
+
+  it("replaces the fraction with the boot once the run is complete", () => {
+    render(<WorkWeekPanel {...workProps} goldenBoot={{ ok: true, target: 4, streak: 4, progress: 4 }} />);
+    expect(screen.getByText("Golden Boot")).toBeVisible();
+    expect(screen.queryByText("Golden Boot 4 / 4")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Golden Boot earned")).toBeInTheDocument();
+  });
+});
+
+describe("WeeklyTierProgress", () => {
+  it("names the tier the week's points actually reach", () => {
+    const { unmount } = render(<WeeklyTierProgress weekPoints={26} weekMax={55} />);
+    expect(screen.getByTestId("tier-current")).toHaveTextContent("Reserves");
+    unmount();
+    render(<WeeklyTierProgress weekPoints={41} weekMax={55} />);
+    expect(screen.getByTestId("tier-current")).toHaveTextContent("Bench");
+  });
+
+  it("lists all four thresholds in descending order", () => {
+    render(<WeeklyTierProgress weekPoints={46} weekMax={55} />);
+    const stops = screen.getAllByTestId("tier-threshold");
+    expect(stops).toHaveLength(4);
+    expect(stops.map(s => s.getAttribute("data-min"))).toEqual(["42", "34", "26", "0"]);
+  });
+
+  it("marks exactly one threshold as the one currently reached", () => {
+    render(<WeeklyTierProgress weekPoints={35} weekMax={55} />);
+    const active = screen.getAllByTestId("tier-threshold").filter(s => s.getAttribute("data-active") === "true");
+    expect(active).toHaveLength(1);
+    expect(active[0]).toHaveAttribute("data-min", "34");
+  });
+
+  it("exposes the week as a labelled progress value, capped at the max", () => {
+    render(<WeeklyTierProgress weekPoints={46} weekMax={55} />);
+    const meter = screen.getByRole("progressbar", { name: "Week total" });
+    expect(meter).toHaveAttribute("aria-valuenow", "46");
+    expect(meter).toHaveAttribute("aria-valuemax", "55");
+  });
+
+  it("does not overflow its track when a weekend pushes past the max", () => {
+    render(<WeeklyTierProgress weekPoints={60} weekMax={55} />);
+    expect(screen.getByTestId("tier-fill")).toHaveStyle({ width: "100%" });
+  });
+
+  /**
+   * The bar must not tell assistive tech something the screen denies. A week
+   * that has not loaded shows an em dash, so the bar is INDETERMINATE — it has
+   * no value yet, and announcing 0 would report a real, bad week.
+   */
+  it("announces no value at all before the score loads", () => {
+    render(<WeeklyTierProgress weekPoints={null} weekMax={55} />);
+    const meter = screen.getByRole("progressbar", { name: "Week total" });
+    expect(meter).not.toHaveAttribute("aria-valuenow");
+    expect(meter).toHaveAttribute("aria-valuemin", "0");
+    expect(meter).toHaveAttribute("aria-valuemax", "55");
+  });
+
+  /**
+   * A weekend can push the total past a ceiling built from weekday points. The
+   * bar caps visually, so the announced value must cap with it — valuenow above
+   * valuemax is an invalid range that screen readers report unpredictably.
+   */
+  it("clamps the announced value to the track's own range", () => {
+    const { unmount } = render(<WeeklyTierProgress weekPoints={60} weekMax={55} />);
+    expect(screen.getByRole("progressbar", { name: "Week total" })).toHaveAttribute("aria-valuenow", "55");
+    unmount();
+    render(<WeeklyTierProgress weekPoints={-3} weekMax={55} />);
+    expect(screen.getByRole("progressbar", { name: "Week total" })).toHaveAttribute("aria-valuenow", "0");
+  });
+
+  it("keeps the announced value and the visible bar telling the same story", () => {
+    for (const [points, expected] of [[0, "0"], [26, "26"], [55, "55"], [60, "55"]] as const) {
+      const { unmount } = render(<WeeklyTierProgress weekPoints={points} weekMax={55} />);
+      expect(screen.getByRole("progressbar", { name: "Week total" })).toHaveAttribute("aria-valuenow", expected);
+      unmount();
+    }
+  });
+
+  it("marks nothing active and shows no bar before the score loads", () => {
+    render(<WeeklyTierProgress weekPoints={null} weekMax={55} />);
+    expect(screen.queryAllByTestId("tier-threshold").filter(s => s.getAttribute("data-active") === "true")).toHaveLength(0);
+    expect(screen.getByTestId("tier-fill")).toHaveStyle({ width: "0%" });
   });
 });

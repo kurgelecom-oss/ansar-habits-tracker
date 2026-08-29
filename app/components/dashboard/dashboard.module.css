@@ -566,3 +566,130 @@
   font-weight: 700;
   color: var(--cyan);
 }
+
+/* ── Work + Week ────────────────────────────────────────────────────────────*/
+.logWork {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--ansar-radius-row);
+  border: 1px solid var(--ansar-border);
+  background: var(--ansar-row);
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.logWork:hover { border-color: color-mix(in srgb, var(--ansar-gold) 45%, transparent); }
+.logWork:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.logWorkIcon { font-size: 18px; line-height: 1; }
+
+.submissionNote {
+  font-size: 11px;
+  color: var(--ansar-muted);
+  text-align: center;
+}
+
+/* ── Weekly tier ────────────────────────────────────────────────────────────
+   One current-tier summary plus a compact scale, replacing the old 2x2 grid
+   that spent a quarter of the column on three tiers the week is not in. */
+.tierBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.tierHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tierTotal {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.tierCaption {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ansar-muted);
+  white-space: nowrap;
+}
+
+.tierTrack {
+  height: 5px;
+  width: 100%;
+  border-radius: 3px;
+  background: var(--ansar-row);
+  overflow: hidden;
+}
+.tierFill { height: 100%; transition: width 0.3s ease; }
+
+.tierScale {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+}
+
+/* A passed or future stop is quiet, but still legible: spec §13 bans
+   unreadable disabled text, and these are the numbers the week is aiming at. */
+.tierStop,
+.tierStopActive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  font-size: 11px;
+  border: 1px solid transparent;
+}
+.tierStop { color: var(--ansar-muted); }
+.tierStopActive {
+  color: #ffffff;
+  background: var(--ansar-row);
+  border-color: var(--ansar-border);
+  font-weight: 700;
+}
+
+.tierDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tierStopLabel { flex: 1; min-width: 0; white-space: nowrap; }
+.tierStopMin { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+.goldenBoot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 5px 8px;
+  border-radius: var(--ansar-radius-row);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cyan) 25%, transparent);
+}
+.goldenBootIcon { font-size: 15px; }
