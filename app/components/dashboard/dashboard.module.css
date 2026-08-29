@@ -931,30 +931,33 @@
    spare and keeps the roomier spacing. */
 @media (min-width: 1440px) and (max-height: 900px) {
   .shell {
-    padding: 8px 10px;
-    gap: 7px;
+    padding: 6px 10px;
+    gap: 6px;
   }
 
-  /* The frame holds a crest and three lines of "not connected yet". It does not
-     need 128px to say that, and it is the largest non-learning block on the
-     board. */
+  /* The largest non-learning block on the board, and the one showing no real
+     information at all: a crest and a sentence saying no fixture is connected.
+     128px to say that is height the nine-row weekday programme needs. The
+     headline stays — the frame is still truthful, and Match Readiness is still
+     shown — only the explanatory third line goes. */
   .matchCentre {
-    max-height: 84px;
-    padding: 8px 14px;
-    gap: 14px;
+    max-height: 56px;
+    padding: 5px 14px;
+    gap: 12px;
   }
-  .matchCrest { height: 46px; }
-  .matchTitle { font-size: 11px; }
-  .matchUnavailable { font-size: 13px; margin-top: 2px; }
-  .matchNote { font-size: 10px; }
-  .matchReadiness { min-width: 148px; padding: 4px 10px; }
-  .readinessValue { font-size: 18px; margin-top: 0; }
+  .matchCrest { height: 30px; }
+  .matchTitle { font-size: 10px; }
+  .matchUnavailable { font-size: 12px; margin-top: 1px; }
+  .matchNote { display: none; }
+  .matchReadiness { min-width: 140px; padding: 3px 9px; }
+  .readinessValue { font-size: 15px; margin-top: 0; }
   .readinessTrack { margin-top: 4px; }
-  .readinessNote { margin-top: 3px; }
+  .readinessNote { font-size: 10px; margin-top: 2px; }
 
+  .clubNav { height: 40px; }
   .clubHeader { height: 36px; }
 
-  .panelHead { padding: 7px 10px 6px; }
+  .panelHead { padding: 6px 10px 5px; }
   .panelTitle { font-size: 14px; }
-  .panelBody { padding: 7px 10px 9px; gap: 5px; }
+  .panelBody { padding: 6px 10px 8px; gap: 5px; }
 }

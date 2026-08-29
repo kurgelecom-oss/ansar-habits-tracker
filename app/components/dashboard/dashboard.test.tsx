@@ -409,8 +409,15 @@ describe("height defences at 1440 x 820", () => {
    * recovered from chrome only.
    */
   it("recovers height from the placeholder Match Centre, not from habit rows", () => {
-    expect(shortDesktop).toMatch(/\.matchCentre[^{]*\{[^}]*max-height:\s*84px/);
+    expect(shortDesktop).toMatch(/\.matchCentre[^{]*\{[^}]*max-height:\s*56px/);
     expect(shortDesktop).not.toMatch(/\.habitRow[^{]*\{[^}]*min-height/);
+  });
+
+  /** The frame may get shorter, but it must not stop telling the truth. */
+  it("keeps the Match Centre honest while compacting it", () => {
+    expect(shortDesktop).not.toMatch(/\.matchUnavailable[^{]*\{[^}]*display:\s*none/);
+    expect(shortDesktop).not.toMatch(/\.matchReadiness[^{]*\{[^}]*display:\s*none/);
+    expect(shortDesktop).not.toMatch(/\.readinessValue[^{]*\{[^}]*display:\s*none/);
   });
 
   it("keeps the habit row target at 44px everywhere", () => {
