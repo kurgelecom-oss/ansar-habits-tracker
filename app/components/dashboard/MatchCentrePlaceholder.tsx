@@ -38,13 +38,17 @@ export default function MatchCentrePlaceholder({ readiness }: { readiness: Match
           src="/real-madrid.png"
           alt="Real Madrid"
         />
-        <div className={styles.matchCopy}>
-          <p className={styles.matchTitle}>REAL MADRID MATCH CENTRE</p>
-          <p className={styles.matchUnavailable}>Fixture data not connected yet</p>
-          <p className={styles.matchNote}>
-            Real data will appear here after the football provider is approved.
-          </p>
+        <div className={styles.matchTeamCopy}>
+          <p className={styles.matchTitle}>REAL MADRID</p>
+          <p className={styles.matchTeamNote}>MATCH CENTRE</p>
         </div>
+      </div>
+
+      <div className={styles.matchCopy}>
+        <p className={styles.matchUnavailable}>Fixture data not connected yet</p>
+        <p className={styles.matchNote}>
+          Real data will appear here after the football provider is approved.
+        </p>
       </div>
 
       <div className={styles.matchReadiness} data-testid="match-readiness">

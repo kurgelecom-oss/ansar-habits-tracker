@@ -21,8 +21,8 @@ const ITEMS: { label: string; icon: string; href?: string }[] = [
   { label: "Dashboard", icon: "\u{1F3E0}", href: "/" },
   { label: "Habits", icon: "\u{1F4CB}" },
   { label: "Quests", icon: "\u{1F3AF}" },
-  { label: "Team", icon: "\u{1F465}" },
-  { label: "Table", icon: "\u{1F3C6}" },
+  { label: "Teams", icon: "\u{1F465}" },
+  { label: "Leaderboards", icon: "\u{1F3C6}" },
   { label: "History", icon: "\u{1F551}" },
   { label: "Settings", icon: "\u2699\uFE0F" },
 ];
@@ -35,8 +35,11 @@ export default function ClubNavigation({ status = null }: { status?: React.React
           eye lands on. The crest keeps an accessible name so the bar is still
           identified to a screen reader. */}
       <span className={styles.clubMark} role="img" aria-label="ANSAR FC">
-        <span className={styles.clubCrest} aria-hidden="true" />
-        <span className={styles.clubName} aria-hidden="true">ANSAR FC</span>
+        <span className={styles.clubCrest} aria-hidden="true">
+          <span className={styles.clubCrown}>♛</span>
+          <span className={styles.clubCrestName}>ANSAR<br />FC</span>
+          <span className={styles.clubBall}>⚽</span>
+        </span>
       </span>
 
       <ul className={styles.clubNavList}>

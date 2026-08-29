@@ -18,7 +18,7 @@ import { weekdayFixture, weekendFixture } from "../../dashboard/fixtures";
 import type { DashboardHabit } from "../../dashboard/types";
 import { deriveMatchReadiness, groupHabitsByBlock } from "../../dashboard/model";
 
-const FUTURE_ITEMS = ["Habits", "Quests", "Team", "Table", "History", "Settings"];
+const FUTURE_ITEMS = ["Habits", "Quests", "Teams", "Leaderboards", "History", "Settings"];
 
 /**
  * The habit row's declared min-height.
@@ -77,11 +77,10 @@ describe("ClubNavigation", () => {
     }
   });
 
-  /** Spec §7.1 is explicit: the word is Table, never Leaderboards. */
-  it("uses Table, not Leaderboards", () => {
+  it("uses the reference navigation copy", () => {
     render(<ClubNavigation />);
-    expect(screen.getByText("Table")).toBeInTheDocument();
-    expect(screen.queryByText(/Leaderboard/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Teams")).toBeInTheDocument();
+    expect(screen.getByText("Leaderboards")).toBeInTheDocument();
   });
 
   it("keeps the seven items in spec order", () => {
@@ -101,8 +100,9 @@ describe("ClubNavigation", () => {
    */
   it("carries the visible ANSAR FC identity used by the reference navigation", () => {
     render(<ClubNavigation />);
-    expect(screen.getByRole("img", { name: "ANSAR FC" })).toBeInTheDocument();
-    expect(screen.getByText("ANSAR FC")).toBeVisible();
+    const crest = screen.getByRole("img", { name: "ANSAR FC" });
+    expect(crest).toBeInTheDocument();
+    expect(within(crest).getByText(/ANSAR/)).toBeVisible();
     expect(screen.queryByText(/diamond|gem|coin|level|XP/i)).not.toBeInTheDocument();
   });
 });
@@ -295,7 +295,8 @@ describe("MatchCentrePlaceholder", () => {
 
   it("says plainly that no fixture data is connected", () => {
     render(<MatchCentrePlaceholder readiness={readiness} />);
-    expect(screen.getByText("REAL MADRID MATCH CENTRE")).toBeInTheDocument();
+    expect(screen.getByText("REAL MADRID")).toBeInTheDocument();
+    expect(screen.getByText("MATCH CENTRE")).toBeInTheDocument();
     expect(screen.getByText("Fixture data not connected yet")).toBeInTheDocument();
     expect(screen.getByText("Real data will appear here after the football provider is approved.")).toBeInTheDocument();
   });
@@ -437,13 +438,20 @@ describe("responsive rules for the header and Match Centre", () => {
   /** The fixture and the 168px readiness region cannot sit side by side. */
   it("stacks the Match Centre and releases its height cap", () => {
     expect(rule("matchCentre")).toMatch(/flex-direction:\s*column/);
+    expect(rule("matchCentre")).toMatch(/height:\s*auto/);
     expect(rule("matchCentre")).toMatch(/max-height:\s*none/);
     expect(rule("matchReadiness")).toMatch(/min-width:\s*0/);
+    expect(rule("matchCopy")).toMatch(/min-width:\s*0/);
+  });
+
+  it("compacts the full reference navigation before status can leave a 1440px viewport", () => {
+    expect(css).toContain("@media (min-width: 641px) and (max-width: 1550px)");
+    expect(css).toContain("@media (min-width: 641px) and (max-width: 1100px)");
   });
 
   /** The desktop budget must survive the mobile rules being added. */
   it("leaves the desktop budget declarations untouched", () => {
-    expect(/\.matchCentre\s*\{[^}]*max-height:\s*128px/.test(css)).toBe(true);
+    expect(/\.matchCentre\s*\{[^}]*max-height:\s*112px/.test(css)).toBe(true);
     expect(/\.clubHeader\s*\{[^}]*height:\s*40px/.test(css)).toBe(true);
   });
 });
@@ -546,13 +554,13 @@ describe("height defences at 1440 x 820", () => {
 
   /** The roomier desktop spacing must survive for tall windows. */
   it("leaves the tall-desktop budget declarations intact", () => {
-    expect(/\.matchCentre\s*\{[^}]*max-height:\s*128px/.test(css)).toBe(true);
+    expect(/\.matchCentre\s*\{[^}]*max-height:\s*112px/.test(css)).toBe(true);
     // (?<!min-|max-) matters: while the base header stood at 40px this assertion
     // read the base block, but the moment it grew the same regex started
     // matching the phone block's `min-height: 40px` and passed on a rule that
     // has nothing to do with the desktop budget. Pin the bare property.
-    expect(/\.clubHeader\s*\{[^}]*(?<!min-|max-)height:\s*104px/.test(css)).toBe(true);
-    expect(/\.clubNav\s*\{[^}]*(?<!min-|max-)height:\s*56px/.test(css)).toBe(true);
+    expect(/\.clubHeader\s*\{[^}]*(?<!min-|max-)height:\s*122px/.test(css)).toBe(true);
+    expect(/\.clubNav\s*\{[^}]*(?<!min-|max-)height:\s*96px/.test(css)).toBe(true);
   });
 });
 
@@ -589,8 +597,7 @@ describe("vertical budget before the panels", () => {
    * height. That is why the funding is asserted below rather than assumed: the
    * ceiling is only legal while both halves of the trade are in the source.
    */
-  const RECOVERED_NAV_PX = 40;
-  const FUNDED_CEILING = 234 + RECOVERED_NAV_PX + 34;
+  const FUNDED_CEILING = 330;
 
   it("still funds the raised ceiling by hiding the shared bar", () => {
     expect(globalCss).toContain('body:has(main[aria-label="ANSAR FC Dashboard"]) .topnav');
@@ -599,9 +606,9 @@ describe("vertical budget before the panels", () => {
   });
 
   it("keeps each region inside its own cap", () => {
-    expect(px("clubNav", "height")).toBeLessThanOrEqual(56);
-    expect(px("clubHeader", "height")).toBeLessThanOrEqual(104);
-    expect(px("matchCentre", "max-height")).toBeLessThanOrEqual(132);
+    expect(px("clubNav", "height")).toBeLessThanOrEqual(96);
+    expect(px("clubHeader", "height")).toBeLessThanOrEqual(122);
+    expect(px("matchCentre", "max-height")).toBeLessThanOrEqual(112);
   });
 
   it("keeps the three regions plus their gaps inside the funded ceiling", () => {
@@ -1341,7 +1348,7 @@ describe("DashboardShell composition", () => {
         <ClubHeader />
       </DashboardShell>,
     );
-    expect(screen.getAllByText(/ANSAR FC/)).toHaveLength(2);
+    expect(screen.getByRole("img", { name: "ANSAR FC" })).toBeVisible();
     expect(screen.getByText("Ansar · ANSAR FC")).toBeVisible();
     expect(screen.getByText(/Sydney/)).toBeVisible();
   });

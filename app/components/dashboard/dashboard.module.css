@@ -40,14 +40,14 @@
 .clubNav {
   display: flex;
   align-items: center;
-  gap: 18px;
-  height: 56px;
+  gap: 22px;
+  height: 96px;
   /* Every other child of .shell declares this. Without it the nav is the only
      shrinkable item in the column and absorbs the whole shortfall on a short
      viewport — it collapsed from 44px to 18.8px at 1440x820, squashing the
      crest and the section links. */
   flex-shrink: 0;
-  padding: 0 20px;
+  padding: 0 18px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 92%, #000000), var(--ansar-base));
   border: 0;
   border-bottom: 1px solid var(--ansar-border);
@@ -60,7 +60,7 @@
 .clubMark {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   flex-shrink: 0;
 }
 
@@ -68,37 +68,68 @@
    Madrid asset belongs to the Match Centre and must not be borrowed as a
    general logo (spec §11.5). */
 .clubCrest {
-  width: 44px;
-  height: 48px;
-  border-radius: 48% 48% 55% 55%;
-  border: 2px solid var(--ansar-gold);
+  position: relative;
+  width: 70px;
+  height: 76px;
+  border-radius: 44% 44% 54% 54% / 26% 26% 72% 72%;
+  border: 3px solid var(--ansar-gold);
   background:
-    radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--ansar-gold) 26%, transparent), transparent 58%),
-    linear-gradient(160deg, var(--ansar-navy), color-mix(in srgb, var(--ansar-navy) 55%, #000000));
+    linear-gradient(90deg, transparent 47%, var(--ansar-gold) 48%, var(--ansar-gold) 52%, transparent 53%),
+    linear-gradient(160deg, color-mix(in srgb, var(--ansar-navy) 72%, #000000), #000000);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--ansar-gold) 34%, transparent),
     0 2px 12px color-mix(in srgb, var(--ansar-gold) 26%, transparent);
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex-shrink: 0;
 }
 /* The club initials sit inside the ring rather than beside it, so the mark
    reads as one badge at a glance the way a crest does. */
+.clubCrest::before,
 .clubCrest::after {
-  content: "AFC";
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 7px;
+  width: 3px;
+  background: var(--ansar-gold);
+  transform-origin: top;
+}
+.clubCrest::before { left: 22px; transform: rotate(-24deg); }
+.clubCrest::after { right: 22px; transform: rotate(24deg); }
+
+.clubCrown {
+  position: absolute;
+  top: -17px;
+  z-index: 2;
+  font-size: 23px;
+  line-height: 1;
   color: var(--ansar-gold-bright);
+}
+.clubCrestName {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+  color: var(--ansar-gold-bright);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: .9;
+  text-align: center;
+  letter-spacing: .02em;
+}
+.clubBall {
+  position: relative;
+  z-index: 2;
+  margin-top: 5px;
+  font-size: 16px;
+  line-height: 1;
+  filter: grayscale(1);
 }
 
 .clubName {
-  color: var(--ansar-gold-bright);
-  font-size: 14px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  white-space: nowrap;
+  display: none;
 }
 
 .clubNavStatus {
@@ -113,7 +144,7 @@
 .clubNavList {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -124,9 +155,10 @@
   align-items: center;
   gap: 7px;
   flex-shrink: 0;
-  padding: 11px 15px;
-  border-radius: 7px;
-  font-size: 14px;
+  min-height: 56px;
+  padding: 0 17px;
+  border-radius: 8px;
+  font-size: 16px;
   font-weight: 650;
   white-space: nowrap;
   text-decoration: none;
@@ -134,7 +166,7 @@
 }
 
 .clubNavIcon {
-  font-size: 13px;
+  font-size: 17px;
   line-height: 1;
 }
 
@@ -291,7 +323,7 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  height: 104px;
+  height: 122px;
   padding: 0 20px;
   flex-shrink: 0;
   /* Measured on the preview at 1440 x 820: at a 0.52 centre stop the seating
@@ -320,7 +352,7 @@
 
 .clubWordmark {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 42px;
+  font-size: 50px;
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.05;
@@ -332,8 +364,9 @@
    other line on this board it cannot go stale or disagree with the server. */
 .clubMotto {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 16px;
-  font-style: italic;
+  font-size: 23px;
+  font-style: normal;
+  font-weight: 700;
   color: var(--ansar-gold-bright);
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
   white-space: nowrap;
@@ -366,9 +399,9 @@
   display: flex;
   align-items: stretch;
   flex-shrink: 0;
-  min-height: 46px;
+  min-height: 62px;
   border: 1px solid color-mix(in srgb, var(--ansar-border) 88%, #ffffff);
-  border-radius: 9px;
+  border-radius: 10px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 92%, #000000), color-mix(in srgb, var(--ansar-base) 90%, #000000));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
@@ -379,21 +412,21 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 12px;
+  padding: 8px 18px;
   white-space: nowrap;
 }
 .statusMetric + .statusMetric {
   border-left: 1px solid color-mix(in srgb, var(--ansar-border) 75%, transparent);
 }
 .statusMetricIcon {
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1;
   color: var(--ansar-gold-bright);
 }
 .statusMetric strong {
   display: block;
   color: var(--ansar-gold-bright);
-  font-size: 14px;
+  font-size: 18px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -401,12 +434,12 @@
   display: block;
   margin-top: 3px;
   color: var(--ansar-muted);
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1;
 }
 
 .clockCard {
-  min-width: 112px;
+  min-width: 126px;
   justify-content: center;
   padding: 6px 13px;
 }
@@ -415,7 +448,7 @@
 .serverClock {
   display: block;
   flex-shrink: 0;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.45;
   text-align: center;
@@ -424,7 +457,7 @@
 }
 .serverClock::first-line {
   color: #ffffff;
-  font-size: 15px;
+  font-size: 21px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -472,8 +505,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  max-height: 128px;
-  padding: 12px 18px;
+  height: 112px;
+  max-height: 112px;
+  padding: 10px 42px;
   flex-shrink: 0;
   /* The reference reads this band as one lit royal-blue plate, not a card that
      happens to be bluish. The navy is carried nearly full strength across the
@@ -485,8 +519,8 @@
       var(--ansar-navy) 42%,
       color-mix(in srgb, var(--ansar-navy) 86%, #000000));
   border: 1px solid color-mix(in srgb, var(--ansar-gold) 34%, transparent);
-  margin: 0 7%;
-  border-radius: 9px;
+  margin: 0 6.75%;
+  border-radius: 10px;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--cyan) 16%, transparent),
     0 10px 30px rgba(0, 0, 0, 0.32);
@@ -498,40 +532,54 @@
 .matchFixture {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
+  flex: 1;
   min-width: 0;
 }
 
 .matchCrest {
-  height: 72px;
+  height: 88px;
   width: auto;
   display: block;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-.matchCopy { min-width: 0; }
+.matchTeamCopy { min-width: 0; }
+
+.matchCopy {
+  min-width: 360px;
+  flex: 1.15;
+  text-align: center;
+}
 
 .matchTitle {
-  font-size: 12px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 21px;
   font-weight: 800;
-  letter-spacing: 0.14em;
-  color: var(--ansar-gold-bright);
+  letter-spacing: 0.01em;
+  color: #ffffff;
+}
+
+.matchTeamNote {
+  margin-top: 5px;
+  font-size: 13px;
+  color: #ffffff;
 }
 
 /* Calm, not an error. A missing provider is not a fault the child caused, and
    it has no bearing on whether today's habits can be ticked (spec §8.2). */
 .matchUnavailable {
-  margin-top: 5px;
-  font-size: 22px;
+  margin-top: 0;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: 0.01em;
   color: #ffffff;
 }
 
 .matchNote {
-  margin-top: 2px;
-  font-size: 11px;
+  margin-top: 7px;
+  font-size: 12px;
   color: var(--ansar-muted);
 }
 
@@ -539,8 +587,8 @@
    region with its own label, off to the side rather than between two teams. */
 .matchReadiness {
   flex-shrink: 0;
-  min-width: 168px;
-  padding: 8px 12px;
+  min-width: 230px;
+  padding: 8px 0 8px 28px;
   border-left: 1px solid color-mix(in srgb, var(--ansar-gold) 16%, transparent);
 }
 
@@ -1174,10 +1222,13 @@
     gap: 10px;
     /* The desktop cap exists to protect the 1440 x 820 fold. A phone scrolls,
        and a stacked frame is taller than 128px by construction. */
+    height: auto;
     max-height: none;
     padding: 12px 14px;
+    margin: 0 10px;
   }
   .matchCrest { height: 56px; }
+  .matchCopy { min-width: 0; }
 
   .matchReadiness {
     min-width: 0;
@@ -1186,6 +1237,56 @@
     border-top: 1px solid color-mix(in srgb, var(--ansar-gold) 16%, transparent);
   }
 
+}
+
+/* The full reference proportions land at 1655px. Between tablet and that
+   canvas, compress only the navigation internals so the authoritative status
+   cards remain initially visible; the masthead and Match Centre keep their
+   reference geometry on tall displays. */
+@media (min-width: 641px) and (max-width: 1550px) {
+  .clubNav { height: 76px; gap: 14px; padding: 0 12px; }
+  .clubCrest { width: 54px; height: 58px; border-width: 2px; }
+  .clubCrest::before { left: 17px; }
+  .clubCrest::after { right: 17px; }
+  .clubCrown { top: -11px; font-size: 17px; }
+  .clubCrestName { margin-top: 11px; font-size: 11px; }
+  .clubBall { margin-top: 3px; font-size: 12px; }
+  .clubNavItem { min-height: 46px; padding: 0 10px; font-size: 13px; }
+  .clubNavIcon { font-size: 14px; }
+  .clubNavStatus { gap: 6px; padding-left: 4px; }
+  .progressCard,
+  .clockCard { min-height: 48px; }
+  .statusMetric { padding: 6px 10px; }
+  .statusMetricIcon { font-size: 16px; }
+  .statusMetric strong { font-size: 13px; }
+  .statusMetric small { font-size: 9px; }
+  .clockCard { min-width: 104px; padding: 5px 9px; }
+  .serverClock { font-size: 9px; }
+  .serverClock::first-line { font-size: 14px; }
+  .statusMeta { font-size: 9px; }
+}
+
+@media (min-width: 641px) and (max-width: 1100px) {
+  .clubNav {
+    height: auto;
+    min-height: 76px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  .clubNavStatus {
+    order: 2;
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+    justify-content: flex-end;
+  }
+  .clubNavList {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
 }
 
 
@@ -1232,6 +1333,8 @@
     gap: 16px;
   }
   .matchCrest { height: 50px; }
+  .matchCopy { min-width: 280px; }
+  .matchTeamNote { margin-top: 2px; font-size: 10px; }
   .matchTitle { font-size: 11px; }
   .matchUnavailable { font-size: 19px; margin-top: 3px; }
   .matchNote { font-size: 12px; margin-top: 3px; }
@@ -1256,6 +1359,25 @@
 
   .clubNav { height: 66px; }
   .clubNavItem { padding: 8px 12px; font-size: 13px; }
+  .clubCrest {
+    width: 46px;
+    height: 50px;
+    border-width: 2px;
+  }
+  .clubCrest::before { left: 14px; }
+  .clubCrest::after { right: 14px; }
+  .clubCrown { top: -10px; font-size: 15px; }
+  .clubCrestName { margin-top: 10px; font-size: 10px; }
+  .clubBall { margin-top: 3px; font-size: 10px; }
+  .progressCard,
+  .clockCard { min-height: 46px; }
+  .statusMetric { padding: 6px 10px; }
+  .statusMetricIcon { font-size: 16px; }
+  .statusMetric strong { font-size: 13px; }
+  .statusMetric small { font-size: 9px; }
+  .clockCard { min-width: 104px; padding: 5px 9px; }
+  .serverClock { font-size: 9px; }
+  .serverClock::first-line { font-size: 14px; }
 
   /* The masthead keeps the reference's shape at this height — centred wordmark
      with the motto under it — at the smallest type that still reads as the
