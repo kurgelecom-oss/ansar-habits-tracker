@@ -508,8 +508,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 108px;
   max-height: 128px;
-  padding: 12px 18px;
+  padding: 14px 20px;
   flex-shrink: 0;
   /* One lit royal-blue plate: the navy at near full strength across the middle,
      falling away only at the ends. */
@@ -571,7 +572,7 @@
 .matchTeamAway .matchTeamText { text-align: right; }
 
 .matchCrest {
-  height: 68px;
+  height: 80px;
   width: auto;
   display: block;
   object-fit: contain;
@@ -580,7 +581,7 @@
 }
 
 .matchTeamName {
-  font-size: 21px;
+  font-size: 23px;
   font-weight: 700;
   letter-spacing: 0.03em;
   color: #ffffff;
@@ -609,7 +610,7 @@
 }
 
 .matchGoals {
-  font-size: 46px;
+  font-size: 50px;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--ansar-gold-bright);
@@ -1385,18 +1386,21 @@
      band, not a strip. Measured against the reference at 1440 wide, its plate
      is ~97px tall with a ~62px crest, and that is what this is. */
   .matchCentre {
-    max-height: 104px;
-    padding: 10px 18px;
+    /* min-height as well as max: the cap alone let the plate collapse to 82px
+       around its content, which is what still read as too small. */
+    min-height: 98px;
+    max-height: 106px;
+    padding: 12px 18px;
   }
-  .matchFixture { gap: 26px; }
-  .matchTeam { gap: 13px; }
-  .matchCrest { height: 60px; }
-  .matchTeamName { font-size: 19px; }
-  .matchTeamMeta { font-size: 13px; }
-  .matchGoals { font-size: 40px; }
-  .matchScoreDash { font-size: 30px; }
-  .matchStatus { font-size: 13px; margin-top: 4px; }
-  .matchScore { min-width: 112px; }
+  .matchFixture { gap: 28px; }
+  .matchTeam { gap: 15px; }
+  .matchCrest { height: 72px; }
+  .matchTeamName { font-size: 21px; }
+  .matchTeamMeta { font-size: 14px; }
+  .matchGoals { font-size: 44px; }
+  .matchScoreDash { font-size: 33px; }
+  .matchStatus { font-size: 14px; margin-top: 4px; }
+  .matchScore { min-width: 120px; }
   /* Readiness goes two-up instead of four-deep. Stacked, its label, figure,
      track and journal note came to 58px inside a 54px content box, and
      .matchCentre is overflow:hidden — the journal note was being cut off.
