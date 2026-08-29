@@ -1110,9 +1110,9 @@
    spare and keeps the roomier spacing. */
 @media (min-width: 1440px) and (max-height: 900px) {
   .shell {
-    /* 4px, not 6: the board's own footer strip sits below the panel grid and
-       was the last 6px hanging outside the fold. */
-    padding: 4px 10px;
+    /* Asymmetric on purpose: the board's own footer strip sits below the panel
+       grid, and the last 2px of it was hanging outside the fold. */
+    padding: 4px 10px 2px;
     gap: 6px;
   }
 
