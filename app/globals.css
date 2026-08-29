@@ -129,3 +129,10 @@ body {
   background: var(--cyan);
   border-radius: 1px 1px 0 0;
 }
+
+/* Dashboard V2 owns a full ANSAR FC navigation bar matching its stadium
+   interface. Hide the shared cross-surface strip only while that labelled main
+   is present; every other surface and route keeps the shared TopNav unchanged. */
+body:has(main[aria-label="ANSAR FC Dashboard"]) .topnav {
+  display: none;
+}

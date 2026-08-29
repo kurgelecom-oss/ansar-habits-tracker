@@ -60,10 +60,10 @@ describe("ClubNavigation", () => {
    * printed "ANSAR FC"s made neither the dominant one, so the nav carries the
    * mark as an image with an accessible name and no visible duplicate text.
    */
-  it("identifies the club by crest, without duplicating the wordmark", () => {
+  it("carries the visible ANSAR FC identity used by the reference navigation", () => {
     render(<ClubNavigation />);
     expect(screen.getByRole("img", { name: "ANSAR FC" })).toBeInTheDocument();
-    expect(screen.queryByText("ANSAR FC")).not.toBeInTheDocument();
+    expect(screen.getByText("ANSAR FC")).toBeVisible();
     expect(screen.queryByText(/diamond|gem|coin|level|XP/i)).not.toBeInTheDocument();
   });
 });
@@ -443,8 +443,12 @@ describe("height defences at 1440 x 820", () => {
   /** The roomier desktop spacing must survive for tall windows. */
   it("leaves the tall-desktop budget declarations intact", () => {
     expect(/\.matchCentre\s*\{[^}]*max-height:\s*128px/.test(css)).toBe(true);
-    expect(/\.clubHeader\s*\{[^}]*height:\s*40px/.test(css)).toBe(true);
-    expect(/\.clubNav\s*\{[^}]*height:\s*44px/.test(css)).toBe(true);
+    // (?<!min-|max-) matters: while the base header stood at 40px this assertion
+    // read the base block, but the moment it grew the same regex started
+    // matching the phone block's `min-height: 40px` and passed on a rule that
+    // has nothing to do with the desktop budget. Pin the bare property.
+    expect(/\.clubHeader\s*\{[^}]*(?<!min-|max-)height:\s*64px/.test(css)).toBe(true);
+    expect(/\.clubNav\s*\{[^}]*(?<!min-|max-)height:\s*44px/.test(css)).toBe(true);
   });
 });
 
@@ -455,6 +459,10 @@ describe("vertical budget before the panels", () => {
     resolve(process.cwd(), "app/components/dashboard/dashboard.module.css"),
     "utf8",
   );
+  // The height above the panels is now a trade against the shared nav, so the
+  // budget has to read the two files that fund it, not just the module CSS.
+  const globalCss = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
+  const pageSource = readFileSync(resolve(process.cwd(), "app/page.tsx"), "utf8");
 
   function px(selector: string, property: string): number {
     const block = new RegExp(`\\.${selector}\\s*\\{[^}]*\\}`).exec(css)?.[0] ?? "";
@@ -464,23 +472,62 @@ describe("vertical budget before the panels", () => {
   }
 
   /**
-   * Task 4 budgets: navigation 54, header 48, Match Centre 132, and 234 for all
+   * Task 4 budgets: navigation 54, header 64, Match Centre 132, and 274 for all
    * of it together. These are declared heights read straight out of the CSS,
    * because jsdom does not lay anything out and a passing render proves nothing
    * about how tall the board actually is. The 1440 × 820 target has no room to
    * discover this on a screenshot later.
+   *
+   * The ceiling was 234 while the shared 40px .topnav sat above the board. The
+   * visual-parity pass hides that strip on this route and drops .ab-root's
+   * matching padding, so the page-level cost of everything above the panels is
+   * unchanged at 274 — the masthead is spending recovered height, not habit
+   * height. That is why the funding is asserted below rather than assumed: the
+   * ceiling is only legal while both halves of the trade are in the source.
    */
+  const RECOVERED_NAV_PX = 40;
+  const FUNDED_CEILING = 234 + RECOVERED_NAV_PX;
+
+  it("still funds the raised ceiling by hiding the shared bar", () => {
+    expect(globalCss).toContain('body:has(main[aria-label="ANSAR FC Dashboard"]) .topnav');
+    expect(globalCss).toMatch(/--nav-h:\s*40px/);
+    expect(pageSource).toMatch(/\.ab-root\{[^}]*padding-top:0/);
+  });
+
   it("keeps each region inside its own cap", () => {
     expect(px("clubNav", "height")).toBeLessThanOrEqual(54);
-    expect(px("clubHeader", "height")).toBeLessThanOrEqual(48);
+    expect(px("clubHeader", "height")).toBeLessThanOrEqual(64);
     expect(px("matchCentre", "max-height")).toBeLessThanOrEqual(132);
   });
 
-  it("keeps the three regions plus their gaps inside 234px", () => {
+  it("keeps the three regions plus their gaps inside the funded ceiling", () => {
     const gap = px("shell", "gap");
     const total = px("clubNav", "height") + px("clubHeader", "height")
       + px("matchCentre", "max-height") + gap * 2;
-    expect(total).toBeLessThanOrEqual(234);
+    expect(total).toBeLessThanOrEqual(FUNDED_CEILING);
+  });
+
+  /**
+   * The binding constraint is not the block above but the short-desktop
+   * override, because 1440 × 820 matches @media (min-width:1440px) and
+   * (max-height:900px). Measured there the stack is 40 + 62 + 56 + two 6px
+   * gaps = 170, against 144 before the masthead grew — 26px spent out of the
+   * 40px recovered, so the nine-row weekday programme ends up 14px better off.
+   */
+  it("keeps the short-desktop stack inside what the hidden bar paid for", () => {
+    const shortDesktop = /@media \(min-width: 1440px\) and \(max-height: 900px\) \{[\s\S]*?\n\}/.exec(css)?.[0] ?? "";
+    expect(shortDesktop, "short-desktop block must exist").not.toBe("");
+    const at = (selector: string, property: string): number => {
+      const block = new RegExp(`\\.${selector}\\s*\\{[^}]*\\}`).exec(shortDesktop)?.[0] ?? "";
+      const value = new RegExp(`${property}\\s*:\\s*(\\d+)px`).exec(block)?.[1];
+      expect(value, `${selector} must declare ${property} at short desktop`).toBeDefined();
+      return Number(value);
+    };
+    const gap = at("shell", "gap");
+    const stack = at("clubNav", "height") + at("clubHeader", "height")
+      + at("matchCentre", "max-height") + gap * 2;
+    expect(stack).toBe(170);
+    expect(stack).toBeLessThanOrEqual(144 + RECOVERED_NAV_PX);
   });
 });
 
@@ -1152,10 +1199,62 @@ describe("StretchWalletPanel", () => {
 /* ── Task 8: the composed board ─────────────────────────────────────────────*/
 
 describe("DashboardShell composition", () => {
-  it("carries exactly one dominant ANSAR FC identity", () => {
+  it("carries the reference image's navigation identity and stadium masthead", () => {
     render(<DashboardShell><ClubHeader serverTime={weekdayFixture.gate.serverTime}
       deviceTime="1:47pm" online pointsActive /></DashboardShell>);
-    expect(screen.getAllByText(/ANSAR FC/)).toHaveLength(1);
+    expect(screen.getAllByText(/ANSAR FC/)).toHaveLength(2);
     expect(screen.getByText("Ansar · ANSAR FC")).toBeVisible();
+  });
+});
+
+describe("visual parity contracts", () => {
+  const dashboardCss = readFileSync(
+    resolve(process.cwd(), "app/components/dashboard/dashboard.module.css"),
+    "utf8",
+  );
+  const globalCss = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
+  const pageSource = readFileSync(resolve(process.cwd(), "app/page.tsx"), "utf8");
+
+  it("removes the redundant shared navigation only on the ANSAR dashboard", () => {
+    expect(globalCss).toContain('body:has(main[aria-label="ANSAR FC Dashboard"]) .topnav');
+    expect(pageSource).toMatch(/\.ab-root\{[^}]*padding-top:0/);
+  });
+
+  it("gives the masthead a stadium treatment without reducing habit targets", () => {
+    // No /s: tsconfig targets ES2017, where the dotAll flag is a compile
+    // error, and [^}] already crosses newlines without it.
+    expect(dashboardCss).toMatch(/\.clubHeader\s*\{[^}]*background-image:/);
+    expect(dashboardCss).toMatch(/\.clubWordmark\s*\{[^}]*font-family:[^;}]*serif/);
+    expect(dashboardCss).toMatch(/\.habitRow\s*\{[^}]*min-height:\s*44px/);
+  });
+
+  /**
+   * The module CSS header forbids hex literals so a brand colour cannot drift
+   * off token — the repo lost the canonical cyan to exactly that once. The
+   * stadium chrome needs pure-neutral mixers and shadows that no token covers,
+   * so the rule now carries a two-value exemption. This is what keeps the
+   * exemption two values wide instead of becoming a loophole.
+   */
+  it("keeps no hex literals outside the neutral pair", () => {
+    // #b0b5c1 is grandfathered, not blessed. It is the dim body grey used
+    // across page.tsx too, it predates this branch, and no token covers it.
+    // Tokenising it touches globals.css and every surface that reads it, so it
+    // is deliberately left as its own follow-up rather than smuggled into a
+    // visual-parity commit. It is listed here so the guard still fails on
+    // anything NEW; shrink this list when the token lands, never grow it.
+    const allowed = ["#000000", "#ffffff", "#b0b5c1"];
+    const body = dashboardCss.replace(/\/\*[\s\S]*?\*\//g, "");
+    const strays = (body.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [])
+      .filter((hex) => !allowed.includes(hex.toLowerCase()));
+    expect(strays, `use a token instead: ${strays.join(", ")}`).toEqual([]);
+  });
+
+  it("marks Journal and Homeschool as different learning priorities", () => {
+    const journal = row({ id: "journal", name: "Daily learning journal entry written", block: "homeschool" });
+    const session = row({ id: "homeschool_session", name: "Homeschool session completed (4 hrs)", block: "homeschool", points: 5 });
+    render(<><HabitRow habit={journal} accent="var(--cyan)" {...rowHandlers} />
+      <HabitRow habit={session} accent="var(--cyan)" {...rowHandlers} /></>);
+    expect(screen.getByRole("button", { name: journal.name })).toHaveAttribute("data-emphasis", "journal");
+    expect(screen.getByRole("button", { name: session.name })).toHaveAttribute("data-emphasis", "homeschool");
   });
 });

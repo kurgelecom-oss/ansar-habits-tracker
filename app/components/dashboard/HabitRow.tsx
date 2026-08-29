@@ -54,6 +54,8 @@ export default function HabitRow({
   const isLive = habit.state === "LIVE";
   const isMissed = habit.state === "MISSED";
   const chip = habit.points > 0 ? `+${habit.points} pt${habit.points === 1 ? "" : "s"}` : "";
+  const emphasis = habit.id === "journal" ? "journal"
+    : habit.id === "homeschool_session" ? "homeschool" : undefined;
 
   const stateClass = isDone ? styles.habitRowDone
     : isLive ? styles.habitRowLive
@@ -73,6 +75,8 @@ export default function HabitRow({
       onPointerCancel={onHoldCancel}
       onContextMenu={event => event.preventDefault()}
       aria-label={habit.overridden ? `${habit.name} — restored by parent override` : habit.name}
+      data-habit-id={habit.id}
+      data-emphasis={emphasis}
       title={habit.overridden ? "Parent override" : habit.window ? `Window ${habit.window}` : undefined}
       style={{ "--row-accent": accent } as React.CSSProperties}
     >

@@ -4,10 +4,25 @@
    Every colour here is a token from globals.css. No hex literals: spec §11.2,
    and the repo has already been burned once by a hex that drifted off the
    canonical cyan.
+
+   Two neutrals are exempt, and only these two: #000000 and #ffffff, used as
+   mixers inside color-mix() and as rgba() shadow and scrim values. The rule
+   exists to stop a BRAND colour drifting — pure black and pure white have
+   nothing to drift from, and there is no token for either. Every hue still
+   comes from a token. "no hex literals outside the neutral pair" in
+   dashboard.test.tsx enforces exactly this, so the exemption cannot widen.
+
+   That guard also grandfathers one pre-existing stray, #b0b5c1 — the dim body
+   grey shared with page.tsx, older than this branch and covered by no token.
+   Tokenising it is its own change; until then the guard keeps it from
+   spreading.
    ══════════════════════════════════════════════════════════════════════════ */
 
 .shell {
-  min-height: calc(100vh - var(--nav-h));
+  /* The shared .topnav is hidden on this route (globals.css) and .ab-root no
+     longer reserves --nav-h for it, so the shell owns the whole viewport. The
+     old calc() subtracted a 40px strip that is no longer drawn here. */
+  min-height: 100vh;
   padding: var(--ansar-gap);
   display: flex;
   flex-direction: column;
@@ -33,8 +48,8 @@
      crest and the section links. */
   flex-shrink: 0;
   padding: 0 12px;
-  background: var(--ansar-card);
-  border: 1px solid var(--ansar-border);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 96%, #000000), var(--ansar-card));
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 20%, var(--ansar-border));
   border-radius: var(--ansar-radius-panel);
   overflow-x: auto;
   scrollbar-width: none;
@@ -52,10 +67,23 @@
    Madrid asset belongs to the Match Centre and must not be borrowed as a
    general logo (spec §11.5). */
 .clubCrest {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  background: linear-gradient(135deg, var(--ansar-navy), var(--ansar-gold));
+  width: 22px;
+  height: 26px;
+  border-radius: 6px 6px 9px 9px;
+  border: 1px solid var(--ansar-gold);
+  background:
+    linear-gradient(135deg, transparent 43%, var(--ansar-gold) 44% 51%, transparent 52%),
+    linear-gradient(45deg, transparent 43%, var(--cyan) 44% 51%, transparent 52%),
+    var(--ansar-navy);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--ansar-gold) 24%, transparent);
+}
+
+.clubName {
+  color: var(--ansar-gold-bright);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
 }
 
 .clubNavList {
@@ -103,10 +131,11 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--ansar-card);
-  border: 1px solid var(--ansar-border);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 96%, #ffffff), var(--ansar-card) 24%);
+  border: 1px solid color-mix(in srgb, var(--ansar-border) 84%, #ffffff);
   border-radius: var(--ansar-radius-panel);
   overflow: hidden;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .panelAccent {
@@ -175,11 +204,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  height: 40px;
-  padding: 0 14px;
+  height: 64px;
+  padding: 0 20px;
   flex-shrink: 0;
-  background: var(--ansar-card);
-  border: 1px solid var(--ansar-border);
+  background-image:
+    linear-gradient(90deg, rgba(4, 10, 22, 0.76), rgba(8, 18, 39, 0.52), rgba(4, 10, 22, 0.84)),
+    url('/bernabeu-bg.jpg');
+  background-size: cover;
+  background-position: center 42%;
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 28%, var(--ansar-border));
   /* The gold identity rides on this rule rather than on a span inside the
      wordmark, so the wordmark stays one text node. */
   border-bottom: 2px solid var(--ansar-gold);
@@ -187,9 +220,11 @@
 }
 
 .clubWordmark {
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
   white-space: nowrap;
 }
 
@@ -268,7 +303,9 @@
   max-height: 128px;
   padding: 12px 18px;
   flex-shrink: 0;
-  background: linear-gradient(90deg, var(--ansar-navy), var(--ansar-card));
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--cyan) 10%, transparent), transparent 42%),
+    linear-gradient(100deg, color-mix(in srgb, var(--ansar-navy) 92%, #000000), var(--ansar-card));
   border: 1px solid color-mix(in srgb, var(--ansar-gold) 28%, transparent);
   border-radius: var(--ansar-radius-panel);
   overflow: hidden;
@@ -382,6 +419,18 @@
   background: var(--ansar-row);
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.habitRow[data-emphasis="journal"] {
+  border-color: color-mix(in srgb, var(--ansar-gold) 72%, var(--ansar-border));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ansar-gold) 10%, var(--ansar-row)), var(--ansar-row) 42%);
+  box-shadow: inset 3px 0 0 var(--ansar-gold), 0 0 0 1px color-mix(in srgb, var(--ansar-gold) 10%, transparent);
+}
+
+.habitRow[data-emphasis="homeschool"] {
+  border-color: color-mix(in srgb, var(--cyan) 58%, var(--ansar-border));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 8%, var(--ansar-row)), var(--ansar-row) 42%);
+  box-shadow: inset 3px 0 0 var(--cyan);
 }
 .habitRow:focus-visible {
   outline: 2px solid var(--cyan);
@@ -969,7 +1018,8 @@
   .readinessNote { grid-column: 1 / -1; font-size: 10px; margin-top: 0; }
 
   .clubNav { height: 40px; }
-  .clubHeader { height: 36px; }
+  .clubHeader { height: 62px; }
+  .clubWordmark { font-size: 23px; }
 
   .panelHead { padding: 6px 10px 5px; }
   .panelTitle { font-size: 14px; }

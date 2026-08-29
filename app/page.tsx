@@ -787,11 +787,15 @@ export default function AnsarPage() {
   /* ── Styles ─────────────────────────────────────────────────────────────── */
 
   const BOARD_CSS = `
-/* padding-top, NOT margin-top, to clear the fixed nav. body is height:100% in
-   globals.css, so a top margin here collapses through it and pushes the document
-   40px taller than the viewport — a scrollbar on a page whose whole point is not
-   scrolling. Padding cannot collapse. box-sizing:border-box is already global. */
-.ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:var(--nav-h);overflow:hidden}
+/* No top padding: this route draws its own ANSAR FC bar, so globals.css hides
+   the shared fixed .topnav while this main is on screen and the 40px it used to
+   reserve is spent on the stadium masthead instead. The two must move together —
+   restore the reservation the moment the shared bar comes back here, or the
+   fixed nav (z-index 900) lands on top of the first 40px of the board. Keep it
+   as padding-top, NOT margin-top: body is height:100% in globals.css, so a top
+   margin collapses through it and pushes the document 40px taller than the
+   viewport — a scrollbar on a page whose whole point is not scrolling. */
+.ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:0;overflow:hidden}
 /* The board grid, the row/spend button chrome and the long-hold ring used to
    be declared here. They now live in dashboard.module.css beside the
    components that draw them — .grid carries the same four-column track list

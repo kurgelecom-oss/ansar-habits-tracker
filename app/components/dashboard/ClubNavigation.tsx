@@ -35,6 +35,7 @@ export default function ClubNavigation() {
           identified to a screen reader. */}
       <span className={styles.clubMark} role="img" aria-label="ANSAR FC">
         <span className={styles.clubCrest} aria-hidden="true" />
+        <span className={styles.clubName} aria-hidden="true">ANSAR FC</span>
       </span>
 
       <ul className={styles.clubNavList}>
