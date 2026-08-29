@@ -27,6 +27,11 @@
   align-items: center;
   gap: 16px;
   height: 44px;
+  /* Every other child of .shell declares this. Without it the nav is the only
+     shrinkable item in the column and absorbs the whole shortfall on a short
+     viewport — it collapsed from 44px to 18.8px at 1440x820, squashing the
+     crest and the section links. */
+  flex-shrink: 0;
   padding: 0 12px;
   background: var(--ansar-card);
   border: 1px solid var(--ansar-border);
@@ -540,17 +545,21 @@
 .programmeSection {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
+/* A rule and 12px of air between subsections, not 17. The divider only has to
+   separate; every pixel it does not spend is a pixel the nine-row weekday
+   programme needs to stay inside the fold. */
 .programmeSection + .programmeSection {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
   border-top: 1px solid var(--ansar-border);
 }
 
 .programmeSectionTitle {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: 0.04em;
   color: var(--ansar-muted);
 }
@@ -903,4 +912,49 @@
   }
 
   .clubNav { height: auto; min-height: 44px; padding: 6px 10px; }
+}
+
+
+/* ── Short-desktop height recovery ──────────────────────────────────────────
+   At 1440 x 820 the weekday Today's Programme carries nine habit rows across
+   three subsections, and the board may not scroll: .ab-root is
+   overflow-y:hidden at this width, so anything past the fold is unreachable
+   rather than merely below it.
+
+   Every pixel recovered here comes from CHROME. No habit row shrinks — .habitRow
+   keeps its 44px target — and no habit is hidden. What gives is the placeholder
+   Match Centre (which currently displays no fixture at all), the Notion source
+   strip (a parent's tool, not part of the day's work), and the panels' own
+   header padding.
+
+   Keyed on height, not width: a 1440-wide window that is 1200 tall has room to
+   spare and keeps the roomier spacing. */
+@media (min-width: 1440px) and (max-height: 900px) {
+  .shell {
+    padding: 8px 10px;
+    gap: 7px;
+  }
+
+  /* The frame holds a crest and three lines of "not connected yet". It does not
+     need 128px to say that, and it is the largest non-learning block on the
+     board. */
+  .matchCentre {
+    max-height: 84px;
+    padding: 8px 14px;
+    gap: 14px;
+  }
+  .matchCrest { height: 46px; }
+  .matchTitle { font-size: 11px; }
+  .matchUnavailable { font-size: 13px; margin-top: 2px; }
+  .matchNote { font-size: 10px; }
+  .matchReadiness { min-width: 148px; padding: 4px 10px; }
+  .readinessValue { font-size: 18px; margin-top: 0; }
+  .readinessTrack { margin-top: 4px; }
+  .readinessNote { margin-top: 3px; }
+
+  .clubHeader { height: 36px; }
+
+  .panelHead { padding: 7px 10px 6px; }
+  .panelTitle { font-size: 14px; }
+  .panelBody { padding: 7px 10px 9px; gap: 5px; }
 }

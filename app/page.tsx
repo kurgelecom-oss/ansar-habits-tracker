@@ -818,6 +818,12 @@ export default function AnsarPage() {
 .ab-src{display:flex;align-items:center;justify-content:center;gap:8px;
   flex-shrink:0;padding:14px 0 20px;font-size:10px;letter-spacing:0.04em;
   color:#565f70}
+/* Compacted on a short desktop viewport: at 1440x820 the weekday programme
+   needs the height more than this strip needs its margins. A parent's link
+   list, not part of the day's work. */
+@media (min-width:1440px) and (max-height:900px){
+  .ab-src{padding:5px 0 6px}
+}
 .ab-src > *{opacity:0.45;transition:opacity 180ms ease,color 180ms ease}
 .ab-src a{color:#565f70;text-decoration:none}
 .ab-src a:hover{opacity:1;color:var(--cyan)}

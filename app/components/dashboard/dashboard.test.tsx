@@ -368,6 +368,69 @@ describe("responsive rules for the header and Match Centre", () => {
   });
 });
 
+describe("height defences at 1440 x 820", () => {
+  const css = readFileSync(
+    resolve(process.cwd(), "app/components/dashboard/dashboard.module.css"),
+    "utf8",
+  );
+  const base = (selector: string): string => {
+    const match = new RegExp(`\\n\\.${selector}\\s*\\{([^}]*)\\}`).exec(css);
+    expect(match, `${selector} must have a base rule`).not.toBeNull();
+    return match![1];
+  };
+  const shortDesktop = (() => {
+    const i = css.indexOf("@media (min-width: 1440px) and (max-height: 900px)");
+    expect(i, "a short-desktop breakpoint must exist").toBeGreaterThan(-1);
+    let depth = 0, j = css.indexOf("{", i);
+    const start = j;
+    do { if (css[j] === "{") depth += 1; else if (css[j] === "}") depth -= 1; j += 1; } while (depth > 0);
+    return css.slice(start, j);
+  })();
+
+  /**
+   * REGRESSION. .clubNav was the only child of the flex-column shell without
+   * flex-shrink:0, so it absorbed the entire vertical shortfall and collapsed
+   * from 44px to 18.8px on the live preview — a squashed crest and squashed
+   * section links.
+   */
+  it("never lets the club navigation absorb the shortfall", () => {
+    expect(base("clubNav")).toMatch(/flex-shrink:\s*0/);
+  });
+
+  it("gives every fixed region above the panels a shrink guard", () => {
+    for (const selector of ["clubNav", "clubHeader", "matchCentre"]) {
+      expect(base(selector), `${selector} must not shrink`).toMatch(/flex-shrink:\s*0/);
+    }
+  });
+
+  /**
+   * The board cannot scroll at this width — .ab-root is overflow-y:hidden — so
+   * a row past the fold is unreachable, not merely below it. Height is
+   * recovered from chrome only.
+   */
+  it("recovers height from the placeholder Match Centre, not from habit rows", () => {
+    expect(shortDesktop).toMatch(/\.matchCentre[^{]*\{[^}]*max-height:\s*84px/);
+    expect(shortDesktop).not.toMatch(/\.habitRow[^{]*\{[^}]*min-height/);
+  });
+
+  it("keeps the habit row target at 44px everywhere", () => {
+    expect(base("habitRow")).toMatch(/min-height:\s*44px/);
+    expect(css).not.toMatch(/\.habitRow[^{]*\{[^}]*min-height:\s*(?!44px)\d+px/);
+  });
+
+  it("tightens subsection dividers without touching row spacing", () => {
+    expect(/\.programmeSection \+ \.programmeSection\s*\{[^}]*margin-top:\s*6px/.test(css)).toBe(true);
+    expect(/\.programmeSection \+ \.programmeSection\s*\{[^}]*padding-top:\s*6px/.test(css)).toBe(true);
+  });
+
+  /** The roomier desktop spacing must survive for tall windows. */
+  it("leaves the tall-desktop budget declarations intact", () => {
+    expect(/\.matchCentre\s*\{[^}]*max-height:\s*128px/.test(css)).toBe(true);
+    expect(/\.clubHeader\s*\{[^}]*height:\s*40px/.test(css)).toBe(true);
+    expect(/\.clubNav\s*\{[^}]*height:\s*44px/.test(css)).toBe(true);
+  });
+});
+
 describe("vertical budget before the panels", () => {
   // Read from the project root: Vitest serves modules over an http-scheme URL,
   // so import.meta.url is not a file path here.
@@ -1027,6 +1090,35 @@ describe("StretchWalletPanel", () => {
     render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet} onSpend={() => { spends += 1; }} />);
     fireEvent.click(screen.getByRole("button", { name: /Convert 10 min/ }));
     expect(spends).toBe(1);
+  });
+
+  /**
+   * REGRESSION. /api/stretch sets redemptionMessage to the same string as
+   * lockMessage while the wallet is locked, and the panel printed both — the
+   * lock reason appeared twice on the live preview, once in the banner and
+   * once under it.
+   */
+  it("prints the lock reason once when the server repeats it as the redemption message", () => {
+    const repeated = {
+      ...weekdayFixture.wallet,
+      unlocked: false,
+      lockMessage: "Locked — Qur'an recitation first",
+      redemptionMessage: "Locked — Qur'an recitation first",
+    };
+    render(<StretchWalletPanel {...walletBase} wallet={repeated} />);
+    expect(screen.getAllByText("Locked — Qur'an recitation first")).toHaveLength(1);
+  });
+
+  it("still shows a redemption message that says something the lock does not", () => {
+    const distinct = {
+      ...weekdayFixture.wallet,
+      unlocked: false,
+      lockMessage: "Locked — Qur'an recitation first",
+      redemptionMessage: "Redeem on Saturday or Sunday",
+    };
+    render(<StretchWalletPanel {...walletBase} wallet={distinct} />);
+    expect(screen.getByText("Locked — Qur'an recitation first")).toBeVisible();
+    expect(screen.getByText("Redeem on Saturday or Sunday")).toBeVisible();
   });
 
   it("explains when conversion opens instead of only greying out", () => {

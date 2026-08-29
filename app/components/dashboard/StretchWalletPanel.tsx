@@ -52,6 +52,23 @@ export default function StretchWalletPanel({
    */
   const rate = wallet?.minPerPoint ?? minPerPoint;
   const capMin = wallet?.dailyRedeemCapMin ?? dailyCapMin;
+
+  /**
+   * The two sentences the server can send about availability.
+   *
+   * /api/stretch sets redemptionMessage to the SAME string as lockMessage while
+   * the wallet is locked, so rendering both printed the lock reason twice —
+   * once in the banner and once under it. The second copy is suppressed when it
+   * says nothing new. It is not dropped outright: when redemption is closed for
+   * a different reason than the lock, that sentence is the only place the
+   * reason appears.
+   */
+  const lockCopy = wallet && locked
+    ? wallet.lockMessage ?? "Finish Morning Habits + Homeschool to unlock"
+    : null;
+  const redemptionCopy = wallet && wallet.redemptionMessage !== lockCopy
+    ? wallet.redemptionMessage
+    : null;
   // NOTE: the convert button deliberately does NOT re-derive "is it the
   // weekend" to relabel itself. redemptionOpen is the server's answer; the
   // label stays constant, `disabled` carries the state, and the server's own
@@ -77,20 +94,17 @@ export default function StretchWalletPanel({
         </>
       }
     >
-      {wallet && locked ? (
+      {lockCopy ? (
         <p className={styles.walletLock}>
           {/* Glyph in its own node so the element's text is exactly the
               server's sentence, not the server's sentence plus decoration. */}
           <span aria-hidden className={styles.walletLockGlyph}>🔒</span>
-          {wallet.lockMessage ?? "Finish Morning Habits + Homeschool to unlock"}
+          {lockCopy}
         </p>
       ) : null}
 
-      {wallet && !locked && wallet.redemptionMessage ? (
-        <p className={styles.walletNote}>{wallet.redemptionMessage}</p>
-      ) : null}
-      {wallet && locked && wallet.redemptionMessage ? (
-        <p className={styles.walletNote}>{wallet.redemptionMessage}</p>
+      {redemptionCopy ? (
+        <p className={styles.walletNote}>{redemptionCopy}</p>
       ) : null}
 
       {/* Weekend all-items bonus. Weekend only — the server sends itemsTotal 0
