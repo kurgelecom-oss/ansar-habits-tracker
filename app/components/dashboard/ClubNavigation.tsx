@@ -16,14 +16,14 @@ import styles from "./dashboard.module.css";
  *
  * `Table`, never `Leaderboards` (spec §7.1).
  */
-const ITEMS: { label: string; href?: string }[] = [
-  { label: "Dashboard", href: "/" },
-  { label: "Habits" },
-  { label: "Quests" },
-  { label: "Team" },
-  { label: "Table" },
-  { label: "History" },
-  { label: "Settings" },
+const ITEMS: { label: string; icon: string; href?: string }[] = [
+  { label: "Dashboard", icon: "\u{1F3E0}", href: "/" },
+  { label: "Habits", icon: "\u{1F4CB}" },
+  { label: "Quests", icon: "\u{1F3AF}" },
+  { label: "Team", icon: "\u{1F465}" },
+  { label: "Table", icon: "\u{1F3C6}" },
+  { label: "History", icon: "\u{1F551}" },
+  { label: "Settings", icon: "\u2699\uFE0F" },
 ];
 
 export default function ClubNavigation() {
@@ -48,7 +48,8 @@ export default function ClubNavigation() {
                 className={`${styles.clubNavItem} ${styles.clubNavItemActive}`}
                 data-testid="club-nav-item"
               >
-                {item.label}
+                <span aria-hidden="true" className={styles.clubNavIcon}>{item.icon}</span>
+                <span data-testid="club-nav-label">{item.label}</span>
               </a>
             ) : (
               <span
@@ -57,7 +58,8 @@ export default function ClubNavigation() {
                 className={`${styles.clubNavItem} ${styles.clubNavItemFuture}`}
                 data-testid="club-nav-item"
               >
-                {item.label}
+                <span aria-hidden="true" className={styles.clubNavIcon}>{item.icon}</span>
+                <span data-testid="club-nav-label">{item.label}</span>
               </span>
             )}
           </li>

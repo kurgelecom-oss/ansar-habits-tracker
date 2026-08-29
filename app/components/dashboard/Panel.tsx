@@ -14,11 +14,23 @@ import styles from "./dashboard.module.css";
 type PanelProps = {
   id?: string; title: string; subtitle?: string; accent: string;
   summary?: React.ReactNode; className?: string; children: React.ReactNode;
+  /**
+   * Optional completion bar under the header. Both numbers come from the same
+   * rows the panel is already rendering, so the bar cannot disagree with the
+   * count beside the title. Omitted entirely when there is nothing to divide.
+   */
+  progress?: { done: number; total: number } | null;
+  /** Optional closing line, e.g. a block score. */
+  footer?: React.ReactNode;
 };
 
 export default function Panel({
   id, title, subtitle, accent, summary, className, children,
+  progress = null, footer = null,
 }: PanelProps) {
+  const pct = progress && progress.total > 0
+    ? Math.round((progress.done / progress.total) * 100)
+    : null;
   return (
     <section
       id={id}
@@ -37,7 +49,27 @@ export default function Panel({
         {summary ? <div className={styles.panelSummary}>{summary}</div> : null}
       </header>
 
+      {pct === null ? null : (
+        <div
+          className={styles.panelProgress}
+          role="progressbar"
+          aria-label={`${title} completed`}
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          data-testid="panel-progress"
+        >
+          <div
+            className={styles.panelProgressFill}
+            data-testid="panel-progress-fill"
+            style={{ width: `${pct}%`, background: accent }}
+          />
+        </div>
+      )}
+
       <div className={styles.panelBody}>{children}</div>
+
+      {footer ? <div className={styles.panelFooter}>{footer}</div> : null}
     </section>
   );
 }

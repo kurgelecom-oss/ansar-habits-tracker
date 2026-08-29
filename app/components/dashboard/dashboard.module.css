@@ -40,16 +40,16 @@
 .clubNav {
   display: flex;
   align-items: center;
-  gap: 16px;
-  height: 44px;
+  gap: 18px;
+  height: 56px;
   /* Every other child of .shell declares this. Without it the nav is the only
      shrinkable item in the column and absorbs the whole shortfall on a short
      viewport — it collapsed from 44px to 18.8px at 1440x820, squashing the
      crest and the section links. */
   flex-shrink: 0;
-  padding: 0 12px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 96%, #000000), var(--ansar-card));
-  border: 1px solid color-mix(in srgb, var(--ansar-gold) 20%, var(--ansar-border));
+  padding: 0 16px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 92%, #000000), var(--ansar-base));
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 22%, var(--ansar-border));
   border-radius: var(--ansar-radius-panel);
   overflow-x: auto;
   scrollbar-width: none;
@@ -67,22 +67,36 @@
    Madrid asset belongs to the Match Centre and must not be borrowed as a
    general logo (spec §11.5). */
 .clubCrest {
-  width: 22px;
-  height: 26px;
-  border-radius: 6px 6px 9px 9px;
-  border: 1px solid var(--ansar-gold);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--ansar-gold);
   background:
-    linear-gradient(135deg, transparent 43%, var(--ansar-gold) 44% 51%, transparent 52%),
-    linear-gradient(45deg, transparent 43%, var(--cyan) 44% 51%, transparent 52%),
-    var(--ansar-navy);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--ansar-gold) 24%, transparent);
+    radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--ansar-gold) 26%, transparent), transparent 58%),
+    linear-gradient(160deg, var(--ansar-navy), color-mix(in srgb, var(--ansar-navy) 55%, #000000));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ansar-gold) 34%, transparent),
+    0 2px 12px color-mix(in srgb, var(--ansar-gold) 26%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+/* The club initials sit inside the ring rather than beside it, so the mark
+   reads as one badge at a glance the way a crest does. */
+.clubCrest::after {
+  content: "AFC";
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--ansar-gold-bright);
 }
 
 .clubName {
   color: var(--ansar-gold-bright);
-  font-size: 12px;
-  font-weight: 850;
-  letter-spacing: 0.09em;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
   white-space: nowrap;
 }
 
@@ -96,20 +110,32 @@
 }
 
 .clubNavItem {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   flex-shrink: 0;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 650;
   white-space: nowrap;
   text-decoration: none;
   transition: color 0.2s ease, background 0.2s ease;
 }
 
+.clubNavIcon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* A filled pill, not a tint. Only one item is ever reachable, so the active
+   state carries real weight rather than a hint of it. */
 .clubNavItemActive {
-  color: var(--cyan);
-  background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  color: #ffffff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cyan) 30%, var(--ansar-navy)), var(--ansar-navy));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--cyan) 34%, transparent),
+    0 2px 10px color-mix(in srgb, var(--cyan) 18%, transparent);
 }
 .clubNavItemActive:focus-visible {
   outline: 2px solid var(--cyan);
@@ -131,11 +157,13 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 96%, #ffffff), var(--ansar-card) 24%);
-  border: 1px solid color-mix(in srgb, var(--ansar-border) 84%, #ffffff);
+  /* Near-black plates, the way the reference reads them — the rows inside are
+     the lighter surface, so the panel has to sit under them, not beside them. */
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-base) 82%, var(--ansar-card)), var(--ansar-base));
+  border: 1px solid color-mix(in srgb, var(--ansar-border) 88%, #000000);
   border-radius: var(--ansar-radius-panel);
   overflow: hidden;
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .panelAccent {
@@ -149,23 +177,56 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 12px 8px;
-  border-bottom: 1px solid var(--ansar-border);
+  padding: 12px 14px 10px;
 }
 
 .panelHeadText { min-width: 0; }
 
 .panelTitle {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.2;
 }
 
+/* Cyan, matching the reference's window/points line. It is supporting detail,
+   not a heading, so it stays a step down in size. */
 .panelSubtitle {
-  margin-top: 2px;
-  font-size: 11px;
+  margin-top: 3px;
+  font-size: 12px;
   font-weight: 500;
-  color: var(--ansar-muted);
+  color: var(--cyan);
+}
+
+/* The completion bar under the header. Its width and its aria-valuenow are the
+   same computed number, so the bar cannot show one thing and announce another. */
+.panelProgress {
+  height: 5px;
+  margin: 0 14px 10px;
+  border-radius: 3px;
+  background: color-mix(in srgb, #ffffff 8%, transparent);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.panelProgressFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* The block's own score, closing the column the way the reference does. */
+.panelFooter {
+  margin-top: auto;
+  padding: 10px 14px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--ansar-border) 70%, transparent);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.panelScore {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cyan);
 }
 
 .panelSummary {
@@ -200,11 +261,16 @@
 /* ── Club header ────────────────────────────────────────────────────────────
    Budget: 40px against a 48px cap. */
 .clubHeader {
+  /* The wordmark is centred on the BAND, not on the space left over beside the
+     status row — so it is positioned against the header itself and the status
+     floats over the right-hand end. Anything else slides the club name off
+     centre by however wide the clock happens to be that second. */
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 16px;
-  height: 64px;
+  height: 104px;
   padding: 0 20px;
   flex-shrink: 0;
   /* Measured on the preview at 1440 x 820: at a 0.52 centre stop the seating
@@ -223,16 +289,40 @@
   border-radius: var(--ansar-radius-panel);
 }
 
+.clubIdentity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
 .clubWordmark {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 25px;
+  font-size: 42px;
   font-weight: 700;
-  letter-spacing: 0.015em;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+  text-shadow: 0 3px 24px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+}
+
+/* Fixed brand copy. It states no number and tracks no state, so unlike every
+   other line on this board it cannot go stale or disagree with the server. */
+.clubMotto {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 16px;
+  font-style: italic;
+  color: var(--ansar-gold-bright);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
   white-space: nowrap;
 }
 
 .clubStatus {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -307,11 +397,20 @@
   max-height: 128px;
   padding: 12px 18px;
   flex-shrink: 0;
+  /* The reference reads this band as one lit royal-blue plate, not a card that
+     happens to be bluish. The navy is carried nearly full strength across the
+     middle and only falls away at the ends. */
   background:
-    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--cyan) 10%, transparent), transparent 42%),
-    linear-gradient(100deg, color-mix(in srgb, var(--ansar-navy) 92%, #000000), var(--ansar-card));
-  border: 1px solid color-mix(in srgb, var(--ansar-gold) 28%, transparent);
+    radial-gradient(ellipse at 50% -20%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 62%),
+    linear-gradient(100deg,
+      color-mix(in srgb, var(--ansar-navy) 78%, #000000),
+      var(--ansar-navy) 42%,
+      color-mix(in srgb, var(--ansar-navy) 86%, #000000));
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 34%, transparent);
   border-radius: var(--ansar-radius-panel);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--cyan) 16%, transparent),
+    0 10px 30px rgba(0, 0, 0, 0.32);
   overflow: hidden;
 }
 
@@ -335,18 +434,19 @@
 .matchCopy { min-width: 0; }
 
 .matchTitle {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   color: var(--ansar-gold-bright);
 }
 
 /* Calm, not an error. A missing provider is not a fault the child caused, and
    it has no bearing on whether today's habits can be ticked (spec §8.2). */
 .matchUnavailable {
-  margin-top: 4px;
-  font-size: 15px;
-  font-weight: 600;
+  margin-top: 5px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   color: #ffffff;
 }
 
@@ -411,10 +511,10 @@
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
+  min-height: 52px;
+  padding: 0 13px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -454,8 +554,8 @@
    text, and the opening time is the most useful thing on a locked row. */
 .habitRowLocked {
   cursor: not-allowed;
-  border-color: var(--ansar-row);
-  background: var(--ansar-card);
+  border-color: color-mix(in srgb, var(--ansar-border) 60%, transparent);
+  background: color-mix(in srgb, var(--ansar-row) 60%, var(--ansar-base));
 }
 
 /* A missed window is a different fact from a not-yet-open one. Restrained —
@@ -481,14 +581,15 @@
 }
 
 .habitBox {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--ansar-border);
+  border: 2px solid color-mix(in srgb, var(--ansar-muted) 55%, transparent);
+  background: color-mix(in srgb, #000000 22%, transparent);
 }
 .habitRowDone .habitBox {
   border-color: var(--row-accent);
@@ -496,7 +597,7 @@
 }
 .habitRowMissed .habitBox { border-color: color-mix(in srgb, var(--ansar-danger) 40%, transparent); }
 
-.habitTick { font-size: 13px; font-weight: 800; color: #000000; }
+.habitTick { font-size: 14px; font-weight: 800; color: #000000; }
 .habitGlyph { font-size: 11px; }
 
 .habitIcon { font-size: 17px; flex-shrink: 0; line-height: 1; }
@@ -542,20 +643,15 @@
 
 .pointChip {
   flex-shrink: 0;
-  padding: 4px 8px;
-  border-radius: 7px;
-  font-size: 11px;
-  font-weight: 800;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
   white-space: nowrap;
-  color: #b0b5c1;
-  background: var(--ansar-card);
-  border: 1px solid var(--ansar-border);
+  color: var(--cyan);
+  background: none;
+  border: 0;
 }
-.habitRowDone .pointChip {
-  color: var(--row-accent);
-  background: color-mix(in srgb, var(--row-accent) 12%, transparent);
-  border-color: color-mix(in srgb, var(--row-accent) 35%, transparent);
-}
+.habitRowDone .pointChip { color: var(--row-accent); }
 
 /* ── Panel summary and the morning feasibility banner ───────────────────────*/
 .panelCount {
@@ -997,13 +1093,13 @@
      taken from a habit row. Restore the 56px cut only if a real weekday is
      ever measured tighter than this. */
   .matchCentre {
-    max-height: 104px;
-    padding: 10px 16px;
+    max-height: 88px;
+    padding: 9px 16px;
     gap: 14px;
   }
   .matchCrest { height: 44px; }
   .matchTitle { font-size: 11px; }
-  .matchUnavailable { font-size: 14px; margin-top: 2px; }
+  .matchUnavailable { font-size: 16px; margin-top: 2px; }
   .matchNote { font-size: 11px; margin-top: 3px; }
   /* Readiness goes two-up instead of four-deep. Stacked, its label, figure,
      track and journal note came to 58px inside a 54px content box, and
@@ -1024,11 +1120,26 @@
   .readinessTrack { grid-column: 1 / -1; margin-top: 0; }
   .readinessNote { grid-column: 1 / -1; font-size: 10px; margin-top: 0; }
 
-  .clubNav { height: 40px; }
-  .clubHeader { height: 62px; }
-  .clubWordmark { font-size: 23px; }
+  .clubNav { height: 48px; }
+  .clubNavItem { padding: 7px 11px; font-size: 12px; }
 
-  .panelHead { padding: 6px 10px 5px; }
-  .panelTitle { font-size: 14px; }
+  /* The masthead keeps the reference's shape at this height — centred wordmark
+     with the motto under it — at the smallest type that still reads as the
+     dominant identity on the board. */
+  .clubHeader { height: 68px; }
+  .clubWordmark { font-size: 26px; }
+  .clubMotto { font-size: 11px; }
+
+  /* 44px exactly: the floor, not a reduction. Rows are 52px on a tall window
+     because the reference is roomier, and this is the one viewport where the
+     whole weekday programme has to fit at once. */
+  .habitRow { min-height: 44px; }
+
+  .panelHead { padding: 8px 11px 6px; }
+  .panelTitle { font-size: 15px; }
+  .panelSubtitle { font-size: 11px; }
+  .panelProgress { height: 4px; margin: 0 11px 6px; }
+  .panelFooter { padding: 6px 11px 7px; }
+  .panelScore { font-size: 12px; }
   .panelBody { padding: 6px 10px 8px; gap: 5px; }
 }

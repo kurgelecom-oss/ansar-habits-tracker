@@ -59,6 +59,12 @@ export default function HabitPanel({
           <span className={styles.panelPoints}>{blockPoints} pts</span>
         </>
       }
+      progress={{ done: doneCount, total: habits.length }}
+      footer={
+        <span className={styles.panelScore}>
+          {title} Score: <strong>{blockPoints > 0 ? `+${blockPoints}` : blockPoints} pts</strong>
+        </span>
+      }
     >
       {feasibility ? (
         <div

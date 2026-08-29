@@ -82,14 +82,6 @@ export default function HabitRow({
     >
       {holding ? <span aria-hidden data-testid="hold-ring" className={styles.holdRing} /> : null}
 
-      <span className={styles.habitBox}>
-        {saving ? <span className={styles.habitGlyph}>⏳</span>
-          : isDone ? <span className={styles.habitTick}>✓</span>
-          : isMissed ? <span className={styles.habitGlyph}>✕</span>
-          : !isLive ? <span className={styles.habitGlyph}>🔒</span>
-          : null}
-      </span>
-
       {icon ? <span aria-hidden className={styles.habitIcon}>{icon}</span> : null}
 
       <span className={styles.habitText}>
@@ -117,6 +109,18 @@ export default function HabitRow({
       ) : null}
 
       {chip ? <span className={styles.pointChip}>{chip}</span> : null}
+
+      {/* The state marker sits at the END of the row, where a checkbox is
+          expected and where the eye lands after reading the habit. It is the
+          last thing in the DOM as well as the last thing on screen, so tab and
+          screen-reader order match what a sighted reader sees. */}
+      <span className={styles.habitBox}>
+        {saving ? <span className={styles.habitGlyph}>⏳</span>
+          : isDone ? <span className={styles.habitTick}>✓</span>
+          : isMissed ? <span className={styles.habitGlyph}>✕</span>
+          : !isLive ? <span className={styles.habitGlyph}>🔒</span>
+          : null}
+      </span>
     </button>
   );
 }
