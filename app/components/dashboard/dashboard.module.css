@@ -1123,11 +1123,11 @@
      taken from a habit row. Restore the 56px cut only if a real weekday is
      ever measured tighter than this. */
   .matchCentre {
-    max-height: 88px;
-    padding: 14px 20px;
+    max-height: 78px;
+    padding: 10px 20px;
     gap: 16px;
   }
-  .matchCrest { height: 56px; }
+  .matchCrest { height: 50px; }
   .matchTitle { font-size: 11px; }
   .matchUnavailable { font-size: 19px; margin-top: 3px; }
   .matchNote { font-size: 12px; margin-top: 3px; }
@@ -1150,26 +1150,26 @@
   .readinessTrack { grid-column: 1 / -1; margin-top: 0; }
   .readinessNote { grid-column: 1 / -1; font-size: 10px; margin-top: 0; }
 
-  .clubNav { height: 76px; }
-  .clubNavItem { padding: 9px 13px; font-size: 13px; }
+  .clubNav { height: 66px; }
+  .clubNavItem { padding: 8px 12px; font-size: 13px; }
 
   /* The masthead keeps the reference's shape at this height — centred wordmark
      with the motto under it — at the smallest type that still reads as the
      dominant identity on the board. */
-  .clubHeader { height: 96px; }
-  .clubWordmark { font-size: 38px; }
-  .clubMotto { font-size: 15px; }
+  .clubHeader { height: 88px; }
+  .clubWordmark { font-size: 35px; }
+  .clubMotto { font-size: 14px; }
 
   /* 44px exactly: the floor, not a reduction. Rows are 52px on a tall window
      because the reference is roomier, and this is the one viewport where the
      whole weekday programme has to fit at once. */
   .habitRow { min-height: 44px; }
 
-  .panelHead { padding: 12px 14px 9px; }
+  .panelHead { padding: 9px 13px 7px; }
   .panelTitle { font-size: 16px; }
   .panelSubtitle { font-size: 12px; }
-  .panelProgress { height: 5px; margin: 0 14px 9px; }
-  .panelFooter { padding: 10px 14px 11px; }
+  .panelProgress { height: 4px; margin: 0 13px 7px; }
+  .panelFooter { padding: 7px 13px 8px; }
   .panelScore { font-size: 12px; }
-  .panelBody { padding: 2px 12px 10px; gap: 7px; }
+  .panelBody { padding: 2px 11px 8px; gap: 5px; }
 }

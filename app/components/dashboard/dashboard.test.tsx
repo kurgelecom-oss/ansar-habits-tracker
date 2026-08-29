@@ -610,7 +610,7 @@ describe("vertical budget before the panels", () => {
     const gap = at("shell", "gap");
     const stack = at("clubNav", "height") + at("clubHeader", "height")
       + at("matchCentre", "max-height") + gap * 2;
-    expect(stack).toBe(272);
+    expect(stack).toBe(244);
     expect(stack).toBeLessThanOrEqual(SHORT_DESKTOP_CEILING);
   });
 
@@ -621,7 +621,7 @@ describe("vertical budget before the panels", () => {
    */
   it("keeps the short-desktop Match Centre substantial", () => {
     const shortDesktop = /@media \(min-width: 1440px\) and \(max-height: 900px\) \{[\s\S]*?\n\}/.exec(css)?.[0] ?? "";
-    expect(/\.matchCentre\s*\{[^}]*max-height:\s*88px/.test(shortDesktop)).toBe(true);
+    expect(/\.matchCentre\s*\{[^}]*max-height:\s*78px/.test(shortDesktop)).toBe(true);
     expect(/\.matchNote\s*\{[^}]*display:\s*none/.test(shortDesktop)).toBe(false);
   });
 });
