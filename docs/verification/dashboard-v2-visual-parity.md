@@ -11,7 +11,7 @@ covers the visual-parity pass on top of it.
 | Item | Value |
 | --- | --- |
 | Preview URL | https://deploy-preview-2--ansar-habits-tracker.netlify.app |
-| Verified commit | `3cc73aa` |
+| Verified commit | `677cfed` |
 | Branch | `feat/dashboard-v2-visual` |
 | Pull request | kurgelecom-oss/ansar-habits-tracker #2 — **draft, not for merge** |
 | Netlify site | `ansar-habits-tracker` (`edf30cde-2303-4297-846a-e15682c4f011`) |
@@ -23,18 +23,19 @@ covers the visual-parity pass on top of it.
 The parity pass grows the masthead and pays for it by hiding the shared 40px
 cross-surface TopNav on this route only.
 
-| Region (at 1440 × 820) | `55bc199` | `3cc73aa` |
+| Region (at 1440 × 820) | `55bc199` | `677cfed` |
 | --- | --- | --- |
-| `.clubNav` | 40 | 40 |
-| `.clubHeader` | 36 | 62 |
-| `.matchCentre` | 56 | 70 (cap 104) |
+| `.clubNav` | 40 | 48 |
+| `.clubHeader` | 36 | 84 |
+| `.matchCentre` | 56 | 69 (cap 88) |
 | `.shell` gaps × 2 | 12 | 12 |
 | Shared TopNav reservation | 40 | **0** |
-| **Total above the panels** | **184** | **184** |
+| **Total above the panels** | **184** | **213** |
 
-The board costs the page exactly what it did before. The masthead and the
-restored Match Centre are funded entirely by the nav that this route no longer
-draws — not by a habit row.
+The chrome costs 29px more than the old board did, and it is paid out of the
+91px still clear beneath the panels — not out of a habit row. Rows are 52px on
+a tall window, where the reference is roomier, and sit at exactly 44px at this
+viewport: the target minimum, and the same height they had before this pass.
 
 ## Measured at 1440 × 820, weekday roster
 
@@ -55,7 +56,7 @@ roster on a real render, not an observed weekday.**
 | Vertical overflow | 0px |
 | Horizontal overflow | 0px |
 | Elements clipped by `overflow:hidden` | **0** |
-| Panel grid bottom | 697 of 820 — **123px clear** |
+| Panel grid bottom | 729 of 820 — **91px clear** |
 | `data-emphasis` applied | `journal`, `homeschool_session` |
 
 ## Breakpoints
@@ -66,6 +67,8 @@ roster on a real render, not an observed weekday.**
 | 1024 × 900 | 2 | vertical (expected) | 0 | 0 |
 | 1440 × 820 | 4 | none | 0 | 0 |
 | 1920 × 1080 | 4 | none | 0 | 0 |
+
+All four measured carrying the weekday roster.
 
 The 390px horizontal overflow recorded against `55bc199` is **resolved**. All
 seven overflowing elements were the shared nav, which this route no longer
@@ -90,32 +93,47 @@ fictional content — the 2–0 result, Real Sociedad, 1,250 pts, 85 gems, the
 
 | Element | State |
 | --- | --- |
-| One ANSAR FC bar, shield + wordmark | matches |
-| Stadium masthead, serif `Ansar · ANSAR FC` | matches |
-| Substantial Match Centre | matches, and truthful |
-| Four premium panels | matches |
+| Round gold-ringed club crest | matches |
+| Icon on every nav section | matches |
+| Filled pill on the one live destination | matches |
+| Points / streak / clock at the bar's right | matches |
+| Centred serif masthead + motto, nothing else | matches |
+| Match Centre as one lit royal-blue plate | matches, and truthful |
+| Four panels: icon, cyan subtitle, count | matches |
+| Completion bar under the header | matches |
+| Block score closing the column | matches |
+| Points as a plain value, check circle at row end | matches |
 | Journal prominence | gold edge, first homeschool row |
-| Homeschool prominence | cyan edge, +5 pts chip, 44px+ |
-| Fictional score / currency | correctly absent |
+| Homeschool prominence | cyan edge, +5 pts, 44px+ |
+| Fictional score / currency / gems | correctly absent |
 
 The Match Centre states "Fixture data not connected yet" and "Real data will
 appear here after the football provider is approved." Match Readiness is
 separately labelled and reads 23% with "Journal not written yet". No invented
 opponent, result, competition or countdown appears anywhere on the board.
 
-### Two gaps found here and fixed in `3cc73aa`
+### Gaps found in comparison and fixed
 
 1. **Masthead scrim too light.** At a 0.52 centre stop the stadium seating read
    as the subject and the status row sat on bright blue plastic. Raised to 0.84.
 2. **Match Centre still crushed.** It was cut to a 56px strip with its third
-   line hidden to save height the board no longer needs — 123px sit clear below
-   the panels. Cap raised to 104px and the explanatory line restored.
+   line hidden to save height the board no longer needs. Cap raised and the
+   explanatory line restored.
+3. **The board still read as a compressed technical layout** rather than the
+   reference: no nav icons, a square chip for a crest, a tinted rather than
+   filled active state, an off-centre masthead with the status row crowding the
+   wordmark, flat panels, and the state marker at the wrong end of the row.
+   Rebuilt in `b19cbe0` and `677cfed`.
 
-## Build health at `3cc73aa`
+The motto is fixed brand copy. It states no number and tracks no state, so
+unlike every other line on the board it cannot go stale or contradict the
+server.
+
+## Build health at `677cfed`
 
 | Check | Result |
 | --- | --- |
-| `npm test` | **156 passed** |
+| `npm test` | **157 passed** |
 | `npx tsc --noEmit` | clean |
 | `npm run build` (placeholder env) | 5/5 static pages |
 | Protected files | all 20 hash-identical to the baseline |
