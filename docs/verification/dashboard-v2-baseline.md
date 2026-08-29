@@ -249,14 +249,25 @@ so there is nothing to roll back outside Git and the Netlify deploy pointer.
    grep -rE "SUPABASE_SERVICE_ROLE_KEY|PARENT_OVERRIDE_PIN|NOTION_TOKEN|FOOTBALL_DATA" .next/static
    ```
 
-4. **The repo is not `netlify link`ed.** `netlify status` warns about this. All
+4. **Deploy Preview environment — corrected 29 Aug 2026.** This baseline was
+   written expecting previews to lack `NOTION_TOKEN`. That is not the case: all
+   five server-only variables are scoped to the `deploy-preview` context, and
+   the preview at commit `55bc199` answered with `notionConfigured: true`,
+   `serviceRoleConfigured: true` and 13 real habits. See
+   `dashboard-v2-preview.md`.
+
+5. **Branch pushes do not build.** The site's `allowed_branches` is `["main"]`,
+   so a Deploy Preview requires a pull request. PR #2 is a draft opened solely
+   for that purpose.
+
+6. **The repo is not `netlify link`ed.** `netlify status` warns about this. All
    Netlify reads in this task used `netlify api` with an explicit `site_id`, which
    works without linking. Linking is not required and was not performed.
 
-5. **`npm audit` reports advisories** in the existing dependency tree. Untouched —
+7. **`npm audit` reports advisories** in the existing dependency tree. Untouched —
    dependency remediation is outside this plan's scope.
 
-6. **Task 5 panel scope is resolved.** The four-column grid remains Morning Habits,
+8. **Task 5 panel scope is resolved.** The four-column grid remains Morning Habits,
    Today's Programme, Work + Week and Stretch Wallet. Today's Programme is one clean
    outer panel containing Homeschool first, Afternoon / Evening second, and
    Conditional third when applicable. Weekends omit only Homeschool. Compact rows
