@@ -827,7 +827,7 @@ export default function AnsarPage() {
    needs the height more than this strip needs its margins. A parent's link
    list, not part of the day's work. */
 @media (min-width:1440px) and (max-height:900px){
-  .ab-src{padding:5px 0 6px}
+  .ab-src{padding:4px 0 3px}
 }
 .ab-src > *{opacity:0.45;transition:opacity 180ms ease,color 180ms ease}
 .ab-src a{color:#565f70;text-decoration:none}
