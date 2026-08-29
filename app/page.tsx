@@ -16,6 +16,9 @@ import { habitsOnDay, scoringHabits, isPrerequisite } from "./lib/days";
 // Mirrored byte-for-byte with family-dashboard/app/lib/streak.ts — see the
 // header there, and scripts/check-scoring-sync.sh which guards the pair.
 import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
+import HabitPanel from "./components/dashboard/HabitPanel";
+import { HABIT_ICONS, DEFAULT_ICON } from "./dashboard/icons";
+import type { DashboardHabit } from "./dashboard/types";
 // The squad week, Mon–Fri. This file used to declare its own copy beside the
 // /55 note below; lib/goldenBoot.ts asked for the collapse the moment page.tsx
 // was next edited, and the Golden Boot cell is that edit. Nothing server-only
@@ -68,15 +71,11 @@ const CYAN = "var(--cyan)";
 /* ── Habits ────────────────────────────────────────────────────────────────
    The list itself is Notion's. Icons are not: Notion's Habit Blocks source has
    no icon property, and an emoji is presentation, not configuration. A habit
-   added in Notion without an entry here simply gets the default tick. */
-const HABIT_ICONS: Record<string, string> = {
-  feet_floor: "🌅", fajr: "🕌", bed_dressed: "🛏️", movement: "⚽",
-  breakfast: "🍳", quran: "📖", goals: "✍️", homeschool_session: "📚",
-  readtheory: "📘", khan: "📐", journal: "📓", btn_cornell: "📰",
-  all_namaz: "🕌", room_tidy: "🧹", shower: "🚿", teeth: "🪥",
-  reading: "🌙", soccer_training: "⚽",
-};
-const DEFAULT_ICON = "✅";
+   added in Notion without an entry here simply gets the default tick.
+
+   The map itself moved to app/dashboard/icons.ts so the board and the Dashboard
+   V2 rows cannot drift onto two different emoji for the same habit. It is
+   imported above; habitButton and HabitPanel read the same copy. */
 
 const BLOCKS = [
   { id: "pre_homeschool",    label: "🌅 Morning Habits",      subtitle: "6:30–8:30am · all = +2 pts", color: "#ffa500" },
@@ -1302,6 +1301,18 @@ export default function AnsarPage() {
   };
 
   const morning = BLOCKS.find(b => b.id === "pre_homeschool")!;
+  /**
+   * Morning rows for HabitPanel: the gate's own habit views, plus the two facts
+   * a row renders that /api/tick does not carry — the Notion point value and
+   * whether a parent override stands behind the completion. Both are read from
+   * the same `pointsById` and `overriddenIds` the rest of this file uses, so
+   * the panel cannot disagree with the board about either.
+   */
+  const morningRows: DashboardHabit[] = inBlock("pre_homeschool").map(h => ({
+    ...h,
+    points: pointsById[h.id] ?? 0,
+    overridden: overriddenIds.has(h.id),
+  }));
   const school = BLOCKS.find(b => b.id === "homeschool")!;
   const evening = BLOCKS.find(b => b.id === "afternoon_evening")!;
   const conditional = BLOCKS.find(b => b.id === "conditional")!;
@@ -1525,7 +1536,25 @@ export default function AnsarPage() {
       <div className="ab-board">
 
         {/* 1 — Morning Habits */}
-        {habitColumn(morning)}
+        {/* MORNING — Dashboard V2 rows. Behaviour-preserving: the same tick,
+            beginHold, cancelHold, saving, holdId and morningFeasibility this
+            column always used, handed to a component instead of a closure.
+            Afternoon/Evening below still renders through habitColumn until
+            Task 6. */}
+        <HabitPanel
+          title={morning.label}
+          subtitle={morning.subtitle}
+          accent={morning.color}
+          habits={morningRows}
+          doneCount={morningRows.filter(h => h.state === "DONE").length}
+          blockPoints={dayScore.blocks.pre_homeschool ?? 0}
+          savingId={saving}
+          holdId={holdId}
+          feasibility={morningFeasibility}
+          onTick={tick}
+          onHoldStart={beginHold}
+          onHoldCancel={cancelHold}
+        />
 
         {/* 2 — Afternoon / Evening */}
         {habitColumn(evening)}

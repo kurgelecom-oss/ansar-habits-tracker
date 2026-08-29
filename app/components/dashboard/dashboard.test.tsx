@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import ClubHeader from "./ClubHeader";
 import ClubNavigation from "./ClubNavigation";
+import HabitPanel from "./HabitPanel";
+import HabitRow from "./HabitRow";
 import MatchCentrePlaceholder from "./MatchCentrePlaceholder";
 import DashboardShell from "./DashboardShell";
 import Panel from "./Panel";
 import { weekdayFixture, weekendFixture } from "../../dashboard/fixtures";
+import type { DashboardHabit } from "../../dashboard/types";
 import { deriveMatchReadiness, groupHabitsByBlock } from "../../dashboard/model";
 
 const FUTURE_ITEMS = ["Habits", "Quests", "Team", "Table", "History", "Settings"];
@@ -301,5 +304,207 @@ describe("vertical budget before the panels", () => {
     const total = px("clubNav", "height") + px("clubHeader", "height")
       + px("matchCentre", "max-height") + gap * 2;
     expect(total).toBeLessThanOrEqual(234);
+  });
+});
+
+/* ── Task 5: habit rows and the Morning panel ───────────────────────────────*/
+
+function row(overrides: Partial<DashboardHabit> & Pick<DashboardHabit, "id" | "name">): DashboardHabit {
+  return {
+    block: "pre_homeschool", order: 1, points: 0, pointType: "block",
+    state: "LIVE", label: "", message: null, reason: null,
+    window: null, dwellSeconds: null, overridden: false,
+    ...overrides,
+  };
+}
+
+const noop = () => {};
+const rowHandlers = { onTick: noop, onHoldStart: noop, onHoldCancel: noop };
+
+describe("HabitRow", () => {
+  it("renders the five server-decided states in one vocabulary", () => {
+    render(
+      <>
+        <HabitRow habit={row({ id: "live", name: "Live habit" })} accent="var(--cyan)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "locked", name: "Locked habit", state: "LOCKED", label: "Opens 1:30pm" })} accent="var(--cyan)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "missed", name: "Missed habit", state: "MISSED", label: "Missed" })} accent="var(--cyan)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "done", name: "Done habit", state: "DONE", label: "Done" })} accent="var(--cyan)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "over", name: "Override habit", state: "DONE", overridden: true })} accent="var(--cyan)" {...rowHandlers} />
+      </>
+    );
+    expect(screen.getByRole("button", { name: "Live habit" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Locked habit" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Opens 1:30pm")).toBeVisible();
+    expect(screen.getByText("Missed")).toBeVisible();
+    expect(screen.getByText("Parent override")).toBeVisible();
+  });
+
+  /**
+   * The single most important line in this file. LOCKED and MISSED must NOT be
+   * HTML-disabled: a disabled button fires no pointer events, and the parent's
+   * two-second hold is the only route to an override. Disabling the refused
+   * rows would silently remove the override door from the whole board.
+   */
+  it("leaves refused rows pointer-reachable so the parent hold still works", () => {
+    const holds: string[] = [];
+    render(
+      <>
+        <HabitRow habit={row({ id: "locked", name: "Locked habit", state: "LOCKED" })} accent="var(--cyan)"
+          onTick={noop} onHoldStart={h => holds.push(h.id)} onHoldCancel={noop} />
+        <HabitRow habit={row({ id: "missed", name: "Missed habit", state: "MISSED" })} accent="var(--cyan)"
+          onTick={noop} onHoldStart={h => holds.push(h.id)} onHoldCancel={noop} />
+      </>
+    );
+    for (const name of ["Locked habit", "Missed habit"]) {
+      const button = screen.getByRole("button", { name });
+      expect(button).toBeEnabled();
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      fireEvent.pointerDown(button);
+    }
+    expect(holds).toEqual(["locked", "missed"]);
+  });
+
+  it("forwards a tick with the habit's id and name", () => {
+    const ticks: [string, string][] = [];
+    render(<HabitRow habit={row({ id: "quran", name: "Qur'an recitation - 20 min" })} accent="var(--cyan)"
+      onTick={(id, name) => ticks.push([id, name])} onHoldStart={noop} onHoldCancel={noop} />);
+    fireEvent.click(screen.getByRole("button", { name: "Qur'an recitation - 20 min" }));
+    expect(ticks).toEqual([["quran", "Qur'an recitation - 20 min"]]);
+  });
+
+  it("cancels the hold on release, leave and cancel alike", () => {
+    let cancels = 0;
+    const habit = row({ id: "locked", name: "Locked habit", state: "LOCKED" });
+    render(<HabitRow habit={habit} accent="var(--cyan)"
+      onTick={noop} onHoldStart={noop} onHoldCancel={() => { cancels += 1; }} />);
+    const button = screen.getByRole("button", { name: "Locked habit" });
+    fireEvent.pointerUp(button);
+    fireEvent.pointerLeave(button);
+    fireEvent.pointerCancel(button);
+    expect(cancels).toBe(3);
+  });
+
+  /** A long-press must not raise the browser's own context menu over the ring. */
+  it("suppresses the native context menu", () => {
+    render(<HabitRow habit={row({ id: "locked", name: "Locked habit", state: "LOCKED" })} accent="var(--cyan)" {...rowHandlers} />);
+    const event = createEvent.contextMenu(screen.getByRole("button", { name: "Locked habit" }));
+    fireEvent(screen.getByRole("button", { name: "Locked habit" }), event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  /**
+   * Spec §5: an override must never look identical to an earned completion.
+   * The audit marker is visible, and the accessible name says so too — a
+   * screen-reader user must not be told a habit was simply done.
+   */
+  it("marks an override in both the visible row and its accessible name", () => {
+    render(<HabitRow habit={row({ id: "feet_floor", name: "Feet on floor", state: "DONE", overridden: true })}
+      accent="var(--cyan)" {...rowHandlers} />);
+    expect(screen.getByRole("button", { name: "Feet on floor — restored by parent override" })).toBeInTheDocument();
+    expect(screen.getByText("Parent override")).toBeVisible();
+  });
+
+  it("gives an earned completion no override marker", () => {
+    render(<HabitRow habit={row({ id: "quran", name: "Qur'an", state: "DONE" })} accent="var(--cyan)" {...rowHandlers} />);
+    expect(screen.queryByText("Parent override")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qur'an" })).toBeInTheDocument();
+  });
+
+  /** The one case that IS HTML-disabled: an in-flight write must not double-fire. */
+  it("disables only the row currently being saved", () => {
+    render(
+      <>
+        <HabitRow habit={row({ id: "a", name: "Saving habit" })} accent="var(--cyan)" saving {...rowHandlers} />
+        <HabitRow habit={row({ id: "b", name: "Idle habit" })} accent="var(--cyan)" {...rowHandlers} />
+      </>
+    );
+    expect(screen.getByRole("button", { name: "Saving habit" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Idle habit" })).toBeEnabled();
+  });
+
+  it("shows a point chip only when the habit is worth points", () => {
+    const { unmount } = render(<HabitRow habit={row({ id: "a", name: "Scored", points: 5 })} accent="var(--cyan)" {...rowHandlers} />);
+    expect(screen.getByText("+5 pts")).toBeVisible();
+    unmount();
+    render(<HabitRow habit={row({ id: "b", name: "Unscored", points: 0 })} accent="var(--cyan)" {...rowHandlers} />);
+    expect(screen.queryByText(/^\+\d+ pts?$/)).not.toBeInTheDocument();
+  });
+
+  it("uses the singular for a one-point habit", () => {
+    render(<HabitRow habit={row({ id: "a", name: "One", points: 1 })} accent="var(--cyan)" {...rowHandlers} />);
+    expect(screen.getByText("+1 pt")).toBeVisible();
+  });
+
+  it("shows the hold ring only on the row being held", () => {
+    render(
+      <>
+        <HabitRow habit={row({ id: "a", name: "Held", state: "LOCKED" })} accent="var(--cyan)" holding {...rowHandlers} />
+        <HabitRow habit={row({ id: "b", name: "Untouched", state: "LOCKED" })} accent="var(--cyan)" {...rowHandlers} />
+      </>
+    );
+    expect(within(screen.getByRole("button", { name: "Held" })).getByTestId("hold-ring")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: "Untouched" })).queryByTestId("hold-ring")).not.toBeInTheDocument();
+  });
+});
+
+describe("HabitPanel", () => {
+  const morning = groupHabitsByBlock(weekdayFixture.gate.habits).pre_homeschool;
+
+  it("renders every habit in the order it was given", () => {
+    render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
+      doneCount={6} blockPoints={2} {...rowHandlers} />);
+    const names = screen.getAllByRole("button").map(b => b.textContent);
+    expect(names).toHaveLength(7);
+    expect(names[0]).toContain("Bed made + dressed");
+    expect(names[6]).toContain("Daily goals written");
+  });
+
+  it("summarises completion and block points", () => {
+    render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
+      doneCount={6} blockPoints={2} {...rowHandlers} />);
+    expect(screen.getByText("6/7")).toBeVisible();
+    expect(screen.getByText("2 pts")).toBeVisible();
+  });
+
+  /** habitColumn() returned null for an empty block; that behaviour is kept. */
+  it("renders nothing for a block with no applicable habits", () => {
+    const { container } = render(<HabitPanel title="Morning Habits" accent="var(--cyan)" habits={[]}
+      doneCount={0} blockPoints={0} {...rowHandlers} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("renders the feasibility warning above the rows, as a live status", () => {
+    render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
+      doneCount={6} blockPoints={2}
+      feasibility={{ level: "red", text: "⏳ 12m left to finish morning — keep tapping", latestSafeNextTick: 492, remaining: 1 }}
+      {...rowHandlers} />);
+    const banner = screen.getByTestId("morning-feasibility");
+    expect(banner).toHaveAttribute("role", "status");
+    expect(banner).toHaveAttribute("aria-live", "polite");
+    expect(banner).toHaveAttribute("data-level", "red");
+    expect(banner).toHaveAttribute("data-latest-safe-next-tick", "492");
+    expect(banner).toHaveAttribute("data-remaining", "1");
+    expect(banner).toHaveTextContent("12m left to finish morning");
+  });
+
+  it("omits the feasibility banner when there is nothing to warn about", () => {
+    render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
+      doneCount={6} blockPoints={2} {...rowHandlers} />);
+    expect(screen.queryByTestId("morning-feasibility")).not.toBeInTheDocument();
+  });
+
+  it("passes hold and tick handlers through to each row", () => {
+    const ticks: string[] = [];
+    render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
+      doneCount={6} blockPoints={2} onTick={id => ticks.push(id)} onHoldStart={noop} onHoldCancel={noop} />);
+    fireEvent.click(screen.getByRole("button", { name: /Bed made/ }));
+    expect(ticks).toEqual(["bed_dressed"]);
+  });
+
+  it("marks the overridden row and no other", () => {
+    render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
+      doneCount={6} blockPoints={2} {...rowHandlers} />);
+    expect(screen.getAllByText("Parent override")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /Feet on floor.*restored by parent override/ })).toBeInTheDocument();
   });
 });
