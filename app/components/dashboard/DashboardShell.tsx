@@ -9,10 +9,12 @@ import styles from "./dashboard.module.css";
  * an unnamed div — the shared TopNav sits outside it, in the root layout, and
  * the two must not read as one region.
  */
-export default function DashboardShell({ children }: { children: React.ReactNode }) {
+export default function DashboardShell(
+  { children, status = null }: { children: React.ReactNode; status?: React.ReactNode },
+) {
   return (
     <main className={styles.shell} aria-label="ANSAR FC Dashboard">
-      <ClubNavigation />
+      <ClubNavigation status={status} />
       {children}
     </main>
   );

@@ -1,3 +1,4 @@
+import type React from "react";
 import styles from "./dashboard.module.css";
 
 /**
@@ -26,7 +27,7 @@ const ITEMS: { label: string; icon: string; href?: string }[] = [
   { label: "Settings", icon: "\u2699\uFE0F" },
 ];
 
-export default function ClubNavigation() {
+export default function ClubNavigation({ status = null }: { status?: React.ReactNode }) {
   return (
     <nav className={styles.clubNav} aria-label="ANSAR FC sections">
       {/* Crest only. The wordmark lives in ClubHeader, which is the dominant
@@ -65,6 +66,12 @@ export default function ClubNavigation() {
           </li>
         ))}
       </ul>
+
+      {/* The live cluster the reference puts at this end of the bar: today,
+          streak, both clocks and the connection state. A slot rather than
+          props, so the nav stays a presentational bar and page.tsx keeps
+          owning every value inside it. */}
+      {status ? <div className={styles.clubNavStatus}>{status}</div> : null}
     </nav>
   );
 }

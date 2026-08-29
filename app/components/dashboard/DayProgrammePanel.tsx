@@ -62,6 +62,7 @@ export default function DayProgrammePanel({
   return (
     <Panel
       title="Today's Programme"
+      icon="🗓️"
       subtitle="Homeschool · Afternoon / Evening · Conditional"
       accent="var(--ansar-success)"
       summary={

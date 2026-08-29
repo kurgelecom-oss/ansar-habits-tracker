@@ -21,6 +21,7 @@ export type MorningFeasibility = {
 
 type HabitPanelProps = {
   title: string;
+  icon?: string;
   subtitle?: string;
   accent: string;
   habits: DashboardHabit[];
@@ -40,7 +41,7 @@ type HabitPanelProps = {
 };
 
 export default function HabitPanel({
-  title, subtitle, accent, habits, doneCount, blockPoints,
+  title, icon, subtitle, accent, habits, doneCount, blockPoints,
   savingId = null, holdId = null, feasibility = null,
   onTick, onHoldStart, onHoldCancel,
 }: HabitPanelProps) {
@@ -51,6 +52,7 @@ export default function HabitPanel({
   return (
     <Panel
       title={title}
+      icon={icon}
       subtitle={subtitle}
       accent={accent}
       summary={
@@ -62,7 +64,7 @@ export default function HabitPanel({
       progress={{ done: doneCount, total: habits.length }}
       footer={
         <span className={styles.panelScore}>
-          {title} Score: <strong>{blockPoints > 0 ? `+${blockPoints}` : blockPoints} pts</strong>
+          Score: <strong>{blockPoints > 0 ? `+${blockPoints}` : blockPoints} pts</strong>
         </span>
       }
     >

@@ -17,6 +17,7 @@ import { habitsOnDay, scoringHabits } from "./lib/days";
 // header there, and scripts/check-scoring-sync.sh which guards the pair.
 import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
 import ClubHeader from "./components/dashboard/ClubHeader";
+import ClubStatus from "./components/dashboard/ClubStatus";
 import DashboardShell from "./components/dashboard/DashboardShell";
 import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
 import MatchCentrePlaceholder from "./components/dashboard/MatchCentrePlaceholder";
@@ -83,10 +84,10 @@ const CYAN = "var(--cyan)";
    up, so there is exactly one copy and nothing here to drift from it. */
 
 const BLOCKS = [
-  { id: "pre_homeschool",    label: "🌅 Morning Habits",      subtitle: "6:30–8:30am · all = +2 pts", color: "#ffa500" },
-  { id: "homeschool",        label: "📚 Homeschool",           subtitle: "8:30am–1:30pm · +5 pts",     color: CYAN },
-  { id: "afternoon_evening", label: "🌆 Afternoon / Evening",  subtitle: "1:30–8:30pm",                color: "#00ff88" },
-  { id: "conditional",       label: "⚽ Conditional",          subtitle: "Mon & Wed · 3:00–8:00pm",    color: "#a78bfa" },
+  { id: "pre_homeschool",    label: "Morning Habits", icon: "🌅",      subtitle: "6:30–8:30am · all = +2 pts", color: "#ffa500" },
+  { id: "homeschool",        label: "Homeschool", icon: "📚",        subtitle: "8:30am–1:30pm · +5 pts",     color: CYAN },
+  { id: "afternoon_evening", label: "Afternoon / Evening", icon: "🌆", subtitle: "1:30–8:30pm",               color: "#00ff88" },
+  { id: "conditional",       label: "Conditional", icon: "⚽",        subtitle: "Mon & Wed · 3:00–8:00pm",    color: "#a78bfa" },
 ];
 
 /* ── Stretch Wallet ────────────────────────────────────────────────────────
@@ -1046,16 +1047,20 @@ export default function AnsarPage() {
     }}>
       <style>{BOARD_CSS}</style>
 
-      <DashboardShell>
+      <DashboardShell
+        status={
+          <ClubStatus
+            serverTime={gate?.serverTime ?? null}
+            deviceTime={mounted ? time : ""}
+            online={online}
+            pointsActive={pointsActive}
+            todayPercent={gate ? overallPct : null}
+            streak={streak}
+          />
+        }
+      >
 
-      <ClubHeader
-        serverTime={gate?.serverTime ?? null}
-        deviceTime={mounted ? time : ""}
-        online={online}
-        pointsActive={pointsActive}
-        todayPercent={gate ? overallPct : null}
-        streak={streak}
-      />
+      <ClubHeader />
 
       {/* The scoreboard strip is replaced by the Match Centre frame. Its
           cells did not disappear: Week total, the tier badge and Golden Boot
@@ -1105,6 +1110,7 @@ export default function AnsarPage() {
             column always used, handed to a component instead of a closure. */}
         <HabitPanel
           title={morning.label}
+          icon={morning.icon}
           subtitle={morning.subtitle}
           accent={morning.color}
           habits={morningRows}

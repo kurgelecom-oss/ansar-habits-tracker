@@ -100,6 +100,15 @@
   white-space: nowrap;
 }
 
+.clubNavStatus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  padding-left: 14px;
+  flex-shrink: 0;
+}
+
 .clubNavList {
   display: flex;
   align-items: center;
@@ -182,7 +191,15 @@
 
 .panelHeadText { min-width: 0; }
 
+.panelIcon {
+  margin-right: 7px;
+  font-size: 16px;
+  line-height: 1;
+}
+
 .panelTitle {
+  display: flex;
+  align-items: center;
   font-size: 18px;
   font-weight: 700;
   line-height: 1.2;
@@ -261,11 +278,9 @@
 /* ── Club header ────────────────────────────────────────────────────────────
    Budget: 40px against a 48px cap. */
 .clubHeader {
-  /* The wordmark is centred on the BAND, not on the space left over beside the
-     status row — so it is positioned against the header itself and the status
-     floats over the right-hand end. Anything else slides the club name off
-     centre by however wide the clock happens to be that second. */
-  position: relative;
+  /* Identity only. With the status cluster gone to the nav there is nothing
+     else on this band, so the wordmark centres on the band itself and cannot
+     be pushed off by however wide the clock is that second. */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -318,11 +333,9 @@
   white-space: nowrap;
 }
 
+/* Lives in the navigation bar now, not the masthead, so it is an ordinary flex
+   row again rather than something positioned out of the identity's way. */
 .clubStatus {
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1126,9 +1139,9 @@
   /* The masthead keeps the reference's shape at this height — centred wordmark
      with the motto under it — at the smallest type that still reads as the
      dominant identity on the board. */
-  .clubHeader { height: 68px; }
-  .clubWordmark { font-size: 26px; }
-  .clubMotto { font-size: 11px; }
+  .clubHeader { height: 84px; }
+  .clubWordmark { font-size: 32px; }
+  .clubMotto { font-size: 13px; }
 
   /* 44px exactly: the floor, not a reduction. Rows are 52px on a tall window
      because the reference is roomier, and this is the one viewport where the

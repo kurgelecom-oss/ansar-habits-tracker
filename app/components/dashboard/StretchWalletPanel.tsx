@@ -80,6 +80,7 @@ export default function StretchWalletPanel({
   return (
     <Panel
       title="Stretch Wallet"
+      icon="🎮"
       subtitle={`Banks all week · converts Sat & Sun · ${capMin} min/day cap`}
       accent="var(--ansar-wallet)"
       className={styles.walletPanel}

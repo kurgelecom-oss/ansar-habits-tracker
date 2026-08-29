@@ -13,6 +13,12 @@ import styles from "./dashboard.module.css";
  */
 type PanelProps = {
   id?: string; title: string; subtitle?: string; accent: string;
+  /**
+   * A decorative glyph before the title. aria-hidden and separate from `title`
+   * on purpose: `title` is the panel's accessible name, and an emoji inside it
+   * gets read aloud as its unicode description.
+   */
+  icon?: string;
   summary?: React.ReactNode; className?: string; children: React.ReactNode;
   /**
    * Optional completion bar under the header. Both numbers come from the same
@@ -26,7 +32,7 @@ type PanelProps = {
 
 export default function Panel({
   id, title, subtitle, accent, summary, className, children,
-  progress = null, footer = null,
+  icon, progress = null, footer = null,
 }: PanelProps) {
   const pct = progress && progress.total > 0
     ? Math.round((progress.done / progress.total) * 100)
@@ -43,7 +49,10 @@ export default function Panel({
 
       <header className={styles.panelHead}>
         <div className={styles.panelHeadText}>
-          <h2 className={styles.panelTitle}>{title}</h2>
+          <h2 className={styles.panelTitle}>
+            {icon ? <span aria-hidden="true" className={styles.panelIcon}>{icon}</span> : null}
+            {title}
+          </h2>
           {subtitle ? <p className={styles.panelSubtitle}>{subtitle}</p> : null}
         </div>
         {summary ? <div className={styles.panelSummary}>{summary}</div> : null}

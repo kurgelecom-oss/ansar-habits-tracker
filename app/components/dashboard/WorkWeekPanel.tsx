@@ -35,6 +35,7 @@ export default function WorkWeekPanel({
   return (
     <Panel
       title="Work + Week"
+      icon="📝"
       subtitle="Log the day's work · Mon–Fri squad total"
       accent="var(--ansar-gold)"
     >
