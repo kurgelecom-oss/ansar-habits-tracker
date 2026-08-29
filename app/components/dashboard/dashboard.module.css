@@ -11,7 +11,11 @@
   padding: var(--ansar-gap);
   display: flex;
   flex-direction: column;
-  gap: var(--ansar-gap);
+  /* 10px, not the 12px grid token, and written as a literal so the vertical
+     budget below can be read straight out of this file. The stack above the
+     panels is measured in whole pixels against a hard 234px ceiling; two 12px
+     gaps would spend 24 of them on air. */
+  gap: 10px;
   color: #ffffff;
 }
 
@@ -164,4 +168,191 @@
   .shell *, .shell *::before, .shell *::after {
     animation-duration:.01ms !important; transition-duration:.01ms !important;
   }
+}
+
+/* ── Club header ────────────────────────────────────────────────────────────
+   Budget: 40px against a 48px cap. */
+.clubHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 40px;
+  padding: 0 14px;
+  flex-shrink: 0;
+  background: var(--ansar-card);
+  border: 1px solid var(--ansar-border);
+  /* The gold identity rides on this rule rather than on a span inside the
+     wordmark, so the wordmark stays one text node. */
+  border-bottom: 2px solid var(--ansar-gold);
+  border-radius: var(--ansar-radius-panel);
+}
+
+.clubWordmark {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.clubStatus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--ansar-muted);
+}
+
+.softLaunch {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ansar-warning);
+  border: 1px solid color-mix(in srgb, var(--ansar-warning) 30%, transparent);
+  background: color-mix(in srgb, var(--ansar-warning) 10%, transparent);
+}
+
+/* The authoritative clock: brighter, heavier, and first. */
+.serverClock {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--ansar-gold-bright);
+  white-space: nowrap;
+}
+
+/* Display only. Quieter on purpose — it must never read as the deciding clock. */
+.deviceClock {
+  flex-shrink: 0;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+}
+.connectionDotLive,
+.connectionDotOffline {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.connectionDotLive { background: var(--ansar-success); }
+.connectionDotOffline { background: var(--ansar-danger); }
+.connectionTextLive { color: var(--ansar-success); }
+.connectionTextOffline { color: var(--ansar-danger); }
+
+/* ── Match Centre frame ─────────────────────────────────────────────────────
+   Budget: 128px against a 132px cap. Spans all four columns (spec §12.1).
+
+   `max-height` rather than `height`: this frame gets shorter, never taller,
+   when a real provider replaces the placeholder copy. */
+.matchCentre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  max-height: 128px;
+  padding: 12px 18px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, var(--ansar-navy), var(--ansar-card));
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 28%, transparent);
+  border-radius: var(--ansar-radius-panel);
+  overflow: hidden;
+}
+
+/* The frame a real fixture will eventually occupy. Readiness is deliberately
+   NOT inside it. */
+.matchFixture {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.matchCrest {
+  height: 72px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.matchCopy { min-width: 0; }
+
+.matchTitle {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ansar-gold-bright);
+}
+
+/* Calm, not an error. A missing provider is not a fault the child caused, and
+   it has no bearing on whether today's habits can be ticked (spec §8.2). */
+.matchUnavailable {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.matchNote {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ansar-muted);
+}
+
+/* Visually related to the fixture, semantically separate — its own boxed
+   region with its own label, off to the side rather than between two teams. */
+.matchReadiness {
+  flex-shrink: 0;
+  min-width: 168px;
+  padding: 8px 12px;
+  border-left: 1px solid color-mix(in srgb, var(--ansar-gold) 16%, transparent);
+}
+
+.readinessLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ansar-muted);
+}
+
+/* Sized well below the 28–40px the spec reserves for scoreboard figures, so it
+   cannot be mistaken for one. */
+.readinessValue {
+  margin-top: 2px;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--cyan);
+}
+
+.readinessTrack {
+  margin-top: 6px;
+  height: 4px;
+  width: 100%;
+  border-radius: 2px;
+  background: var(--ansar-row);
+  overflow: hidden;
+}
+
+.readinessFill {
+  height: 100%;
+  background: var(--cyan);
+  transition: width 0.3s ease;
+}
+
+.readinessNote {
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--ansar-muted);
 }
