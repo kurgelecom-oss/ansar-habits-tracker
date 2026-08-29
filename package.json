@@ -6,17 +6,24 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest run app/components/dashboard/dashboard.test.tsx"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@supabase/supabase-js": "^2.45.0",
     "next": "^15.0.0",
-    "@supabase/supabase-js": "^2.45.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.8.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^20.17.6",
     "@types/react": "^18.3.3",
-    "@types/node": "^20.17.6"
+    "jsdom": "^26.1.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.7"
   }
 }
