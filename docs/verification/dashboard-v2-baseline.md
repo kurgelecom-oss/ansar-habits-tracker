@@ -241,8 +241,10 @@ so there is nothing to roll back outside Git and the Netlify deploy pointer.
    `~/ansar-habits-tracker`. With `FAMILY_DASHBOARD` set, both mirrored modules are
    byte-identical and the script reports IN SYNC.
 
-3. **`rg` is not usable on this machine.** The name resolves to a shim that prints
-   ripgrep's help instead of searching. Task 9 Step 5's bundle scan must use `grep`:
+3. **The Task 1 shell invocation did not execute `rg` correctly.** Independent
+   review confirmed ripgrep works at its absolute path and reports version 15.2.0.
+   Later tasks should use `command rg`; if Claude's shell wrapper still interferes,
+   use the recorded `grep` fallback:
    ```bash
    grep -rE "SUPABASE_SERVICE_ROLE_KEY|PARENT_OVERRIDE_PIN|NOTION_TOKEN|FOOTBALL_DATA" .next/static
    ```
@@ -254,10 +256,8 @@ so there is nothing to roll back outside Git and the Netlify deploy pointer.
 5. **`npm audit` reports advisories** in the existing dependency tree. Untouched —
    dependency remediation is outside this plan's scope.
 
-6. **Open scope question for Task 5.** The spec's four-panel grid names Morning
-   Habits, Homeschool, Work + Week and Stretch Wallet, but the live configuration has
-   four blocks: `pre_homeschool`, `homeschool`, `afternoon_evening` and `conditional`.
-   Plan Task 5 says "replace only Morning/Evening presentation", implying one
-   `HabitPanel` renders both, yet the grid has no dedicated slot for the seven
-   `afternoon_evening` habits or `soccer_training`. This must be resolved before
-   Task 5 implementation; it does not block Tasks 2–4.
+6. **Task 5 panel scope is resolved.** The four-column grid remains Morning Habits,
+   Today's Programme, Work + Week and Stretch Wallet. Today's Programme is one clean
+   outer panel containing Homeschool first, Afternoon / Evening second, and
+   Conditional third when applicable. Weekends omit only Homeschool. Compact rows
+   and subsection dividers replace nested large cards; no configured habit is hidden.

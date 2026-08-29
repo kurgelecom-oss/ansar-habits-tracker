@@ -106,10 +106,10 @@ The primary desktop composition is:
 │ Real Madrid | factual fixture state / score | opponent | competition │
 │                         Match Readiness                               │
 ├──────────────────┬──────────────────┬──────────────────┬────────────────┤
-│ Morning Habits   │ Homeschool       │ Work + Week      │ Stretch Wallet │
-│ real habits      │ journal          │ Log Work         │ balance        │
-│ real gates       │ school session   │ weekly form      │ stretch items  │
-│ overrides        │ evidence state   │ tier/Golden Boot │ redemption     │
+│ Morning Habits   │ Today's Programme│ Work + Week      │ Stretch Wallet │
+│ real habits      │ Homeschool first │ Log Work         │ balance        │
+│ real gates       │ Afternoon/Evening│ weekly form      │ stretch items  │
+│ overrides        │ Conditional      │ tier/Golden Boot │ redemption     │
 └──────────────────┴──────────────────┴──────────────────┴────────────────┘
 ```
 
@@ -317,7 +317,23 @@ State design:
 
 The morning feasibility warning is a compact banner, not a competing full card.
 
-### 10.3 Homeschool
+### 10.3 Today's Programme
+
+The second column is one clean outer panel containing every applicable non-morning
+habit. It uses compact rows and subsection dividers rather than nested large cards,
+so the full programme remains legible at the 1440 × 820 target.
+
+Required subsection ordering:
+
+1. Homeschool — weekdays only.
+2. Afternoon / Evening — every applicable day.
+3. Conditional — only when applicable, including soccer training.
+
+On weekends, omit only the Homeschool subsection. Afternoon / Evening remains
+visible, and Conditional remains visible when applicable. No configured habit may
+disappear merely to preserve the four-column layout.
+
+#### Homeschool subsection
 
 Required ordering:
 
@@ -443,7 +459,7 @@ Disallowed:
 
 ### 12.3 Mobile
 
-- Panels stack in operational order: Match Centre, Morning, Homeschool, Work, Wallet.
+- Panels stack in operational order: Match Centre, Morning, Today's Programme, Work, Wallet.
 - Navigation becomes a compact menu.
 - Habit controls retain comfortable touch targets.
 - Parent override remains intentionally undiscoverable to casual taps.
@@ -475,7 +491,8 @@ app/components/dashboard/MatchReadiness.tsx
 app/components/dashboard/DashboardGrid.tsx
 app/components/dashboard/HabitPanel.tsx
 app/components/dashboard/HabitRow.tsx
-app/components/dashboard/HomeschoolPanel.tsx
+app/components/dashboard/DayProgrammePanel.tsx
+app/components/dashboard/HomeschoolSection.tsx
 app/components/dashboard/WorkWeekPanel.tsx
 app/components/dashboard/WeeklyTierProgress.tsx
 app/components/dashboard/StretchWalletPanel.tsx

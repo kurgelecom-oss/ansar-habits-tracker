@@ -39,7 +39,8 @@
 - \`app/components/dashboard/Panel.tsx\`
 - \`app/components/dashboard/HabitRow.tsx\`
 - \`app/components/dashboard/HabitPanel.tsx\`
-- \`app/components/dashboard/HomeschoolPanel.tsx\`
+- \`app/components/dashboard/DayProgrammePanel.tsx\`
+- \`app/components/dashboard/HomeschoolSection.tsx\`
 - \`app/components/dashboard/WeeklyTierProgress.tsx\`
 - \`app/components/dashboard/WorkWeekPanel.tsx\`
 - \`app/components/dashboard/StretchWalletPanel.tsx\`
@@ -311,7 +312,10 @@ type PanelProps = {
 
 - [ ] **Step 5: Add fixtures and responsive grid**
 
-Weekday includes all real habit names/states and journal before homeschool session. Weekend omits homeschool. No fixture performs network calls.
+Weekday includes all real habit names/states: journal before homeschool session,
+then all Afternoon / Evening habits, then applicable Conditional habits. Weekend
+omits only Homeschool; Afternoon / Evening remains and Conditional remains when
+applicable. No fixture performs network calls.
 
 \`\`\`css
 .grid { display:grid; grid-template-columns:1fr 1fr .84fr .96fr; gap:var(--ansar-gap); }
@@ -432,9 +436,11 @@ onContextMenu={(event) => event.preventDefault()}
 
 Do not HTML-disable LOCKED/MISSED because parent long-hold must remain reachable. Use \`aria-disabled={!isLive}\`; the existing click/server path remains authoritative.
 
-- [ ] **Step 4: Implement panel and replace only Morning/Evening presentation**
+- [ ] **Step 4: Implement reusable rows and replace only Morning presentation**
 
 Pass existing \`tick\`, \`beginHold\`, \`cancelHold\`, \`saving\`, \`holdId\`, \`overriddenIds\`, \`morningFeasibility\`, and scores. Do not alter them.
+Task 6 reuses the same row primitive for Afternoon / Evening and Conditional habits
+inside Today's Programme; do not move those habits into the Morning panel.
 
 - [ ] **Step 5: Verify protected diff and commit**
 
@@ -450,15 +456,15 @@ Expected: protected diff empty.
 
 ---
 
-### Task 6: Build journal-first Homeschool
+### Task 6: Build the complete journal-first Today's Programme
 
 **Files:**
-- Create: \`HomeschoolPanel.tsx\`
+- Create: \`DayProgrammePanel.tsx\`, \`HomeschoolSection.tsx\`
 - Modify: \`dashboard.module.css\`, \`dashboard.test.tsx\`, \`app/page.tsx\`
 
 **Interfaces:**
-- Consumes: ordered homeschool habits and standard tick/hold props.
-- Produces: journal-first presentation with truthful evidence language.
+- Consumes: ordered Homeschool, Afternoon / Evening and Conditional habits with standard tick/hold props.
+- Produces: one compact second-column programme with truthful journal evidence language and complete habit coverage.
 
 - [ ] **Step 1: Write failing ordering tests**
 
@@ -468,13 +474,22 @@ expect(items[0]).toHaveTextContent("Daily learning journal entry written");
 expect(items[1]).toHaveTextContent("Homeschool session completed");
 expect(screen.getByText("Recorded")).toBeInTheDocument();
 expect(screen.queryByText("Verified")).not.toBeInTheDocument();
+for (const id of ["btn_cornell", "shower", "all_namaz", "room_tidy", "teeth", "reading", "soccer_training"]) {
+  expect(screen.getByTestId(`programme-${id}`)).toBeInTheDocument();
+}
 \`\`\`
 
-Also assert no empty Homeschool panel on weekend fixtures.
+Also assert the weekday subsection order is Homeschool, Afternoon / Evening,
+Conditional. On weekend fixtures assert only Homeschool is absent while the other
+applicable subsections and habits remain.
 
 - [ ] **Step 2: Prove failure, implement, and replace inline school presentation**
 
-Sort by \`order\`. DONE journal copy is \`Recorded\`; overridden journal is \`Parent override\`. Do not create verified logic.
+Render one outer \`Panel\` titled \`Today's Programme\`. Within it, render compact
+rows separated by subsection dividers: Homeschool first, Afternoon / Evening
+second, Conditional third. Sort within each subsection by \`order\`. DONE journal
+copy is \`Recorded\`; overridden journal is \`Parent override\`. Do not create
+verified logic. Do not use nested full-size cards.
 
 \`\`\`bash
 npm test -- app/components/dashboard/dashboard.test.tsx
@@ -484,10 +499,11 @@ npm run build
 - [ ] **Step 3: Commit**
 
 \`\`\`bash
-git add app/components/dashboard/HomeschoolPanel.tsx \
+git add app/components/dashboard/DayProgrammePanel.tsx \
+  app/components/dashboard/HomeschoolSection.tsx \
   app/components/dashboard/dashboard.module.css \
   app/components/dashboard/dashboard.test.tsx app/page.tsx
-git commit -m "feat: add journal-first Homeschool panel"
+git commit -m "feat: add complete journal-first daily programme"
 \`\`\`
 
 ---
@@ -562,7 +578,7 @@ Render supplied server values verbatim. Do not calculate lock, redemption, cap, 
   <MatchCentrePlaceholder readiness={readiness} />
   <div className={styles.grid}>
     <HabitPanel {...morningProps} />
-    <HomeschoolPanel {...schoolProps} />
+    <DayProgrammePanel {...programmeProps} />
     <WorkWeekPanel {...workProps} />
     <StretchWalletPanel {...walletProps} />
   </div>
@@ -570,7 +586,8 @@ Render supplied server values verbatim. Do not calculate lock, redemption, cap, 
 </DashboardShell>
 \`\`\`
 
-Do not render an empty Homeschool panel on weekends.
+On weekends, omit only the Homeschool subsection. Continue rendering the Today's
+Programme panel with Afternoon / Evening and any applicable Conditional habits.
 
 - [ ] **Step 4: Remove only obsolete inline presentation**
 
@@ -631,7 +648,15 @@ Capture 1440×820, 1920×1080, 1024×900, and 390×844. At 1440×820 require: no
 - Toggle offline/online and verify recovery.
 - Confirm server clock remains authoritative.
 
-- [ ] **Step 5: Scan client bundle**
+- [ ] **Step 5: Probe anonymous-write denial without creating data**
+
+Only after explicit owner approval, use the preview's public Supabase URL and anon
+key to attempt an insert that duplicates a known existing completion key. Expected:
+RLS denial (HTTP 401/403 with a policy error). The duplicate key makes the probe
+non-creating even if policy regresses; any conflict response instead of RLS denial
+is a security failure requiring investigation. Never use a novel row or service key.
+
+- [ ] **Step 6: Scan client bundle**
 
 \`\`\`bash
 rg -n "SUPABASE_SERVICE_ROLE_KEY|PARENT_OVERRIDE_PIN|NOTION_TOKEN|FOOTBALL_DATA" .next/static
