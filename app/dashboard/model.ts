@@ -109,6 +109,14 @@ export function getTier(points: number): Tier {
  * not evidence. Only VERIFIED — which nothing in this plan produces — earns
  * full credit. NOT_REQUIRED also credits in full: on a weekend there is no
  * journal to write, and an absent obligation must not read as a failure.
+ *
+ * The result is clamped to 0..100. The weights sum to exactly 100, so anything
+ * outside that range means the inputs disagreed with themselves — more habits
+ * done than configured, or a negative count. Clamping HERE rather than at each
+ * consumer is what keeps them honest together: the Match Centre feeds this one
+ * number to the visible figure, the fill width and aria-valuenow at once, and
+ * an unbounded value would both overflow the track and announce a value
+ * outside its own aria-valuemax.
  */
 export function deriveMatchReadiness(input: ReadinessInput): MatchReadiness {
   // A zero total means no morning habits are configured today, not that none
@@ -118,10 +126,11 @@ export function deriveMatchReadiness(input: ReadinessInput): MatchReadiness {
   const journal = input.journalState === "VERIFIED" ? 1
     : input.journalState === "RECORDED" || input.journalState === "OVERRIDE" ? 0.5
     : input.journalState === "NOT_REQUIRED" ? 1 : 0;
+  const raw = Math.round(morning * 40 + Number(input.homeschoolDone) * 30
+    + journal * 20 + Math.min(input.workSubmissionCount, 1) * 10);
   return {
     label: "Match Readiness",
-    percent: Math.round(morning * 40 + Number(input.homeschoolDone) * 30
-      + journal * 20 + Math.min(input.workSubmissionCount, 1) * 10),
+    percent: Math.max(0, Math.min(100, raw)),
     journalState: input.journalState,
   };
 }

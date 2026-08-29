@@ -267,6 +267,36 @@ describe("MatchCentrePlaceholder", () => {
     expect(meter).toHaveAttribute("aria-valuemax", "100");
   });
 
+  /**
+   * The visible figure, the fill width and the announced value are one number.
+   * If inconsistent data ever pushes it out of range, all three must move
+   * together — a bar that draws 106% while announcing 106 against a max of 100
+   * is wrong in two ways at once.
+   */
+  it("keeps figure, fill and announced value identical and in range when inputs disagree", () => {
+    const overshoot = deriveMatchReadiness({
+      morningDone: 8, morningTotal: 7, homeschoolDone: true,
+      journalState: "VERIFIED", workSubmissionCount: 1,
+    });
+    render(<MatchCentrePlaceholder readiness={overshoot} />);
+    expect(screen.getByTestId("match-readiness")).toHaveTextContent("100%");
+    expect(screen.getByTestId("readiness-fill")).toHaveStyle({ width: "100%" });
+    expect(screen.getByRole("progressbar", { name: "Match Readiness" }))
+      .toHaveAttribute("aria-valuenow", "100");
+  });
+
+  it("draws and announces zero, not a negative bar, when a count arrives negative", () => {
+    const undershoot = deriveMatchReadiness({
+      morningDone: 0, morningTotal: 7, homeschoolDone: false,
+      journalState: "MISSING", workSubmissionCount: -3,
+    });
+    render(<MatchCentrePlaceholder readiness={undershoot} />);
+    expect(screen.getByTestId("match-readiness")).toHaveTextContent("0%");
+    expect(screen.getByTestId("readiness-fill")).toHaveStyle({ width: "0%" });
+    expect(screen.getByRole("progressbar", { name: "Match Readiness" }))
+      .toHaveAttribute("aria-valuenow", "0");
+  });
+
   /** Spec §8.4 and §5: readiness is learning state, never a football result. */
   it("does not describe readiness in football-result language", () => {
     const { container } = render(<MatchCentrePlaceholder readiness={readiness} />);

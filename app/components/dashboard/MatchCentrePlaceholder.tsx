@@ -58,7 +58,10 @@ export default function MatchCentrePlaceholder({ readiness }: { readiness: Match
           aria-valuemax={100}
           className={styles.readinessTrack}
         >
-          <div className={styles.readinessFill} style={{ width: `${readiness.percent}%` }} />
+          {/* Width, the figure above and aria-valuenow are all this one
+              bounded number, so they cannot disagree. */}
+          <div data-testid="readiness-fill" className={styles.readinessFill}
+            style={{ width: `${readiness.percent}%` }} />
         </div>
         <p className={styles.readinessNote}>{JOURNAL_NOTE[readiness.journalState]}</p>
       </div>

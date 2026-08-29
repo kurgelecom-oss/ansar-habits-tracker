@@ -147,6 +147,51 @@ describe("deriveMatchReadiness", () => {
     expect(of(9)).toBe(10);
   });
 
+  /**
+   * The percent is a display value bounded by its own scale: the weights sum
+   * to exactly 100, so anything outside 0..100 means the inputs disagreed with
+   * themselves. Clamping here is what keeps every consumer honest at once —
+   * the Match Centre feeds this one number to the visible figure, the fill
+   * width and aria-valuenow, and an unbounded value would overflow the track
+   * and announce a value outside its own aria-valuemax.
+   */
+  it("clamps above 100 when more habits are done than are configured", () => {
+    const result = deriveMatchReadiness({
+      morningDone: 8, morningTotal: 7, homeschoolDone: true,
+      journalState: "VERIFIED", workSubmissionCount: 1,
+    });
+    expect(result.percent).toBe(100);
+  });
+
+  it("clamps below 0 when a count arrives negative", () => {
+    const result = deriveMatchReadiness({
+      morningDone: 0, morningTotal: 7, homeschoolDone: false,
+      journalState: "MISSING", workSubmissionCount: -3,
+    });
+    expect(result.percent).toBe(0);
+  });
+
+  it("stays inside 0..100 across a sweep of inconsistent inputs", () => {
+    const cases = [
+      { morningDone: 99, morningTotal: 1, homeschoolDone: true, journalState: "VERIFIED" as const, workSubmissionCount: 99 },
+      { morningDone: -5, morningTotal: 7, homeschoolDone: false, journalState: "MISSING" as const, workSubmissionCount: -9 },
+      { morningDone: 7, morningTotal: 0, homeschoolDone: true, journalState: "VERIFIED" as const, workSubmissionCount: 1 },
+      { morningDone: 0, morningTotal: -1, homeschoolDone: false, journalState: "MISSING" as const, workSubmissionCount: 0 },
+    ];
+    for (const input of cases) {
+      const { percent } = deriveMatchReadiness(input);
+      expect(percent).toBeGreaterThanOrEqual(0);
+      expect(percent).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("leaves every in-range result untouched", () => {
+    expect(deriveMatchReadiness({
+      morningDone: 6, morningTotal: 7, homeschoolDone: false,
+      journalState: "RECORDED", workSubmissionCount: 1,
+    }).percent).toBe(54);
+  });
+
   it("passes the journal state through for truthful labelling", () => {
     expect(deriveMatchReadiness({
       morningDone: 0, morningTotal: 7, homeschoolDone: false,
