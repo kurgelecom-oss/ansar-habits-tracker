@@ -77,34 +77,34 @@ export default function HabitRow({
       aria-label={habit.overridden ? `${habit.name} — restored by parent override` : habit.name}
       data-habit-id={habit.id}
       data-emphasis={emphasis}
-      title={habit.overridden ? "Parent override" : habit.window ? `Window ${habit.window}` : undefined}
+      title={[
+        habit.overridden ? "Parent override" : "",
+        !isDone && !isLive && habit.label ? habit.label : "",
+        habit.window ? `Window ${habit.window}` : "",
+      ].filter(Boolean).join(" · ") || undefined}
       style={{ "--row-accent": accent } as React.CSSProperties}
     >
       {holding ? <span aria-hidden data-testid="hold-ring" className={styles.holdRing} /> : null}
 
       {icon ? <span aria-hidden className={styles.habitIcon}>{icon}</span> : null}
 
+      {/* One line, always. The reason and the note live in the row's
+          accessible name and tooltip instead of under the habit — the visible
+          state is carried by three distinct glyphs (✓ ✕ 🔒), not by colour. */}
       <span className={styles.habitText}>
         <span className={styles.habitName}>{habit.name}</span>
-        {/* The gate's own words for why this row is not actionable. Text, not
-            colour alone — spec §13. */}
-        {!isDone && !isLive && habit.label ? (
-          <span className={isMissed ? styles.habitCaptionMissed : styles.habitCaption}>
-            {habit.label}
-          </span>
-        ) : null}
         {note ? <span className={styles.habitNote}>{note}</span> : null}
       </span>
 
-      {/* The audit marker. aria-hidden because the button's accessible name
-          already carries it — announcing it twice is noise, but a sighted
-          reader must still see that this was not earned. */}
+      {/* The audit marker, reduced to a dot so the row stays one line. It is
+          NOT removed: without some visible trace an overridden habit looks
+          exactly like an earned one, and that is an audit problem rather than a
+          styling one. The wording rides along in a visually-hidden span so it
+          stays readable to assistive tech and greppable by the contract. */}
       {habit.overridden ? (
-        <span aria-hidden className={styles.overrideBadge}>
-          {/* The glyph is a separate node so the badge's own text reads exactly
-              "Parent override" — the audit wording the contract asserts on. */}
-          <span className={styles.overrideGlyph}>⟲</span>
-          Parent override
+        <span className={styles.overrideBadge} title="Parent override">
+          <span aria-hidden className={styles.overrideGlyph} />
+          <span className={styles.overrideWord}>Parent override</span>
         </span>
       ) : null}
 

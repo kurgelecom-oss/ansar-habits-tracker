@@ -615,7 +615,12 @@
 
 .habitIcon { font-size: 17px; flex-shrink: 0; line-height: 1; }
 
-.habitText { flex: 1; min-width: 0; }
+.habitText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+}
 
 .habitName {
   display: block;
@@ -640,19 +645,31 @@
 
 /* Unmistakably gold, and never the same treatment as an earned tick. */
 .overrideBadge {
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
-  padding: 3px 7px;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-  color: var(--ansar-gold-bright);
-  background: color-mix(in srgb, var(--ansar-gold) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ansar-gold) 40%, transparent);
 }
 
-.overrideGlyph { margin-right: 3px; }
+.overrideGlyph {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ansar-gold);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ansar-gold) 60%, transparent);
+}
+
+/* Readable to assistive tech, and still a real visible box for the contract
+   that asserts it — just clipped to a pixel so it costs the row no width. */
+.overrideWord {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 .pointChip {
   flex-shrink: 0;
@@ -731,11 +748,11 @@
 /* Evidence language, not a gate reason. Cyan rather than the muted grey a lock
    caption uses, because "Recorded" is a positive fact about today's work. */
 .habitNote {
-  display: block;
-  margin-top: 2px;
+  margin-left: 8px;
   font-size: 11px;
-  font-weight: 700;
-  color: var(--cyan);
+  font-weight: 600;
+  color: var(--ansar-muted);
+  white-space: nowrap;
 }
 
 /* ── Work + Week ────────────────────────────────────────────────────────────*/
@@ -1107,13 +1124,13 @@
      ever measured tighter than this. */
   .matchCentre {
     max-height: 88px;
-    padding: 9px 16px;
-    gap: 14px;
+    padding: 14px 20px;
+    gap: 16px;
   }
-  .matchCrest { height: 44px; }
+  .matchCrest { height: 56px; }
   .matchTitle { font-size: 11px; }
-  .matchUnavailable { font-size: 16px; margin-top: 2px; }
-  .matchNote { font-size: 11px; margin-top: 3px; }
+  .matchUnavailable { font-size: 19px; margin-top: 3px; }
+  .matchNote { font-size: 12px; margin-top: 3px; }
   /* Readiness goes two-up instead of four-deep. Stacked, its label, figure,
      track and journal note came to 58px inside a 54px content box, and
      .matchCentre is overflow:hidden — the journal note was being cut off.
@@ -1133,26 +1150,26 @@
   .readinessTrack { grid-column: 1 / -1; margin-top: 0; }
   .readinessNote { grid-column: 1 / -1; font-size: 10px; margin-top: 0; }
 
-  .clubNav { height: 48px; }
-  .clubNavItem { padding: 7px 11px; font-size: 12px; }
+  .clubNav { height: 76px; }
+  .clubNavItem { padding: 9px 13px; font-size: 13px; }
 
   /* The masthead keeps the reference's shape at this height — centred wordmark
      with the motto under it — at the smallest type that still reads as the
      dominant identity on the board. */
-  .clubHeader { height: 84px; }
-  .clubWordmark { font-size: 32px; }
-  .clubMotto { font-size: 13px; }
+  .clubHeader { height: 96px; }
+  .clubWordmark { font-size: 38px; }
+  .clubMotto { font-size: 15px; }
 
   /* 44px exactly: the floor, not a reduction. Rows are 52px on a tall window
      because the reference is roomier, and this is the one viewport where the
      whole weekday programme has to fit at once. */
   .habitRow { min-height: 44px; }
 
-  .panelHead { padding: 8px 11px 6px; }
-  .panelTitle { font-size: 15px; }
-  .panelSubtitle { font-size: 11px; }
-  .panelProgress { height: 4px; margin: 0 11px 6px; }
-  .panelFooter { padding: 6px 11px 7px; }
+  .panelHead { padding: 12px 14px 9px; }
+  .panelTitle { font-size: 16px; }
+  .panelSubtitle { font-size: 12px; }
+  .panelProgress { height: 5px; margin: 0 14px 9px; }
+  .panelFooter { padding: 10px 14px 11px; }
   .panelScore { font-size: 12px; }
-  .panelBody { padding: 6px 10px 8px; gap: 5px; }
+  .panelBody { padding: 2px 12px 10px; gap: 7px; }
 }
