@@ -8,6 +8,7 @@ import DayProgrammePanel from "./DayProgrammePanel";
 import HabitPanel from "./HabitPanel";
 import HabitRow from "./HabitRow";
 import MatchCentrePlaceholder from "./MatchCentrePlaceholder";
+import StretchWalletPanel from "./StretchWalletPanel";
 import WeeklyTierProgress from "./WeeklyTierProgress";
 import WorkWeekPanel from "./WorkWeekPanel";
 import DashboardShell from "./DashboardShell";
@@ -54,9 +55,15 @@ describe("ClubNavigation", () => {
     expect(items).toEqual(["Dashboard", ...FUTURE_ITEMS]);
   });
 
-  it("carries the club identity without inventing a slogan or currency", () => {
+  /**
+   * The crest identifies the bar; the wordmark belongs to ClubHeader. Two
+   * printed "ANSAR FC"s made neither the dominant one, so the nav carries the
+   * mark as an image with an accessible name and no visible duplicate text.
+   */
+  it("identifies the club by crest, without duplicating the wordmark", () => {
     render(<ClubNavigation />);
-    expect(screen.getByText("ANSAR FC")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "ANSAR FC" })).toBeInTheDocument();
+    expect(screen.queryByText("ANSAR FC")).not.toBeInTheDocument();
     expect(screen.queryByText(/diamond|gem|coin|level|XP/i)).not.toBeInTheDocument();
   });
 });
@@ -301,6 +308,63 @@ describe("MatchCentrePlaceholder", () => {
   it("does not describe readiness in football-result language", () => {
     const { container } = render(<MatchCentrePlaceholder readiness={readiness} />);
     expect(container.textContent).not.toMatch(/\b(score|goals?|won|lost|draw)\b/i);
+  });
+});
+
+describe("responsive rules for the header and Match Centre", () => {
+  const css = readFileSync(
+    resolve(process.cwd(), "app/components/dashboard/dashboard.module.css"),
+    "utf8",
+  );
+
+  /** The declarations inside the narrowest breakpoint. */
+  const mobile = (() => {
+    const i = css.indexOf("@media (max-width: 640px)");
+    expect(i, "a 640px breakpoint must exist").toBeGreaterThan(-1);
+    let depth = 0, j = css.indexOf("{", i);
+    const start = j;
+    do { if (css[j] === "{") depth += 1; else if (css[j] === "}") depth -= 1; j += 1; } while (depth > 0);
+    return css.slice(start, j);
+  })();
+
+  function rule(selector: string): string {
+    const match = new RegExp(`\\.${selector}[^{]*\\{([^}]*)\\}`).exec(mobile);
+    expect(match, `${selector} must have a mobile rule`).not.toBeNull();
+    return match![1];
+  }
+
+  /**
+   * At 390px the wordmark, two stats, two clocks and the connection state
+   * cannot share one 40px line. The header must be allowed to grow and wrap
+   * rather than clip whatever falls off the right edge.
+   */
+  it("lets the header wrap instead of clipping", () => {
+    expect(rule("clubHeader")).toMatch(/flex-wrap:\s*wrap/);
+    expect(rule("clubHeader")).toMatch(/height:\s*auto/);
+    expect(rule("clubStatus")).toMatch(/flex-wrap:\s*wrap/);
+  });
+
+  /**
+   * Something has to yield at 390px, and it must not be the clock every gate
+   * is decided against, nor whether the board is talking to the server.
+   */
+  it("drops the display-only clock but never the server clock or connection", () => {
+    expect(rule("deviceClock")).toMatch(/display:\s*none/);
+    expect(mobile).not.toMatch(/\.serverClock[^{]*\{[^}]*display:\s*none/);
+    expect(mobile).not.toMatch(/\.connection[^{]*\{[^}]*display:\s*none/);
+  });
+
+  /** The fixture and the 168px readiness region cannot sit side by side. */
+  it("stacks the Match Centre and releases its height cap", () => {
+    expect(rule("matchCentre")).toMatch(/flex-direction:\s*column/);
+    expect(rule("matchCentre")).toMatch(/max-height:\s*none/);
+    expect(rule("matchReadiness")).toMatch(/min-width:\s*0/);
+  });
+
+  /** The desktop budget must survive the mobile rules being added. */
+  it("leaves the desktop budget declarations untouched", () => {
+    expect(/\.matchCentre\s*\{[^}]*max-height:\s*128px/.test(css)).toBe(true);
+    expect(/\.clubHeader\s*\{[^}]*height:\s*40px/.test(css)).toBe(true);
   });
 });
 
@@ -832,5 +896,157 @@ describe("WeeklyTierProgress", () => {
     render(<WeeklyTierProgress weekPoints={null} weekMax={55} />);
     expect(screen.queryAllByTestId("tier-threshold").filter(s => s.getAttribute("data-active") === "true")).toHaveLength(0);
     expect(screen.getByTestId("tier-fill")).toHaveStyle({ width: "0%" });
+  });
+});
+
+/* ── Task 8: Stretch Wallet ─────────────────────────────────────────────────*/
+
+const walletBase = {
+  wallet: weekdayFixture.wallet,
+  items: weekdayFixture.stretchItems,
+  earnedItemIds: new Set(weekdayFixture.wallet.earnedItemIds),
+  savingId: null,
+  minPerPoint: 10,
+  spendStepMin: 10,
+  dailyCapMin: 75,
+  onEarn: noop,
+  onSpend: noop,
+};
+
+describe("StretchWalletPanel", () => {
+  it("renders the locked state in the server's own words", () => {
+    render(<StretchWalletPanel {...walletBase} />);
+    expect(screen.getByText("Locked — Qur'an recitation first")).toBeVisible();
+    expect(screen.getByRole("button", { name: /Convert 10 min/ })).toBeDisabled();
+  });
+
+  it("shows the banked balance and the weekend bonus when the server sends one", () => {
+    render(<StretchWalletPanel {...walletBase}
+      wallet={{ ...weekendFixture.wallet, balance: 30 }}
+      earnedItemIds={new Set(weekendFixture.wallet.earnedItemIds)} />);
+    expect(screen.getByText("30 min")).toBeVisible();
+    expect(screen.getByText(/Weekend bonus/)).toBeVisible();
+  });
+
+  /**
+   * Render-only. Every one of these numbers is a decision /api/stretch already
+   * made against the server's Sydney clock. Recomputing any of them here would
+   * give the board a second opinion about what a reward costs.
+   */
+  it("computes no lock, cap, redemption or bonus of its own", () => {
+    const lying = {
+      ...weekdayFixture.wallet,
+      unlocked: true, lockMessage: null,
+      redemptionOpen: true, redemptionMessage: null,
+      weekday: "Wednesday", weekendRedemptionOnly: true,
+      balance: 999,
+    };
+    render(<StretchWalletPanel {...walletBase} wallet={lying} />);
+    // Weekday + weekendRedemptionOnly would be "locked" by any local rule, but
+    // the server said open, so the panel renders open.
+    expect(screen.getByRole("button", { name: /Convert 10 min/ })).toBeEnabled();
+    expect(screen.queryByText(/Locked/)).not.toBeInTheDocument();
+    expect(screen.getByText("999 min")).toBeVisible();
+  });
+
+  it("hides the balance while the wallet is locked rather than guessing it", () => {
+    render(<StretchWalletPanel {...walletBase} />);
+    expect(screen.getByTestId("wallet-balance")).toHaveTextContent("—");
+    expect(screen.queryByText("30 min")).not.toBeInTheDocument();
+  });
+
+  it("renders nothing but a placeholder before the wallet has loaded", () => {
+    render(<StretchWalletPanel {...walletBase} wallet={null} />);
+    expect(screen.getByTestId("wallet-balance")).toHaveTextContent("—");
+    expect(screen.getByRole("button", { name: /Convert 10 min/ })).toBeDisabled();
+  });
+
+  /* ── Earning ──────────────────────────────────────────────────────────────*/
+
+  it("forwards an earn with the item that was pressed", () => {
+    const earned: string[] = [];
+    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet}
+      earnedItemIds={new Set()} onEarn={item => earned.push(item.id)} />);
+    fireEvent.click(screen.getByRole("button", { name: "Help at home" }));
+    expect(earned).toEqual(["help_home"]);
+  });
+
+  it("disables an item already banked today", () => {
+    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet}
+      earnedItemIds={new Set(["extra_reading"])} />);
+    expect(screen.getByRole("button", { name: "Extra reading - 20 min" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Help at home" })).toBeEnabled();
+  });
+
+  it("disables every item while the wallet is locked", () => {
+    render(<StretchWalletPanel {...walletBase} earnedItemIds={new Set()} />);
+    for (const item of weekdayFixture.stretchItems) {
+      expect(screen.getByRole("button", { name: item.name })).toBeDisabled();
+    }
+  });
+
+  it("shows each item's minute value from the server's rate", () => {
+    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet} minPerPoint={10} />);
+    expect(screen.getAllByText("+10m")).toHaveLength(4);
+  });
+
+  /**
+   * /api/stretch supplies minPerPoint. The local constant is a pre-load
+   * fallback, NOT a second opinion: if the server retunes the rate, an item
+   * priced from the constant would advertise minutes the server will not pay.
+   * Same rule the daily cap already follows.
+   */
+  it("prices items from the server's rate, not the local constant", () => {
+    render(<StretchWalletPanel {...walletBase}
+      wallet={{ ...weekendFixture.wallet, minPerPoint: 15 }}
+      minPerPoint={10} />);
+    expect(screen.getAllByText("+15m")).toHaveLength(4);
+    expect(screen.queryByText("+10m")).not.toBeInTheDocument();
+  });
+
+  it("falls back to the local rate only while the wallet is unloaded", () => {
+    render(<StretchWalletPanel {...walletBase} wallet={null} minPerPoint={10} />);
+    expect(screen.getAllByText("+10m")).toHaveLength(4);
+  });
+
+  it("uses the server's daily cap the same way", () => {
+    render(<StretchWalletPanel {...walletBase}
+      wallet={{ ...weekendFixture.wallet, dailyRedeemCapMin: 90 }} dailyCapMin={75} />);
+    expect(screen.getByText(/90 min\/day cap/)).toBeInTheDocument();
+  });
+
+  it("says so plainly when there are no stretch items", () => {
+    render(<StretchWalletPanel {...walletBase} items={[]} />);
+    expect(screen.getByText("No stretch items available right now.")).toBeVisible();
+  });
+
+  /* ── Spending ─────────────────────────────────────────────────────────────*/
+
+  it("forwards a spend exactly once", () => {
+    let spends = 0;
+    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet} onSpend={() => { spends += 1; }} />);
+    fireEvent.click(screen.getByRole("button", { name: /Convert 10 min/ }));
+    expect(spends).toBe(1);
+  });
+
+  it("explains when conversion opens instead of only greying out", () => {
+    render(<StretchWalletPanel {...walletBase} />);
+    expect(screen.getByText("Redeem on Saturday or Sunday")).toBeVisible();
+  });
+
+  it("blocks a second spend while one is already in flight", () => {
+    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet} savingId="__spend__" />);
+    expect(screen.getByRole("button", { name: /Convert 10 min/ })).toBeDisabled();
+  });
+});
+
+/* ── Task 8: the composed board ─────────────────────────────────────────────*/
+
+describe("DashboardShell composition", () => {
+  it("carries exactly one dominant ANSAR FC identity", () => {
+    render(<DashboardShell><ClubHeader serverTime={weekdayFixture.gate.serverTime}
+      deviceTime="1:47pm" online pointsActive /></DashboardShell>);
+    expect(screen.getAllByText(/ANSAR FC/)).toHaveLength(1);
+    expect(screen.getByText("Ansar · ANSAR FC")).toBeVisible();
   });
 });

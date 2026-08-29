@@ -29,9 +29,12 @@ const ITEMS: { label: string; href?: string }[] = [
 export default function ClubNavigation() {
   return (
     <nav className={styles.clubNav} aria-label="ANSAR FC sections">
-      <span className={styles.clubMark}>
+      {/* Crest only. The wordmark lives in ClubHeader, which is the dominant
+          identity; printing "ANSAR FC" in both bars made neither the one the
+          eye lands on. The crest keeps an accessible name so the bar is still
+          identified to a screen reader. */}
+      <span className={styles.clubMark} role="img" aria-label="ANSAR FC">
         <span className={styles.clubCrest} aria-hidden="true" />
-        <span className={styles.clubName}>ANSAR FC</span>
       </span>
 
       <ul className={styles.clubNavList}>

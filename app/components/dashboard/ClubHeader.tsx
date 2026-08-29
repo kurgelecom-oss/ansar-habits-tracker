@@ -23,10 +23,19 @@ type ClubHeaderProps = {
    * soft-launch badge that may be wrong a moment later.
    */
   pointsActive: boolean | null;
+  /**
+   * Today's proportion complete and the streak, carried over from the
+   * scoreboard strip the Match Centre replaces. Spec §7.3 allows a compact
+   * points/streak summary here; both are optional, and undefined renders
+   * nothing rather than a zero.
+   */
+  todayPercent?: number | null;
+  streak?: number | null;
 };
 
 export default function ClubHeader({
   serverTime, deviceTime, online, pointsActive,
+  todayPercent = null, streak = null,
 }: ClubHeaderProps) {
   return (
     <header className={styles.clubHeader}>
@@ -38,6 +47,18 @@ export default function ClubHeader({
         {pointsActive === false ? (
           <span className={styles.softLaunch}>Soft-launch · points preview</span>
         ) : null}
+
+        {todayPercent === null ? null : (
+          <span className={styles.headerStat} title="Today's applicable habits completed">
+            Today {todayPercent}%
+          </span>
+        )}
+
+        {streak === null ? null : (
+          <span className={styles.headerStat} title="Consecutive qualifying days">
+            Streak {streak}{streak > 0 ? " 🔥" : ""}
+          </span>
+        )}
 
         {serverTime ? (
           <span className={styles.serverClock} title="Server clock — every gate uses this">

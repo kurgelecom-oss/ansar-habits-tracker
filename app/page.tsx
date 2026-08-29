@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, getWeekStart } from "./lib/supabase";
-import { scoreDay, SOCCER_DAYS } from "./lib/scoring";
+import { scoreDay } from "./lib/scoring";
 // sydneyMinutesOfDay/parseHHMM feed the morning feasibility banner. Both are the
 // SAME primitives the server gates against — time.ts is Intl.DateTimeFormat with
 // timeZone "Australia/Sydney" throughout and holds no hardcoded offset, so the
@@ -16,9 +16,15 @@ import { habitsOnDay, scoringHabits } from "./lib/days";
 // Mirrored byte-for-byte with family-dashboard/app/lib/streak.ts — see the
 // header there, and scripts/check-scoring-sync.sh which guards the pair.
 import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
+import ClubHeader from "./components/dashboard/ClubHeader";
+import DashboardShell from "./components/dashboard/DashboardShell";
 import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
+import MatchCentrePlaceholder from "./components/dashboard/MatchCentrePlaceholder";
 import HabitPanel from "./components/dashboard/HabitPanel";
+import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
+import dashboardStyles from "./components/dashboard/dashboard.module.css";
+import { deriveMatchReadiness, journalEvidenceState } from "./dashboard/model";
 import type { DashboardHabit } from "./dashboard/types";
 // The squad week, Mon–Fri. This file used to declare its own copy beside the
 // /55 note below; lib/goldenBoot.ts asked for the collapse the moment page.tsx
@@ -51,8 +57,6 @@ import { SQUAD_DAYS } from "./lib/goldenBoot";
 // re-open the contrast work. RM identity instead comes from Champions-League
 // gold + royal navy + kit-white accents on the dark base.
 const RM_GOLD = "#D4AF37";        // CL gold — FC scoreboard, achievements, top tier
-const RM_GOLD_BRIGHT = "#E7C55B"; // brighter gold for large scoreboard numbers on dark
-const RM_NAVY = "#0d2350";        // deep royal navy — scoreboard bar / section accents
 
 // The canonical accent, from globals.css. This repo used to carry #00d9ff — a
 // near-identical but WRONG cyan that matched none of the other five surfaces.
@@ -211,19 +215,12 @@ const WEEKLY_MAX = 55;
  * perfect day. There is no conditional term — SOCCER_DAYS is Mon/Wed, so nothing
  * on a weekend can reach the 11 a training day allows.
  */
-const HOMESCHOOL_PTS = 5;
-const WEEKEND_MAX = 10 - HOMESCHOOL_PTS;
+/* The weekend ceiling and the tier table used to be declared here. Both are
+   gone from this file: the tiers now come from app/dashboard/model.ts, which
+   reads the 42/34/26/0 boundaries out of lib/scoring.ts rather than re-typing
+   them. That leaves exactly one written-down copy of the tier boundaries in
+   the repo, which is what check-scoring-sync.sh has always been guarding. */
 
-const THRESHOLDS = [
-  { min: 42, label: "First Team 🏆",      desc: "42+ pts",   color: RM_GOLD },
-  { min: 34, label: "Bench ✅",           desc: "34–41 pts", color: CYAN },
-  { min: 26, label: "Reserves ⚠️",        desc: "26–33 pts", color: "#ffa500" },
-  { min: 0,  label: "Training Ground ❌", desc: "0–25 pts",  color: "#ff4444" },
-];
-
-function getThreshold(pts: number) {
-  return THRESHOLDS.find(t => pts >= t.min) || THRESHOLDS[THRESHOLDS.length - 1];
-}
 
 export default function AnsarPage() {
   const [gate, setGate] = useState<GateSnapshot | null>(null);
@@ -770,10 +767,8 @@ export default function AnsarPage() {
   const preIds = scored.filter(h => h.block === "pre_homeschool").map(h => h.id);
   const baseIds = scored.filter(h => h.block !== "conditional").map(h => h.id);
   const dayScore = scoreDay(completedIds, dayName, preIds, baseIds);
-  const todayPts = dayScore.total;
   const todayDone = scored.filter(h => h.state === "DONE").length;
   const overallPct = scored.length > 0 ? Math.round((todayDone / scored.length) * 100) : 0;
-  const weekThreshold = getThreshold(weeklyPts ?? 0);
 
   // Weekend is read from the SERVER's Sydney weekday, never `new Date()` — same
   // rule as every gate on this page. Empty until /api/tick answers, so the
@@ -781,17 +776,12 @@ export default function AnsarPage() {
   // spoken. It is declared BEFORE DAILY_MAX because the ceiling now depends on
   // it: a weekend day is a real scoring day with a real, lower ceiling, not a
   // blank one.
-  const isWeekend = dayName === "Saturday" || dayName === "Sunday";
 
   // Three ceilings, one expression. 11 on a training day, 10 on a school day, 5
   // on a weekend — see WEEKEND_MAX for why the weekend number is 10 minus the
   // Homeschool block's 5. `todayPts` needs no branch at all: it comes from
   // scoreDay() over the habits the SERVER says apply today, so a weekend already
   // scores itself correctly out of this ceiling.
-  const DAILY_MAX = isWeekend ? WEEKEND_MAX : SOCCER_DAYS.includes(dayName) ? 11 : 10;
-
-  const walletLocked = !wallet?.unlocked;
-  const stretchBalance = wallet?.balance ?? 0;
   const earnedItemIds = new Set(wallet?.earnedItemIds ?? []);
 
   /* ── Styles ─────────────────────────────────────────────────────────────── */
@@ -802,31 +792,13 @@ export default function AnsarPage() {
    40px taller than the viewport — a scrollbar on a page whose whole point is not
    scrolling. Padding cannot collapse. box-sizing:border-box is already global. */
 .ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:var(--nav-h);overflow:hidden}
-/* Outer padding trimmed 10/11 -> 6/7. Cheapest 8px on the board: it costs no
-   information and every column gains it. One-page dashboard — nothing here ever
-   scrolls, so vertical space goes to content rather than to margins. */
-.ab-board{display:grid;grid-template-columns:1fr 1fr 0.84fr 0.96fr;gap:11px;
-  padding:6px 16px 7px;flex:1;min-height:0}
-.ab-btn{transition:transform 220ms cubic-bezier(.34,1.56,.64,1),background 180ms ease,
-  border-color 180ms ease,box-shadow 180ms ease;box-shadow:0 2px 0 rgba(0,0,0,.32)}
-.ab-btn:active:not(:disabled){transform:scale(.965) translateY(1px);
-  box-shadow:0 0 0 rgba(0,0,0,.32),inset 0 2px 9px rgba(0,0,0,.34)}
-.ab-btn:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:2px}
-.ab-btn:disabled{box-shadow:none}
-.ab-spend{transition:transform 220ms cubic-bezier(.34,1.56,.64,1),box-shadow 180ms ease}
-.ab-spend:active:not(:disabled){transform:translateY(3px);box-shadow:0 0 0 #7c5fd3}
-.ab-spend:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:2px}
-/* Below the 4-column breakpoint the board reflows to 2 columns and the page is
-   allowed to scroll again — the habits at a usable size genuinely cannot fit an
-   iPad. The no-scroll guarantee is for the 1440px+ screens this is built for. */
+/* The board grid, the row/spend button chrome and the long-hold ring used to
+   be declared here. They now live in dashboard.module.css beside the
+   components that draw them — .grid carries the same four-column track list
+   and the same 1439/820 breakpoints, and .holdRing the same two-second sweep.
+   Only the rules for elements this file still renders remain below. */
 @media (max-width:1439px){
   .ab-root{height:auto;min-height:100dvh;overflow:visible}
-  .ab-board{grid-template-columns:1fr 1fr}
-}
-@media (max-width:820px){.ab-board{grid-template-columns:1fr}}
-@media (prefers-reduced-motion:reduce){
-  .ab-btn,.ab-spend{transition:none}
-  .ab-btn:active,.ab-spend:active{transform:none}
 }
 
 /* ── NOTION SOURCE STRIP ──────────────────────────────────────────────────
@@ -840,7 +812,7 @@ export default function AnsarPage() {
    child is an element (the middots are spans) so the > * selector reaches all
    of them — a bare text node could not be targeted.
 
-   flex-shrink:0 keeps the strip off .ab-board's flex:1 growth path, so at the
+   flex-shrink:0 keeps the strip off the panel grid's growth path, so at the
    1440px+ height:100dvh / overflow:hidden layout the board yields the ~34px
    rather than the strip being squeezed to nothing. */
 .ab-src{display:flex;align-items:center;justify-content:center;gap:8px;
@@ -855,19 +827,9 @@ export default function AnsarPage() {
 }
 
 /* ── LONG-PRESS HOLD INDICATOR ────────────────────────────────────────────
-   Fills left-to-right over the two seconds of the hold. It is the only visible
-   hint that a refused habit can be opened at all — deliberately quiet, so a
-   child mashing buttons never discovers it by accident, while a parent who
-   holds sees immediate feedback that something is happening. */
-.ab-hold{position:absolute;left:0;top:0;bottom:0;width:100%;pointer-events:none;
-  transform-origin:left center;transform:scaleX(0);border-radius:11px;
-  background:linear-gradient(90deg,${RM_GOLD}26,${RM_GOLD}12);
-  border-right:2px solid ${RM_GOLD}aa;
-  animation:ab-hold-fill 2000ms linear forwards}
-@keyframes ab-hold-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@media (prefers-reduced-motion:reduce){
-  .ab-hold{animation-duration:2000ms}
-}
+   It moved to dashboard.module.css as .holdRing, drawn by HabitRow, with the
+   same two-second sweep and the same reason for existing: it is the only
+   visible hint that a refused habit can be opened at all. */
 
 /* ── PARENT OVERRIDE DIALOG ───────────────────────────────────────────────── */
 .ab-ov-pin{letter-spacing:0.5em;font-size:22px!important;text-align:center;
@@ -929,22 +891,11 @@ export default function AnsarPage() {
    styles, so the size overrides here need !important; nothing at or above
    641px can see this block, and the >=1440px no-scroll contract is untouched. */
 @media (max-width:640px){
-  .ab-head{height:auto!important;min-height:52px;flex-wrap:wrap;row-gap:2px;padding:6px 12px!important}
-  .ab-head > div{flex-wrap:wrap}
-  .ab-score{height:auto!important;flex-wrap:wrap;row-gap:6px;padding:8px 8px!important}
-  .ab-cell{height:auto!important;min-height:52px;padding:0 12px!important}
-  .ab-crest{height:auto!important;max-width:64px}
-  .ab-meter{width:auto!important;flex:1 1 auto;min-width:90px}
   /* Bottom-most fixed element on the board: keep the toast above the iOS
      home-indicator safe area. */
   .ab-toast{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
 }`;
 
-  const cardStyle: React.CSSProperties = {
-    background: "#16192d", border: "1px solid #2d3543", borderRadius: 12,
-    overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 0,
-    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-  };
 
   /**
    * Column shell: accent rail, title/subtitle, optional right-hand count.
@@ -957,21 +908,6 @@ export default function AnsarPage() {
    * lives here as a parameter rather than in the shared style: editing the base
    * would have restyled every card on the board.
    */
-  const colHead = (color: string, title: string, subtitle: string, right?: React.ReactNode, compact = false) => (
-    <>
-      <div style={{ height: compact ? 2 : 3, background: color, flexShrink: 0 }} />
-      <div style={{
-        padding: compact ? "5px 10px" : "9px 14px 8px", borderBottom: "1px solid #2d3543", flexShrink: 0,
-        display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10,
-      }}>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color }}>{title}</div>
-          <div style={{ fontSize: compact ? 9 : 10, color: "#757f8f", marginTop: compact ? 1 : 3, fontWeight: 500 }}>{subtitle}</div>
-        </div>
-        {right}
-      </div>
-    </>
-  );
 
 
   /* habitButton, heroButton and habitColumn were the inline presentation for
@@ -1054,6 +990,20 @@ export default function AnsarPage() {
       overridden: overriddenIds.has(h.id),
     }));
   const morningRows = rowsFor("pre_homeschool");
+  const homeschoolRows = rowsFor("homeschool");
+  /**
+   * Match Readiness — a DISPLAY summary of today's learning state, never a
+   * football result and never an input to a gate. workSubmissionCount is 0
+   * because nothing in this app counts Tally submissions yet; claiming a
+   * number here would be inventing evidence.
+   */
+  const readiness = deriveMatchReadiness({
+    morningDone: morningRows.filter(h => h.state === "DONE").length,
+    morningTotal: morningRows.length,
+    homeschoolDone: homeschoolRows.some(h => h.id === "homeschool_session" && h.state === "DONE"),
+    journalState: journalEvidenceState(homeschoolRows.find(h => h.id === "journal")),
+    workSubmissionCount: 0,
+  });
 
   /**
    * One scoreboard cell. `opts` is additive and defaulted, so the four calls
@@ -1068,33 +1018,7 @@ export default function AnsarPage() {
    *          after it, so it draws on the LEFT instead and separates itself from
    *          Banked, which has never drawn one of its own.
    */
-  const cell = (
-    label: string,
-    value: React.ReactNode,
-    extra?: React.ReactNode,
-    opts?: { color?: string; side?: "left" | "right" },
-  ) => (
-    <div className="ab-cell" style={{
-      padding: "0 22px", height: 52,
-      ...(opts?.side === "left"
-        ? { borderLeft: "1px solid rgba(212,175,55,0.16)" }
-        : { borderRight: "1px solid rgba(212,175,55,0.16)" }),
-      display: "flex", flexDirection: "column", justifyContent: "center",
-    }}>
-      <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(232,235,242,0.6)" }}>
-        {label}
-      </div>
-      <div style={{
-        fontSize: 29, fontWeight: 800, color: opts?.color ?? RM_GOLD_BRIGHT, lineHeight: 1.08,
-        fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em",
-      }}>
-        {value}
-      </div>
-      {extra}
-    </div>
-  );
 
-  const sub = (t: string) => <small style={{ fontSize: 14, color: "rgba(232,235,242,0.55)", fontWeight: 600 }}>{t}</small>;
 
   return (
     <div className="ab-root" style={{
@@ -1112,129 +1036,23 @@ export default function AnsarPage() {
     }}>
       <style>{BOARD_CSS}</style>
 
-      {/* HEADER */}
-      <header className="ab-head" style={{
-        background: "#16192d", borderBottom: "1px solid #2d3543", height: 52, flexShrink: 0,
-        padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
-      }}>
-        <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em" }}>
-          Ansar <span style={{ color: RM_GOLD, letterSpacing: "0.04em" }}>· ANSAR FC</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "#757f8f", flexShrink: 0 }}>
-          {pointsActive === false && (
-            <span style={{
-              fontSize: 10, fontWeight: 700, color: "#ffa500", padding: "3px 9px", borderRadius: 20,
-              border: "1px solid rgba(255,165,0,0.3)", background: "rgba(255,165,0,0.1)",
-            }}>
-              Soft-launch · points preview
-            </span>
-          )}
-          {/* The SERVER's clock — the one every gate is decided against. Shown
-              first, and labelled, so it is obvious which clock is authoritative. */}
-          {gate && (
-            <span style={{ color: RM_GOLD_BRIGHT, fontWeight: 700 }} title="Server clock — every gate uses this">
-              🕒 {gate.serverTime.clock} {gate.serverTime.weekday} · Sydney
-            </span>
-          )}
-          <span style={{ opacity: 0.7 }} title="This device's clock — display only, no gate reads it">
-            device {mounted ? time : ""}
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: online ? "#00ff88" : "#ff4444", display: "inline-block" }} />
-            <span style={{ color: online ? "#00ff88" : "#ff4444", fontSize: 11, fontWeight: 500 }}>{online ? "Live" : "Offline"}</span>
-          </span>
-        </div>
-      </header>
+      <DashboardShell>
 
-      {/* SCOREBOARD STRIP */}
-      <div className="ab-score" style={{
-        height: 120, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 16px",
-        background: RM_NAVY, borderBottom: "1px solid rgba(212,175,55,0.28)",
-      }}>
-        {/* Crest. The divider lives on this wrapper rather than on the <img>
-            because the cells to the right draw theirs at height 52 (see cell()),
-            and a border on a 42px-tall image would render a short line against
-            four full-height neighbours. Wrapper matches; the img does not. */}
-        <div className="ab-cell" style={{
-          height: 52, display: "flex", alignItems: "center", flexShrink: 0,
-          paddingRight: 18, marginRight: 18,
-          borderRight: "1px solid rgba(212,175,55,0.16)",
-        }}>
-          <img
-            className="ab-crest"
-            src="/real-madrid.png"
-            alt="Real Madrid"
-            style={{ height: 112, width: "auto", display: "block", objectFit: "contain" }}
-          />
-        </div>
-        {/* One cell, both kinds of day. The weekend used to borrow this slot to
-            re-print the week's tier, because Saturday scheduled nothing and
-            "Points today 0 / 10" would have reported a failure that never had a
-            chance to happen. A weekend now has 13 real habits and a real ceiling
-            of its own, so it gets a real score out of WEEKEND_MAX — only the
-            label changes. The tier it used to show has not gone anywhere: it is
-            the badge at the right-hand end of this same strip, all week. */}
-        {cell(isWeekend ? "Weekend pts" : "Points today",
-          <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
-        {cell("Week total", <>{weeklyPts !== null ? weeklyPts : "—"}{sub(` / ${WEEKLY_MAX}`)}</>)}
-        {cell("Streak", <>{streak !== null ? streak : "—"}{streak !== null && streak > 0 ? " 🔥" : ""}</>)}
-        {/* This cell read "—" on Sat/Sun, because a weekend scheduled nothing and
-            a 0% would have said "you did none of it" about a day with nothing to
-            do. There are 13 weekend habits now, so there is a real proportion to
-            report and it is reported — `overallPct` is already computed over
-            whatever the SERVER says applies today, weekday or weekend. */}
-        {cell("Today", <>{gate ? overallPct : 0}{sub("%")}</>,
-          <div className="ab-meter" style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.34)", overflow: "hidden", marginTop: 6, width: 150 }}>
-            <div style={{
-              height: "100%", borderRadius: 3, transition: "width 200ms ease-in-out",
-              width: gate ? `${overallPct}%` : "0%",
-              background: "linear-gradient(90deg, #ffa500, #00ff88)",
-            }} />
-          </div>,
-        )}
-        <div className="ab-cell" style={{ padding: "0 22px", height: 52, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(232,235,242,0.6)" }}>
-            Banked
-          </div>
-          <div style={{ fontSize: 29, fontWeight: 800, color: "#a78bfa", lineHeight: 1.08, fontVariantNumeric: "tabular-nums" }}>
-            {!wallet ? "—" : walletLocked ? "🔒" : stretchBalance}
-            {wallet && !walletLocked && sub(" min")}
-          </div>
-        </div>
+      <ClubHeader
+        serverTime={gate?.serverTime ?? null}
+        deviceTime={mounted ? time : ""}
+        online={online}
+        pointsActive={pointsActive}
+        todayPercent={gate ? overallPct : null}
+        streak={streak}
+      />
 
-        {/* GOLDEN BOOT — consecutive First Team weeks, out of four.
-            Rendered only when the ledger answered. While db/week_results.sql is
-            unrun the route 503s, `goldenBoot` is null and this cell is absent
-            entirely; the five cells to its left and the badge to its right are
-            untouched, and the strip keeps its 120px. At a full run of four the
-            fraction gives way to the boot itself — the number stops being the
-            point once it has been earned. */}
-        {goldenBoot && cell(
-          "Golden Boot",
-          goldenBoot.progress >= goldenBoot.target
-            ? <span style={{ fontSize: 26 }}>🏆</span>
-            : <>{goldenBoot.progress}{sub(` / ${goldenBoot.target}`)}</>,
-          undefined,
-          { color: CYAN, side: "left" },
-        )}
-
-        <div style={{
-          marginLeft: "auto", display: "flex", alignItems: "center", gap: 11,
-          border: `1px solid ${weekThreshold.color}66`, background: `${weekThreshold.color}1a`,
-          padding: "9px 16px", borderRadius: 9,
-        }}>
-          <div>
-            <b style={{ color: weekThreshold.color, fontSize: 15 }}>{weekThreshold.label}</b>
-            {/* "Mon–Fri" is stated, not implied. This badge is the squad tier and
-                the squad total is a weekday number, which is invisible on a
-                Monday and confusing on a Saturday — where a full weekend of
-                ticks deliberately moves nothing here. */}
-            <i style={{ fontStyle: "normal", fontSize: 11, color: "rgba(232,235,242,0.62)", display: "block", marginTop: 2 }}>
-              {weekThreshold.desc} · Mon–Fri{pointsActive === false && " · preview, not yet enforced"}
-            </i>
-          </div>
-        </div>
-      </div>
+      {/* The scoreboard strip is replaced by the Match Centre frame. Its
+          cells did not disappear: Week total, the tier badge and Golden Boot
+          are in Work + Week, Banked is the Stretch Wallet's own summary, and
+          Today and Streak moved into the header status line. The Golden Boot
+          is now rendered in exactly one place. */}
+      <MatchCentrePlaceholder readiness={readiness} />
 
       {/* Server-unreachable banner. The board fails closed, and says so. */}
       {mounted && !gate && (
@@ -1269,7 +1087,7 @@ export default function AnsarPage() {
       )}
 
       {/* BOARD — four columns, no scroll on either axis at 1440px+ */}
-      <div className="ab-board">
+      <div className={dashboardStyles.grid}>
 
         {/* 1 — Morning Habits */}
         {/* MORNING — Dashboard V2 rows. Behaviour-preserving: the same tick,
@@ -1294,7 +1112,7 @@ export default function AnsarPage() {
             in one panel. Amendment 8027d53: the weekend removes only the
             Homeschool subsection; nothing else is allowed to disappear. */}
         <DayProgrammePanel
-          homeschool={rowsFor("homeschool")}
+          homeschool={homeschoolRows}
           afternoonEvening={rowsFor("afternoon_evening")}
           conditional={rowsFor("conditional")}
           savingId={saving}
@@ -1316,140 +1134,19 @@ export default function AnsarPage() {
           onOpenLogWork={() => setLogOpen(true)}
         />
 
-        {/* 4 — Stretch Wallet */}
-        {/* no scroll — one-page dashboard, overflow-y is banned here */}
-        <div style={{ ...cardStyle, border: "1px solid #3a2d5a" }}>
-          {colHead(`linear-gradient(90deg, #a78bfa, ${CYAN})`, "🎮 Stretch Wallet",
-            `Banks all week · converts Sat & Sun · ${wallet?.dailyRedeemCapMin ?? STRETCH_DAILY_REDEEM_CAP_MIN} min/day cap`,
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: 19, fontWeight: 800, color: "#a78bfa", fontVariantNumeric: "tabular-nums" }}>
-                {wallet && !walletLocked ? stretchBalance : "—"}
-                <span style={{ fontSize: 12, color: "#757f8f" }}> min</span>
-              </div>
-              <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
-                {wallet && !walletLocked ? `${wallet.earnedWeek} earned · ${wallet.spentWeek} spent` : "locked"}
-              </div>
-            </div>,
-          )}
-
-          <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
-            {wallet && walletLocked && (
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderRadius: 9,
-                border: "1px solid #3a2d5a", background: "rgba(167,139,250,0.10)",
-                fontSize: 12, color: "#a78bfa", fontWeight: 700, flexShrink: 0,
-              }}>
-                🔒 {wallet.lockMessage ?? "Finish Morning Habits + Homeschool to unlock"}
-              </div>
-            )}
-
-            {wallet && !walletLocked && wallet.redemptionMessage && (
-              <div style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600, flexShrink: 0 }}>
-                {wallet.redemptionMessage}
-              </div>
-            )}
-
-            {/* Weekend all-items bonus strip. Weekend only (the server sends
-                itemsTotal 0 on a weekday), sits above the item list so the
-                deal is visible before the first tap: clear every item today
-                and the day's PS5 cap rises by weekendBonusMin. State is the
-                server's — this line renders what /api/stretch decided. */}
-            {wallet && !walletLocked && (wallet.weekendBonusItemsTotal ?? 0) > 0 && (
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9,
-                border: `1px solid ${wallet.weekendBonusActive ? "#a78bfa" : "rgba(167,139,250,0.35)"}`,
-                background: wallet.weekendBonusActive ? "rgba(167,139,250,0.18)" : "rgba(167,139,250,0.07)",
-                fontSize: 11.5, color: "#a78bfa", fontWeight: 700, flexShrink: 0,
-              }}>
-                {wallet.weekendBonusActive
-                  ? `🏆 Weekend bonus ON — all ${wallet.weekendBonusItemsTotal} done, +${wallet.weekendBonusMin ?? 30} min PS5 today`
-                  : `🎯 Weekend bonus: ${wallet.weekendBonusItemsDone ?? 0}/${wallet.weekendBonusItemsTotal} — do them all for +${wallet.weekendBonusMin ?? 30} min PS5 today`}
-              </div>
-            )}
-
-            <div style={{
-              display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0,
-              opacity: walletLocked ? 0.4 : 1,
-              pointerEvents: walletLocked ? "none" : "auto",
-            }}>
-              {stretchItems.length === 0 && (
-                <div style={{ fontSize: 12, color: "#757f8f", padding: "8px 2px" }}>
-                  No stretch items available right now.
-                </div>
-              )}
-              {stretchItems.map(item => {
-                const itemMin = item.points * STRETCH_MIN_PER_POINT;
-                const isSaving = saving === item.id;
-                const done = earnedItemIds.has(item.id);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="ab-btn"
-                    onClick={() => earnStretch(item)}
-                    disabled={done || isSaving || walletLocked}
-                    aria-label={item.name}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
-                      borderRadius: 11, flex: 1, minHeight: 62, width: "100%", textAlign: "left",
-                      font: "inherit", color: "inherit",
-                      border: `1px solid ${done ? "#a78bfa50" : "#2d3543"}`,
-                      background: done ? "rgba(167,139,250,0.06)" : "#1f2438",
-                      opacity: done ? 0.55 : 1,
-                      cursor: done ? "default" : "pointer",
-                      WebkitTapHighlightColor: "transparent",
-                    }}
-                  >
-                    <span style={{
-                      width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                      border: `2px solid ${done ? "#a78bfa" : "#2d3543"}`,
-                      background: done ? "#a78bfa" : "transparent",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {isSaving ? <span style={{ fontSize: 11 }}>⏳</span> :
-                       done ? <span style={{ fontSize: 14, color: "#0f1419", fontWeight: 800 }}>✓</span> : null}
-                    </span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>
-                        🧩 {item.name}
-                      </span>
-                      <span style={{ display: "block", fontSize: 11, color: "#757f8f", marginTop: 3 }}>
-                        {done ? "✓ banked today" : item.whatCountsAsDone || `Worth ${item.points} pt`}
-                      </span>
-                    </span>
-                    <span style={{
-                      fontSize: 12, fontWeight: 800, flexShrink: 0, color: "#a78bfa",
-                      border: "1px solid rgba(167,139,250,0.4)", background: "rgba(167,139,250,0.12)",
-                      padding: "6px 11px", borderRadius: 7, whiteSpace: "nowrap",
-                    }}>
-                      +{itemMin}m
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              className="ab-spend"
-              onClick={spendStretch}
-              disabled={!wallet?.redemptionOpen || saving === "__spend__"}
-              style={{
-                minHeight: 56, borderRadius: 10, border: "none", width: "100%", flexShrink: 0,
-                fontSize: 16, fontWeight: 800, fontFamily: "inherit",
-                color: wallet?.redemptionOpen ? "#0f1419" : "#757f8f",
-                background: wallet?.redemptionOpen ? "#a78bfa" : "#1f2438",
-                boxShadow: wallet?.redemptionOpen ? "0 3px 0 #7c5fd3" : "none",
-                cursor: wallet?.redemptionOpen ? "pointer" : "not-allowed",
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              {wallet && wallet.weekendRedemptionOnly && !["Saturday", "Sunday"].includes(wallet.weekday)
-                ? "Converts Sat & Sun"
-                : `Convert ${STRETCH_SPEND_STEP_MIN} min →`}
-            </button>
-          </div>
-        </div>
+        {/* 4 — STRETCH WALLET. Render-only: every lock, cap, redemption and
+            bonus below is the server's decision, passed through verbatim. */}
+        <StretchWalletPanel
+          wallet={wallet}
+          items={stretchItems}
+          earnedItemIds={earnedItemIds}
+          savingId={saving}
+          minPerPoint={STRETCH_MIN_PER_POINT}
+          spendStepMin={STRETCH_SPEND_STEP_MIN}
+          dailyCapMin={STRETCH_DAILY_REDEEM_CAP_MIN}
+          onEarn={earnStretch}
+          onSpend={spendStretch}
+        />
       </div>
 
       {/* ── NOTION SOURCE STRIP ─────────────────────────────────────────────
@@ -1643,6 +1340,7 @@ export default function AnsarPage() {
           </div>
         </div>
       )}
+      </DashboardShell>
     </div>
   );
 }

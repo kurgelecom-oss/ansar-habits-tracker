@@ -53,13 +53,6 @@
   background: linear-gradient(135deg, var(--ansar-navy), var(--ansar-gold));
 }
 
-.clubName {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-
 .clubNavList {
   display: flex;
   align-items: center;
@@ -213,6 +206,13 @@
   color: var(--ansar-warning);
   border: 1px solid color-mix(in srgb, var(--ansar-warning) 30%, transparent);
   background: color-mix(in srgb, var(--ansar-warning) 10%, transparent);
+}
+
+.headerStat {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: #b0b5c1;
+  white-space: nowrap;
 }
 
 /* The authoritative clock: brighter, heavier, and first. */
@@ -693,3 +693,214 @@
   border: 1px solid color-mix(in srgb, var(--cyan) 25%, transparent);
 }
 .goldenBootIcon { font-size: 15px; }
+
+/* ── Stretch Wallet ─────────────────────────────────────────────────────────
+   Purple is reserved for wallet value and reward actions. */
+.walletPanel { border-color: color-mix(in srgb, var(--ansar-wallet) 30%, var(--ansar-border)); }
+
+.walletBalance {
+  display: block;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ansar-wallet);
+  font-variant-numeric: tabular-nums;
+}
+
+.walletLock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: var(--ansar-radius-row);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ansar-wallet);
+  background: color-mix(in srgb, var(--ansar-wallet) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-wallet) 35%, transparent);
+}
+
+.walletLockGlyph { flex-shrink: 0; }
+
+.walletNote {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ansar-wallet);
+}
+
+.walletBonus,
+.walletBonusOn {
+  padding: 7px 10px;
+  border-radius: var(--ansar-radius-row);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ansar-wallet);
+}
+.walletBonus {
+  background: color-mix(in srgb, var(--ansar-wallet) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-wallet) 35%, transparent);
+}
+.walletBonusOn {
+  background: color-mix(in srgb, var(--ansar-wallet) 18%, transparent);
+  border: 1px solid var(--ansar-wallet);
+}
+
+.walletItems {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.walletEmpty { font-size: 12px; color: var(--ansar-muted); padding: 6px 2px; }
+
+.walletItem,
+.walletItemDone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 11px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border-radius: var(--ansar-radius-row);
+  -webkit-tap-highlight-color: transparent;
+}
+.walletItem {
+  border: 1px solid var(--ansar-border);
+  background: var(--ansar-row);
+  cursor: pointer;
+}
+.walletItem:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ansar-wallet) 45%, transparent);
+}
+.walletItem:focus-visible,
+.walletItemDone:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* Banked, not broken. Still legible — spec §13 bans unreadable disabled text. */
+.walletItemDone {
+  border: 1px solid color-mix(in srgb, var(--ansar-wallet) 40%, transparent);
+  background: color-mix(in srgb, var(--ansar-wallet) 6%, transparent);
+  cursor: default;
+}
+.walletItem:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.walletBox {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ansar-border);
+}
+.walletItemDone .walletBox {
+  border-color: var(--ansar-wallet);
+  background: var(--ansar-wallet);
+}
+.walletTick { font-size: 13px; font-weight: 800; color: var(--ansar-base); }
+
+.walletItemName {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.walletItemNote {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ansar-muted);
+}
+
+.walletItemValue {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--ansar-wallet);
+  background: color-mix(in srgb, var(--ansar-wallet) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-wallet) 40%, transparent);
+}
+
+.walletSpend,
+.walletSpendOpen {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  border-radius: var(--ansar-radius-row);
+  border: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  -webkit-tap-highlight-color: transparent;
+}
+.walletSpend {
+  color: var(--ansar-muted);
+  background: var(--ansar-row);
+  cursor: not-allowed;
+}
+.walletSpendOpen {
+  color: var(--ansar-base);
+  background: var(--ansar-wallet);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--ansar-wallet) 70%, #000000);
+  cursor: pointer;
+}
+.walletSpendOpen:disabled { opacity: 0.6; cursor: not-allowed; }
+.walletSpendOpen:focus-visible,
+.walletSpend:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* ── Phone ──────────────────────────────────────────────────────────────────
+   At 390px the header's wordmark, two stats, two clocks and connection state
+   cannot share one 40px line, and the Match Centre's fixture cannot sit beside
+   a 168px readiness region. Both are allowed to grow and stack rather than
+   clip whatever falls off the right edge.
+
+   What yields is chosen, not incidental: the DEVICE clock goes, because it is
+   explicitly display-only. The server clock stays — it is the one every gate is
+   decided against — and so does the connection state, because a child needs to
+   know the board is not talking to the server before wondering why a tap did
+   nothing. */
+@media (max-width: 640px) {
+  .clubHeader {
+    height: auto;
+    min-height: 40px;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding: 7px 12px;
+  }
+  .clubWordmark { font-size: 15px; }
+
+  .clubStatus {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    gap: 8px;
+  }
+
+  .deviceClock { display: none; }
+
+  .matchCentre {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    /* The desktop cap exists to protect the 1440 x 820 fold. A phone scrolls,
+       and a stacked frame is taller than 128px by construction. */
+    max-height: none;
+    padding: 12px 14px;
+  }
+  .matchCrest { height: 56px; }
+
+  .matchReadiness {
+    min-width: 0;
+    padding: 8px 0 0;
+    border-left: none;
+    border-top: 1px solid color-mix(in srgb, var(--ansar-gold) 16%, transparent);
+  }
+
+  .clubNav { height: auto; min-height: 44px; padding: 6px 10px; }
+}
