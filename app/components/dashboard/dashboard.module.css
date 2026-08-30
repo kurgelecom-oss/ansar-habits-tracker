@@ -1473,5 +1473,5 @@
   .panelProgress { height: 6px; margin: 0 14px 6px; }
   .panelFooter { padding: 5px 13px 6px; }
   .panelScore { font-size: 12px; }
-  .panelBody { padding: 1px 11px 5px; gap: 4px; }
+  .panelBody { padding: 1px 11px 4px; gap: 3px; }
 }
