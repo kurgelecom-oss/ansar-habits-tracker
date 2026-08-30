@@ -18,6 +18,7 @@ import { habitsOnDay, scoringHabits } from "./lib/days";
 import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
 import ClubHeader from "./components/dashboard/ClubHeader";
 import ClubStatus from "./components/dashboard/ClubStatus";
+import DayViewToggle, { type DayView } from "./components/dashboard/DayViewToggle";
 import DashboardShell from "./components/dashboard/DashboardShell";
 import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
 import MatchCentrePlaceholder from "./components/dashboard/MatchCentrePlaceholder";
@@ -226,6 +227,8 @@ const WEEKLY_MAX = 55;
 export default function AnsarPage() {
   const [gate, setGate] = useState<GateSnapshot | null>(null);
   const [notionHabits, setNotionHabits] = useState<NotionHabit[]>([]);
+  /** Weekday/weekend PREVIEW. null = follow the server's real day. */
+  const [dayView, setDayView] = useState<DayView | null>(null);
   const [wallet, setWallet] = useState<WalletState | null>(null);
   const [stretchItems, setStretchItems] = useState<StretchItem[]>([]);
   // null until /api/settings answers — see the POINTS_ACTIVE note at the top.
@@ -928,8 +931,37 @@ export default function AnsarPage() {
      they carried - the four states, the point chip, the override marker, the
      tick and long-hold wiring - moved into HabitRow unchanged. */
 
+  /* ── WEEKDAY / WEEKEND PREVIEW ──────────────────────────────────────────────
+     `liveView` is what the server says today actually is. When the toggle picks
+     the other side, the roster is rebuilt from the Notion habit list using
+     habitsOnDay() — the same rule the server applies — and every row comes back
+     LOCKED. A tick belongs to a date and the server would refuse one for a day
+     that is not today, so the board says so up front rather than letting a tap
+     fail silently. Nothing here touches scoring, the gate, or any write. */
+  const liveView: DayView | null =
+    dayName === "" ? null : (dayName === "Saturday" || dayName === "Sunday" ? "weekend" : "weekday");
+  const previewing = dayView !== null && liveView !== null && dayView !== liveView;
+  const previewDayName = dayView === "weekend" ? "Saturday" : "Monday";
+
+  const previewHabits: DashboardHabit[] = previewing
+    ? habitsOnDay(notionHabits, previewDayName).map(h => ({
+        id: h.id, name: h.name, block: h.block, order: h.order,
+        pointType: h.pointType, points: h.points,
+        state: "LOCKED" as ButtonState,
+        label: `Preview · ${previewDayName}`,
+        message: null, reason: "preview",
+        window: h.windowStart && h.windowEnd ? `${h.windowStart}-${h.windowEnd}` : null,
+        dwellSeconds: h.dwellSeconds ?? null,
+        overridden: false,
+      }))
+    : [];
+
+  const viewHabits: DashboardHabit[] = previewing
+    ? previewHabits
+    : (gateHabits as DashboardHabit[]);
+
   const inBlock = (blockId: string) =>
-    gateHabits.filter(h => h.block === blockId).sort((a, b) => a.order - b.order);
+    viewHabits.filter(h => h.block === blockId).sort((a, b) => a.order - b.order);
 
   /* ── MORNING FEASIBILITY ────────────────────────────────────────────────────
      Can the morning block still be finished before its window shuts?
@@ -1049,6 +1081,12 @@ export default function AnsarPage() {
 
       <DashboardShell
         status={
+          <>
+          <DayViewToggle
+            value={dayView ?? liveView ?? "weekday"}
+            live={liveView}
+            onChange={setDayView}
+          />
           <ClubStatus
             serverTime={gate?.serverTime ?? null}
             deviceTime={mounted ? time : ""}
@@ -1057,6 +1095,7 @@ export default function AnsarPage() {
             todayPercent={gate ? overallPct : null}
             streak={streak}
           />
+          </>
         }
       >
 

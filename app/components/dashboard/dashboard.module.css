@@ -132,6 +132,45 @@
   display: none;
 }
 
+/* Weekday / weekend preview switch, at the nav's right-hand end. */
+.dayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #000000 34%, transparent);
+  border: 1px solid var(--ansar-hairline);
+  flex-shrink: 0;
+}
+
+.dayToggleOn,
+.dayToggleOff {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dayToggleOn {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--cyan) 26%, var(--ansar-navy));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cyan) 30%, transparent);
+}
+
+.dayToggleOff {
+  color: var(--ansar-subtext);
+  background: none;
+}
+.dayToggleOff:hover { color: #ffffff; }
+.dayToggleOn:focus-visible,
+.dayToggleOff:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
 .clubNavStatus {
   display: flex;
   align-items: center;
@@ -201,8 +240,8 @@
   min-width: 0;
   /* Near-black plates, the way the reference reads them — the rows inside are
      the lighter surface, so the panel has to sit under them, not beside them. */
-  background: color-mix(in srgb, var(--ansar-base) 88%, var(--ansar-card));
-  border: 1px solid color-mix(in srgb, var(--ansar-border) 72%, transparent);
+  background: var(--ansar-panel);
+  border: 1px solid var(--ansar-hairline);
   border-radius: var(--ansar-radius-panel);
   overflow: hidden;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.025);
@@ -528,20 +567,17 @@
   justify-content: center;
   min-height: 120px;
   max-height: 140px;
-  margin: 0 20px;
+  /* 7.24% each side: measured off the reference, where the plate spans 83.7%
+     of the canvas while the panel row below spans almost all of it. */
+  margin: 0 7.24%;
   padding: 16px 24px;
   flex-shrink: 0;
   /* One lit royal-blue plate: the navy at near full strength across the middle,
      falling away only at the ends. */
-  /* Royal blue, not near-black navy. The reference plate reads as a lit blue
-     board: the navy lifted toward white across the middle and only falling
-     back at the ends. */
-  background:
-    radial-gradient(ellipse at 50% -10%, color-mix(in srgb, var(--cyan) 12%, transparent), transparent 66%),
-    linear-gradient(100deg,
-      color-mix(in srgb, var(--ansar-navy) 88%, #000000),
-      color-mix(in srgb, var(--ansar-navy) 62%, var(--ansar-royal)) 46%,
-      color-mix(in srgb, var(--ansar-navy) 90%, #000000));
+  /* Flat. Sampled across the reference plate at eight points and it is one
+     colour end to end — #02193c — not a gradient. Every gradient I put here
+     was invention. */
+  background: var(--ansar-fixture);
   border: 1px solid color-mix(in srgb, var(--ansar-gold) 34%, transparent);
   border-radius: var(--ansar-radius-panel);
   box-shadow:
@@ -594,12 +630,16 @@
 .matchTeamAway .matchTeamText { text-align: right; }
 
 .matchCrest {
-  height: 80px;
+  height: 88px;
   width: auto;
   display: block;
   object-fit: contain;
   flex-shrink: 0;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.45));
+  /* The source art is 431x600 and 567x652, so a 72-88px crest is still drawn
+     from well over 2x the pixels it needs — which is what the old 194x259
+     Real Madrid file could not do, and why it read as soft. */
+  image-rendering: auto;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55)) saturate(1.08) contrast(1.06);
 }
 
 .matchTeamName {
@@ -710,10 +750,10 @@
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
   min-height: 58px;
-  padding: 0 16px;
+  padding: 0 18px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -757,8 +797,8 @@
    a tint and a caption, not an alarm wall. */
 .habitRowMissed {
   cursor: not-allowed;
-  border-color: color-mix(in srgb, var(--ansar-danger) 26%, transparent);
-  background: color-mix(in srgb, var(--ansar-danger) 6%, var(--ansar-card));
+  border-color: color-mix(in srgb, var(--ansar-danger) 30%, var(--ansar-hairline));
+  background: var(--ansar-rowflat);
 }
 
 /* The parent's two-second hold, made visible. The only hint the override
@@ -856,6 +896,7 @@
 
 .pointChip {
   flex-shrink: 0;
+  margin-right: 10px;
   padding: 0;
   font-size: 14px;
   font-weight: 600;
@@ -934,7 +975,7 @@
   font-size: 13px;
   font-weight: 400;
   line-height: 1.3;
-  color: color-mix(in srgb, #ffffff 46%, transparent);
+  color: var(--ansar-subtext);
 }
 
 /* ── Work + Week ────────────────────────────────────────────────────────────*/
@@ -949,8 +990,8 @@
   border-radius: var(--ansar-radius-row);
   /* Transparent, not none: the emphasis and state rules below colour this
      border, and a row that gains a border on tick would jump by 2px. */
-  border: 1px solid transparent;
-  background: color-mix(in srgb, var(--ansar-row) 76%, var(--ansar-base));
+  border: 1px solid var(--ansar-hairline);
+  background: var(--ansar-rowflat);
   color: #ffffff;
   font: inherit;
   font-size: 15px;
@@ -1270,7 +1311,46 @@
     flex-wrap: wrap;
     overflow-x: visible;
   }
-  .clubNavStatus {
+  /* Weekday / weekend preview switch, at the nav's right-hand end. */
+.dayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #000000 34%, transparent);
+  border: 1px solid var(--ansar-hairline);
+  flex-shrink: 0;
+}
+
+.dayToggleOn,
+.dayToggleOff {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dayToggleOn {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--cyan) 26%, var(--ansar-navy));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cyan) 30%, transparent);
+}
+
+.dayToggleOff {
+  color: var(--ansar-subtext);
+  background: none;
+}
+.dayToggleOff:hover { color: #ffffff; }
+.dayToggleOn:focus-visible,
+.dayToggleOff:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.clubNavStatus {
     order: 2;
     width: 100%;
     margin-left: 0;
@@ -1336,7 +1416,46 @@
   .clubBall { margin-top: 3px; font-size: 12px; }
   .clubNavItem { min-height: 46px; padding: 0 10px; font-size: 13px; }
   .clubNavIcon { font-size: 14px; }
-  .clubNavStatus { gap: 6px; padding-left: 4px; }
+  /* Weekday / weekend preview switch, at the nav's right-hand end. */
+.dayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #000000 34%, transparent);
+  border: 1px solid var(--ansar-hairline);
+  flex-shrink: 0;
+}
+
+.dayToggleOn,
+.dayToggleOff {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dayToggleOn {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--cyan) 26%, var(--ansar-navy));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cyan) 30%, transparent);
+}
+
+.dayToggleOff {
+  color: var(--ansar-subtext);
+  background: none;
+}
+.dayToggleOff:hover { color: #ffffff; }
+.dayToggleOn:focus-visible,
+.dayToggleOff:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.clubNavStatus { gap: 6px; padding-left: 4px; }
   .progressCard,
   .clockCard { min-height: 48px; }
   .statusMetric { padding: 6px 10px; }
@@ -1357,7 +1476,46 @@
     flex-wrap: wrap;
     overflow-x: visible;
   }
-  .clubNavStatus {
+  /* Weekday / weekend preview switch, at the nav's right-hand end. */
+.dayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #000000 34%, transparent);
+  border: 1px solid var(--ansar-hairline);
+  flex-shrink: 0;
+}
+
+.dayToggleOn,
+.dayToggleOff {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dayToggleOn {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--cyan) 26%, var(--ansar-navy));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cyan) 30%, transparent);
+}
+
+.dayToggleOff {
+  color: var(--ansar-subtext);
+  background: none;
+}
+.dayToggleOff:hover { color: #ffffff; }
+.dayToggleOn:focus-visible,
+.dayToggleOff:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.clubNavStatus {
     order: 2;
     width: 100%;
     margin-left: 0;
@@ -1408,12 +1566,12 @@
   .matchCentre {
     min-height: 104px;
     max-height: 112px;
-    margin: 0 12px;
+    margin: 0 7.24%;
     padding: 12px 20px;
   }
   .matchFixture { gap: 28px; }
   .matchTeam { gap: 15px; }
-  .matchCrest { height: 72px; }
+  .matchCrest { height: 76px; }
   .matchTeamName { font-size: 21px; }
   .matchTeamMeta { font-size: 14px; }
   .matchGoals { font-size: 44px; }
@@ -1482,7 +1640,7 @@
   .panelIcon { font-size: 17px; margin-right: 8px; }
   .panelSubtitle { font-size: 12.5px; line-height: 1.25; }
   .habitName { font-size: 15px; line-height: 1.3; }
-  .habitRow { min-height: 46px; padding: 0 13px; gap: 11px; }
+  .habitRow { min-height: 46px; padding: 0 15px; gap: 13px; }
   .habitBox { width: 25px; height: 25px; }
   .habitNote { font-size: 12px; }
   .panelSubtitle { font-size: 12px; }

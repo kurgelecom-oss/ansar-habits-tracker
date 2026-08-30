@@ -61,6 +61,16 @@ export default function DayProgrammePanel({
 
   return (
     <Panel
+      footer={(() => {
+        const all = [...homeschool, ...afternoonEvening, ...conditional];
+        const earned = all.filter(h => h.state === "DONE").reduce((n, h) => n + h.points, 0);
+        return (
+          <span className={styles.panelScore}>
+            Programme Score:{" "}
+            <strong>{earned > 0 ? `+${earned}` : earned} pts</strong>
+          </span>
+        );
+      })()}
       title="Today's Programme"
       icon="🗓️"
       subtitle="Homeschool · Afternoon / Evening · Conditional"

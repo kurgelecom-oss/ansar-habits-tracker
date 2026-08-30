@@ -79,6 +79,17 @@ export default function StretchWalletPanel({
 
   return (
     <Panel
+      /* The week's earned/spent pair, which used to sit under the panel title
+         as sub-text. It reads as a score line at the foot, where the other
+         three columns close, and the balance stays the headline up top. */
+      footer={
+        <span className={styles.panelScore}>
+          This week:{" "}
+          <strong>
+            {wallet && !locked ? `${wallet.earnedWeek} earned · ${wallet.spentWeek} spent` : "locked"}
+          </strong>
+        </span>
+      }
       title="Stretch Wallet"
       icon="🎮"
       subtitle={`Converts Sat & Sun · ${capMin} min/day cap`}

@@ -34,6 +34,12 @@ export default function WorkWeekPanel({
 
   return (
     <Panel
+      footer={
+        <span className={styles.panelScore}>
+          Week Score:{" "}
+          <strong>{weekPoints === null ? "—" : `${weekPoints} / ${weekMax} pts`}</strong>
+        </span>
+      }
       title="Work + Week"
       icon="📝"
       subtitle="Log the day's work · Mon–Fri squad total"

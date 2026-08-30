@@ -52,7 +52,15 @@
   --ansar-border: #2d3543;       /* hairline, same value the TopNav uses */
   --ansar-muted: #757f8f;        /* secondary text, same as .topnav-link */
   --ansar-navy: #0d2350;         /* Real Madrid royal navy */
-  --ansar-royal: #2f66d8;        /* the lit blue the Match Centre plate rises to */
+  /* Sampled straight off the approved reference image rather than guessed:
+     the fixture plate is a FLAT deep royal navy with no gradient in it at all,
+     the panels are a touch darker than the rows, and the rows are separated by
+     a hairline rather than by a fill. */
+  --ansar-fixture: #02193c;      /* Match Centre plate — flat, no gradient */
+  --ansar-panel: #0e1420;        /* panel plate */
+  --ansar-rowflat: #0f1521;      /* row surface inside a panel */
+  --ansar-hairline: #1b232f;     /* the line between rows */
+  --ansar-subtext: #b1b8be;      /* secondary line under a habit name */
   --ansar-gold: #d4af37;         /* Champions League gold — override marker */
   --ansar-gold-bright: #e7c55b;  /* gold, lifted for text on dark surfaces */
   --ansar-success: #00ff88;      /* DONE */
