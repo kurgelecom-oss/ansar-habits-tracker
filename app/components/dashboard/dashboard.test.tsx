@@ -319,6 +319,12 @@ describe("MatchCentrePlaceholder", () => {
     expect(crests[1]).toHaveAttribute("src", "/real-sociedad.png");
     expect(crests[1]).toHaveAccessibleName("Real Sociedad");
   });
+
+  it("keeps readiness out of the reference-matched fixture bar", () => {
+    render(<MatchCentrePlaceholder readiness={readiness} />);
+    expect(screen.queryByTestId("match-readiness")).not.toBeInTheDocument();
+    expect(screen.queryByText("Match Readiness")).not.toBeInTheDocument();
+  });
 });
 
 describe("responsive rules for the header and Match Centre", () => {
@@ -370,18 +376,15 @@ describe("responsive rules for the header and Match Centre", () => {
     expect(mobile).not.toMatch(/\.connection[^{]*\{[^}]*display:\s*none/);
   });
 
-  /** The fixture and the 168px readiness region cannot sit side by side. */
+  /** The fixture itself wraps rather than shrinking below a readable size. */
   it("stacks the Match Centre and releases its height cap", () => {
     expect(rule("matchCentre")).toMatch(/flex-direction:\s*column/);
     expect(rule("matchCentre")).toMatch(/height:\s*auto/);
     expect(rule("matchCentre")).toMatch(/max-height:\s*none/);
-    expect(rule("matchReadiness")).toMatch(/min-width:\s*0/);
     // The fixture wraps on a phone instead of shrinking: teams share a row and
     // the score drops beneath them.
     expect(rule("matchFixture")).toMatch(/flex-wrap:\s*wrap/);
     expect(rule("matchScore")).toMatch(/order:\s*3/);
-    // Readiness only leaves the flow on desktop, to keep the score centred.
-    expect(rule("matchReadiness")).toMatch(/position:\s*static/);
   });
 
   it("compacts the full reference navigation before status can leave a 1440px viewport", () => {
@@ -458,21 +461,9 @@ describe("height defences at 1440 x 820", () => {
     expect(declaredRowMinHeight(css)).toBeGreaterThanOrEqual(ROW_TARGET_FLOOR_PX);
   });
 
-  /** The frame may get shorter, but it must not stop telling the truth. */
+  /** The frame may get shorter, but it must not hide fixture truth. */
   it("keeps the Match Centre honest while compacting it", () => {
     expect(shortDesktop).not.toMatch(/\.matchUnavailable[^{]*\{[^}]*display:\s*none/);
-    expect(shortDesktop).not.toMatch(/\.matchReadiness[^{]*\{[^}]*display:\s*none/);
-    expect(shortDesktop).not.toMatch(/\.readinessValue[^{]*\{[^}]*display:\s*none/);
-  });
-
-  /**
-   * .matchCentre is overflow:hidden, so anything taller than its cap is cut
-   * silently. The readiness block is laid out two-up at this size for exactly
-   * that reason; stacked, it overran the frame and clipped the journal note.
-   */
-  it("lays readiness out to fit the compacted frame rather than overflow it", () => {
-    expect(shortDesktop).toMatch(/\.matchReadiness[^{]*\{[^}]*display:\s*grid/);
-    expect(shortDesktop).toMatch(/\.readinessNote[^{]*\{[^}]*grid-column/);
   });
 
   it("keeps every habit row target at or above 44px", () => {
@@ -839,6 +830,15 @@ describe("DayProgrammePanel", () => {
     expect(items[1]).toHaveTextContent("Homeschool session completed");
   });
 
+  it("uses the reference's white-primary and grey-guidance structure for both homeschool rows", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    const items = screen.getAllByTestId("homeschool-item");
+    expect(within(items[0]).getByText("Daily learning journal entry written")).toBeVisible();
+    expect(within(items[0]).getByText("Tap when your journal entry is written")).toBeVisible();
+    expect(within(items[1]).getByText("Homeschool session completed (4 hrs)")).toBeVisible();
+    expect(within(items[1]).getByText("Tap when 4 hours are completed")).toBeVisible();
+  });
+
   /**
    * The journal is DONE in the weekday fixture. It is a self-certified tick, so
    * the only honest word for it is Recorded. "Verified" must not appear
@@ -956,6 +956,18 @@ const workProps = {
 };
 
 describe("WorkWeekPanel", () => {
+  it("places today's readiness with the work summary instead of inside the fixture", () => {
+    const readiness = deriveMatchReadiness({
+      morningDone: 6, morningTotal: 7, homeschoolDone: false,
+      journalState: "RECORDED", workSubmissionCount: 1,
+    });
+    render(<WorkWeekPanel {...workProps} readiness={readiness} />);
+    const summary = screen.getByTestId("work-readiness");
+    expect(summary).toHaveTextContent("Match Readiness");
+    expect(summary).toHaveTextContent("54%");
+    expect(summary).toHaveTextContent("Journal recorded");
+  });
+
   it("shows the week, the tier, the Golden Boot and a working Log Work", () => {
     render(<WorkWeekPanel {...workProps} />);
     expect(screen.getByRole("button", { name: "Log Work" })).toBeEnabled();

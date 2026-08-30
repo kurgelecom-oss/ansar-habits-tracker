@@ -704,55 +704,6 @@
   white-space: nowrap;
 }
 
-/* Its own labelled region, off to the side — never between the two teams. */
-.matchReadiness {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  min-width: 152px;
-  padding: 8px 12px;
-  border-left: 1px solid color-mix(in srgb, var(--ansar-gold) 16%, transparent);
-}
-
-.readinessLabel {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--ansar-muted);
-}
-
-/* Sized well below the 28–40px the spec reserves for scoreboard figures, so it
-   cannot be mistaken for one. */
-.readinessValue {
-  margin-top: 2px;
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1.1;
-  color: var(--cyan);
-}
-
-.readinessTrack {
-  margin-top: 6px;
-  height: 4px;
-  width: 100%;
-  border-radius: 2px;
-  background: var(--ansar-row);
-  overflow: hidden;
-}
-
-.readinessFill {
-  height: 100%;
-  background: var(--cyan);
-  transition: width 0.3s ease;
-}
-
-.readinessNote {
-  margin-top: 5px;
-  font-size: 11px;
-  color: var(--ansar-muted);
-}
-
 /* ── Habit rows ─────────────────────────────────────────────────────────────
    `--row-accent` is set inline per row from the owning block's colour, so the
    state rules below can tint themselves without a class per block. */
@@ -984,8 +935,16 @@
    caption uses, because "Recorded" is a positive fact about today's work. */
 .habitNote {
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.3;
+  color: var(--cyan);
+  flex-shrink: 0;
+}
+
+.habitDescription {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.25;
   color: var(--ansar-subtext);
 }
 
@@ -1020,6 +979,46 @@
   font-size: 11px;
   color: var(--ansar-muted);
   text-align: center;
+}
+
+.workReadiness {
+  padding: 8px 10px;
+  border: 1px solid var(--ansar-hairline);
+  border-radius: var(--ansar-radius-row);
+  background: var(--ansar-rowflat);
+}
+
+.workReadinessHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ansar-subtext);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.workReadinessHead strong { color: var(--cyan); font-size: 14px; }
+
+.workReadinessTrack {
+  display: block;
+  height: 3px;
+  margin-top: 5px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--ansar-hairline);
+}
+
+.workReadinessFill {
+  display: block;
+  height: 100%;
+  background: var(--cyan);
+}
+
+.workReadiness p {
+  margin-top: 5px;
+  color: var(--ansar-subtext);
+  font-size: 10px;
 }
 
 /* ── Weekly tier ────────────────────────────────────────────────────────────
@@ -1390,8 +1389,7 @@
   }
   /* A phone cannot hold crest + name + score + name + crest on one line, so
      the fixture wraps to two: the teams share a row and the score sits under
-     them. Readiness comes back into flow at the bottom — it is only taken out
-     of it on desktop to keep the score centred on the plate. */
+     them. */
   .matchFixture { flex-wrap: wrap; gap: 10px 14px; }
   .matchTeam { flex: 1 1 40%; gap: 9px; }
   .matchScore { order: 3; flex: 1 1 100%; min-width: 0; }
@@ -1401,15 +1399,6 @@
   .matchGoals { font-size: 34px; }
   .matchScoreDash { font-size: 26px; }
   .matchPreviewTag { position: static; align-self: flex-start; }
-
-  .matchReadiness {
-    position: static;
-    transform: none;
-    min-width: 0;
-    padding: 8px 0 0;
-    border-left: none;
-    border-top: 1px solid color-mix(in srgb, var(--ansar-gold) 16%, transparent);
-  }
 
 }
 
@@ -1541,7 +1530,6 @@
   }
 }
 
-
 /* ── Short-desktop height recovery ──────────────────────────────────────────
    At 1440 x 820 the weekday Today's Programme carries nine habit rows across
    three subsections, and the board may not scroll: .ab-root is
@@ -1589,25 +1577,6 @@
   .matchScoreDash { font-size: 33px; }
   .matchStatus { font-size: 14px; margin-top: 4px; }
   .matchScore { min-width: 120px; }
-  /* Readiness goes two-up instead of four-deep. Stacked, its label, figure,
-     track and journal note came to 58px inside a 54px content box, and
-     .matchCentre is overflow:hidden — the journal note was being cut off.
-     Pairing the label with the figure costs nothing and hides nothing. */
-  .matchReadiness {
-    display: grid;
-    grid-template-columns: auto auto;
-    column-gap: 8px;
-    row-gap: 2px;
-    align-items: baseline;
-    align-content: center;
-    min-width: 168px;
-    padding: 3px 9px;
-  }
-  .readinessLabel { grid-column: 1; }
-  .readinessValue { grid-column: 2; justify-self: end; font-size: 16px; margin-top: 0; }
-  .readinessTrack { grid-column: 1 / -1; margin-top: 0; }
-  .readinessNote { grid-column: 1 / -1; font-size: 10px; margin-top: 0; }
-
   .clubNav { height: 66px; }
   .clubNavItem { padding: 8px 12px; font-size: 13px; }
   .clubCrest {

@@ -28,6 +28,10 @@ type HomeschoolSectionProps = {
 };
 
 const JOURNAL_ID = "journal";
+const GUIDANCE: Record<string, string> = {
+  journal: "Tap when your journal entry is written",
+  homeschool_session: "Tap when 4 hours are completed",
+};
 
 export default function HomeschoolSection({
   habits, savingId = null, holdId = null, onTick, onHoldStart, onHoldCancel,
@@ -47,6 +51,7 @@ export default function HomeschoolSection({
             saving={savingId === habit.id}
             holding={holdId === habit.id}
             note={habit.id === JOURNAL_ID && evidence === "RECORDED" ? "Recorded" : undefined}
+            description={GUIDANCE[habit.id]}
             onTick={onTick}
             onHoldStart={onHoldStart}
             onHoldCancel={onHoldCancel}

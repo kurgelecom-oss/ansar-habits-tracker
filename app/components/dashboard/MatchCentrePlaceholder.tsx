@@ -14,10 +14,9 @@ import styles from "./dashboard.module.css";
  * When the provider lands, delete PREVIEW_FIXTURE and take the same fields from
  * the API. The layout does not change — that is the point of building it now.
  *
- * Match Readiness sits in its own labelled region, pinned to the right edge and
- * NEVER in the space between the two teams where the score goes (spec §8.4). It
- * is absolutely positioned so the fixture centres on the PANEL rather than on
- * the space left over beside it.
+ * Match Readiness deliberately lives in Work + Week. The owner's reference has
+ * an uninterrupted fixture bar, so putting learning data beside the away crest
+ * made the football score feel off-centre even when the flex maths was exact.
  */
 const PREVIEW_FIXTURE = {
   home: { name: "REAL MADRID", competition: "La Liga", crest: "/real-madrid.png", goals: 2 },
@@ -25,15 +24,7 @@ const PREVIEW_FIXTURE = {
   status: "Full Time",
 } as const;
 
-const JOURNAL_NOTE: Record<MatchReadiness["journalState"], string> = {
-  NOT_REQUIRED: "No journal scheduled today",
-  MISSING: "Journal not written yet",
-  RECORDED: "Journal recorded",
-  VERIFIED: "Journal verified",
-  OVERRIDE: "Journal — parent override",
-};
-
-export default function MatchCentrePlaceholder({ readiness }: { readiness: MatchReadiness }) {
+export default function MatchCentrePlaceholder({ readiness: _readiness }: { readiness: MatchReadiness }) {
   const { home, away, status } = PREVIEW_FIXTURE;
 
   return (
@@ -72,24 +63,6 @@ export default function MatchCentrePlaceholder({ readiness }: { readiness: Match
         </div>
       </div>
 
-      <div className={styles.matchReadiness} data-testid="match-readiness">
-        <p className={styles.readinessLabel}>{readiness.label}</p>
-        <p className={styles.readinessValue}>{readiness.percent}%</p>
-        <div
-          role="progressbar"
-          aria-label={readiness.label}
-          aria-valuenow={readiness.percent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          className={styles.readinessTrack}
-        >
-          {/* Width, the figure above and aria-valuenow are all this one
-              bounded number, so they cannot disagree. */}
-          <div data-testid="readiness-fill" className={styles.readinessFill}
-            style={{ width: `${readiness.percent}%` }} />
-        </div>
-        <p className={styles.readinessNote}>{JOURNAL_NOTE[readiness.journalState]}</p>
-      </div>
     </section>
   );
 }

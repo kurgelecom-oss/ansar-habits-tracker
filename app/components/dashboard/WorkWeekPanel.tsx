@@ -1,4 +1,4 @@
-import type { DashboardGoldenBoot } from "../../dashboard/types";
+import type { DashboardGoldenBoot, MatchReadiness } from "../../dashboard/types";
 import Panel from "./Panel";
 import WeeklyTierProgress from "./WeeklyTierProgress";
 import styles from "./dashboard.module.css";
@@ -23,12 +23,13 @@ type WorkWeekPanelProps = {
    * counts them yet, so null is the honest value and the panel says so.
    */
   submissionCount: number | null;
+  readiness?: MatchReadiness;
   logOpen?: boolean;
   onOpenLogWork: () => void;
 };
 
 export default function WorkWeekPanel({
-  weekPoints, weekMax, goldenBoot, submissionCount, logOpen = false, onOpenLogWork,
+  weekPoints, weekMax, goldenBoot, submissionCount, readiness, logOpen = false, onOpenLogWork,
 }: WorkWeekPanelProps) {
   const bootEarned = goldenBoot !== null && goldenBoot.progress >= goldenBoot.target;
 
@@ -63,6 +64,32 @@ export default function WorkWeekPanel({
           ? "Submission count not connected yet"
           : `${submissionCount} logged today`}
       </p>
+
+      {readiness ? (
+        <div className={styles.workReadiness} data-testid="work-readiness">
+          <div className={styles.workReadinessHead}>
+            <span>{readiness.label}</span>
+            <strong>{readiness.percent}%</strong>
+          </div>
+          <div
+            role="progressbar"
+            aria-label={readiness.label}
+            aria-valuenow={readiness.percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className={styles.workReadinessTrack}
+          >
+            <span className={styles.workReadinessFill} style={{ width: `${readiness.percent}%` }} />
+          </div>
+          <p>{({
+            NOT_REQUIRED: "No journal scheduled today",
+            MISSING: "Journal not written yet",
+            RECORDED: "Journal recorded",
+            VERIFIED: "Journal verified",
+            OVERRIDE: "Journal — parent override",
+          } as const)[readiness.journalState]}</p>
+        </div>
+      ) : null}
 
       <WeeklyTierProgress weekPoints={weekPoints} weekMax={weekMax} />
 

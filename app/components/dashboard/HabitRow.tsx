@@ -41,13 +41,15 @@ type HabitRowProps = {
    * additive and never overwrites it.
    */
   note?: string;
+  /** Supporting action copy shown below the primary habit name. */
+  description?: string;
   onTick: (id: string, name: string) => void;
   onHoldStart: (habit: DashboardHabit) => void;
   onHoldCancel: () => void;
 };
 
 export default function HabitRow({
-  habit, accent, saving = false, holding = false, icon, note,
+  habit, accent, saving = false, holding = false, icon, note, description,
   onTick, onHoldStart, onHoldCancel,
 }: HabitRowProps) {
   const isDone = habit.state === "DONE";
@@ -88,15 +90,17 @@ export default function HabitRow({
 
       {icon ? <span aria-hidden className={styles.habitIcon}>{icon}</span> : null}
 
-      {/* One line, always. The reason and the note live in the row's
-          accessible name and tooltip instead of under the habit — the visible
-          state is carried by three distinct glyphs (✓ ✕ 🔒), not by colour. */}
+      {/* Most rows stay on one line. The two Homeschool actions mirror the
+          owner's reference with a smaller guidance line; gate reasons still
+          live in the tooltip and state remains visible through ✓ ✕ 🔒. */}
       <span className={styles.habitText}>
         <span className={styles.habitName}>{habit.name}</span>
-        {note ? <span className={styles.habitNote}>{note}</span> : null}
+        {description ? <span className={styles.habitDescription}>{description}</span> : null}
       </span>
 
-      {/* The audit marker, reduced to a dot so the row stays one line. It is
+      {note ? <span className={styles.habitNote}>{note}</span> : null}
+
+      {/* The audit marker, reduced to a dot so ordinary rows stay one line. It is
           NOT removed: without some visible trace an overridden habit looks
           exactly like an earned one, and that is an audit problem rather than a
           styling one. The wording rides along in a visually-hidden span so it

@@ -1186,6 +1186,7 @@ export default function AnsarPage() {
           weekMax={WEEKLY_MAX}
           goldenBoot={goldenBoot}
           submissionCount={null}
+          readiness={readiness}
           logOpen={logOpen}
           onOpenLogWork={() => setLogOpen(true)}
         />
