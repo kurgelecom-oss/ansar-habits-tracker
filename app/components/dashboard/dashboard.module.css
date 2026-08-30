@@ -201,17 +201,21 @@
   min-width: 0;
   /* Near-black plates, the way the reference reads them — the rows inside are
      the lighter surface, so the panel has to sit under them, not beside them. */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 84%, var(--ansar-base)), color-mix(in srgb, var(--ansar-base) 78%, var(--ansar-card)));
-  border: 1px solid var(--ansar-border);
+  background: color-mix(in srgb, var(--ansar-base) 88%, var(--ansar-card));
+  border: 1px solid color-mix(in srgb, var(--ansar-border) 72%, transparent);
   border-radius: var(--ansar-radius-panel);
   overflow: hidden;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .panelAccent {
+  /* The reference draws no coloured bar across the top of a panel. The element
+     stays (it is the panel's colour identity in the DOM and under test) but it
+     is a hairline the eye reads as an edge, not a stripe. */
   height: 1px;
   width: 100%;
   flex-shrink: 0;
+  opacity: 0.5;
 }
 
 .panelHead {
@@ -261,6 +265,7 @@
 .panelProgressFill {
   height: 100%;
   border-radius: 3px;
+  background: var(--cyan);
   transition: width 0.3s ease;
 }
 
@@ -710,14 +715,10 @@
 }
 
 .habitRow[data-emphasis="journal"] {
-  border-color: color-mix(in srgb, var(--ansar-gold) 72%, var(--ansar-border));
-  background: linear-gradient(90deg, color-mix(in srgb, var(--ansar-gold) 10%, var(--ansar-row)), var(--ansar-row) 42%);
-  box-shadow: inset 3px 0 0 var(--ansar-gold), 0 0 0 1px color-mix(in srgb, var(--ansar-gold) 10%, transparent);
+  box-shadow: inset 3px 0 0 var(--ansar-gold);
 }
 
 .habitRow[data-emphasis="homeschool"] {
-  border-color: color-mix(in srgb, var(--cyan) 58%, var(--ansar-border));
-  background: linear-gradient(90deg, color-mix(in srgb, var(--cyan) 8%, var(--ansar-row)), var(--ansar-row) 42%);
   box-shadow: inset 3px 0 0 var(--cyan);
 }
 .habitRow:focus-visible {
@@ -776,12 +777,12 @@
   background: color-mix(in srgb, #000000 22%, transparent);
 }
 .habitRowDone .habitBox {
-  border-color: var(--row-accent);
-  background: var(--row-accent);
+  border-color: color-mix(in srgb, var(--ansar-success) 78%, #000000);
+  background: color-mix(in srgb, var(--ansar-success) 12%, transparent);
 }
 .habitRowMissed .habitBox { border-color: color-mix(in srgb, var(--ansar-danger) 40%, transparent); }
 
-.habitTick { font-size: 14px; font-weight: 800; color: #000000; }
+.habitTick { font-size: 13px; font-weight: 800; color: color-mix(in srgb, var(--ansar-success) 82%, #ffffff); }
 .habitGlyph { font-size: 11px; }
 
 .habitIcon { font-size: 17px; flex-shrink: 0; line-height: 1; }
@@ -795,9 +796,9 @@
 
 .habitName {
   display: block;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.25;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.3;
   color: #ffffff;
 }
 .habitRowDone .habitName { color: var(--ansar-muted); }
@@ -822,11 +823,7 @@
 }
 
 .overrideGlyph {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ansar-gold);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--ansar-gold) 60%, transparent);
+  display: none;
 }
 
 /* Readable to assistive tech, and still a real visible box for the contract
@@ -845,7 +842,7 @@
 .pointChip {
   flex-shrink: 0;
   padding: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
   color: var(--cyan);
@@ -857,9 +854,9 @@
 /* ── Panel summary and the morning feasibility banner ───────────────────────*/
 .panelCount {
   display: block;
-  font-size: 17px;
-  font-weight: 800;
-  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  color: color-mix(in srgb, #ffffff 62%, transparent);
   font-variant-numeric: tabular-nums;
 }
 .panelPoints {
@@ -936,8 +933,10 @@
   min-height: 40px;
   flex-shrink: 0;
   border-radius: var(--ansar-radius-row);
-  border: 1px solid color-mix(in srgb, var(--ansar-border) 80%, transparent);
-  background: color-mix(in srgb, var(--ansar-row) 88%, var(--ansar-card));
+  /* Transparent, not none: the emphasis and state rules below colour this
+     border, and a row that gains a border on tick would jump by 2px. */
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--ansar-row) 76%, var(--ansar-base));
   color: #ffffff;
   font: inherit;
   font-size: 15px;
@@ -1463,7 +1462,7 @@
 
   .panelHead { padding: 7px 13px 5px; }
   .panelSubtitle { font-size: 11px; line-height: 1.25; }
-  .habitName { font-size: 13.5px; line-height: 1.3; }
+  .habitName { font-size: 14px; line-height: 1.28; }
   .panelTitle { font-size: 16px; }
   .panelSubtitle { font-size: 12px; }
   .panelProgress { height: 4px; margin: 0 13px 5px; }

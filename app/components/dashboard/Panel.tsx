@@ -71,7 +71,9 @@ export default function Panel({
           <div
             className={styles.panelProgressFill}
             data-testid="panel-progress-fill"
-            style={{ width: `${pct}%`, background: accent }}
+            /* Cyan, not the block accent: the reference draws every completion
+               bar in the same colour so the four columns read as one system. */
+            style={{ width: `${pct}%` }}
           />
         </div>
       )}
