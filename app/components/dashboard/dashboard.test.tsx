@@ -8,7 +8,7 @@ import ClubNavigation from "./ClubNavigation";
 import DayProgrammePanel from "./DayProgrammePanel";
 import HabitPanel from "./HabitPanel";
 import HabitRow from "./HabitRow";
-import MatchCentrePlaceholder from "./MatchCentrePlaceholder";
+import MatchCentre from "./MatchCentre";
 import StretchWalletPanel from "./StretchWalletPanel";
 import WeeklyTierProgress from "./WeeklyTierProgress";
 import WorkWeekPanel from "./WorkWeekPanel";
@@ -16,6 +16,7 @@ import DashboardShell from "./DashboardShell";
 import Panel from "./Panel";
 import { weekdayFixture, weekendFixture } from "../../dashboard/fixtures";
 import type { DashboardHabit } from "../../dashboard/types";
+import type { MatchCentreData } from "../../lib/football/types";
 import { deriveMatchReadiness, groupHabitsByBlock } from "../../dashboard/model";
 
 const FUTURE_ITEMS = ["Habits", "Quests", "Teams", "Leaderboards", "History", "Settings"];
@@ -287,41 +288,61 @@ describe("ClubStatus", () => {
   });
 });
 
-describe("MatchCentrePlaceholder", () => {
-  const readiness = deriveMatchReadiness({
-    morningDone: 6, morningTotal: 7, homeschoolDone: false,
-    journalState: "RECORDED", workSubmissionCount: 1,
+describe("MatchCentre", () => {
+  const live: MatchCentreData = {
+    available: true,
+    matchId: 901,
+    phase: "LIVE",
+    competition: "Primera Division",
+    startTime: "2026-08-30T03:00:00Z",
+    home: { id: 86, name: "Real Madrid", crest: null, score: 2 },
+    away: { id: 92, name: "Real Sociedad", crest: "https://crests.football-data.org/92.png", score: 0 },
+    updatedAt: "2026-08-30T04:00:00Z",
+    stale: false,
+  };
+
+  it("renders the provider's real live fixture and never labels it preview", () => {
+    render(<MatchCentre data={live} />);
+    expect(screen.getByRole("region", { name: "Live fixture — Real Madrid 2, Real Sociedad 0" })).toBeVisible();
+    expect(screen.getByTestId("match-score")).toHaveTextContent("2 - 0");
+    expect(screen.getByText("Live")).toBeVisible();
+    expect(screen.queryByText("Preview")).not.toBeInTheDocument();
   });
 
-  it("renders the approved dummy fixture for visual preview", () => {
-    render(<MatchCentrePlaceholder readiness={readiness} />);
-    expect(screen.getByText("REAL MADRID")).toBeInTheDocument();
-    expect(screen.getByText("REAL SOCIEDAD")).toBeInTheDocument();
-    const score = screen.getByTestId("match-score");
-    expect(score).toHaveTextContent("2");
-    expect(score).toHaveTextContent("0");
-    expect(screen.getByText("Full Time")).toBeInTheDocument();
-    expect(screen.getAllByText("La Liga")).toHaveLength(2);
-  });
-
-  it("labels the fixture as preview data for assistive technology", () => {
-    render(<MatchCentrePlaceholder readiness={readiness} />);
-    expect(screen.getByRole("region", { name: "Preview fixture — Real Madrid 2, Real Sociedad 0" }))
-      .toBeInTheDocument();
-  });
-
-  it("shows both proper team crests, labelled and in fixture order", () => {
-    render(<MatchCentrePlaceholder readiness={readiness} />);
+  it("uses the local Real Madrid fallback and the provider's accurate opponent crest", () => {
+    render(<MatchCentre data={live} />);
     const crests = screen.getAllByRole("img");
-    expect(crests).toHaveLength(2);
     expect(crests[0]).toHaveAttribute("src", "/real-madrid.png");
-    expect(crests[0]).toHaveAccessibleName("Real Madrid");
-    expect(crests[1]).toHaveAttribute("src", "/real-sociedad.png");
-    expect(crests[1]).toHaveAccessibleName("Real Sociedad");
+    expect(crests[1]).toHaveAttribute("src", "https://crests.football-data.org/92.png");
+  });
+
+  it("shows a scheduled kickoff without inventing a score", () => {
+    render(<MatchCentre data={{
+      ...live,
+      phase: "SCHEDULED",
+      startTime: "2026-09-02T19:00:00Z",
+      home: { ...live.home, score: null },
+      away: { ...live.away, score: null },
+    }} />);
+    expect(screen.queryByTestId("match-score")).not.toBeInTheDocument();
+    expect(screen.getByText("Thu 3 Sep · 5:00am")).toBeVisible();
+  });
+
+  it("renders a calm unavailable state instead of the old dummy fixture", () => {
+    render(<MatchCentre data={{
+      available: false,
+      reason: "not_configured",
+      message: "Real Madrid season data is not configured yet",
+      updatedAt: null,
+      stale: false,
+    }} />);
+    expect(screen.getByText("Real Madrid season data is not configured yet")).toBeVisible();
+    expect(screen.queryByText("REAL SOCIEDAD")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("match-score")).not.toBeInTheDocument();
   });
 
   it("keeps readiness out of the reference-matched fixture bar", () => {
-    render(<MatchCentrePlaceholder readiness={readiness} />);
+    render(<MatchCentre data={live} />);
     expect(screen.queryByTestId("match-readiness")).not.toBeInTheDocument();
     expect(screen.queryByText("Match Readiness")).not.toBeInTheDocument();
   });

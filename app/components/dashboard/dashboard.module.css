@@ -709,6 +709,45 @@
   white-space: nowrap;
 }
 
+/* A scheduled fixture has no score, so the kickoff takes the score's place at
+   the centre of the plate. Deliberately smaller than .matchGoals: a time is not
+   a result and should not shout like one. */
+.matchKickoff {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ansar-gold-bright);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Provider crest missing and the team is not ours: two letters, same box as a
+   crest, so the bar's geometry never moves. */
+.matchMonogram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88px;
+  width: 88px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, #ffffff 86%, transparent);
+  background: color-mix(in srgb, #ffffff 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 28%, transparent);
+}
+
+/* No fixture to show. The plate keeps its height so the four panels below never
+   jump; the copy is calm and true rather than a placeholder score. */
+.matchUnavailable {
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  color: color-mix(in srgb, #ffffff 70%, transparent);
+}
+
 /* ── Habit rows ─────────────────────────────────────────────────────────────
    `--row-accent` is set inline per row from the owning block's colour, so the
    state rules below can tint themselves without a class per block. */

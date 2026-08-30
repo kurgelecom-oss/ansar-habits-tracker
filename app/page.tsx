@@ -21,13 +21,14 @@ import ClubStatus from "./components/dashboard/ClubStatus";
 import DayViewToggle, { type DayView } from "./components/dashboard/DayViewToggle";
 import DashboardShell from "./components/dashboard/DashboardShell";
 import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
-import MatchCentrePlaceholder from "./components/dashboard/MatchCentrePlaceholder";
+import MatchCentre from "./components/dashboard/MatchCentre";
 import HabitPanel from "./components/dashboard/HabitPanel";
 import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import dashboardStyles from "./components/dashboard/dashboard.module.css";
 import { deriveMatchReadiness, journalEvidenceState } from "./dashboard/model";
 import type { DashboardHabit } from "./dashboard/types";
+import type { MatchCentreData } from "./lib/football/types";
 // The squad week, Mon–Fri. This file used to declare its own copy beside the
 // /55 note below; lib/goldenBoot.ts asked for the collapse the moment page.tsx
 // was next edited, and the Golden Boot cell is that edit. Nothing server-only
@@ -252,6 +253,13 @@ export default function AnsarPage() {
   const [weeklyPts, setWeeklyPts] = useState<number | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
   const [goldenBoot, setGoldenBoot] = useState<GoldenBootState | null>(null);
+  /**
+   * Real Madrid's live fixture, from /api/football/real-madrid. `null` only
+   * before the first fetch lands; after that it is always a provider answer,
+   * including the deliberate "unavailable" one. The board never fabricates a
+   * fixture to fill this in.
+   */
+  const [football, setFootball] = useState<MatchCentreData | null>(null);
   const [reject, setReject] = useState<Rejection | null>(null);
 
   // Parent override. The PIN is typed here and sent to the server; it is never
@@ -441,6 +449,27 @@ export default function AnsarPage() {
     setStreak(calculateStreak(byDate, today));
   }, []);
 
+  /**
+   * The Match Centre feed. A failed fetch is NOT an empty bar: it becomes the
+   * same honest "unavailable" shape the route returns, so the plate keeps its
+   * geometry and says why instead of showing a stale or invented score.
+   */
+  const loadFootball = useCallback(async () => {
+    try {
+      const res = await fetch("/api/football/real-madrid", { cache: "no-store" });
+      if (!res.ok) throw new Error(String(res.status));
+      setFootball(await res.json() as MatchCentreData);
+    } catch {
+      setFootball({
+        available: false,
+        reason: "upstream_unavailable",
+        message: "Fixture unavailable right now",
+        updatedAt: null,
+        stale: true,
+      });
+    }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     loadGate();
@@ -448,6 +477,7 @@ export default function AnsarPage() {
     loadWallet();
     loadStretchItems();
     loadSettings();
+    loadFootball();
 
     // The header clock is the DEVICE's, and is labelled as such. It is display
     // only — no gate anywhere reads it. The server's Sydney clock is shown
@@ -464,6 +494,11 @@ export default function AnsarPage() {
     // whole board to redraw the same sentence is waste. It is also faster than
     // the 30s gate poll on purpose: the deadline moves on its own even when
     // nothing is tapped, so the warning must not wait for a refetch to appear.
+    // 60s, not the 30s gate poll: a LIVE score is the only thing here that
+    // moves quickly, and the route's phase-aware Cache-Control means a
+    // SCHEDULED match answers from the CDN for an hour regardless.
+    const fixturePoll = setInterval(() => { loadFootball(); }, 60000);
+
     const feas = setInterval(() => setNowMin(sydneyMinutesOfDay()), 15000);
     setNowMin(sydneyMinutesOfDay());
 
@@ -471,15 +506,15 @@ export default function AnsarPage() {
     // next tick; refetch the same pair the poll fetches the moment the tab is
     // visible again. Intervals themselves are untouched.
     const onVis = () => {
-      if (document.visibilityState === "visible") { loadGate(); loadWallet(); }
+      if (document.visibilityState === "visible") { loadGate(); loadWallet(); loadFootball(); }
     };
     document.addEventListener("visibilitychange", onVis);
 
     return () => {
-      clearInterval(t); clearInterval(poll); clearInterval(feas);
+      clearInterval(t); clearInterval(poll); clearInterval(feas); clearInterval(fixturePoll);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [loadGate, loadNotionHabits, loadWallet, loadStretchItems, loadSettings]);
+  }, [loadGate, loadNotionHabits, loadWallet, loadStretchItems, loadSettings, loadFootball]);
 
   // History reloads whenever the server's date or the habit list changes.
   const serverDate = gate?.serverTime.date ?? "";
@@ -1106,7 +1141,13 @@ export default function AnsarPage() {
           are in Work + Week, Banked is the Stretch Wallet's own summary, and
           Today and Streak moved into the header status line. The Golden Boot
           is now rendered in exactly one place. */}
-      <MatchCentrePlaceholder readiness={readiness} />
+      <MatchCentre data={football ?? {
+        available: false,
+        reason: "upstream_unavailable",
+        message: "Loading Real Madrid's fixture…",
+        updatedAt: null,
+        stale: false,
+      }} />
 
       {/* Server-unreachable banner. The board fails closed, and says so. */}
       {mounted && !gate && (
