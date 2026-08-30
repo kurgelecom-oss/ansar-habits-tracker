@@ -81,18 +81,13 @@ export default function StretchWalletPanel({
     <Panel
       title="Stretch Wallet"
       icon="🎮"
-      subtitle={`Banks all week · converts Sat & Sun · ${capMin} min/day cap`}
+      subtitle={`Converts Sat & Sun · ${capMin} min/day cap`}
       accent="var(--ansar-wallet)"
       className={styles.walletPanel}
       summary={
-        <>
-          <span data-testid="wallet-balance" className={styles.walletBalance}>
-            {wallet && !locked ? `${wallet.balance} min` : "—"}
-          </span>
-          <span className={styles.panelPoints}>
-            {wallet && !locked ? `${wallet.earnedWeek} earned · ${wallet.spentWeek} spent` : "locked"}
-          </span>
-        </>
+        <span data-testid="wallet-balance" className={styles.walletBalance}>
+          {wallet && !locked ? `${wallet.balance} min` : "—"}
+        </span>
       }
     >
       {lockCopy ? (
