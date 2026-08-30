@@ -203,7 +203,7 @@
      the lighter surface, so the panel has to sit under them, not beside them. */
   background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 84%, var(--ansar-base)), color-mix(in srgb, var(--ansar-base) 78%, var(--ansar-card)));
   border: 1px solid var(--ansar-border);
-  border-radius: 7px;
+  border-radius: var(--ansar-radius-panel);
   overflow: hidden;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
@@ -219,21 +219,21 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  padding: 12px 14px 10px;
+  padding: 14px 16px 10px;
 }
 
 .panelHeadText { min-width: 0; }
 
 .panelIcon {
-  margin-right: 7px;
-  font-size: 16px;
+  margin-right: 9px;
+  font-size: 18px;
   line-height: 1;
 }
 
 .panelTitle {
   display: flex;
   align-items: center;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -304,6 +304,13 @@
   grid-template-columns:1fr 1fr 1fr 1fr;
   gap:16px;
   padding: 10px 20px 0;
+  /* Claim everything the chrome above did not use. Without this the grid is
+     only as tall as its tallest column's content and the board stops short,
+     leaving the stadium showing under four floating cards. Panels stretch to
+     the row height, so all four columns end on the same line. */
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
 }
 @media (max-width:1439px) { .grid { grid-template-columns:1fr 1fr; } }
 @media (max-width:820px) { .grid { grid-template-columns:1fr; } }
@@ -688,10 +695,10 @@
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
   width: 100%;
-  min-height: 52px;
-  padding: 0 13px;
+  min-height: 54px;
+  padding: 0 14px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -929,8 +936,8 @@
   min-height: 40px;
   flex-shrink: 0;
   border-radius: var(--ansar-radius-row);
-  border: 1px solid var(--ansar-border);
-  background: var(--ansar-row);
+  border: 1px solid color-mix(in srgb, var(--ansar-border) 80%, transparent);
+  background: color-mix(in srgb, var(--ansar-row) 88%, var(--ansar-card));
   color: #ffffff;
   font: inherit;
   font-size: 15px;

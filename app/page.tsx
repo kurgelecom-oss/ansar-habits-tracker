@@ -1111,6 +1111,7 @@ export default function AnsarPage() {
         <HabitPanel
           title={morning.label}
           icon={morning.icon}
+          scoreLabel="Morning"
           subtitle={morning.subtitle}
           accent={morning.color}
           habits={morningRows}
