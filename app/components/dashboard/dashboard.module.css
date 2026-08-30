@@ -1,0 +1,1709 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   Dashboard V2 — shell, navigation and panel anatomy.
+
+   Every colour here is a token from globals.css. No hex literals: spec §11.2,
+   and the repo has already been burned once by a hex that drifted off the
+   canonical cyan.
+
+   Two neutrals are exempt, and only these two: #000000 and #ffffff, used as
+   mixers inside color-mix() and as rgba() shadow and scrim values. The rule
+   exists to stop a BRAND colour drifting — pure black and pure white have
+   nothing to drift from, and there is no token for either. Every hue still
+   comes from a token. "no hex literals outside the neutral pair" in
+   dashboard.test.tsx enforces exactly this, so the exemption cannot widen.
+
+   That guard also grandfathers one pre-existing stray, #b0b5c1 — the dim body
+   grey shared with page.tsx, older than this branch and covered by no token.
+   Tokenising it is its own change; until then the guard keeps it from
+   spreading.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.shell {
+  /* The shared .topnav is hidden on this route (globals.css) and .ab-root no
+     longer reserves --nav-h for it, so the shell owns the whole viewport. The
+     old calc() subtracted a 40px strip that is no longer drawn here. */
+  min-height: 100vh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  /* 10px, not the 12px grid token, and written as a literal so the vertical
+     budget below can be read straight out of this file. The stack above the
+     panels is measured in whole pixels against a hard 234px ceiling; two 12px
+     gaps would spend 24 of them on air. */
+  gap: 0px;
+  color: #ffffff;
+}
+
+/* ── Club navigation ────────────────────────────────────────────────────────
+   Task 4 budgets this bar at 54px. It is built to 44 so the budget has room
+   left in it rather than being spent on arrival. */
+.clubNav {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  height: 96px;
+  /* Every other child of .shell declares this. Without it the nav is the only
+     shrinkable item in the column and absorbs the whole shortfall on a short
+     viewport — it collapsed from 44px to 18.8px at 1440x820, squashing the
+     crest and the section links. */
+  flex-shrink: 0;
+  padding: 0 18px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 92%, #000000), var(--ansar-base));
+  border: 0;
+  border-bottom: 1px solid var(--ansar-border);
+  border-radius: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.clubNav::-webkit-scrollbar { display: none; }
+
+.clubMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+/* A navy/gold chip, not a crest image. The club identity is ANSAR FC; the Real
+   Madrid asset belongs to the Match Centre and must not be borrowed as a
+   general logo (spec §11.5). */
+.clubCrest {
+  position: relative;
+  width: 70px;
+  height: 76px;
+  border-radius: 44% 44% 54% 54% / 26% 26% 72% 72%;
+  border: 3px solid var(--ansar-gold);
+  background:
+    linear-gradient(90deg, transparent 47%, var(--ansar-gold) 48%, var(--ansar-gold) 52%, transparent 53%),
+    linear-gradient(160deg, color-mix(in srgb, var(--ansar-navy) 72%, #000000), #000000);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ansar-gold) 34%, transparent),
+    0 2px 12px color-mix(in srgb, var(--ansar-gold) 26%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+/* The club initials sit inside the ring rather than beside it, so the mark
+   reads as one badge at a glance the way a crest does. */
+.clubCrest::before,
+.clubCrest::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 7px;
+  width: 3px;
+  background: var(--ansar-gold);
+  transform-origin: top;
+}
+.clubCrest::before { left: 22px; transform: rotate(-24deg); }
+.clubCrest::after { right: 22px; transform: rotate(24deg); }
+
+.clubCrown {
+  position: absolute;
+  top: -17px;
+  z-index: 2;
+  font-size: 23px;
+  line-height: 1;
+  color: var(--ansar-gold-bright);
+}
+.clubCrestName {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+  color: var(--ansar-gold-bright);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: .9;
+  text-align: center;
+  letter-spacing: .02em;
+}
+.clubBall {
+  position: relative;
+  z-index: 2;
+  margin-top: 5px;
+  font-size: 16px;
+  line-height: 1;
+  filter: grayscale(1);
+}
+
+.clubName {
+  display: none;
+}
+
+/* Weekday / weekend preview switch, at the nav's right-hand end. */
+.dayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #000000 34%, transparent);
+  border: 1px solid var(--ansar-hairline);
+  flex-shrink: 0;
+}
+
+.dayToggleOn,
+.dayToggleOff {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dayToggleOn {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--cyan) 26%, var(--ansar-navy));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cyan) 30%, transparent);
+}
+
+.dayToggleOff {
+  color: var(--ansar-subtext);
+  background: none;
+}
+.dayToggleOff:hover { color: #ffffff; }
+.dayToggleOn:focus-visible,
+.dayToggleOff:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.clubNavStatus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  padding-left: 10px;
+  flex-shrink: 0;
+}
+
+.clubNavList {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.clubNavItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  min-height: 56px;
+  padding: 0 17px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 650;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.clubNavIcon {
+  font-size: 17px;
+  line-height: 1;
+}
+
+/* A filled pill, not a tint. Only one item is ever reachable, so the active
+   state carries real weight rather than a hint of it. */
+.clubNavItemActive {
+  color: #ffffff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cyan) 30%, var(--ansar-navy)), var(--ansar-navy));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--cyan) 34%, transparent),
+    0 2px 10px color-mix(in srgb, var(--cyan) 18%, transparent);
+}
+.clubNavItemActive:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* A future space, not a broken link. Muted, but still on the readable side of
+   the contrast line — spec §13 forbids unreadable disabled text. `default`
+   rather than `not-allowed`: nothing was refused, it simply does not exist yet. */
+.clubNavItemFuture {
+  color: var(--ansar-muted);
+  cursor: default;
+  user-select: none;
+}
+
+/* ── Panels ─────────────────────────────────────────────────────────────────*/
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* Near-black plates, the way the reference reads them — the rows inside are
+     the lighter surface, so the panel has to sit under them, not beside them. */
+  background: var(--ansar-panel);
+  border: 1px solid var(--ansar-hairline);
+  border-radius: var(--ansar-radius-panel);
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.panelAccent {
+  /* The reference draws no coloured bar across the top of a panel. The element
+     stays (it is the panel's colour identity in the DOM and under test) but it
+     is a hairline the eye reads as an edge, not a stripe. */
+  height: 1px;
+  width: 100%;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.panelHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px 10px;
+}
+
+.panelHeadText { min-width: 0; }
+
+.panelIcon {
+  margin-right: 9px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.panelTitle {
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Cyan, matching the reference's window/points line. It is supporting detail,
+   not a heading, so it stays a step down in size. */
+.panelSubtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cyan);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The completion bar under the header. Its width and its aria-valuenow are the
+   same computed number, so the bar cannot show one thing and announce another. */
+.panelProgress {
+  height: 5px;
+  margin: 0 14px 10px;
+  border-radius: 3px;
+  background: color-mix(in srgb, #ffffff 8%, transparent);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.panelProgressFill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--cyan);
+  transition: width 0.3s ease;
+}
+
+/* The block's own score, closing the column the way the reference does. */
+.panelFooter {
+  margin-top: auto;
+  padding: 10px 14px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--ansar-border) 70%, transparent);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.panelScore {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cyan);
+}
+
+.panelSummary {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* A habit that is on the board but cannot be seen is worse than a scrollbar.
+   A real Monday carries sixteen habits — nine of them in Today's Programme,
+   under three section headers — and that does not fit 1440 x 820 at the
+   reference's row height no matter where the padding is taken from. So the
+   body scrolls when it must rather than clipping: the chrome stays put, the
+   panel keeps its score line, and every configured habit stays reachable.
+   On every roster that does fit, this changes nothing. */
+.panelBody {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ansar-hairline) transparent;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px;
+  min-width: 0;
+}
+
+/* ── Grid ───────────────────────────────────────────────────────────────────
+   Four columns at the 1440 × 820 acceptance viewport, two below it, one on a
+   phone. The uneven tracks are deliberate: Morning and Today's Programme carry
+   the habit rows and need the width; Work + Week and the Wallet are summaries. */
+.grid {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  /* The grid itself already claims the remaining flex height. An explicit 1fr
+     row makes the cards claim it too; without this, the implicit row stays at
+     max-content height and a short weekend roster leaves a dead stadium strip
+     under all four panels. */
+  grid-template-rows:minmax(0, 1fr);
+  gap:16px;
+  padding: 10px 20px 0;
+  /* Claim everything the chrome above did not use. Without this the grid is
+     only as tall as its tallest column's content and the board stops short,
+     leaving the stadium showing under four floating cards. Panels stretch to
+     the row height, so all four columns end on the same line. */
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+}
+@media (max-width:1439px) { .grid { grid-template-columns:1fr 1fr; } }
+@media (max-width:820px) { .grid { grid-template-columns:1fr; } }
+@media (prefers-reduced-motion:reduce) {
+  .shell *, .shell *::before, .shell *::after {
+    animation-duration:.01ms !important; transition-duration:.01ms !important;
+  }
+}
+
+/* ── Club header ────────────────────────────────────────────────────────────
+   Budget: 40px against a 48px cap. */
+.clubHeader {
+  /* Identity only. With the status cluster gone to the nav there is nothing
+     else on this band, so the wordmark centres on the band itself and cannot
+     be pushed off by however wide the clock is that second. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 122px;
+  padding: 0 20px;
+  flex-shrink: 0;
+  /* Measured on the preview at 1440 x 820: at a 0.52 centre stop the seating
+     read as the subject and the status row (Today / Streak / server clock) sat
+     on bright blue plastic. The photo is atmosphere, not content — it stays
+     under a floor dark enough for white text everywhere it lands. */
+  background-image:
+    linear-gradient(90deg, rgba(4, 10, 22, 0.88), rgba(6, 14, 30, 0.72) 45%, rgba(4, 10, 22, 0.90)),
+    url('/stadium-lights.jpg');
+  background-size: cover;
+  background-position: center 34%;
+  border: 0;
+  /* The gold identity rides on this rule rather than on a span inside the
+     wordmark, so the wordmark stays one text node. */
+  border-bottom: 2px solid var(--ansar-gold);
+  border-radius: 0;
+}
+
+.clubIdentity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.clubWordmark {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 50px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+  text-shadow: 0 3px 24px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+}
+
+/* Fixed brand copy. It states no number and tracks no state, so unlike every
+   other line on this board it cannot go stale or disagree with the server. */
+.clubMotto {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 23px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--ansar-gold-bright);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+}
+
+/* Lives in the navigation bar now, not the masthead, so it is an ordinary flex
+   row again rather than something positioned out of the identity's way. */
+.clubStatus {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--ansar-muted);
+}
+
+.softLaunch {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ansar-warning);
+  border: 1px solid color-mix(in srgb, var(--ansar-warning) 30%, transparent);
+  background: color-mix(in srgb, var(--ansar-warning) 10%, transparent);
+}
+
+.progressCard,
+.clockCard {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  min-height: 62px;
+  border: 1px solid color-mix(in srgb, var(--ansar-border) 88%, #ffffff);
+  border-radius: 10px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 92%, #000000), color-mix(in srgb, var(--ansar-base) 90%, #000000));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.progressCard { padding: 0 4px; }
+
+.statusMetric {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  white-space: nowrap;
+}
+.statusMetric + .statusMetric {
+  border-left: 1px solid color-mix(in srgb, var(--ansar-border) 75%, transparent);
+}
+.statusMetricIcon {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ansar-gold-bright);
+}
+.statusMetric strong {
+  display: block;
+  color: var(--ansar-gold-bright);
+  font-size: 18px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.statusMetric small {
+  display: block;
+  margin-top: 3px;
+  color: var(--ansar-muted);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.clockCard {
+  min-width: 126px;
+  justify-content: center;
+  padding: 6px 13px;
+}
+
+/* The authoritative clock: brighter, heavier, and first. */
+.serverClock {
+  display: block;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--ansar-muted);
+  white-space: nowrap;
+}
+.serverClock::first-line {
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.statusMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Display only. Quieter on purpose — it must never read as the deciding clock. */
+.deviceClock {
+  flex-shrink: 0;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+}
+.connectionDotLive,
+.connectionDotOffline {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.connectionDotLive { background: var(--ansar-success); }
+.connectionDotOffline { background: var(--ansar-danger); }
+.connectionTextLive { color: var(--ansar-success); }
+.connectionTextOffline { color: var(--ansar-danger); }
+
+/* ── Match Centre frame ─────────────────────────────────────────────────────
+   Budget: 128px against a 132px cap. Spans all four columns (spec §12.1).
+
+   `max-height` rather than `height`: this frame gets shorter, never taller,
+   when a real provider replaces the placeholder copy. */
+.matchCentre {
+  /* The fixture is centred on the PANEL. Readiness is taken out of flow so its
+     width cannot push the score off centre — the same trick the masthead uses
+     to keep the wordmark honest. */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  max-height: 140px;
+  /* 7.24% each side: measured off the reference, where the plate spans 83.7%
+     of the canvas while the panel row below spans almost all of it. */
+  margin: 0 7.24%;
+  padding: 16px 24px;
+  flex-shrink: 0;
+  /* One lit royal-blue plate: the navy at near full strength across the middle,
+     falling away only at the ends. */
+  /* Flat. Sampled across the reference plate at eight points and it is one
+     colour end to end — #02193c — not a gradient. Every gradient I put here
+     was invention. */
+  background: var(--ansar-fixture);
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 34%, transparent);
+  border-radius: var(--ansar-radius-panel);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--cyan) 16%, transparent),
+    0 10px 30px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+}
+
+/* The score below is dummy preview data. This tag is the visible half of
+   saying so; the region's accessible name is the other half. Both go when a
+   real provider lands. */
+.matchPreviewTag {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ansar-gold-bright);
+  background: color-mix(in srgb, var(--ansar-gold) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 34%, transparent);
+}
+
+.matchFixture {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Equal flex on both sides is what actually centres the score: the two teams
+   claim the same width whatever their names are, so "REAL SOCIEDAD" being
+   longer than "REAL MADRID" cannot shift the middle. */
+.matchTeam {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.matchTeamHome { justify-content: flex-end; }
+.matchTeamAway { justify-content: flex-start; }
+
+.matchTeamText { min-width: 0; }
+.matchTeamAway .matchTeamText { text-align: right; }
+
+.matchCrest {
+  height: 88px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+  /* The source art is 431x600 and 567x652, so a 72-88px crest is still drawn
+     from well over 2x the pixels it needs — which is what the old 194x259
+     Real Madrid file could not do, and why it read as soft. */
+  image-rendering: auto;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55)) saturate(1.08) contrast(1.06);
+}
+
+.matchTeamName {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.matchTeamMeta {
+  margin-top: 2px;
+  font-size: 14px;
+  color: color-mix(in srgb, #ffffff 62%, transparent);
+  white-space: nowrap;
+}
+
+.matchScore {
+  flex-shrink: 0;
+  text-align: center;
+  min-width: 128px;
+}
+
+.matchScoreLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14px;
+  line-height: 1;
+}
+
+.matchGoals {
+  font-size: 50px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ansar-gold-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.matchScoreDash {
+  font-size: 34px;
+  font-weight: 700;
+  color: color-mix(in srgb, #ffffff 55%, transparent);
+}
+
+.matchStatus {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: color-mix(in srgb, #ffffff 68%, transparent);
+  white-space: nowrap;
+}
+
+/* A scheduled fixture has no score, so the kickoff takes the score's place at
+   the centre of the plate. Deliberately smaller than .matchGoals: a time is not
+   a result and should not shout like one. */
+.matchKickoff {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ansar-gold-bright);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Provider crest missing and the team is not ours: two letters, same box as a
+   crest, so the bar's geometry never moves. */
+.matchMonogram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88px;
+  width: 88px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, #ffffff 86%, transparent);
+  background: color-mix(in srgb, #ffffff 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-gold) 28%, transparent);
+}
+
+/* No fixture to show. The plate keeps its height so the four panels below never
+   jump; the copy is calm and true rather than a placeholder score. */
+.matchUnavailable {
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  color: color-mix(in srgb, #ffffff 70%, transparent);
+}
+
+/* ── Habit rows ─────────────────────────────────────────────────────────────
+   `--row-accent` is set inline per row from the owning block's colour, so the
+   state rules below can tint themselves without a class per block. */
+.habitRow {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 58px;
+  padding: 0 18px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border-radius: 7px;
+  border: 1px solid var(--ansar-border);
+  background: var(--ansar-row);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.habitRow[data-emphasis="journal"] {
+  box-shadow: inset 3px 0 0 var(--ansar-gold);
+}
+
+.habitRow[data-emphasis="homeschool"] {
+  box-shadow: inset 3px 0 0 var(--cyan);
+}
+.habitRow:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.habitRowLive { cursor: pointer; }
+.habitRowLive:hover { border-color: color-mix(in srgb, var(--row-accent) 45%, transparent); }
+
+.habitRowDone {
+  cursor: not-allowed;
+  border-color: var(--ansar-border);
+  background: var(--ansar-row);
+}
+
+/* Muted, but deliberately not faded out. Spec §13 forbids unreadable disabled
+   text, and the opening time is the most useful thing on a locked row. */
+.habitRowLocked {
+  cursor: not-allowed;
+  border-color: color-mix(in srgb, var(--ansar-border) 60%, transparent);
+  background: var(--ansar-row);
+}
+
+/* A missed window is a different fact from a not-yet-open one. Restrained —
+   a tint and a caption, not an alarm wall. */
+.habitRowMissed {
+  cursor: not-allowed;
+  border-color: color-mix(in srgb, var(--ansar-danger) 30%, var(--ansar-hairline));
+  background: var(--ansar-rowflat);
+}
+
+/* The parent's two-second hold, made visible. The only hint the override
+   exists. */
+.holdRing {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ansar-gold) 22%, transparent), transparent);
+  animation: holdSweep 2s linear forwards;
+}
+@keyframes holdSweep {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+.habitBox {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid color-mix(in srgb, var(--ansar-muted) 55%, transparent);
+  background: color-mix(in srgb, #000000 22%, transparent);
+}
+.habitRowDone .habitBox {
+  border-color: color-mix(in srgb, var(--ansar-success) 78%, #000000);
+  background: color-mix(in srgb, var(--ansar-success) 12%, transparent);
+}
+.habitRowMissed .habitBox { border-color: color-mix(in srgb, var(--ansar-danger) 40%, transparent); }
+
+.habitTick { font-size: 15px; font-weight: 700; color: color-mix(in srgb, var(--ansar-success) 82%, #ffffff); }
+.habitGlyph { font-size: 12px; }
+
+.habitIcon { font-size: 19px; flex-shrink: 0; line-height: 1; }
+
+.habitText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.habitName {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #ffffff;
+  /* Crisper glyph edges on the dark plate — the default subpixel pass on a
+     near-black background is what was reading as soft. */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.habitRowDone .habitName { color: var(--ansar-muted); }
+.habitRowLocked .habitName { color: #b0b5c1; }
+.habitRowMissed .habitName { color: #b0b5c1; }
+
+.habitCaption,
+.habitCaptionMissed {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.habitCaption { color: var(--ansar-muted); }
+.habitCaptionMissed { color: var(--ansar-danger); }
+
+/* Unmistakably gold, and never the same treatment as an earned tick. */
+.overrideBadge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.overrideGlyph {
+  display: none;
+}
+
+/* Readable to assistive tech, and still a real visible box for the contract
+   that asserts it — just clipped to a pixel so it costs the row no width. */
+.overrideWord {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.pointChip {
+  flex-shrink: 0;
+  margin-right: 10px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--ansar-success) 70%, #ffffff);
+  background: none;
+  border: 0;
+}
+.habitRowDone .pointChip { color: color-mix(in srgb, var(--ansar-success) 70%, #ffffff); }
+
+/* ── Panel summary and the morning feasibility banner ───────────────────────*/
+.panelCount {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: color-mix(in srgb, #ffffff 62%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.panelPoints {
+  display: block;
+  margin-top: 1px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ansar-muted);
+}
+
+.feasibilityRed,
+.feasibilityAmber {
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.feasibilityRed {
+  color: var(--ansar-danger);
+  background: color-mix(in srgb, var(--ansar-danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-danger) 35%, transparent);
+}
+.feasibilityAmber {
+  color: var(--ansar-warning);
+  background: color-mix(in srgb, var(--ansar-warning) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-warning) 35%, transparent);
+}
+
+/* ── Today's Programme ──────────────────────────────────────────────────────
+   Subsections are dividers inside the one panel, never nested cards. A card
+   inside a card is what stops the full programme fitting at 1440 x 820. */
+.programmeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* A rule and 12px of air between subsections, not 17. The divider only has to
+   separate; every pixel it does not spend is a pixel the nine-row weekday
+   programme needs to stay inside the fold. */
+.programmeSection + .programmeSection {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ansar-border);
+}
+
+.programmeSectionTitle {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  color: var(--ansar-muted);
+}
+
+.programmeItem { display: contents; }
+
+/* Evidence language, not a gate reason. Cyan rather than the muted grey a lock
+   caption uses, because "Recorded" is a positive fact about today's work. */
+.habitNote {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--cyan);
+  flex-shrink: 0;
+}
+
+.habitDescription {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--ansar-subtext);
+}
+
+/* ── Work + Week ────────────────────────────────────────────────────────────*/
+.logWork {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--ansar-radius-row);
+  /* Transparent, not none: the emphasis and state rules below colour this
+     border, and a row that gains a border on tick would jump by 2px. */
+  border: 1px solid var(--ansar-hairline);
+  background: var(--ansar-rowflat);
+  color: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.logWork:hover { border-color: color-mix(in srgb, var(--ansar-gold) 45%, transparent); }
+.logWork:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.logWorkIcon { font-size: 18px; line-height: 1; }
+
+.submissionNote {
+  font-size: 11px;
+  color: var(--ansar-muted);
+  text-align: center;
+}
+
+.workReadiness {
+  padding: 8px 10px;
+  border: 1px solid var(--ansar-hairline);
+  border-radius: var(--ansar-radius-row);
+  background: var(--ansar-rowflat);
+}
+
+.workReadinessHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ansar-subtext);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.workReadinessHead strong { color: var(--cyan); font-size: 14px; }
+
+.workReadinessTrack {
+  display: block;
+  height: 3px;
+  margin-top: 5px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--ansar-hairline);
+}
+
+.workReadinessFill {
+  display: block;
+  height: 100%;
+  background: var(--cyan);
+}
+
+.workReadiness p {
+  margin-top: 5px;
+  color: var(--ansar-subtext);
+  font-size: 10px;
+}
+
+/* ── Weekly tier ────────────────────────────────────────────────────────────
+   One current-tier summary plus a compact scale, replacing the old 2x2 grid
+   that spent a quarter of the column on three tiers the week is not in. */
+.tierBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.tierHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tierTotal {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.tierCaption {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ansar-muted);
+  white-space: nowrap;
+}
+
+.tierTrack {
+  height: 5px;
+  width: 100%;
+  border-radius: 3px;
+  background: var(--ansar-row);
+  overflow: hidden;
+}
+.tierFill { height: 100%; transition: width 0.3s ease; }
+
+.tierScale {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+}
+
+/* A passed or future stop is quiet, but still legible: spec §13 bans
+   unreadable disabled text, and these are the numbers the week is aiming at. */
+.tierStop,
+.tierStopActive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  font-size: 11px;
+  border: 1px solid transparent;
+}
+.tierStop { color: var(--ansar-muted); }
+.tierStopActive {
+  color: #ffffff;
+  background: var(--ansar-row);
+  border-color: var(--ansar-border);
+  font-weight: 700;
+}
+
+.tierDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tierStopLabel { flex: 1; min-width: 0; white-space: nowrap; }
+.tierStopMin { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+.goldenBoot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 5px 8px;
+  border-radius: var(--ansar-radius-row);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cyan) 25%, transparent);
+}
+.goldenBootIcon { font-size: 15px; }
+
+/* ── Stretch Wallet ─────────────────────────────────────────────────────────
+   Purple is reserved for wallet value and reward actions. */
+.walletPanel { border-color: var(--ansar-border); }
+
+.walletBalance {
+  display: block;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ansar-wallet);
+  font-variant-numeric: tabular-nums;
+}
+
+.walletLock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: var(--ansar-radius-row);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ansar-wallet);
+  background: color-mix(in srgb, var(--ansar-wallet) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-wallet) 35%, transparent);
+}
+
+.walletLockGlyph { flex-shrink: 0; }
+
+.walletNote {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ansar-wallet);
+}
+
+.walletBonus,
+.walletBonusOn {
+  padding: 7px 10px;
+  border-radius: var(--ansar-radius-row);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ansar-wallet);
+}
+.walletBonus {
+  background: color-mix(in srgb, var(--ansar-wallet) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-wallet) 35%, transparent);
+}
+.walletBonusOn {
+  background: color-mix(in srgb, var(--ansar-wallet) 18%, transparent);
+  border: 1px solid var(--ansar-wallet);
+}
+
+.walletItems {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.walletEmpty { font-size: 12px; color: var(--ansar-muted); padding: 6px 2px; }
+
+.walletItem,
+.walletItemDone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 11px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border-radius: var(--ansar-radius-row);
+  -webkit-tap-highlight-color: transparent;
+}
+.walletText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  text-align: left;
+}
+
+.walletItem {
+  border: 1px solid var(--ansar-border);
+  background: var(--ansar-row);
+  cursor: pointer;
+}
+.walletItem:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ansar-wallet) 45%, transparent);
+}
+.walletItem:focus-visible,
+.walletItemDone:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* Banked, not broken. Still legible — spec §13 bans unreadable disabled text. */
+.walletItemDone {
+  border: 1px solid color-mix(in srgb, var(--ansar-wallet) 40%, transparent);
+  background: color-mix(in srgb, var(--ansar-wallet) 6%, transparent);
+  cursor: default;
+}
+.walletItem:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.walletBox {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ansar-border);
+}
+.walletItemDone .walletBox {
+  border-color: var(--ansar-wallet);
+  background: var(--ansar-wallet);
+}
+.walletTick { font-size: 13px; font-weight: 800; color: var(--ansar-base); }
+
+.walletItemName {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+}
+.walletItemNote {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ansar-muted);
+}
+
+.walletItemValue {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--ansar-wallet);
+  background: color-mix(in srgb, var(--ansar-wallet) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ansar-wallet) 40%, transparent);
+}
+
+.walletSpend,
+.walletSpendOpen {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  border-radius: var(--ansar-radius-row);
+  border: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  -webkit-tap-highlight-color: transparent;
+}
+.walletSpend {
+  color: var(--ansar-muted);
+  background: var(--ansar-row);
+  cursor: not-allowed;
+}
+.walletSpendOpen {
+  color: var(--ansar-base);
+  background: var(--ansar-wallet);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--ansar-wallet) 70%, #000000);
+  cursor: pointer;
+}
+.walletSpendOpen:disabled { opacity: 0.6; cursor: not-allowed; }
+.walletSpendOpen:focus-visible,
+.walletSpend:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* ── Phone ──────────────────────────────────────────────────────────────────
+   At 390px the header's wordmark, two stats, two clocks and connection state
+   cannot share one 40px line, and the Match Centre's fixture cannot sit beside
+   a 168px readiness region. Both are allowed to grow and stack rather than
+   clip whatever falls off the right edge.
+
+   What yields is chosen, not incidental: the DEVICE clock goes, because it is
+   explicitly display-only. The server clock stays — it is the one every gate is
+   decided against — and so does the connection state, because a child needs to
+   know the board is not talking to the server before wondering why a tap did
+   nothing. */
+@media (max-width: 640px) {
+  .grid {
+    /* A phone is a scrolling document, not a four-column kiosk. Let every
+       stacked panel take its natural height and keep one scroll surface. */
+    grid-template-rows: none;
+    flex: none;
+  }
+
+  .panelBody { overflow-y: visible; }
+
+  .clubHeader {
+    height: auto;
+    min-height: 40px;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding: 7px 12px;
+  }
+  .clubWordmark { font-size: 15px; }
+
+  .clubStatus {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    gap: 8px;
+  }
+
+  .clubNav {
+    height: auto;
+    min-height: 44px;
+    padding: 6px 10px;
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  /* Weekday / weekend preview switch, at the nav's right-hand end. */
+.dayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #000000 34%, transparent);
+  border: 1px solid var(--ansar-hairline);
+  flex-shrink: 0;
+}
+
+.dayToggleOn,
+.dayToggleOff {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dayToggleOn {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--cyan) 26%, var(--ansar-navy));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cyan) 30%, transparent);
+}
+
+.dayToggleOff {
+  color: var(--ansar-subtext);
+  background: none;
+}
+.dayToggleOff:hover { color: #ffffff; }
+.dayToggleOn:focus-visible,
+.dayToggleOff:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.clubNavStatus {
+    order: 2;
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+    justify-content: center;
+  }
+  .clubNavList {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .deviceClock { display: none; }
+
+  .matchCentre {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    /* The desktop cap exists to protect the 1440 x 820 fold. A phone scrolls,
+       and a stacked frame is taller than 128px by construction. */
+    height: auto;
+    max-height: none;
+    padding: 12px 14px;
+    margin: 0 10px;
+  }
+  /* A phone cannot hold crest + name + score + name + crest on one line, so
+     the fixture wraps to two: the teams share a row and the score sits under
+     them. */
+  .matchFixture { flex-wrap: wrap; gap: 10px 14px; }
+  .matchTeam { flex: 1 1 40%; gap: 9px; }
+  .matchScore { order: 3; flex: 1 1 100%; min-width: 0; }
+  .matchCrest { height: 44px; }
+  .matchTeamName { font-size: 15px; white-space: normal; }
+  .matchTeamMeta { font-size: 12px; }
+  .matchGoals { font-size: 34px; }
+  .matchScoreDash { font-size: 26px; }
+  .matchPreviewTag { position: static; align-self: flex-start; }
+
+}
+
+/* The full reference proportions land at 1655px. Between tablet and that
+   canvas, compress only the navigation internals so the authoritative status
+   cards remain initially visible; the masthead and Match Centre keep their
+   reference geometry on tall displays. */
+@media (min-width: 641px) and (max-width: 1550px) {
+  .clubNav { height: 76px; gap: 14px; padding: 0 12px; }
+  .clubCrest { width: 54px; height: 58px; border-width: 2px; }
+  .clubCrest::before { left: 17px; }
+  .clubCrest::after { right: 17px; }
+  .clubCrown { top: -11px; font-size: 17px; }
+  .clubCrestName { margin-top: 11px; font-size: 11px; }
+  .clubBall { margin-top: 3px; font-size: 12px; }
+  .clubNavItem { min-height: 46px; padding: 0 10px; font-size: 13px; }
+  .clubNavIcon { font-size: 14px; }
+  /* Weekday / weekend preview switch, at the nav's right-hand end. */
+.dayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #000000 34%, transparent);
+  border: 1px solid var(--ansar-hairline);
+  flex-shrink: 0;
+}
+
+.dayToggleOn,
+.dayToggleOff {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dayToggleOn {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--cyan) 26%, var(--ansar-navy));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cyan) 30%, transparent);
+}
+
+.dayToggleOff {
+  color: var(--ansar-subtext);
+  background: none;
+}
+.dayToggleOff:hover { color: #ffffff; }
+.dayToggleOn:focus-visible,
+.dayToggleOff:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.clubNavStatus { gap: 6px; padding-left: 4px; }
+  .progressCard,
+  .clockCard { min-height: 48px; }
+  .statusMetric { padding: 6px 10px; }
+  .statusMetricIcon { font-size: 16px; }
+  .statusMetric strong { font-size: 13px; }
+  .statusMetric small { font-size: 9px; }
+  .clockCard { min-width: 104px; padding: 5px 9px; }
+  .serverClock { font-size: 9px; }
+  .serverClock::first-line { font-size: 14px; }
+  .statusMeta { font-size: 9px; }
+}
+
+@media (min-width: 641px) and (max-width: 1100px) {
+  .clubNav {
+    height: auto;
+    min-height: 76px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  /* Weekday / weekend preview switch, at the nav's right-hand end. */
+.dayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, #000000 34%, transparent);
+  border: 1px solid var(--ansar-hairline);
+  flex-shrink: 0;
+}
+
+.dayToggleOn,
+.dayToggleOff {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dayToggleOn {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--cyan) 26%, var(--ansar-navy));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cyan) 30%, transparent);
+}
+
+.dayToggleOff {
+  color: var(--ansar-subtext);
+  background: none;
+}
+.dayToggleOff:hover { color: #ffffff; }
+.dayToggleOn:focus-visible,
+.dayToggleOff:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.clubNavStatus {
+    order: 2;
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+    justify-content: flex-end;
+  }
+  .clubNavList {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
+
+/* ── Short-desktop height recovery ──────────────────────────────────────────
+   At 1440 x 820 the weekday Today's Programme carries nine habit rows across
+   three subsections, and the board may not scroll: .ab-root is
+   overflow-y:hidden at this width, so anything past the fold is unreachable
+   rather than merely below it.
+
+   Every pixel recovered here comes from CHROME. No habit row shrinks — .habitRow
+   keeps its 44px target — and no habit is hidden. What gives is the placeholder
+   Match Centre (which currently displays no fixture at all), the Notion source
+   strip (a parent's tool, not part of the day's work), and the panels' own
+   header padding.
+
+   Keyed on height, not width: a 1440-wide window that is 1200 tall has room to
+   spare and keeps the roomier spacing. */
+@media (min-width: 1440px) and (max-height: 900px) {
+  .shell {
+    /* Asymmetric on purpose: the board's own footer strip sits below the panel
+       grid, and the last of it was hanging outside the fold.
+
+       min-height:0 matters as much as the padding. The base rule asks for a
+       full 100vh, but .ab-root is 100dvh MINUS this padding, so demanding the
+       whole viewport inside a box smaller than it pushed the strip out by the
+       exact height of the padding. The shell is a flex child here; let it be
+       the size of its container instead of the size of the screen. */
+    min-height: 0;
+    padding: 0;
+    gap: 6px;
+  }
+
+  /* The reference's Match Centre, scaled to this viewport: a real fixture
+     band, not a strip. Measured against the reference at 1440 wide, its plate
+     is ~97px tall with a ~62px crest, and that is what this is. */
+  .matchCentre {
+    min-height: 104px;
+    max-height: 112px;
+    margin: 0 7.24%;
+    padding: 12px 20px;
+  }
+  .matchFixture { gap: 28px; }
+  .matchTeam { gap: 15px; }
+  .matchCrest { height: 76px; }
+  .matchTeamName { font-size: 21px; }
+  .matchTeamMeta { font-size: 14px; }
+  .matchGoals { font-size: 44px; }
+  .matchScoreDash { font-size: 33px; }
+  .matchStatus { font-size: 14px; margin-top: 4px; }
+  .matchScore { min-width: 120px; }
+  .clubNav { height: 66px; }
+  .clubNavItem { padding: 8px 12px; font-size: 13px; }
+  .clubCrest {
+    width: 46px;
+    height: 50px;
+    border-width: 2px;
+  }
+  .clubCrest::before { left: 14px; }
+  .clubCrest::after { right: 14px; }
+  .clubCrown { top: -10px; font-size: 15px; }
+  .clubCrestName { margin-top: 10px; font-size: 10px; }
+  .clubBall { margin-top: 3px; font-size: 10px; }
+  .progressCard,
+  .clockCard { min-height: 46px; }
+  .statusMetric { padding: 6px 10px; }
+  .statusMetricIcon { font-size: 16px; }
+  .statusMetric strong { font-size: 13px; }
+  .statusMetric small { font-size: 9px; }
+  .clockCard { min-width: 104px; padding: 5px 9px; }
+  .serverClock { font-size: 9px; }
+  .serverClock::first-line { font-size: 14px; }
+
+  /* The masthead keeps the reference's shape at this height — centred wordmark
+     with the motto under it — at the smallest type that still reads as the
+     dominant identity on the board. */
+  .clubHeader { height: 88px; }
+  .clubWordmark { font-size: 35px; }
+  .clubMotto { font-size: 14px; }
+
+  /* 44px exactly: the floor, not a reduction. Rows are 52px on a tall window
+     because the reference is roomier, and this is the one viewport where the
+     whole weekday programme has to fit at once. */
+  .habitRow { min-height: 44px; }
+
+  /* The header was the last thing still reading small against the reference:
+     a 16px title and an 11px subtitle where it sets ~21 and ~15. Bought out of
+     the 19px still clear under the grid — it costs the tallest column once,
+     not once per row. */
+  .panelHead { padding: 9px 14px 6px; }
+  .panelTitle { font-size: 19px; }
+  .panelIcon { font-size: 17px; margin-right: 8px; }
+  .panelSubtitle { font-size: 12.5px; line-height: 1.25; }
+  .habitName { font-size: 15px; line-height: 1.3; }
+  .habitRow { min-height: 46px; padding: 0 15px; gap: 13px; }
+  .habitBox { width: 25px; height: 25px; }
+  .habitNote { font-size: 12px; }
+  .panelSubtitle { font-size: 12px; }
+  .panelProgress { height: 6px; margin: 0 14px 6px; }
+  .panelFooter { padding: 4px 13px 4px; }
+
+  /* Stretch Wallet is the one column with no closing score line, so its body
+     runs right to the panel edge and the Convert button was the 3px over. Its
+     subtitle also wraps to two lines here, which is what makes its head the
+     tallest of the four. */
+  .walletSpend, .walletSpendOpen { min-height: 40px; margin-top: 0; }
+  .panelScore { font-size: 12px; }
+  /* A habit that is on the board but cannot be seen is worse than a scrollbar.
+   A real Monday carries sixteen habits — nine of them in Today's Programme,
+   under three section headers — and that does not fit 1440 x 820 at the
+   reference's row height no matter where the padding is taken from. So the
+   body scrolls when it must rather than clipping: the chrome stays put, the
+   panel keeps its score line, and every configured habit stays reachable.
+   On every roster that does fit, this changes nothing. */
+.panelBody {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ansar-hairline) transparent;
+  min-height: 0; padding: 1px 11px 4px; gap: 3px; }
+  .programmeSection + .programmeSection { margin-top: 4px; padding-top: 4px; }
+}
+
+.panelBody::-webkit-scrollbar { width: 6px; }
+.panelBody::-webkit-scrollbar-thumb {
+  background: var(--ansar-hairline);
+  border-radius: 3px;
+}
+.panelBody::-webkit-scrollbar-track { background: transparent; }

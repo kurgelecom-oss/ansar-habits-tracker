@@ -33,6 +33,44 @@
 
   /* Height of the fixed TopNav. Layouts subtract this from the viewport. */
   --nav-h: 40px;
+
+  /* ── Dashboard V2 (ANSAR FC) ──────────────────────────────────────────────
+     The board's stadium palette, written down as tokens.
+
+     These are NOT a second opinion on --bg-base/--bg-card. The header note
+     above settles that: shared and new chrome uses the canonical three, and
+     the Real Madrid board keeps the stadium surfaces the 92% #0f1419 scrim
+     was tuned for. Every value below is one of those already-settled hexes,
+     collected out of inline styles so a panel can reference a token instead
+     of re-typing a hex — spec §11.2.
+
+     The accent stays var(--cyan). There is deliberately no --ansar-cyan:
+     a second cyan token is exactly how #00d9ff got in last time. */
+  --ansar-base: #0f1419;         /* page ground, under the stadium scrim */
+  --ansar-card: #16192d;         /* panel surface */
+  --ansar-row: #1f2438;          /* row surface inside a panel */
+  --ansar-border: #2d3543;       /* hairline, same value the TopNav uses */
+  --ansar-muted: #757f8f;        /* secondary text, same as .topnav-link */
+  --ansar-navy: #0d2350;         /* Real Madrid royal navy */
+  /* Sampled straight off the approved reference image rather than guessed:
+     the fixture plate is a FLAT deep royal navy with no gradient in it at all,
+     the panels are a touch darker than the rows, and the rows are separated by
+     a hairline rather than by a fill. */
+  --ansar-fixture: #02193c;      /* Match Centre plate — flat, no gradient */
+  --ansar-panel: #0e1420;        /* panel plate */
+  --ansar-rowflat: #0f1521;      /* row surface inside a panel */
+  --ansar-hairline: #1b232f;     /* the line between rows */
+  --ansar-subtext: #b1b8be;      /* secondary line under a habit name */
+  --ansar-gold: #d4af37;         /* Champions League gold — override marker */
+  --ansar-gold-bright: #e7c55b;  /* gold, lifted for text on dark surfaces */
+  --ansar-success: #00ff88;      /* DONE */
+  --ansar-warning: #ffa500;      /* Reserves tier, caution */
+  --ansar-danger: #ff4444;       /* MISSED, Training Ground tier */
+  --ansar-wallet: #a78bfa;       /* reserved for wallet value and reward actions */
+
+  --ansar-radius-panel: 14px;
+  --ansar-radius-row: 10px;
+  --ansar-gap: 12px;
 }
 
 * {
@@ -99,4 +137,11 @@ body {
   height: 2px;
   background: var(--cyan);
   border-radius: 1px 1px 0 0;
+}
+
+/* Dashboard V2 owns a full ANSAR FC navigation bar matching its stadium
+   interface. Hide the shared cross-surface strip only while that labelled main
+   is present; every other surface and route keeps the shared TopNav unchanged. */
+body:has(main[aria-label="ANSAR FC Dashboard"]) .topnav {
+  display: none;
 }

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase, getWeekStart } from "./lib/supabase";
-import { scoreDay, SOCCER_DAYS } from "./lib/scoring";
+import { scoreDay } from "./lib/scoring";
 // sydneyMinutesOfDay/parseHHMM feed the morning feasibility banner. Both are the
 // SAME primitives the server gates against — time.ts is Intl.DateTimeFormat with
 // timeZone "Australia/Sydney" throughout and holds no hardcoded offset, so the
@@ -12,10 +12,23 @@ import { addDays, dayNameOf, sydneyMinutesOfDay, parseHHMM } from "./lib/time";
 // scoringHabits/isPrerequisite are the second rule in the same pure module: a
 // habit whose Notion "Point Type" is `prerequisite` unlocks and scores nothing,
 // so it is stripped out of every count before any total is taken.
-import { habitsOnDay, scoringHabits, isPrerequisite } from "./lib/days";
+import { habitsOnDay, scoringHabits } from "./lib/days";
 // Mirrored byte-for-byte with family-dashboard/app/lib/streak.ts — see the
 // header there, and scripts/check-scoring-sync.sh which guards the pair.
 import { calculateStreak, STREAK_LOOKBACK_DAYS } from "./lib/streak";
+import ClubHeader from "./components/dashboard/ClubHeader";
+import ClubStatus from "./components/dashboard/ClubStatus";
+import DayViewToggle, { type DayView } from "./components/dashboard/DayViewToggle";
+import DashboardShell from "./components/dashboard/DashboardShell";
+import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
+import MatchCentre from "./components/dashboard/MatchCentre";
+import HabitPanel from "./components/dashboard/HabitPanel";
+import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
+import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
+import dashboardStyles from "./components/dashboard/dashboard.module.css";
+import { deriveMatchReadiness, journalEvidenceState } from "./dashboard/model";
+import type { DashboardHabit } from "./dashboard/types";
+import type { MatchCentreData } from "./lib/football/types";
 // The squad week, Mon–Fri. This file used to declare its own copy beside the
 // /55 note below; lib/goldenBoot.ts asked for the collapse the moment page.tsx
 // was next edited, and the Golden Boot cell is that edit. Nothing server-only
@@ -47,8 +60,6 @@ import { SQUAD_DAYS } from "./lib/goldenBoot";
 // re-open the contrast work. RM identity instead comes from Champions-League
 // gold + royal navy + kit-white accents on the dark base.
 const RM_GOLD = "#D4AF37";        // CL gold — FC scoreboard, achievements, top tier
-const RM_GOLD_BRIGHT = "#E7C55B"; // brighter gold for large scoreboard numbers on dark
-const RM_NAVY = "#0d2350";        // deep royal navy — scoreboard bar / section accents
 
 // The canonical accent, from globals.css. This repo used to carry #00d9ff — a
 // near-identical but WRONG cyan that matched none of the other five surfaces.
@@ -68,21 +79,17 @@ const CYAN = "var(--cyan)";
 /* ── Habits ────────────────────────────────────────────────────────────────
    The list itself is Notion's. Icons are not: Notion's Habit Blocks source has
    no icon property, and an emoji is presentation, not configuration. A habit
-   added in Notion without an entry here simply gets the default tick. */
-const HABIT_ICONS: Record<string, string> = {
-  feet_floor: "🌅", fajr: "🕌", bed_dressed: "🛏️", movement: "⚽",
-  breakfast: "🍳", quran: "📖", goals: "✍️", homeschool_session: "📚",
-  readtheory: "📘", khan: "📐", journal: "📓", btn_cornell: "📰",
-  all_namaz: "🕌", room_tidy: "🧹", shower: "🚿", teeth: "🪥",
-  reading: "🌙", soccer_training: "⚽",
-};
-const DEFAULT_ICON = "✅";
+   added in Notion without an entry here simply gets the default tick.
+
+   The map itself lives in app/dashboard/icons.ts. This file no longer reads it
+   at all: every habit now renders through HabitRow, which looks its own icon
+   up, so there is exactly one copy and nothing here to drift from it. */
 
 const BLOCKS = [
-  { id: "pre_homeschool",    label: "🌅 Morning Habits",      subtitle: "6:30–8:30am · all = +2 pts", color: "#ffa500" },
-  { id: "homeschool",        label: "📚 Homeschool",           subtitle: "8:30am–1:30pm · +5 pts",     color: CYAN },
-  { id: "afternoon_evening", label: "🌆 Afternoon / Evening",  subtitle: "1:30–8:30pm",                color: "#00ff88" },
-  { id: "conditional",       label: "⚽ Conditional",          subtitle: "Mon & Wed · 3:00–8:00pm",    color: "#a78bfa" },
+  { id: "pre_homeschool",    label: "Morning Habits", icon: "🌅",      subtitle: "6:30–8:30am · all = +2 pts", color: "#ffa500" },
+  { id: "homeschool",        label: "Homeschool", icon: "📚",        subtitle: "8:30am–1:30pm · +5 pts",     color: CYAN },
+  { id: "afternoon_evening", label: "Afternoon / Evening", icon: "🌆", subtitle: "1:30–8:30pm",               color: "#00ff88" },
+  { id: "conditional",       label: "Conditional", icon: "⚽",        subtitle: "Mon & Wed · 3:00–8:00pm",    color: "#a78bfa" },
 ];
 
 /* ── Stretch Wallet ────────────────────────────────────────────────────────
@@ -211,23 +218,18 @@ const WEEKLY_MAX = 55;
  * perfect day. There is no conditional term — SOCCER_DAYS is Mon/Wed, so nothing
  * on a weekend can reach the 11 a training day allows.
  */
-const HOMESCHOOL_PTS = 5;
-const WEEKEND_MAX = 10 - HOMESCHOOL_PTS;
+/* The weekend ceiling and the tier table used to be declared here. Both are
+   gone from this file: the tiers now come from app/dashboard/model.ts, which
+   reads the 42/34/26/0 boundaries out of lib/scoring.ts rather than re-typing
+   them. That leaves exactly one written-down copy of the tier boundaries in
+   the repo, which is what check-scoring-sync.sh has always been guarding. */
 
-const THRESHOLDS = [
-  { min: 42, label: "First Team 🏆",      desc: "42+ pts",   color: RM_GOLD },
-  { min: 34, label: "Bench ✅",           desc: "34–41 pts", color: CYAN },
-  { min: 26, label: "Reserves ⚠️",        desc: "26–33 pts", color: "#ffa500" },
-  { min: 0,  label: "Training Ground ❌", desc: "0–25 pts",  color: "#ff4444" },
-];
-
-function getThreshold(pts: number) {
-  return THRESHOLDS.find(t => pts >= t.min) || THRESHOLDS[THRESHOLDS.length - 1];
-}
 
 export default function AnsarPage() {
   const [gate, setGate] = useState<GateSnapshot | null>(null);
   const [notionHabits, setNotionHabits] = useState<NotionHabit[]>([]);
+  /** Weekday/weekend PREVIEW. null = follow the server's real day. */
+  const [dayView, setDayView] = useState<DayView | null>(null);
   const [wallet, setWallet] = useState<WalletState | null>(null);
   const [stretchItems, setStretchItems] = useState<StretchItem[]>([]);
   // null until /api/settings answers — see the POINTS_ACTIVE note at the top.
@@ -251,6 +253,13 @@ export default function AnsarPage() {
   const [weeklyPts, setWeeklyPts] = useState<number | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
   const [goldenBoot, setGoldenBoot] = useState<GoldenBootState | null>(null);
+  /**
+   * Real Madrid's live fixture, from /api/football/real-madrid. `null` only
+   * before the first fetch lands; after that it is always a provider answer,
+   * including the deliberate "unavailable" one. The board never fabricates a
+   * fixture to fill this in.
+   */
+  const [football, setFootball] = useState<MatchCentreData | null>(null);
   const [reject, setReject] = useState<Rejection | null>(null);
 
   // Parent override. The PIN is typed here and sent to the server; it is never
@@ -440,6 +449,27 @@ export default function AnsarPage() {
     setStreak(calculateStreak(byDate, today));
   }, []);
 
+  /**
+   * The Match Centre feed. A failed fetch is NOT an empty bar: it becomes the
+   * same honest "unavailable" shape the route returns, so the plate keeps its
+   * geometry and says why instead of showing a stale or invented score.
+   */
+  const loadFootball = useCallback(async () => {
+    try {
+      const res = await fetch("/api/football/real-madrid", { cache: "no-store" });
+      if (!res.ok) throw new Error(String(res.status));
+      setFootball(await res.json() as MatchCentreData);
+    } catch {
+      setFootball({
+        available: false,
+        reason: "upstream_unavailable",
+        message: "Fixture unavailable right now",
+        updatedAt: null,
+        stale: true,
+      });
+    }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     loadGate();
@@ -447,6 +477,7 @@ export default function AnsarPage() {
     loadWallet();
     loadStretchItems();
     loadSettings();
+    loadFootball();
 
     // The header clock is the DEVICE's, and is labelled as such. It is display
     // only — no gate anywhere reads it. The server's Sydney clock is shown
@@ -463,6 +494,11 @@ export default function AnsarPage() {
     // whole board to redraw the same sentence is waste. It is also faster than
     // the 30s gate poll on purpose: the deadline moves on its own even when
     // nothing is tapped, so the warning must not wait for a refetch to appear.
+    // 60s, not the 30s gate poll: a LIVE score is the only thing here that
+    // moves quickly, and the route's phase-aware Cache-Control means a
+    // SCHEDULED match answers from the CDN for an hour regardless.
+    const fixturePoll = setInterval(() => { loadFootball(); }, 60000);
+
     const feas = setInterval(() => setNowMin(sydneyMinutesOfDay()), 15000);
     setNowMin(sydneyMinutesOfDay());
 
@@ -470,15 +506,15 @@ export default function AnsarPage() {
     // next tick; refetch the same pair the poll fetches the moment the tab is
     // visible again. Intervals themselves are untouched.
     const onVis = () => {
-      if (document.visibilityState === "visible") { loadGate(); loadWallet(); }
+      if (document.visibilityState === "visible") { loadGate(); loadWallet(); loadFootball(); }
     };
     document.addEventListener("visibilitychange", onVis);
 
     return () => {
-      clearInterval(t); clearInterval(poll); clearInterval(feas);
+      clearInterval(t); clearInterval(poll); clearInterval(feas); clearInterval(fixturePoll);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [loadGate, loadNotionHabits, loadWallet, loadStretchItems, loadSettings]);
+  }, [loadGate, loadNotionHabits, loadWallet, loadStretchItems, loadSettings, loadFootball]);
 
   // History reloads whenever the server's date or the habit list changes.
   const serverDate = gate?.serverTime.date ?? "";
@@ -770,10 +806,8 @@ export default function AnsarPage() {
   const preIds = scored.filter(h => h.block === "pre_homeschool").map(h => h.id);
   const baseIds = scored.filter(h => h.block !== "conditional").map(h => h.id);
   const dayScore = scoreDay(completedIds, dayName, preIds, baseIds);
-  const todayPts = dayScore.total;
   const todayDone = scored.filter(h => h.state === "DONE").length;
   const overallPct = scored.length > 0 ? Math.round((todayDone / scored.length) * 100) : 0;
-  const weekThreshold = getThreshold(weeklyPts ?? 0);
 
   // Weekend is read from the SERVER's Sydney weekday, never `new Date()` — same
   // rule as every gate on this page. Empty until /api/tick answers, so the
@@ -781,52 +815,33 @@ export default function AnsarPage() {
   // spoken. It is declared BEFORE DAILY_MAX because the ceiling now depends on
   // it: a weekend day is a real scoring day with a real, lower ceiling, not a
   // blank one.
-  const isWeekend = dayName === "Saturday" || dayName === "Sunday";
 
   // Three ceilings, one expression. 11 on a training day, 10 on a school day, 5
   // on a weekend — see WEEKEND_MAX for why the weekend number is 10 minus the
   // Homeschool block's 5. `todayPts` needs no branch at all: it comes from
   // scoreDay() over the habits the SERVER says apply today, so a weekend already
   // scores itself correctly out of this ceiling.
-  const DAILY_MAX = isWeekend ? WEEKEND_MAX : SOCCER_DAYS.includes(dayName) ? 11 : 10;
-
-  const walletLocked = !wallet?.unlocked;
-  const stretchBalance = wallet?.balance ?? 0;
   const earnedItemIds = new Set(wallet?.earnedItemIds ?? []);
 
   /* ── Styles ─────────────────────────────────────────────────────────────── */
 
   const BOARD_CSS = `
-/* padding-top, NOT margin-top, to clear the fixed nav. body is height:100% in
-   globals.css, so a top margin here collapses through it and pushes the document
-   40px taller than the viewport — a scrollbar on a page whose whole point is not
-   scrolling. Padding cannot collapse. box-sizing:border-box is already global. */
-.ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:var(--nav-h);overflow:hidden}
-/* Outer padding trimmed 10/11 -> 6/7. Cheapest 8px on the board: it costs no
-   information and every column gains it. One-page dashboard — nothing here ever
-   scrolls, so vertical space goes to content rather than to margins. */
-.ab-board{display:grid;grid-template-columns:1fr 1fr 0.84fr 0.96fr;gap:11px;
-  padding:6px 16px 7px;flex:1;min-height:0}
-.ab-btn{transition:transform 220ms cubic-bezier(.34,1.56,.64,1),background 180ms ease,
-  border-color 180ms ease,box-shadow 180ms ease;box-shadow:0 2px 0 rgba(0,0,0,.32)}
-.ab-btn:active:not(:disabled){transform:scale(.965) translateY(1px);
-  box-shadow:0 0 0 rgba(0,0,0,.32),inset 0 2px 9px rgba(0,0,0,.34)}
-.ab-btn:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:2px}
-.ab-btn:disabled{box-shadow:none}
-.ab-spend{transition:transform 220ms cubic-bezier(.34,1.56,.64,1),box-shadow 180ms ease}
-.ab-spend:active:not(:disabled){transform:translateY(3px);box-shadow:0 0 0 #7c5fd3}
-.ab-spend:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:2px}
-/* Below the 4-column breakpoint the board reflows to 2 columns and the page is
-   allowed to scroll again — the habits at a usable size genuinely cannot fit an
-   iPad. The no-scroll guarantee is for the 1440px+ screens this is built for. */
+/* No top padding: this route draws its own ANSAR FC bar, so globals.css hides
+   the shared fixed .topnav while this main is on screen and the 40px it used to
+   reserve is spent on the stadium masthead instead. The two must move together —
+   restore the reservation the moment the shared bar comes back here, or the
+   fixed nav (z-index 900) lands on top of the first 40px of the board. Keep it
+   as padding-top, NOT margin-top: body is height:100% in globals.css, so a top
+   margin collapses through it and pushes the document 40px taller than the
+   viewport — a scrollbar on a page whose whole point is not scrolling. */
+.ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:0;overflow:hidden}
+/* The board grid, the row/spend button chrome and the long-hold ring used to
+   be declared here. They now live in dashboard.module.css beside the
+   components that draw them — .grid carries the same four-column track list
+   and the same 1439/820 breakpoints, and .holdRing the same two-second sweep.
+   Only the rules for elements this file still renders remain below. */
 @media (max-width:1439px){
   .ab-root{height:auto;min-height:100dvh;overflow:visible}
-  .ab-board{grid-template-columns:1fr 1fr}
-}
-@media (max-width:820px){.ab-board{grid-template-columns:1fr}}
-@media (prefers-reduced-motion:reduce){
-  .ab-btn,.ab-spend{transition:none}
-  .ab-btn:active,.ab-spend:active{transform:none}
 }
 
 /* ── NOTION SOURCE STRIP ──────────────────────────────────────────────────
@@ -840,12 +855,18 @@ export default function AnsarPage() {
    child is an element (the middots are spans) so the > * selector reaches all
    of them — a bare text node could not be targeted.
 
-   flex-shrink:0 keeps the strip off .ab-board's flex:1 growth path, so at the
+   flex-shrink:0 keeps the strip off the panel grid's growth path, so at the
    1440px+ height:100dvh / overflow:hidden layout the board yields the ~34px
    rather than the strip being squeezed to nothing. */
 .ab-src{display:flex;align-items:center;justify-content:center;gap:8px;
   flex-shrink:0;padding:14px 0 20px;font-size:10px;letter-spacing:0.04em;
   color:#565f70}
+/* Compacted on a short desktop viewport: at 1440x820 the weekday programme
+   needs the height more than this strip needs its margins. A parent's link
+   list, not part of the day's work. */
+@media (min-width:1440px) and (max-height:900px){
+  .ab-src{padding:0}
+}
 .ab-src > *{opacity:0.45;transition:opacity 180ms ease,color 180ms ease}
 .ab-src a{color:#565f70;text-decoration:none}
 .ab-src a:hover{opacity:1;color:var(--cyan)}
@@ -855,19 +876,9 @@ export default function AnsarPage() {
 }
 
 /* ── LONG-PRESS HOLD INDICATOR ────────────────────────────────────────────
-   Fills left-to-right over the two seconds of the hold. It is the only visible
-   hint that a refused habit can be opened at all — deliberately quiet, so a
-   child mashing buttons never discovers it by accident, while a parent who
-   holds sees immediate feedback that something is happening. */
-.ab-hold{position:absolute;left:0;top:0;bottom:0;width:100%;pointer-events:none;
-  transform-origin:left center;transform:scaleX(0);border-radius:11px;
-  background:linear-gradient(90deg,${RM_GOLD}26,${RM_GOLD}12);
-  border-right:2px solid ${RM_GOLD}aa;
-  animation:ab-hold-fill 2000ms linear forwards}
-@keyframes ab-hold-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@media (prefers-reduced-motion:reduce){
-  .ab-hold{animation-duration:2000ms}
-}
+   It moved to dashboard.module.css as .holdRing, drawn by HabitRow, with the
+   same two-second sweep and the same reason for existing: it is the only
+   visible hint that a refused habit can be opened at all. */
 
 /* ── PARENT OVERRIDE DIALOG ───────────────────────────────────────────────── */
 .ab-ov-pin{letter-spacing:0.5em;font-size:22px!important;text-align:center;
@@ -929,22 +940,11 @@ export default function AnsarPage() {
    styles, so the size overrides here need !important; nothing at or above
    641px can see this block, and the >=1440px no-scroll contract is untouched. */
 @media (max-width:640px){
-  .ab-head{height:auto!important;min-height:52px;flex-wrap:wrap;row-gap:2px;padding:6px 12px!important}
-  .ab-head > div{flex-wrap:wrap}
-  .ab-score{height:auto!important;flex-wrap:wrap;row-gap:6px;padding:8px 8px!important}
-  .ab-cell{height:auto!important;min-height:52px;padding:0 12px!important}
-  .ab-crest{height:auto!important;max-width:64px}
-  .ab-meter{width:auto!important;flex:1 1 auto;min-width:90px}
   /* Bottom-most fixed element on the board: keep the toast above the iOS
      home-indicator safe area. */
   .ab-toast{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
 }`;
 
-  const cardStyle: React.CSSProperties = {
-    background: "#16192d", border: "1px solid #2d3543", borderRadius: 12,
-    overflow: "hidden", display: "flex", flexDirection: "column", minHeight: 0,
-    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-  };
 
   /**
    * Column shell: accent rail, title/subtitle, optional right-hand count.
@@ -957,236 +957,46 @@ export default function AnsarPage() {
    * lives here as a parameter rather than in the shared style: editing the base
    * would have restyled every card on the board.
    */
-  const colHead = (color: string, title: string, subtitle: string, right?: React.ReactNode, compact = false) => (
-    <>
-      <div style={{ height: compact ? 2 : 3, background: color, flexShrink: 0 }} />
-      <div style={{
-        padding: compact ? "5px 10px" : "9px 14px 8px", borderBottom: "1px solid #2d3543", flexShrink: 0,
-        display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10,
-      }}>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color }}>{title}</div>
-          <div style={{ fontSize: compact ? 9 : 10, color: "#757f8f", marginTop: compact ? 1 : 3, fontWeight: 500 }}>{subtitle}</div>
-        </div>
-        {right}
-      </div>
-    </>
-  );
 
-  /**
-   * One habit as a real <button>, in one of four server-decided states.
-   *
-   *   DONE    ticked, struck through
-   *   LIVE    full colour, tappable
-   *   LOCKED  greyed, non-tappable, says when it opens ("Opens 6:30am")
-   *   MISSED  greyed, non-tappable, says "Missed" — this one scores zero
-   *
-   * MISSED is tinted red rather than merely dimmed: a missed window is a
-   * different fact from a not-yet-open one, and the board should not make them
-   * look the same.
-   */
-  const habitButton = (h: GateHabitView, color: string) => {
-    const isDone = h.state === "DONE";
-    const isLive = h.state === "LIVE";
-    const isMissed = h.state === "MISSED";
-    const isSaving = saving === h.id;
-    const pts = pointsById[h.id] ?? 0;
-    const chip = pts > 0 ? `+${pts} pt${pts === 1 ? "" : "s"}` : "";
-    const wasOverridden = overriddenIds.has(h.id);
-    const holding = holdId === h.id;
 
-    return (
-      <button
-        key={h.id}
-        type="button"
-        className="ab-btn"
-        onClick={() => tick(h.id, h.name)}
-        disabled={isSaving}
-        aria-disabled={!isLive}
-        onPointerDown={() => beginHold(h)}
-        onPointerUp={cancelHold}
-        onPointerLeave={cancelHold}
-        onPointerCancel={cancelHold}
-        onContextMenu={e => e.preventDefault()}
-        aria-label={wasOverridden ? `${h.name} — restored by parent override` : h.name}
-        title={wasOverridden ? "Parent override" : h.window ? `Window ${h.window}` : undefined}
-        style={{
-          position: "relative", overflow: "hidden",
-          display: "flex", alignItems: "center", gap: 14, padding: "0 16px",
-          borderRadius: 11, flex: 1, minHeight: 56, width: "100%", textAlign: "left",
-          font: "inherit", color: "inherit",
-          border: `1px solid ${isDone ? color + "50" : isLive ? "#2d3543" : isMissed ? "#ff444440" : "#1f2438"}`,
-          background: isDone ? color + "0a" : isLive ? "#1f2438" : isMissed ? "rgba(255,68,68,0.06)" : "#16192d",
-          opacity: isLive || isDone ? 1 : 0.5,
-          cursor: isLive ? "pointer" : "not-allowed",
-          WebkitTapHighlightColor: "transparent",
-        }}
-      >
-        {holding && <span aria-hidden className="ab-hold" />}
+  /* habitButton, heroButton and habitColumn were the inline presentation for
+     Morning, Afternoon/Evening, Homeschool and Conditional. Every one of those
+     blocks now renders through HabitPanel or DayProgrammePanel, so the closures
+     are gone rather than left to rot beside their replacements. The behaviour
+     they carried - the four states, the point chip, the override marker, the
+     tick and long-hold wiring - moved into HabitRow unchanged. */
 
-        <span style={{
-          width: 30, height: 30, borderRadius: 9, flexShrink: 0,
-          border: `2px solid ${isDone ? color : isLive ? "#2d3543" : isMissed ? "#ff444460" : "#1f2438"}`,
-          background: isDone ? color : "transparent",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {isSaving ? <span style={{ fontSize: 13 }}>⏳</span> :
-           isDone ? <span style={{ fontSize: 16, color: "#000", fontWeight: 800 }}>✓</span> :
-           isMissed ? <span style={{ fontSize: 12 }}>✕</span> :
-           !isLive ? <span style={{ fontSize: 12 }}>🔒</span> : null}
-        </span>
+  /* ── WEEKDAY / WEEKEND PREVIEW ──────────────────────────────────────────────
+     `liveView` is what the server says today actually is. When the toggle picks
+     the other side, the roster is rebuilt from the Notion habit list using
+     habitsOnDay() — the same rule the server applies — and every row comes back
+     LOCKED. A tick belongs to a date and the server would refuse one for a day
+     that is not today, so the board says so up front rather than letting a tap
+     fail silently. Nothing here touches scoring, the gate, or any write. */
+  const liveView: DayView | null =
+    dayName === "" ? null : (dayName === "Saturday" || dayName === "Sunday" ? "weekend" : "weekday");
+  const previewing = dayView !== null && liveView !== null && dayView !== liveView;
+  const previewDayName = dayView === "weekend" ? "Saturday" : "Monday";
 
-        <span aria-hidden style={{ fontSize: 24, flexShrink: 0, lineHeight: 1 }}>
-          {HABIT_ICONS[h.id] ?? DEFAULT_ICON}
-        </span>
+  const previewHabits: DashboardHabit[] = previewing
+    ? habitsOnDay(notionHabits, previewDayName).map(h => ({
+        id: h.id, name: h.name, block: h.block, order: h.order,
+        pointType: h.pointType, points: h.points,
+        state: "LOCKED" as ButtonState,
+        label: `Preview · ${previewDayName}`,
+        message: null, reason: "preview",
+        window: h.windowStart && h.windowEnd ? `${h.windowStart}-${h.windowEnd}` : null,
+        dwellSeconds: h.dwellSeconds ?? null,
+        overridden: false,
+      }))
+    : [];
 
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{
-            display: "block", fontSize: 15, fontWeight: 600, lineHeight: 1.28,
-            color: isDone ? "#757f8f" : isLive ? "#ffffff" : "#565f70",
-            textDecoration: isDone ? "line-through" : "none",
-          }}>
-            {h.name}
-          </span>
-          {!isDone && !isLive && h.label && (
-            <span style={{
-              display: "block", fontSize: 11, fontWeight: 700, marginTop: 3,
-              color: isMissed ? "#ff4444" : "#757f8f",
-            }}>
-              {h.label}
-            </span>
-          )}
-        </span>
-
-        {wasOverridden && (
-          <span aria-hidden title="Parent override" style={{
-            fontSize: 10, fontWeight: 800, flexShrink: 0, padding: "4px 7px",
-            borderRadius: 6, whiteSpace: "nowrap", letterSpacing: "0.04em",
-            color: RM_GOLD, background: `${RM_GOLD}14`, border: `1px solid ${RM_GOLD}44`,
-          }}>
-            ⟲ OVERRIDE
-          </span>
-        )}
-
-        {chip && (
-          <span style={{
-            fontSize: 11, fontWeight: 800, flexShrink: 0, padding: "5px 10px",
-            borderRadius: 7, whiteSpace: "nowrap",
-            color: isDone ? color : isLive ? "#b0b5c1" : "#565f70",
-            background: isDone ? color + "15" : "#16192d",
-            border: `1px solid ${isDone ? color + "40" : "#2d3543"}`,
-          }}>
-            {chip}
-          </span>
-        )}
-      </button>
-    );
-  };
-
-  /**
-   * The Homeschool hero.
-   *
-   * `homeschool_session` is worth 5 points — more than all seven Morning Habits
-   * combined — so it gets the largest target on the board rather than one 56px
-   * line lost in a list. The Stage 4 port to /api/habits dropped this treatment
-   * and rendered it with the generic row button; this restores it.
-   *
-   * It carries all four server-decided states, same vocabulary as the rows:
-   *   DONE    accent border/tint, struck through, "+5" in the block colour
-   *   LIVE    full colour, tappable, the only state with a pointer cursor
-   *   LOCKED  dimmed, 🔒, and the gate's own reason as the caption
-   *   MISSED  red tint, ✕, and a literal "0" where the "+5" was — a missed
-   *           window scores nothing, and the number should say so rather than
-   *           keep advertising five points it will never pay
-   *
-   * `flex: 1 1 auto` with a minHeight floor lets it take slack on tall screens
-   * and give it back on short ones, so it can never be the thing that pushes
-   * the column past the fold.
-   */
-  const heroButton = (h: GateHabitView, color: string) => {
-    const isDone = h.state === "DONE";
-    const isLive = h.state === "LIVE";
-    const isMissed = h.state === "MISSED";
-    const isSaving = saving === h.id;
-    const pts = pointsById[h.id] ?? 0;
-    const accent = isMissed ? "#ff4444" : color;
-    const wasOverridden = overriddenIds.has(h.id);
-    const holding = holdId === h.id;
-
-    const caption = isDone ? "✓ Done — wallet unlocked"
-      : isLive ? "Tap when the day's homeschool is finished"
-      : isMissed ? "Missed — this scores zero"
-      : h.label || "Locked";
-
-    return (
-      <button
-        key={h.id}
-        type="button"
-        className="ab-btn"
-        onClick={() => tick(h.id, h.name)}
-        disabled={isSaving}
-        aria-disabled={!isLive}
-        onPointerDown={() => beginHold(h)}
-        onPointerUp={cancelHold}
-        onPointerLeave={cancelHold}
-        onPointerCancel={cancelHold}
-        onContextMenu={e => e.preventDefault()}
-        aria-label={wasOverridden ? `${h.name} — restored by parent override` : h.name}
-        title={wasOverridden ? "Parent override" : h.window ? `Window ${h.window}` : undefined}
-        style={{
-          position: "relative", overflow: "hidden",
-          display: "flex", flexDirection: "column", alignItems: "flex-start",
-          justifyContent: "center", gap: 6, padding: "14px 16px",
-          minHeight: 112, flex: "1 1 auto", width: "100%",
-          borderRadius: 11, textAlign: "left", font: "inherit", color: "inherit",
-          border: `1px solid ${isDone ? color + "66" : isLive ? "#2d3543" : isMissed ? "#ff444440" : "#1f2438"}`,
-          background: isDone ? color + "10" : isLive ? "#1f2438" : isMissed ? "rgba(255,68,68,0.06)" : "#16192d",
-          opacity: isLive || isDone ? 1 : 0.5,
-          cursor: isLive ? "pointer" : "not-allowed",
-          WebkitTapHighlightColor: "transparent",
-        }}
-      >
-        {holding && <span aria-hidden className="ab-hold" />}
-
-        <span style={{ display: "flex", alignItems: "center", gap: 11 }}>
-          <span style={{
-            fontSize: 34, fontWeight: 800, color: accent, lineHeight: 1,
-            fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em",
-          }}>
-            {isSaving ? "⏳" : isMissed ? "0" : `+${pts}`}
-          </span>
-          <span aria-hidden style={{
-            width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-            border: `2px solid ${isDone ? color : isLive ? "#2d3543" : isMissed ? "#ff444460" : "#1f2438"}`,
-            background: isDone ? color : "transparent",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {isDone ? <span style={{ fontSize: 14, color: "#000", fontWeight: 800 }}>✓</span> :
-             isMissed ? <span style={{ fontSize: 11 }}>✕</span> :
-             !isLive ? <span style={{ fontSize: 11 }}>🔒</span> : null}
-          </span>
-        </span>
-
-        <span style={{
-          fontSize: 18, fontWeight: 800, lineHeight: 1.2,
-          color: isDone ? "#757f8f" : isLive ? "#ffffff" : "#565f70",
-          textDecoration: isDone ? "line-through" : "none",
-        }}>
-          {HABIT_ICONS[h.id] ?? DEFAULT_ICON} {h.name}
-        </span>
-
-        <span style={{
-          fontSize: 11.5, fontWeight: 700,
-          color: isDone ? color : isMissed ? "#ff4444" : "#757f8f",
-        }}>
-          {wasOverridden ? "⟲ Restored by parent override" : caption}
-        </span>
-      </button>
-    );
-  };
+  const viewHabits: DashboardHabit[] = previewing
+    ? previewHabits
+    : (gateHabits as DashboardHabit[]);
 
   const inBlock = (blockId: string) =>
-    gateHabits.filter(h => h.block === blockId).sort((a, b) => a.order - b.order);
+    viewHabits.filter(h => h.block === blockId).sort((a, b) => a.order - b.order);
 
   /* ── MORNING FEASIBILITY ────────────────────────────────────────────────────
      Can the morning block still be finished before its window shuts?
@@ -1242,71 +1052,36 @@ export default function AnsarPage() {
     return null;
   })();
 
-  /** A full habit column (Morning, and Afternoon/Evening). */
-  const habitColumn = (block: (typeof BLOCKS)[number]) => {
-    const bh = inBlock(block.id);
-    if (bh.length === 0) return null;
-    const done = bh.filter(h => h.state === "DONE").length;
-    return (
-      // no scroll — one-page dashboard, overflow-y is banned here
-      <div style={cardStyle}>
-        {colHead(block.color, block.label, block.subtitle,
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: 19, fontWeight: 800, color: "#ffffff", fontVariantNumeric: "tabular-nums" }}>
-              {done}/{bh.length}
-            </div>
-            <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
-              {dayScore.blocks[block.id] ?? 0} pts
-            </div>
-          </div>,
-        )}
-        {/* The feasibility warning. Morning only — it is the one block whose
-            dwell chain can outrun its own window, because it is the only one
-            with seven habits inside two hours. Rendered above the buttons so it
-            is read before the next tap, not after it. Colours are the amber and
-            red this file already uses for Reserves and Training Ground; no token
-            is added and globals.css is untouched. */}
-        {block.id === "pre_homeschool" && morningFeasibility && (
-          <div
-            role="status"
-            aria-live="polite"
-            data-testid="morning-feasibility"
-            data-level={morningFeasibility.level}
-            data-latest-safe-next-tick={morningFeasibility.latestSafeNextTick}
-            data-remaining={morningFeasibility.remaining}
-            style={{
-              margin: "0 10px 0",
-              marginTop: 10,
-              padding: "7px 10px",
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              lineHeight: 1.35,
-              color: morningFeasibility.level === "red" ? "#ff4444" : "#ffa500",
-              background: morningFeasibility.level === "red"
-                ? "rgba(255, 68, 68, 0.10)"
-                : "rgba(255, 165, 0, 0.10)",
-              border: `1px solid ${morningFeasibility.level === "red"
-                ? "rgba(255, 68, 68, 0.35)"
-                : "rgba(255, 165, 0, 0.35)"}`,
-            }}
-          >
-            {morningFeasibility.text}
-          </div>
-        )}
-        <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
-          {bh.map(h => habitButton(h, block.color))}
-        </div>
-      </div>
-    );
-  };
 
   const morning = BLOCKS.find(b => b.id === "pre_homeschool")!;
-  const school = BLOCKS.find(b => b.id === "homeschool")!;
-  const evening = BLOCKS.find(b => b.id === "afternoon_evening")!;
-  const conditional = BLOCKS.find(b => b.id === "conditional")!;
-  const schoolHabits = inBlock("homeschool");
-  const condHabits = inBlock("conditional");
+  /**
+   * Morning rows for HabitPanel: the gate's own habit views, plus the two facts
+   * a row renders that /api/tick does not carry — the Notion point value and
+   * whether a parent override stands behind the completion. Both are read from
+   * the same `pointsById` and `overriddenIds` the rest of this file uses, so
+   * the panel cannot disagree with the board about either.
+   */
+  const rowsFor = (blockId: string): DashboardHabit[] =>
+    inBlock(blockId).map(h => ({
+      ...h,
+      points: pointsById[h.id] ?? 0,
+      overridden: overriddenIds.has(h.id),
+    }));
+  const morningRows = rowsFor("pre_homeschool");
+  const homeschoolRows = rowsFor("homeschool");
+  /**
+   * Match Readiness — a DISPLAY summary of today's learning state, never a
+   * football result and never an input to a gate. workSubmissionCount is 0
+   * because nothing in this app counts Tally submissions yet; claiming a
+   * number here would be inventing evidence.
+   */
+  const readiness = deriveMatchReadiness({
+    morningDone: morningRows.filter(h => h.state === "DONE").length,
+    morningTotal: morningRows.length,
+    homeschoolDone: homeschoolRows.some(h => h.id === "homeschool_session" && h.state === "DONE"),
+    journalState: journalEvidenceState(homeschoolRows.find(h => h.id === "journal")),
+    workSubmissionCount: 0,
+  });
 
   /**
    * One scoreboard cell. `opts` is additive and defaulted, so the four calls
@@ -1321,33 +1096,7 @@ export default function AnsarPage() {
    *          after it, so it draws on the LEFT instead and separates itself from
    *          Banked, which has never drawn one of its own.
    */
-  const cell = (
-    label: string,
-    value: React.ReactNode,
-    extra?: React.ReactNode,
-    opts?: { color?: string; side?: "left" | "right" },
-  ) => (
-    <div className="ab-cell" style={{
-      padding: "0 22px", height: 52,
-      ...(opts?.side === "left"
-        ? { borderLeft: "1px solid rgba(212,175,55,0.16)" }
-        : { borderRight: "1px solid rgba(212,175,55,0.16)" }),
-      display: "flex", flexDirection: "column", justifyContent: "center",
-    }}>
-      <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(232,235,242,0.6)" }}>
-        {label}
-      </div>
-      <div style={{
-        fontSize: 29, fontWeight: 800, color: opts?.color ?? RM_GOLD_BRIGHT, lineHeight: 1.08,
-        fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em",
-      }}>
-        {value}
-      </div>
-      {extra}
-    </div>
-  );
 
-  const sub = (t: string) => <small style={{ fontSize: 14, color: "rgba(232,235,242,0.55)", fontWeight: 600 }}>{t}</small>;
 
   return (
     <div className="ab-root" style={{
@@ -1355,7 +1104,7 @@ export default function AnsarPage() {
       // #0f1419 page colour) sits on top of the photo and does ALL the work of
       // preserving contrast — no text/card styling is changed.
       backgroundColor: "#0f1419",
-      backgroundImage: "linear-gradient(rgba(15,20,25,0.92), rgba(15,20,25,0.92)), url('/bernabeu-bg.jpg')",
+      backgroundImage: "linear-gradient(rgba(8,12,20,0.88), rgba(6,9,16,0.94)), url('/stadium-lights.jpg')",
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
@@ -1365,129 +1114,40 @@ export default function AnsarPage() {
     }}>
       <style>{BOARD_CSS}</style>
 
-      {/* HEADER */}
-      <header className="ab-head" style={{
-        background: "#16192d", borderBottom: "1px solid #2d3543", height: 52, flexShrink: 0,
-        padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
-      }}>
-        <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em" }}>
-          Ansar <span style={{ color: RM_GOLD, letterSpacing: "0.04em" }}>· ANSAR FC</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "#757f8f", flexShrink: 0 }}>
-          {pointsActive === false && (
-            <span style={{
-              fontSize: 10, fontWeight: 700, color: "#ffa500", padding: "3px 9px", borderRadius: 20,
-              border: "1px solid rgba(255,165,0,0.3)", background: "rgba(255,165,0,0.1)",
-            }}>
-              Soft-launch · points preview
-            </span>
-          )}
-          {/* The SERVER's clock — the one every gate is decided against. Shown
-              first, and labelled, so it is obvious which clock is authoritative. */}
-          {gate && (
-            <span style={{ color: RM_GOLD_BRIGHT, fontWeight: 700 }} title="Server clock — every gate uses this">
-              🕒 {gate.serverTime.clock} {gate.serverTime.weekday} · Sydney
-            </span>
-          )}
-          <span style={{ opacity: 0.7 }} title="This device's clock — display only, no gate reads it">
-            device {mounted ? time : ""}
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: online ? "#00ff88" : "#ff4444", display: "inline-block" }} />
-            <span style={{ color: online ? "#00ff88" : "#ff4444", fontSize: 11, fontWeight: 500 }}>{online ? "Live" : "Offline"}</span>
-          </span>
-        </div>
-      </header>
-
-      {/* SCOREBOARD STRIP */}
-      <div className="ab-score" style={{
-        height: 120, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 16px",
-        background: RM_NAVY, borderBottom: "1px solid rgba(212,175,55,0.28)",
-      }}>
-        {/* Crest. The divider lives on this wrapper rather than on the <img>
-            because the cells to the right draw theirs at height 52 (see cell()),
-            and a border on a 42px-tall image would render a short line against
-            four full-height neighbours. Wrapper matches; the img does not. */}
-        <div className="ab-cell" style={{
-          height: 52, display: "flex", alignItems: "center", flexShrink: 0,
-          paddingRight: 18, marginRight: 18,
-          borderRight: "1px solid rgba(212,175,55,0.16)",
-        }}>
-          <img
-            className="ab-crest"
-            src="/real-madrid.png"
-            alt="Real Madrid"
-            style={{ height: 112, width: "auto", display: "block", objectFit: "contain" }}
+      <DashboardShell
+        status={
+          <>
+          <DayViewToggle
+            value={dayView ?? liveView ?? "weekday"}
+            live={liveView}
+            onChange={setDayView}
           />
-        </div>
-        {/* One cell, both kinds of day. The weekend used to borrow this slot to
-            re-print the week's tier, because Saturday scheduled nothing and
-            "Points today 0 / 10" would have reported a failure that never had a
-            chance to happen. A weekend now has 13 real habits and a real ceiling
-            of its own, so it gets a real score out of WEEKEND_MAX — only the
-            label changes. The tier it used to show has not gone anywhere: it is
-            the badge at the right-hand end of this same strip, all week. */}
-        {cell(isWeekend ? "Weekend pts" : "Points today",
-          <>{gate ? todayPts : "—"}{sub(` / ${DAILY_MAX}`)}{gate && dayScore.perfect && <span style={{ fontSize: 18, marginLeft: 5 }}>⭐</span>}</>)}
-        {cell("Week total", <>{weeklyPts !== null ? weeklyPts : "—"}{sub(` / ${WEEKLY_MAX}`)}</>)}
-        {cell("Streak", <>{streak !== null ? streak : "—"}{streak !== null && streak > 0 ? " 🔥" : ""}</>)}
-        {/* This cell read "—" on Sat/Sun, because a weekend scheduled nothing and
-            a 0% would have said "you did none of it" about a day with nothing to
-            do. There are 13 weekend habits now, so there is a real proportion to
-            report and it is reported — `overallPct` is already computed over
-            whatever the SERVER says applies today, weekday or weekend. */}
-        {cell("Today", <>{gate ? overallPct : 0}{sub("%")}</>,
-          <div className="ab-meter" style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.34)", overflow: "hidden", marginTop: 6, width: 150 }}>
-            <div style={{
-              height: "100%", borderRadius: 3, transition: "width 200ms ease-in-out",
-              width: gate ? `${overallPct}%` : "0%",
-              background: "linear-gradient(90deg, #ffa500, #00ff88)",
-            }} />
-          </div>,
-        )}
-        <div className="ab-cell" style={{ padding: "0 22px", height: 52, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(232,235,242,0.6)" }}>
-            Banked
-          </div>
-          <div style={{ fontSize: 29, fontWeight: 800, color: "#a78bfa", lineHeight: 1.08, fontVariantNumeric: "tabular-nums" }}>
-            {!wallet ? "—" : walletLocked ? "🔒" : stretchBalance}
-            {wallet && !walletLocked && sub(" min")}
-          </div>
-        </div>
+          <ClubStatus
+            serverTime={gate?.serverTime ?? null}
+            deviceTime={mounted ? time : ""}
+            online={online}
+            pointsActive={pointsActive}
+            todayPercent={gate ? overallPct : null}
+            streak={streak}
+          />
+          </>
+        }
+      >
 
-        {/* GOLDEN BOOT — consecutive First Team weeks, out of four.
-            Rendered only when the ledger answered. While db/week_results.sql is
-            unrun the route 503s, `goldenBoot` is null and this cell is absent
-            entirely; the five cells to its left and the badge to its right are
-            untouched, and the strip keeps its 120px. At a full run of four the
-            fraction gives way to the boot itself — the number stops being the
-            point once it has been earned. */}
-        {goldenBoot && cell(
-          "Golden Boot",
-          goldenBoot.progress >= goldenBoot.target
-            ? <span style={{ fontSize: 26 }}>🏆</span>
-            : <>{goldenBoot.progress}{sub(` / ${goldenBoot.target}`)}</>,
-          undefined,
-          { color: CYAN, side: "left" },
-        )}
+      <ClubHeader />
 
-        <div style={{
-          marginLeft: "auto", display: "flex", alignItems: "center", gap: 11,
-          border: `1px solid ${weekThreshold.color}66`, background: `${weekThreshold.color}1a`,
-          padding: "9px 16px", borderRadius: 9,
-        }}>
-          <div>
-            <b style={{ color: weekThreshold.color, fontSize: 15 }}>{weekThreshold.label}</b>
-            {/* "Mon–Fri" is stated, not implied. This badge is the squad tier and
-                the squad total is a weekday number, which is invisible on a
-                Monday and confusing on a Saturday — where a full weekend of
-                ticks deliberately moves nothing here. */}
-            <i style={{ fontStyle: "normal", fontSize: 11, color: "rgba(232,235,242,0.62)", display: "block", marginTop: 2 }}>
-              {weekThreshold.desc} · Mon–Fri{pointsActive === false && " · preview, not yet enforced"}
-            </i>
-          </div>
-        </div>
-      </div>
+      {/* The scoreboard strip is replaced by the Match Centre frame. Its
+          cells did not disappear: Week total, the tier badge and Golden Boot
+          are in Work + Week, Banked is the Stretch Wallet's own summary, and
+          Today and Streak moved into the header status line. The Golden Boot
+          is now rendered in exactly one place. */}
+      <MatchCentre data={football ?? {
+        available: false,
+        reason: "upstream_unavailable",
+        message: "Loading Real Madrid's fixture…",
+        updatedAt: null,
+        stale: false,
+      }} />
 
       {/* Server-unreachable banner. The board fails closed, and says so. */}
       {mounted && !gate && (
@@ -1522,280 +1182,69 @@ export default function AnsarPage() {
       )}
 
       {/* BOARD — four columns, no scroll on either axis at 1440px+ */}
-      <div className="ab-board">
+      <div className={dashboardStyles.grid}>
 
         {/* 1 — Morning Habits */}
-        {habitColumn(morning)}
+        {/* MORNING — Dashboard V2 rows. Behaviour-preserving: the same tick,
+            beginHold, cancelHold, saving, holdId and morningFeasibility this
+            column always used, handed to a component instead of a closure. */}
+        <HabitPanel
+          title={morning.label}
+          icon={morning.icon}
+          scoreLabel="Morning"
+          subtitle={morning.subtitle}
+          accent={morning.color}
+          habits={morningRows}
+          doneCount={morningRows.filter(h => h.state === "DONE").length}
+          blockPoints={dayScore.blocks.pre_homeschool ?? 0}
+          savingId={saving}
+          holdId={holdId}
+          feasibility={morningFeasibility}
+          onTick={tick}
+          onHoldStart={beginHold}
+          onHoldCancel={cancelHold}
+        />
 
-        {/* 2 — Afternoon / Evening */}
-        {habitColumn(evening)}
+        {/* 2 — TODAY'S PROGRAMME. Homeschool, Afternoon/Evening and Conditional
+            in one panel. Amendment 8027d53: the weekend removes only the
+            Homeschool subsection; nothing else is allowed to disappear. */}
+        <DayProgrammePanel
+          homeschool={homeschoolRows}
+          afternoonEvening={rowsFor("afternoon_evening")}
+          conditional={rowsFor("conditional")}
+          savingId={saving}
+          holdId={holdId}
+          onTick={tick}
+          onHoldStart={beginHold}
+          onHoldCancel={cancelHold}
+        />
 
-        {/* 3 — Homeschool · Log Work · Conditional · Weekly Tiers */}
-        {/* no scroll — one-page dashboard, overflow-y is banned here */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 4, minHeight: 0 }}>
-          {schoolHabits.length > 0 && (
-            <div style={{ ...cardStyle, flex: "0 0 auto" }}>
-              {colHead(school.color, school.label, school.subtitle,
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 19, fontWeight: 800, color: "#ffffff", fontVariantNumeric: "tabular-nums" }}>
-                    {schoolHabits.filter(h => h.state === "DONE").length}/{schoolHabits.length}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
-                    {dayScore.blocks.homeschool ?? 0} pts
-                  </div>
-                </div>,
-                true,
-              )}
-              {/* The hero treatment is for the habit that pays 5. A prerequisite
-                  pays nothing and only unlocks, so it renders as the SAME 56px
-                  row button every other column uses — no new component, no new
-                  style, and it carries the existing LOCKED/DONE lock chrome the
-                  cascade gate already draws. It also keeps column 3 inside the
-                  no-scroll budget: a second 112px hero would not fit. */}
-              <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 9 }}>
-                {schoolHabits.map(h =>
-                  isPrerequisite(h) ? habitButton(h, school.color) : heroButton(h, school.color),
-                )}
-              </div>
-            </div>
-          )}
+        {/* 3 — WORK + WEEK. The Log Work button only opens the modal; every
+            piece of Tally wiring (origin allow-list, form URL, embed script,
+            submitted message, reset) stays in this file, untouched. */}
+        <WorkWeekPanel
+          weekPoints={weeklyPts}
+          weekMax={WEEKLY_MAX}
+          goldenBoot={goldenBoot}
+          submissionCount={null}
+          readiness={readiness}
+          logOpen={logOpen}
+          onOpenLogWork={() => setLogOpen(true)}
+        />
 
-          {/* LOG WORK — opens the Tally intake modal. Touches no scoring state. */}
-          <button
-            type="button"
-            className="ab-btn"
-            onClick={() => setLogOpen(true)}
-            aria-haspopup="dialog"
-            aria-expanded={logOpen}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              minHeight: 44, width: "100%", flexShrink: 0, borderRadius: 11,
-              border: "1px solid #2d3543", background: "#1f2438",
-              color: "#ffffff", font: "inherit", fontSize: 16, fontWeight: 800,
-              cursor: "pointer", WebkitTapHighlightColor: "transparent",
-            }}
-          >
-            <span aria-hidden style={{ fontSize: 21, lineHeight: 1 }}>📝</span>
-            Log Work
-          </button>
-
-          {condHabits.length > 0 && (
-            <div style={{ ...cardStyle, flex: "0 0 auto" }}>
-              {colHead(conditional.color, conditional.label, conditional.subtitle,
-                <div style={{ fontSize: 19, fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
-                  {condHabits.filter(h => h.state === "DONE").length}/{condHabits.length}
-                </div>,
-                true,
-              )}
-              <div style={{ padding: 6, display: "flex", flexDirection: "column", gap: 8 }}>
-                {condHabits.map(h => habitButton(h, conditional.color))}
-              </div>
-            </div>
-          )}
-
-          {/* min-height:min-content, NOT 0. cardStyle carries overflow:hidden, and
-              flex:1 + min-height:0 licensed this card to be squeezed below its own
-              content. It is the only elastic member of this column, so it absorbed
-              the entire shortfall on short viewports and clipped its second grid row
-              — Reserves and Training Ground. min-content floors it at header + both
-              rows; flex:1 still lets it stretch on tall screens, so nothing changes
-              above ~945px of viewport height. */}
-          <div style={{ ...cardStyle, flex: 1, minHeight: "min-content" }}>
-            {colHead(`linear-gradient(90deg, ${RM_NAVY}, ${RM_GOLD}, #f5f5f5)`, "🏆 Weekly Tiers", `5 Perfect Days Mon–Fri = +3 · max ${WEEKLY_MAX}`, undefined, true)}
-            {/* 2x2, one line per tile, everything at 11.5px.
-                minmax(0,·) stays: a bare 1fr is minmax(auto,1fr), and that auto floor
-                is the track's min-content width, so the tracks grow to fit their
-                labels and the row overflows this 304px card horizontally — clipped
-                off the right edge by cardStyle's overflow:hidden.
-
-                The columns are deliberately UNEQUAL. Measured one-line widths at
-                11.5px are First Team 126, Reserves 130, Bench 100, Training Ground
-                163 — and because THRESHOLDS order puts Reserves in column 1 and
-                Training Ground in column 2, the two columns need 130 and 163, a
-                1:1.254 split. Equal tracks give both 144, which fits Reserves and
-                leaves Training Ground 21px short; 1fr/1.26fr fits all four with zero
-                clipping. Total need is 293px against 297px of track, so the slack is
-                only a few px — a longer tier name would need the ratio revisited. */}
-            <div style={{
-              padding: 3, display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.26fr)", gap: 3,
-              flex: 1, minHeight: "min-content",
-            }}>
-              {THRESHOLDS.map((t, i) => {
-                const weekPts = weeklyPts ?? 0;
-                const isActive = weeklyPts !== null && weekPts >= t.min && (i === 0 || weekPts < THRESHOLDS[i - 1].min);
-                const isAchieved = weeklyPts !== null && weekPts >= t.min;
-                return (
-                  <div key={t.min} style={{
-                    display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-                    gap: 3, padding: "4px 4px", borderRadius: 9, overflow: "hidden",
-                    background: isActive ? t.color + "15" : "#1f2438",
-                    border: `1px solid ${isActive ? t.color + "50" : "#2d3543"}`,
-                    opacity: isAchieved ? 1 : 0.45,
-                    transition: "all 200ms ease-out",
-                  }}>
-                    <div style={{
-                      fontSize: 11.5, fontWeight: 800, color: t.color, lineHeight: 1.15,
-                      display: "flex", alignItems: "center", gap: 3, minWidth: 0, whiteSpace: "nowrap",
-                    }}>
-                      <span style={{
-                        width: 7, height: 7, borderRadius: "50%", background: t.color, flexShrink: 0,
-                        boxShadow: isActive ? `0 0 8px ${t.color}` : "none",
-                      }} />
-                      {t.label}
-                    </div>
-                    {/* " pts" is stripped so the threshold shares the row, and the
-                        active tier's "· you are here" tail stays dropped — there is no
-                        width for it at 11.5px. The active cue is the glowing dot, the
-                        tinted fill and the full-opacity border, all still applied.
-                        THRESHOLDS is not edited; the suffix goes at the render site. */}
-                    <div style={{
-                      fontSize: 11.5, color: "#757f8f", lineHeight: 1.15,
-                      whiteSpace: "nowrap", flexShrink: 0,
-                    }}>
-                      {t.desc.replace(" pts", "")}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* 4 — Stretch Wallet */}
-        {/* no scroll — one-page dashboard, overflow-y is banned here */}
-        <div style={{ ...cardStyle, border: "1px solid #3a2d5a" }}>
-          {colHead(`linear-gradient(90deg, #a78bfa, ${CYAN})`, "🎮 Stretch Wallet",
-            `Banks all week · converts Sat & Sun · ${wallet?.dailyRedeemCapMin ?? STRETCH_DAILY_REDEEM_CAP_MIN} min/day cap`,
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: 19, fontWeight: 800, color: "#a78bfa", fontVariantNumeric: "tabular-nums" }}>
-                {wallet && !walletLocked ? stretchBalance : "—"}
-                <span style={{ fontSize: 12, color: "#757f8f" }}> min</span>
-              </div>
-              <div style={{ fontSize: 10, color: "#757f8f", marginTop: 2, fontWeight: 500 }}>
-                {wallet && !walletLocked ? `${wallet.earnedWeek} earned · ${wallet.spentWeek} spent` : "locked"}
-              </div>
-            </div>,
-          )}
-
-          <div style={{ padding: 10, display: "flex", flexDirection: "column", gap: 8, flex: 1, minHeight: 0 }}>
-            {wallet && walletLocked && (
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderRadius: 9,
-                border: "1px solid #3a2d5a", background: "rgba(167,139,250,0.10)",
-                fontSize: 12, color: "#a78bfa", fontWeight: 700, flexShrink: 0,
-              }}>
-                🔒 {wallet.lockMessage ?? "Finish Morning Habits + Homeschool to unlock"}
-              </div>
-            )}
-
-            {wallet && !walletLocked && wallet.redemptionMessage && (
-              <div style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600, flexShrink: 0 }}>
-                {wallet.redemptionMessage}
-              </div>
-            )}
-
-            {/* Weekend all-items bonus strip. Weekend only (the server sends
-                itemsTotal 0 on a weekday), sits above the item list so the
-                deal is visible before the first tap: clear every item today
-                and the day's PS5 cap rises by weekendBonusMin. State is the
-                server's — this line renders what /api/stretch decided. */}
-            {wallet && !walletLocked && (wallet.weekendBonusItemsTotal ?? 0) > 0 && (
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9,
-                border: `1px solid ${wallet.weekendBonusActive ? "#a78bfa" : "rgba(167,139,250,0.35)"}`,
-                background: wallet.weekendBonusActive ? "rgba(167,139,250,0.18)" : "rgba(167,139,250,0.07)",
-                fontSize: 11.5, color: "#a78bfa", fontWeight: 700, flexShrink: 0,
-              }}>
-                {wallet.weekendBonusActive
-                  ? `🏆 Weekend bonus ON — all ${wallet.weekendBonusItemsTotal} done, +${wallet.weekendBonusMin ?? 30} min PS5 today`
-                  : `🎯 Weekend bonus: ${wallet.weekendBonusItemsDone ?? 0}/${wallet.weekendBonusItemsTotal} — do them all for +${wallet.weekendBonusMin ?? 30} min PS5 today`}
-              </div>
-            )}
-
-            <div style={{
-              display: "flex", flexDirection: "column", gap: 9, flex: 1, minHeight: 0,
-              opacity: walletLocked ? 0.4 : 1,
-              pointerEvents: walletLocked ? "none" : "auto",
-            }}>
-              {stretchItems.length === 0 && (
-                <div style={{ fontSize: 12, color: "#757f8f", padding: "8px 2px" }}>
-                  No stretch items available right now.
-                </div>
-              )}
-              {stretchItems.map(item => {
-                const itemMin = item.points * STRETCH_MIN_PER_POINT;
-                const isSaving = saving === item.id;
-                const done = earnedItemIds.has(item.id);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="ab-btn"
-                    onClick={() => earnStretch(item)}
-                    disabled={done || isSaving || walletLocked}
-                    aria-label={item.name}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
-                      borderRadius: 11, flex: 1, minHeight: 62, width: "100%", textAlign: "left",
-                      font: "inherit", color: "inherit",
-                      border: `1px solid ${done ? "#a78bfa50" : "#2d3543"}`,
-                      background: done ? "rgba(167,139,250,0.06)" : "#1f2438",
-                      opacity: done ? 0.55 : 1,
-                      cursor: done ? "default" : "pointer",
-                      WebkitTapHighlightColor: "transparent",
-                    }}
-                  >
-                    <span style={{
-                      width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                      border: `2px solid ${done ? "#a78bfa" : "#2d3543"}`,
-                      background: done ? "#a78bfa" : "transparent",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      {isSaving ? <span style={{ fontSize: 11 }}>⏳</span> :
-                       done ? <span style={{ fontSize: 14, color: "#0f1419", fontWeight: 800 }}>✓</span> : null}
-                    </span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontSize: 14, fontWeight: 700, lineHeight: 1.25 }}>
-                        🧩 {item.name}
-                      </span>
-                      <span style={{ display: "block", fontSize: 11, color: "#757f8f", marginTop: 3 }}>
-                        {done ? "✓ banked today" : item.whatCountsAsDone || `Worth ${item.points} pt`}
-                      </span>
-                    </span>
-                    <span style={{
-                      fontSize: 12, fontWeight: 800, flexShrink: 0, color: "#a78bfa",
-                      border: "1px solid rgba(167,139,250,0.4)", background: "rgba(167,139,250,0.12)",
-                      padding: "6px 11px", borderRadius: 7, whiteSpace: "nowrap",
-                    }}>
-                      +{itemMin}m
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              className="ab-spend"
-              onClick={spendStretch}
-              disabled={!wallet?.redemptionOpen || saving === "__spend__"}
-              style={{
-                minHeight: 56, borderRadius: 10, border: "none", width: "100%", flexShrink: 0,
-                fontSize: 16, fontWeight: 800, fontFamily: "inherit",
-                color: wallet?.redemptionOpen ? "#0f1419" : "#757f8f",
-                background: wallet?.redemptionOpen ? "#a78bfa" : "#1f2438",
-                boxShadow: wallet?.redemptionOpen ? "0 3px 0 #7c5fd3" : "none",
-                cursor: wallet?.redemptionOpen ? "pointer" : "not-allowed",
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              {wallet && wallet.weekendRedemptionOnly && !["Saturday", "Sunday"].includes(wallet.weekday)
-                ? "Converts Sat & Sun"
-                : `Convert ${STRETCH_SPEND_STEP_MIN} min →`}
-            </button>
-          </div>
-        </div>
+        {/* 4 — STRETCH WALLET. Render-only: every lock, cap, redemption and
+            bonus below is the server's decision, passed through verbatim. */}
+        <StretchWalletPanel
+          wallet={wallet}
+          items={stretchItems}
+          earnedItemIds={earnedItemIds}
+          savingId={saving}
+          minPerPoint={STRETCH_MIN_PER_POINT}
+          spendStepMin={STRETCH_SPEND_STEP_MIN}
+          dailyCapMin={STRETCH_DAILY_REDEEM_CAP_MIN}
+          onEarn={earnStretch}
+          onSpend={spendStretch}
+        />
       </div>
 
       {/* ── NOTION SOURCE STRIP ─────────────────────────────────────────────
@@ -1989,6 +1438,7 @@ export default function AnsarPage() {
           </div>
         </div>
       )}
+      </DashboardShell>
     </div>
   );
 }

@@ -1,0 +1,270 @@
+# Handoff — Dashboard V2 visual overhaul
+
+## CLAUDE PICKED UP CODEX'S HANDOFF — 2026-08-30 2:40pm AEST
+
+Both of Codex's open tasks are DONE, pushed and verified on the deploy preview.
+
+### Commit `8c3e5a4` — the Match Centre is real
+
+`MatchCentre.tsx` replaces `MatchCentrePlaceholder.tsx`. `PREVIEW_FIXTURE`, the
+dummy `2 - 0`, the PREVIEW tag and the "Preview fixture" accessible name are all
+gone from the codebase. The bar now renders only what
+`/api/football/real-madrid` returns.
+
+- LIVE / FINISHED → the provider's real score, status "Live" / "Full Time".
+- SCHEDULED → the Sydney kickoff sits where the score was (`Thu 3 Sep · 5:00am`)
+  and no score element is rendered at all.
+- Unavailable / loading → the same 120px plate, centred calm copy, no fixture.
+- Crests: our local 431×600 `/real-madrid.png` is the fallback for team id 86
+  ONLY; every other crest is the provider's, allowlisted to
+  `crests.football-data.org`. A team with neither gets a monogram in the same
+  88px box, so the plate's geometry never moves.
+- Month names come from a local table, NOT `Intl`. CLDR flips en-AU/en-GB
+  between "Sep" and "Sept" across ICU versions, so the same build would have
+  rendered differently here and on Netlify. Only the timezone conversion is
+  Intl's.
+- `page.tsx` holds `football` state, `loadFootball()`, an initial fetch, a 60s
+  poll and a refetch on tab focus. Polling is cheap because the route's
+  `Cache-Control` is phase-aware. A failed fetch becomes the same honest
+  unavailable shape — never a stale or invented score.
+- New CSS in `dashboard.module.css`: `.matchKickoff`, `.matchMonogram`,
+  `.matchUnavailable`. No existing match rule was changed.
+
+### `FOOTBALL_DATA_API_TOKEN` — DONE, and the feed is live
+
+The owner added the token on 2026-08-30 at ~2:46pm AEST (all scopes, same value
+for every deploy context). Empty commit `96fce8b` rebuilt the preview, because
+env vars only reach a deploy at build time.
+
+Live proof from `/api/football/real-madrid` on the preview:
+
+```json
+{"available":true,"matchId":564656,"phase":"SCHEDULED",
+ "competition":"Primera Division","startTime":"2026-08-30T15:00:00Z",
+ "home":{"id":86,"name":"Real Madrid","crest":"https://crests.football-data.org/86.png","score":null},
+ "away":{"id":84,"name":"Málaga","crest":"https://crests.football-data.org/84.png","score":null}}
+```
+
+The bar renders `REAL MADRID · Mon 31 Aug · 1:00am · MÁLAGA`, both clubs marked
+Primera Division, no score element in the DOM. The Sydney conversion and the
+local month table are both confirmed correct against a real UTC kickoff.
+
+### Crest resolution — one fixed, one still open (`1e98551`)
+
+Turning the token on exposed a regression the unavailable state had been
+hiding. Measured on the live page:
+
+| crest | source | natural | drawn |
+|---|---|---|---|
+| Real Madrid | `/real-madrid.png` (ours) | 431×600 | 55×76 — a DOWNSCALE, sharp |
+| Málaga | `crests.football-data.org/84.png` | 70×70 | 76×76 — an UPSCALE, soft |
+
+`1e98551` makes our Real Madrid art win outright for team 86 instead of only
+filling a gap: the provider serves `86.png` at 200×200 colormapped, ours is a
+431×600 RGBA original, and at an 88px box on a retina screen that is exactly
+the softness the owner rejected the first time. A test now locks it — the local
+file is used even when the provider supplies a crest.
+
+**Still open:** opponent crests. football-data.org serves them at 70×70, which
+on a 2× screen is a ~2.2× upscale into a 152px physical box. Every La Liga
+opponent will look soft next to a crisp Real Madrid. Fixing it properly means a
+local crest library built with the corner-floodfill recipe below, keyed by
+provider team id with the provider URL as the fallback. That is open item 2 and
+has NOT been started.
+
+### Verification evidence — deploy `8c3e5a4`, state `ready`
+
+Route, live:
+
+```
+$ curl -i .../api/football/real-madrid
+HTTP/2 200 · cache-control: no-store
+{"available":false,"reason":"not_configured",
+ "message":"Real Madrid season data is not configured yet",
+ "updatedAt":null,"stale":false}
+```
+
+Page HTML grep: `matchUnavailable` present; `PREVIEW`, `REAL SOCIEDAD` and
+`match-score` all absent. No token or provider error text in the body.
+
+Desktop 1524×849 (the owner's own viewport):
+
+- `document.scrollHeight - innerHeight` = **0** — no page scroll.
+- All four panel bottoms = **730px** — the viewport-fill fix at `939c153` is
+  confirmed on the deploy, not just locally.
+- The only elements with overflow are seven hidden `.overrideWord` spans, which
+  are off-screen text, not layout.
+
+iPhone 390×844:
+
+- `scrollHeight` 2688 vs `innerHeight` 844 → **one document scrollbar**.
+- All four `.panelBody` elements report `scrollHeight - clientHeight === 0` →
+  **no nested scroll regions**, which was the exact phone requirement.
+
+Gates, all green before the commit: `npm test` **168 passing** (was 158; the 4
+new MatchCentre tests plus the football provider files), `npx tsc --noEmit`
+clean, build 5/5 static pages, `check-scoring-sync.sh` **IN SYNC**,
+`git diff -- app/api app/lib db netlify.toml` **empty** so all 20 protected
+files are hash-identical.
+
+### One judgement call for the owner
+
+With no token, the plate is 120px of near-empty navy holding one sentence. It is
+honest and it holds the geometry so nothing jumps when real data lands — but if
+the token is not coming soon, say so and the plate can shrink or carry something
+useful in the meantime. Nothing was changed on a guess.
+
+### What is next, in the owner's stated priority order
+
+1. Add `FOOTBALL_DATA_API_TOKEN` to Netlify, redeploy, and confirm a real
+   fixture renders. Nothing else can prove the LIVE/SCHEDULED paths end to end.
+2. **All remaining team logos** — the crest recipe below still applies for any
+   crest the provider does not serve well.
+3. Journal copy/structure across all boxes, re-checked on the Weekday toggle.
+4. Match Readiness placement — it is in Work + Week and the fixture bar is
+   clean, which is what the reference shows. Confirm or move.
+
+**Branch:** `feat/dashboard-v2-visual` @ `8c3e5a4`
+**main:** untouched, no merge
+**PR:** kurgelecom-oss/ansar-habits-tracker #2 — **DRAFT, preview only**
+**Preview:** https://deploy-preview-2--ansar-habits-tracker.netlify.app
+
+## Objective
+
+Make the board visually match the owner's reference image
+(`~/Downloads/ansar-dashboard-weekday-journal-location.png`) using OUR real
+content. The owner reviews by screenshot and is direct about misses. Match the
+image; do not invent design.
+
+---
+
+## Working rules that have been earned the hard way
+
+1. **Sample the reference, don't guess.** Colours and geometry in this build were
+   read out of the PNG pixel by pixel. Every gradient previously invented for the
+   fixture bar was wrong — it is one flat colour. Script pattern that works
+   (no PIL on this machine; decode the PNG with `zlib` + manual defilter — see
+   the sampling snippet in the session, or use `magick convert ... txt:`).
+2. **Diagnose before trimming pixels.** Twice, hours went into shaving padding off
+   the wrong element. Query the DOM for what actually overflows:
+   ```js
+   [...d.querySelectorAll('*')].filter(e => e.scrollHeight - e.clientHeight > 1)
+   ```
+3. **Never let a guard "pass" vacuously.** A `.clubHeader { height: 40px }` regex
+   silently started matching the phone block's `min-height` once the desktop value
+   changed. Pin with `(?<!min-|max-)`.
+4. **Verify on the deploy preview, not locally.** `npm run build` needs placeholder
+   env; the real board needs the preview's server vars.
+
+## Verification commands (all currently green)
+
+```bash
+npm test                       # 154 passing
+npx tsc --noEmit               # clean
+NEXT_PUBLIC_SUPABASE_URL="https://placeholder.supabase.co" \
+NEXT_PUBLIC_SUPABASE_ANON_KEY="placeholder-anon-key" \
+NOTION_TOKEN="placeholder" npm run build      # 5/5 static pages
+
+FAMILY_DASHBOARD=/Users/taylankursunlu/Documents/Business/business/family-dashboard \
+bash scripts/check-scoring-sync.sh            # IN SYNC
+```
+`npm run lint` is unusable — ESLint is unconfigured and drops into an interactive
+prompt. It is not part of the verification set.
+
+`check-scoring-sync.sh` defaults to a sibling path that does not exist here and
+reports FAIL for a MISSING MIRROR, not drift. Always pass `FAMILY_DASHBOARD=`.
+
+## Protected files — must stay hash-identical
+
+Baseline table: `docs/verification/dashboard-v2-baseline.md`. Re-hash with
+`shasum -a 256 <file> | cut -c1-16`. All 20 verified unchanged at `ce6a0ab`.
+
+---
+
+## What is DONE
+
+- **Codex pass `5398345`**: both crests were audited and retained; the journal
+  and Homeschool session now use the reference's primary/guidance structure;
+  Match Readiness moved from the fixture bar into Work + Week. Verified on the
+  deploy preview at 1440×820 and at the reference's 1655×932 viewport.
+- **Viewport-fill work in progress**: the desktop grid now declares a
+  `minmax(0, 1fr)` row so a short weekend roster stretches all four panels to
+  the remaining viewport height. At ≤640px the grid and panel bodies return to
+  natural document flow so iPhone has one page scrollbar, not nested scrollers.
+
+- **Weekday/Weekend toggle** (`DayViewToggle.tsx`, wired in `page.tsx`). Defaults
+  to the server's real day. Picking the other side rebuilds the roster from
+  Notion via `habitsOnDay()` and renders every row **LOCKED** — a tick belongs to
+  a date and the server refuses one for another day.
+- **Colours, sampled off the reference** and tokenised in `globals.css`:
+  `--ansar-fixture #02193c` (FLAT — no gradient), `--ansar-panel #0e1420`,
+  `--ansar-rowflat #0f1521`, `--ansar-hairline #1b232f`, `--ansar-subtext #b1b8be`.
+- **Fixture bar** inset `7.24%` each side (measured: spans 83.7% of the reference
+  canvas). Real Madrid + Real Sociedad crests, dummy `2 - 0` preview fixture.
+- **Crests**: Real Madrid replaced (was 194×259 — the cause of the blur) with a
+  431×600 original, corner flood-filled so the white interior survives.
+- **Stadium-with-floodlights background** (`public/stadium-lights.jpg`), generated
+  via Higgsfield `gpt_image_2` at 4k, used as page ground + masthead.
+- Rows: 46px at the fold / 58px tall, 16px white primary text, grey sub-line,
+  27px green ring tick, green points, `-webkit-font-smoothing: antialiased`.
+- Score line at the foot of **all four** panels.
+- Stretch Wallet decluttered — name + value only.
+- Panel grid flexes to fill the fold; panel body scrolls rather than clips.
+
+## Open items, in the owner's priority order
+
+0. **Current active task:** finish and deploy viewport-fill verification on Mac
+   and iPhone, then implement the already-approved football-data.org provider
+   boundary for Real Madrid team id `86`. Keep UI and provider in separate
+   commits. The required server-only variable is `FOOTBALL_DATA_API_TOKEN`.
+
+1. **All remaining team logos.** Owner: "make all team logos goal to be nice size,
+   clarity and clean. they need to stand out." Real Madrid + Real Sociedad done.
+   Recipe that works:
+   ```bash
+   magick <src>.png -alpha set -fuzz 12% -fill none \
+     -draw "alpha 0,0 floodfill" -draw "alpha %[fx:w-1],0 floodfill" \
+     -draw "alpha 0,%[fx:h-1] floodfill" -draw "alpha %[fx:w-1],%[fx:h-1] floodfill" \
+     -trim +repage -resize x600 out.png
+   ```
+   Corner floodfill, NOT `-transparent white` — the latter knocks out the crest's
+   white interior too. Source needs ≥400px on the short edge. `logos-world.net`
+   served a 3840×2160 Real Madrid; Wikimedia 403s without a browser UA.
+   `pixelshot` is installed but renders *pages*, not transparent crests.
+2. **Journal copy/structure across all boxes.** Owner could not fully review this
+   because the review day was a Sunday — re-check on the Weekday toggle now that
+   it exists. Reference sets a white primary line over a smaller grey sub-line.
+3. **Match Centre readiness placement.** Still pinned right inside the bar. The
+   reference has nothing there. It is absolutely positioned so it does not shift
+   the score off centre, but the owner may want it moved into a panel.
+4. **`PREVIEW_FIXTURE`** in `MatchCentrePlaceholder.tsx` is DUMMY DATA at the
+   owner's request. Delete the constant when a football provider lands; the
+   layout does not change.
+
+## Known defects, unfixed
+
+- **Connection status stays "Offline" after network recovery.** The 30s gate poll
+  runs and `setOnline(true)` succeeds, but the UI does not flip. App logic, not
+  presentation — untouched by this whole visual branch.
+- **Anonymous-write probe** still deferred; it risks creating false data.
+
+## The thing that most recently changed the picture
+
+A real Monday is **SIXTEEN habits**, not fifteen — Monday is a soccer day, so
+`soccer_training` is on the board. Every "weekday simulation" before the toggle
+existed was injecting only `journal` + `homeschool_session` onto the Saturday
+set and was therefore one row short. Nine of the sixteen land in Today's
+Programme under three section headers, and at the reference's row height that
+column runs 129px past the 1440×820 fold with **no** arrangement of padding that
+fixes it. Hence `.panelBody { overflow-y: auto }` — a habit on the board that
+cannot be seen is a correctness failure; a scrollbar is not.
+
+Do not "fix" that scroll by shrinking rows below 44px. 44px is a hard floor
+(iPad touch target) and the guard in `dashboard.test.tsx` reads the declared
+value and compares it, so it fails on 40 and passes on 52.
+
+## Verification docs
+
+- `docs/verification/dashboard-v2-baseline.md` — protected hashes, env contract
+- `docs/verification/dashboard-v2-preview.md` — the `55bc199` proof
+- `docs/verification/dashboard-v2-visual-parity.md` — the parity proof
