@@ -363,6 +363,11 @@
 .grid {
   display:grid;
   grid-template-columns:1fr 1fr 1fr 1fr;
+  /* The grid itself already claims the remaining flex height. An explicit 1fr
+     row makes the cards claim it too; without this, the implicit row stays at
+     max-content height and a short weekend roster leaves a dead stadium strip
+     under all four panels. */
+  grid-template-rows:minmax(0, 1fr);
   gap:16px;
   padding: 10px 20px 0;
   /* Claim everything the chrome above did not use. Without this the grid is
@@ -1299,6 +1304,15 @@
    know the board is not talking to the server before wondering why a tap did
    nothing. */
 @media (max-width: 640px) {
+  .grid {
+    /* A phone is a scrolling document, not a four-column kiosk. Let every
+       stacked panel take its natural height and keep one scroll surface. */
+    grid-template-rows: none;
+    flex: none;
+  }
+
+  .panelBody { overflow-y: visible; }
+
   .clubHeader {
     height: auto;
     min-height: 40px;

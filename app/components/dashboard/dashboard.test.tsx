@@ -392,6 +392,17 @@ describe("responsive rules for the header and Match Centre", () => {
     expect(css).toContain("@media (min-width: 641px) and (max-width: 1100px)");
   });
 
+  it("stretches the single desktop grid row through the remaining viewport", () => {
+    const baseGrid = /\n\.grid\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(baseGrid).toMatch(/grid-template-rows:\s*minmax\(0,\s*1fr\)/);
+  });
+
+  it("uses document scrolling rather than nested panel scrolling on iPhone", () => {
+    expect(rule("grid")).toMatch(/grid-template-rows:\s*none/);
+    expect(rule("grid")).toMatch(/flex:\s*none/);
+    expect(rule("panelBody")).toMatch(/overflow-y:\s*visible/);
+  });
+
   /** The desktop budget must survive the mobile rules being added. */
   it("leaves the desktop budget declarations untouched", () => {
     expect(/\.matchCentre\s*\{[^}]*max-height:\s*140px/.test(css)).toBe(true);

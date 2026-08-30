@@ -1,6 +1,6 @@
 # Handoff — Dashboard V2 visual overhaul
 
-**Branch:** `feat/dashboard-v2-visual` @ `ce6a0ab` (pushed, clean tree)
+**Branch:** `feat/dashboard-v2-visual` @ `5398345` before the current viewport-fill work
 **main:** `0008474` — untouched, no merge has happened
 **PR:** kurgelecom-oss/ansar-habits-tracker #2 — **DRAFT, preview only, do not merge**
 **Preview:** https://deploy-preview-2--ansar-habits-tracker.netlify.app
@@ -60,6 +60,15 @@ Baseline table: `docs/verification/dashboard-v2-baseline.md`. Re-hash with
 
 ## What is DONE
 
+- **Codex pass `5398345`**: both crests were audited and retained; the journal
+  and Homeschool session now use the reference's primary/guidance structure;
+  Match Readiness moved from the fixture bar into Work + Week. Verified on the
+  deploy preview at 1440×820 and at the reference's 1655×932 viewport.
+- **Viewport-fill work in progress**: the desktop grid now declares a
+  `minmax(0, 1fr)` row so a short weekend roster stretches all four panels to
+  the remaining viewport height. At ≤640px the grid and panel bodies return to
+  natural document flow so iPhone has one page scrollbar, not nested scrollers.
+
 - **Weekday/Weekend toggle** (`DayViewToggle.tsx`, wired in `page.tsx`). Defaults
   to the server's real day. Picking the other side rebuilds the roster from
   Notion via `habitsOnDay()` and renders every row **LOCKED** — a tick belongs to
@@ -80,6 +89,11 @@ Baseline table: `docs/verification/dashboard-v2-baseline.md`. Re-hash with
 - Panel grid flexes to fill the fold; panel body scrolls rather than clips.
 
 ## Open items, in the owner's priority order
+
+0. **Current active task:** finish and deploy viewport-fill verification on Mac
+   and iPhone, then implement the already-approved football-data.org provider
+   boundary for Real Madrid team id `86`. Keep UI and provider in separate
+   commits. The required server-only variable is `FOOTBALL_DATA_API_TOKEN`.
 
 1. **All remaining team logos.** Owner: "make all team logos goal to be nice size,
    clarity and clean. they need to stand out." Real Madrid + Real Sociedad done.
