@@ -1,130 +1,103 @@
 # Handoff — Dashboard V2 visual overhaul
 
-## URGENT CODEX → CLAUDE HANDOFF — 2026-08-30 2:26pm AEST
+## CLAUDE PICKED UP CODEX'S HANDOFF — 2026-08-30 2:40pm AEST
 
-The owner explicitly asked Claude to take over because Codex is near its token
-limit. **Read this section before doing anything. Do not discard the dirty
-worktree.**
+Both of Codex's open tasks are DONE, pushed and verified on the deploy preview.
 
-### Last safe pushed state
+### Commit `8c3e5a4` — the Match Centre is real
 
-- Branch: `feat/dashboard-v2-visual`
-- Pushed commit: `939c153` — `fix: stretch dashboard panels through viewport`
-- Previous provider-free visual commit: `5398345`
-- PR #2 remains DRAFT; do not merge.
-- Preview: https://deploy-preview-2--ansar-habits-tracker.netlify.app
-- `main` remains untouched.
+`MatchCentre.tsx` replaces `MatchCentrePlaceholder.tsx`. `PREVIEW_FIXTURE`, the
+dummy `2 - 0`, the PREVIEW tag and the "Preview fixture" accessible name are all
+gone from the codebase. The bar now renders only what
+`/api/football/real-madrid` returns.
 
-### UI task just completed and pushed
+- LIVE / FINISHED → the provider's real score, status "Live" / "Full Time".
+- SCHEDULED → the Sydney kickoff sits where the score was (`Thu 3 Sep · 5:00am`)
+  and no score element is rendered at all.
+- Unavailable / loading → the same 120px plate, centred calm copy, no fixture.
+- Crests: our local 431×600 `/real-madrid.png` is the fallback for team id 86
+  ONLY; every other crest is the provider's, allowlisted to
+  `crests.football-data.org`. A team with neither gets a monogram in the same
+  88px box, so the plate's geometry never moves.
+- Month names come from a local table, NOT `Intl`. CLDR flips en-AU/en-GB
+  between "Sep" and "Sept" across ICU versions, so the same build would have
+  rendered differently here and on Netlify. Only the timezone conversion is
+  Intl's.
+- `page.tsx` holds `football` state, `loadFootball()`, an initial fetch, a 60s
+  poll and a refetch on tab focus. Polling is cheap because the route's
+  `Cache-Control` is phase-aware. A failed fetch becomes the same honest
+  unavailable shape — never a stale or invented score.
+- New CSS in `dashboard.module.css`: `.matchKickoff`, `.matchMonogram`,
+  `.matchUnavailable`. No existing match rule was changed.
 
-The owner's screenshot showed a large unused strip below short weekend panels.
-Cause: `.grid` grew as a flex child but its implicit grid row stayed
-content-sized. Fix at `939c153`:
+### `FOOTBALL_DATA_API_TOKEN` DOES NOT EXIST — owner action required
 
-- desktop `.grid`: `grid-template-rows: minmax(0, 1fr)`;
-- phone ≤640px: `grid-template-rows:none; flex:none`;
-- phone `.panelBody`: `overflow-y:visible` so iPhone uses one document scrollbar,
-  not nested panel scrollbars;
-- tests raised to 158 and all passed before commit;
-- build, TypeScript and scoring sync passed before commit.
+Netlify site `edf30cde-2303-4297-846a-e15682c4f011` has exactly six variables
+(names only, read via `netlify env:list`): `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_SKIP_VALIDATION`, `NOTION_TOKEN`,
+`PARENT_OVERRIDE_PIN`, `SUPABASE_SERVICE_ROLE_KEY`. No football token.
 
-This UI commit is pushed but has NOT yet been visually verified on its new
-Netlify deploy. First Claude action should be: wait for commit `939c153` to show
-`state: ready`, screenshot Weekend at the owner's viewport and iPhone 390px,
-then run the DOM overflow query. Expected desktop result: all four panels extend
-to the bottom grid line. Expected phone result: normal page scrolling; panel
-bodies must not become nested scroll regions.
+**Until the owner creates a free football-data.org token and adds it as
+`FOOTBALL_DATA_API_TOKEN`, the bar will keep saying "Real Madrid season data is
+not configured yet".** That is the designed behaviour, not a bug. No credential
+was created or guessed.
 
-### Active football task — dirty worktree, TDD in progress
+### Verification evidence — deploy `8c3e5a4`, state `ready`
 
-Owner's next top priority: connect the **real current Real Madrid season**.
-The approved architecture already exists in
-`docs/superpowers/specs/2026-08-29-dashboard-v2-design.md` §9. Use
-football-data.org v4, Real Madrid team id `86`, server-only env key
-`FOOTBALL_DATA_API_TOKEN`.
+Route, live:
 
-Official docs confirmed:
+```
+$ curl -i .../api/football/real-madrid
+HTTP/2 200 · cache-control: no-store
+{"available":false,"reason":"not_configured",
+ "message":"Real Madrid season data is not configured yet",
+ "updatedAt":null,"stale":false}
+```
 
-- `GET https://api.football-data.org/v4/teams/86/matches?limit=100`
-- auth header: `X-Auth-Token`
-- team match list is current-season by default;
-- match selection order required by spec: LIVE → finished within 24h → next
-  scheduled → unavailable.
+Page HTML grep: `matchUnavailable` present; `PREVIEW`, `REAL SOCIEDAD` and
+`match-score` all absent. No token or provider error text in the body.
 
-#### New uncommitted files that are implemented and green
+Desktop 1524×849 (the owner's own viewport):
 
-- `app/lib/football/types.ts`
-- `app/lib/football/normalize.ts`
-- `app/lib/football/normalize.test.ts` — 4 green
-- `app/lib/football/football-data.ts`
-- `app/lib/football/football-data.test.ts` — 3 green
-- `app/api/football/real-madrid/route.ts`
-- `app/api/football/real-madrid/route.test.ts` — 2 green
+- `document.scrollHeight - innerHeight` = **0** — no page scroll.
+- All four panel bottoms = **730px** — the viewport-fill fix at `939c153` is
+  confirmed on the deploy, not just locally.
+- The only elements with overflow are seven hidden `.overrideWord` spans, which
+  are off-screen text, not layout.
 
-Provider behavior already implemented:
+iPhone 390×844:
 
-- phase-aware selection and 24-hour finished window;
-- provider crest URL allowlist (`https://crests.football-data.org` only);
-- scheduled scores remain `null`;
-- missing token and upstream errors return deliberate generic unavailable data;
-- token/provider error bodies never reach the response;
-- route cache: LIVE 30s, FINISHED 300s, SCHEDULED 3600s, unavailable no-store.
+- `scrollHeight` 2688 vs `innerHeight` 844 → **one document scrollbar**.
+- All four `.panelBody` elements report `scrollHeight - clientHeight === 0` →
+  **no nested scroll regions**, which was the exact phone requirement.
 
-#### Intentional RED boundary right now
+Gates, all green before the commit: `npm test` **168 passing** (was 158; the 4
+new MatchCentre tests plus the football provider files), `npx tsc --noEmit`
+clean, build 5/5 static pages, `check-scoring-sync.sh` **IN SYNC**,
+`git diff -- app/api app/lib db netlify.toml` **empty** so all 20 protected
+files are hash-identical.
 
-`app/components/dashboard/dashboard.test.tsx` was updated to import a new
-`./MatchCentre` component and test real LIVE, SCHEDULED and UNAVAILABLE states.
-`MatchCentre.tsx` does not exist yet. The next test run must fail on that missing
-module; that is the current TDD red step. Do not revert the tests.
+### One judgement call for the owner
 
-Exact next implementation:
+With no token, the plate is 120px of near-empty navy holding one sentence. It is
+honest and it holds the geometry so nothing jumps when real data lands — but if
+the token is not coming soon, say so and the plate can shrink or carry something
+useful in the meantime. Nothing was changed on a guess.
 
-1. Run `npm test -- app/components/dashboard/dashboard.test.tsx` and confirm the
-   missing `./MatchCentre` import is the failure.
-2. Create `app/components/dashboard/MatchCentre.tsx` using `MatchCentreData`.
-   Preserve the existing fixture geometry/classes. Rules:
-   - LIVE/FINISHED show real score; SCHEDULED shows Sydney kickoff and no score;
-   - local `/real-madrid.png` is fallback when team id is 86 and provider crest
-     is missing; accurate provider opponent crest otherwise; monogram if absent;
-   - no `PREVIEW_FIXTURE`, dummy score, invented opponent or preview badge;
-   - unavailable/loading state keeps the same bar geometry and calm truthful copy;
-   - Match Readiness remains in Work + Week, never in this bar.
-3. Delete `MatchCentrePlaceholder.tsx`, change `app/page.tsx` import/render.
-4. Add `football` state plus `loadFootball()` in `app/page.tsx`; fetch
-   `/api/football/real-madrid`, initial load and 60s client poll. Polling the
-   route is safe because CDN caching is phase-aware.
-5. Run targeted red/green tests, then full test/type/build gates.
-6. Determine whether `FOOTBALL_DATA_API_TOKEN` exists in Netlify by listing
-   **names only**. Do not print values. Local `rg -l` found no token file. If no
-   token exists, code and unavailable UI can deploy safely, but real fixture
-   data cannot appear until the owner supplies a football-data.org token. Never
-   create or guess credentials.
-7. Commit provider integration separately from `939c153`, push draft branch,
-   verify preview. Update this handoff with final commit/deploy/test evidence.
+### What is next, in the owner's stated priority order
 
-### Dirty worktree warning
+1. Add `FOOTBALL_DATA_API_TOKEN` to Netlify, redeploy, and confirm a real
+   fixture renders. Nothing else can prove the LIVE/SCHEDULED paths end to end.
+2. **All remaining team logos** — the crest recipe below still applies for any
+   crest the provider does not serve well.
+3. Journal copy/structure across all boxes, re-checked on the Weekday toggle.
+4. Match Readiness placement — it is in Work + Week and the fixture bar is
+   clean, which is what the reference shows. Confirm or move.
 
-Run `git status --short` before edits. Expected dirty files are the new football
-files above plus `app/components/dashboard/dashboard.test.tsx`. `HANDOFF.md`
-will be clean once this urgent handoff commit is pushed. Preserve all of them.
-
-### Non-negotiable inherited rules
-
-- Do not merge PR #2 or touch `main`.
-- Do not change the 20 protected file hashes listed below.
-- New `app/lib/football/**` files are allowed; existing protected `app/lib/*`
-  files must remain hash-identical.
-- Never shrink a habit row below 44px.
-- Never remove `.panelBody` desktop scrolling; a real Monday has 16 habits.
-- Verify deployed preview, not only local build.
-- Keep provider token server-only; never log it or return it.
-- Update this handoff before stopping again.
-
-**Branch:** `feat/dashboard-v2-visual` @ `5398345` before the current viewport-fill work
-**main:** `0008474` — untouched, no merge has happened
-**PR:** kurgelecom-oss/ansar-habits-tracker #2 — **DRAFT, preview only, do not merge**
+**Branch:** `feat/dashboard-v2-visual` @ `8c3e5a4`
+**main:** untouched, no merge
+**PR:** kurgelecom-oss/ansar-habits-tracker #2 — **DRAFT, preview only**
 **Preview:** https://deploy-preview-2--ansar-habits-tracker.netlify.app
-**Netlify site:** `ansar-habits-tracker` (`edf30cde-2303-4297-846a-e15682c4f011`)
 
 ## Objective
 
