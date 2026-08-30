@@ -1462,6 +1462,8 @@
   .habitRow { min-height: 44px; }
 
   .panelHead { padding: 7px 13px 5px; }
+  .panelSubtitle { font-size: 11px; line-height: 1.25; }
+  .habitName { font-size: 13.5px; line-height: 1.3; }
   .panelTitle { font-size: 16px; }
   .panelSubtitle { font-size: 12px; }
   .panelProgress { height: 4px; margin: 0 13px 5px; }
