@@ -53,10 +53,13 @@ export function formatSydneyKickoff(iso: string): string {
 }
 
 function crestFor(team: MatchTeam): string | null {
-  if (team.crest) return team.crest;
-  // Our local art is a 431x600 original; the provider's Real Madrid crest is
-  // smaller and softer, so ours wins the fallback for team 86 only.
-  return team.id === REAL_MADRID_TEAM_ID ? REAL_MADRID_LOCAL_CREST : null;
+  // Our local Real Madrid art wins outright, not just as a fallback. The
+  // provider serves 86.png at 200x200 colormapped; ours is a 431x600 RGBA
+  // original, and at an 88px box drawn on a retina screen that difference is
+  // the exact softness the owner rejected once already. Same club, better
+  // pixels, no accuracy risk.
+  if (team.id === REAL_MADRID_TEAM_ID) return REAL_MADRID_LOCAL_CREST;
+  return team.crest;
 }
 
 function monogram(name: string): string {

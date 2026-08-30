@@ -316,6 +316,17 @@ describe("MatchCentre", () => {
     expect(crests[1]).toHaveAttribute("src", "https://crests.football-data.org/92.png");
   });
 
+  // The provider serves 86.png at 200x200 colormapped; our local file is a
+  // 431x600 RGBA original. At an 88px retina box that is the difference the
+  // owner already rejected once, so ours wins even when the provider has one.
+  it("prefers our own Real Madrid art over the provider's smaller crest", () => {
+    render(<MatchCentre data={{
+      ...live,
+      home: { ...live.home, crest: "https://crests.football-data.org/86.png" },
+    }} />);
+    expect(screen.getAllByRole("img")[0]).toHaveAttribute("src", "/real-madrid.png");
+  });
+
   it("shows a scheduled kickoff without inventing a score", () => {
     render(<MatchCentre data={{
       ...live,
