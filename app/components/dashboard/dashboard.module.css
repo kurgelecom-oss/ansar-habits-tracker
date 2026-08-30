@@ -1606,8 +1606,17 @@
        full 100vh, but .ab-root is 100dvh MINUS this padding, so demanding the
        whole viewport inside a box smaller than it pushed the strip out by the
        exact height of the padding. The shell is a flex child here; let it be
-       the size of its container instead of the size of the screen. */
+       the size of its container instead of the size of the screen.
+
+       `flex: 1` is the other half of that sentence and was missing. min-height:0
+       stops the shell demanding the whole screen, but on its own it also stops
+       the shell claiming its container: it fell back to content height — 748px
+       inside an 849px .ab-root — and left a 101px dead stadium strip under the
+       panels. Container-relative means BOTH: do not demand the screen, and do
+       fill the box. The grid below already declares flex-grow, so every pixel
+       recovered here lands in the panels, not in new chrome. */
     min-height: 0;
+    flex: 1 1 auto;
     padding: 0;
     gap: 6px;
   }

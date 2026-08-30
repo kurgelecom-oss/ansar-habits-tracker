@@ -478,6 +478,20 @@ describe("height defences at 1440 x 820", () => {
   });
 
   /**
+   * REGRESSION. min-height:0 alone stops the shell demanding a full 100vh, but
+   * it also stopped the shell CLAIMING its container: it fell back to content
+   * height — 748px measured inside an 849px .ab-root on the live site — and
+   * left a 101px dead stadium strip under all four panels. `flex: 1` is the
+   * other half of "be the size of your container". Both must be present.
+   */
+  it("makes the shell fill .ab-root rather than settle at content height", () => {
+    const shell = /\.shell\s*\{([^}]*)\}/.exec(shortDesktop)?.[1] ?? "";
+    expect(shell, "the short-desktop shell rule must exist").not.toBe("");
+    expect(shell).toMatch(/min-height:\s*0/);
+    expect(shell).toMatch(/flex:\s*1/);
+  });
+
+  /**
    * The board cannot scroll at this width — .ab-root is overflow-y:hidden — so
    * a row past the fold is unreachable, not merely below it. Height is
    * recovered from chrome only.
