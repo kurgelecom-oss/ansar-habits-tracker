@@ -1472,6 +1472,12 @@
   .panelSubtitle { font-size: 12px; }
   .panelProgress { height: 6px; margin: 0 14px 6px; }
   .panelFooter { padding: 4px 13px 4px; }
+
+  /* Stretch Wallet is the one column with no closing score line, so its body
+     runs right to the panel edge and the Convert button was the 3px over. Its
+     subtitle also wraps to two lines here, which is what makes its head the
+     tallest of the four. */
+  .walletSpend, .walletSpendOpen { min-height: 40px; margin-top: 0; }
   .panelScore { font-size: 12px; }
   .panelBody { padding: 1px 11px 4px; gap: 3px; }
 }
