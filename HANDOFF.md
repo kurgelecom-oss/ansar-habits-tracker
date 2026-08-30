@@ -30,17 +30,47 @@ gone from the codebase. The bar now renders only what
 - New CSS in `dashboard.module.css`: `.matchKickoff`, `.matchMonogram`,
   `.matchUnavailable`. No existing match rule was changed.
 
-### `FOOTBALL_DATA_API_TOKEN` DOES NOT EXIST — owner action required
+### `FOOTBALL_DATA_API_TOKEN` — DONE, and the feed is live
 
-Netlify site `edf30cde-2303-4297-846a-e15682c4f011` has exactly six variables
-(names only, read via `netlify env:list`): `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_SKIP_VALIDATION`, `NOTION_TOKEN`,
-`PARENT_OVERRIDE_PIN`, `SUPABASE_SERVICE_ROLE_KEY`. No football token.
+The owner added the token on 2026-08-30 at ~2:46pm AEST (all scopes, same value
+for every deploy context). Empty commit `96fce8b` rebuilt the preview, because
+env vars only reach a deploy at build time.
 
-**Until the owner creates a free football-data.org token and adds it as
-`FOOTBALL_DATA_API_TOKEN`, the bar will keep saying "Real Madrid season data is
-not configured yet".** That is the designed behaviour, not a bug. No credential
-was created or guessed.
+Live proof from `/api/football/real-madrid` on the preview:
+
+```json
+{"available":true,"matchId":564656,"phase":"SCHEDULED",
+ "competition":"Primera Division","startTime":"2026-08-30T15:00:00Z",
+ "home":{"id":86,"name":"Real Madrid","crest":"https://crests.football-data.org/86.png","score":null},
+ "away":{"id":84,"name":"Málaga","crest":"https://crests.football-data.org/84.png","score":null}}
+```
+
+The bar renders `REAL MADRID · Mon 31 Aug · 1:00am · MÁLAGA`, both clubs marked
+Primera Division, no score element in the DOM. The Sydney conversion and the
+local month table are both confirmed correct against a real UTC kickoff.
+
+### Crest resolution — one fixed, one still open (`1e98551`)
+
+Turning the token on exposed a regression the unavailable state had been
+hiding. Measured on the live page:
+
+| crest | source | natural | drawn |
+|---|---|---|---|
+| Real Madrid | `/real-madrid.png` (ours) | 431×600 | 55×76 — a DOWNSCALE, sharp |
+| Málaga | `crests.football-data.org/84.png` | 70×70 | 76×76 — an UPSCALE, soft |
+
+`1e98551` makes our Real Madrid art win outright for team 86 instead of only
+filling a gap: the provider serves `86.png` at 200×200 colormapped, ours is a
+431×600 RGBA original, and at an 88px box on a retina screen that is exactly
+the softness the owner rejected the first time. A test now locks it — the local
+file is used even when the provider supplies a crest.
+
+**Still open:** opponent crests. football-data.org serves them at 70×70, which
+on a 2× screen is a ~2.2× upscale into a 152px physical box. Every La Liga
+opponent will look soft next to a crisp Real Madrid. Fixing it properly means a
+local crest library built with the corner-floodfill recipe below, keyed by
+provider team id with the provider URL as the fallback. That is open item 2 and
+has NOT been started.
 
 ### Verification evidence — deploy `8c3e5a4`, state `ready`
 
