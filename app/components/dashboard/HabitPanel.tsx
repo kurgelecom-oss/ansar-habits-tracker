@@ -57,12 +57,7 @@ export default function HabitPanel({
       icon={icon}
       subtitle={subtitle}
       accent={accent}
-      summary={
-        <>
-          <span className={styles.panelCount}>{doneCount}/{habits.length}</span>
-          <span className={styles.panelPoints}>{blockPoints} pts</span>
-        </>
-      }
+      summary={<span className={styles.panelCount}>{doneCount}/{habits.length}</span>}
       progress={{ done: doneCount, total: habits.length }}
       footer={
         <span className={styles.panelScore}>

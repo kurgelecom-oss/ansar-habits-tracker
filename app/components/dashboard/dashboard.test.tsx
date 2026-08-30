@@ -764,11 +764,15 @@ describe("HabitPanel", () => {
     expect(names[6]).toContain("Daily goals written");
   });
 
-  it("summarises completion and block points", () => {
+  it("summarises completion in the head and the block score at the foot", () => {
     render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
       doneCount={6} blockPoints={2} {...rowHandlers} />);
     expect(screen.getByText("6/7")).toBeVisible();
-    expect(screen.getByText("2 pts")).toBeVisible();
+    // The header carries the count alone, as the reference does. The block's
+    // points are stated once, in the closing score line — printing them under
+    // the count as well was the same number said twice.
+    expect(screen.getByText(/Morning Habits Score/)).toBeVisible();
+    expect(screen.getByText("+2 pts")).toBeVisible();
   });
 
   /** habitColumn() returned null for an empty block; that behaviour is kept. */
