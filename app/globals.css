@@ -52,6 +52,7 @@
   --ansar-border: #2d3543;       /* hairline, same value the TopNav uses */
   --ansar-muted: #757f8f;        /* secondary text, same as .topnav-link */
   --ansar-navy: #0d2350;         /* Real Madrid royal navy */
+  --ansar-royal: #2f66d8;        /* the lit blue the Match Centre plate rises to */
   --ansar-gold: #d4af37;         /* Champions League gold — override marker */
   --ansar-gold-bright: #e7c55b;  /* gold, lifted for text on dark surfaces */
   --ansar-success: #00ff88;      /* DONE */

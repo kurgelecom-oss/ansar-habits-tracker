@@ -391,7 +391,7 @@ describe("responsive rules for the header and Match Centre", () => {
 
   /** The desktop budget must survive the mobile rules being added. */
   it("leaves the desktop budget declarations untouched", () => {
-    expect(/\.matchCentre\s*\{[^}]*max-height:\s*128px/.test(css)).toBe(true);
+    expect(/\.matchCentre\s*\{[^}]*max-height:\s*140px/.test(css)).toBe(true);
     expect(/\.clubHeader\s*\{[^}]*(?<!min-|max-)height:\s*122px/.test(css)).toBe(true);
   });
 });
@@ -494,7 +494,7 @@ describe("height defences at 1440 x 820", () => {
 
   /** The roomier desktop spacing must survive for tall windows. */
   it("leaves the tall-desktop budget declarations intact", () => {
-    expect(/\.matchCentre\s*\{[^}]*max-height:\s*128px/.test(css)).toBe(true);
+    expect(/\.matchCentre\s*\{[^}]*max-height:\s*140px/.test(css)).toBe(true);
     // (?<!min-|max-) matters: while the base header stood at 40px this assertion
     // read the base block, but the moment it grew the same regex started
     // matching the phone block's `min-height: 40px` and passed on a rule that
@@ -540,7 +540,7 @@ describe("vertical budget before the panels", () => {
   // 350: the tall-desktop stack with the Match Centre carrying a real fixture
   // band (96 nav + 122 masthead + 128 fixture). This block is not the binding
   // constraint — 1440 x 820 is, and it is measured separately below.
-  const FUNDED_CEILING = 350;
+  const FUNDED_CEILING = 362;
 
   it("still funds the raised ceiling by hiding the shared bar", () => {
     expect(globalCss).toContain('body:has(main[aria-label="ANSAR FC Dashboard"]) .topnav');
@@ -551,7 +551,7 @@ describe("vertical budget before the panels", () => {
   it("keeps each region inside its own cap", () => {
     expect(px("clubNav", "height")).toBeLessThanOrEqual(96);
     expect(px("clubHeader", "height")).toBeLessThanOrEqual(122);
-    expect(px("matchCentre", "max-height")).toBeLessThanOrEqual(128);
+    expect(px("matchCentre", "max-height")).toBeLessThanOrEqual(140);
   });
 
   it("keeps the three regions plus their gaps inside the funded ceiling", () => {
@@ -588,7 +588,7 @@ describe("vertical budget before the panels", () => {
     const gap = at("shell", "gap");
     const stack = at("clubNav", "height") + at("clubHeader", "height")
       + at("matchCentre", "max-height") + gap * 2;
-    expect(stack).toBe(272);
+    expect(stack).toBe(278);
     expect(stack).toBeLessThanOrEqual(SHORT_DESKTOP_CEILING);
   });
 
@@ -599,7 +599,7 @@ describe("vertical budget before the panels", () => {
    */
   it("keeps the short-desktop Match Centre substantial", () => {
     const shortDesktop = /@media \(min-width: 1440px\) and \(max-height: 900px\) \{[\s\S]*?\n\}/.exec(css)?.[0] ?? "";
-    expect(/\.matchCentre\s*\{[^}]*max-height:\s*106px/.test(shortDesktop)).toBe(true);
+    expect(/\.matchCentre\s*\{[^}]*max-height:\s*112px/.test(shortDesktop)).toBe(true);
     expect(/\.matchNote\s*\{[^}]*display:\s*none/.test(shortDesktop)).toBe(false);
   });
 });

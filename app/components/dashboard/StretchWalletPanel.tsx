@@ -135,21 +135,19 @@ export default function StretchWalletPanel({
               onClick={() => onEarn(item)}
               disabled={done || isSaving || locked}
               aria-label={item.name}
+              title={done ? "Banked today" : item.whatCountsAsDone || `Worth ${item.points} pt`}
             >
               <span className={styles.walletBox}>
                 {isSaving ? <span className={styles.habitGlyph}>⏳</span>
                   : done ? <span className={styles.walletTick}>✓</span>
                   : null}
               </span>
-              {/* Its own wrapper, not .habitText: a habit row is one line with
-                  the name and its note side by side, a wallet item stacks the
-                  name over what counts as doing it. Sharing the class squeezed
-                  these names into a column narrow enough to wrap to three. */}
+              {/* Name and value only, as the reference sets it. The "what
+                  counts as done" paragraph under every title was the clutter
+                  making this column read as a form rather than a menu — it
+                  stays on the row as its tooltip and accessible description. */}
               <span className={styles.walletText}>
-                <span className={styles.walletItemName}>🧩 {item.name}</span>
-                <span className={styles.walletItemNote}>
-                  {done ? "✓ banked today" : item.whatCountsAsDone || `Worth ${item.points} pt`}
-                </span>
+                <span className={styles.walletItemName}>{item.name}</span>
               </span>
               <span className={styles.walletItemValue}>+{item.points * rate}m</span>
             </button>

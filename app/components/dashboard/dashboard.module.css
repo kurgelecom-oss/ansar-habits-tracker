@@ -238,6 +238,8 @@
   display: flex;
   align-items: center;
   font-size: 20px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -245,10 +247,14 @@
 /* Cyan, matching the reference's window/points line. It is supporting detail,
    not a heading, so it stays a step down in size. */
 .panelSubtitle {
-  margin-top: 3px;
-  font-size: 12px;
+  margin-top: 4px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--cyan);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* The completion bar under the header. Its width and its aria-valuenow are the
@@ -343,10 +349,10 @@
      on bright blue plastic. The photo is atmosphere, not content — it stays
      under a floor dark enough for white text everywhere it lands. */
   background-image:
-    linear-gradient(90deg, rgba(4, 10, 22, 0.93), rgba(6, 14, 30, 0.84) 42%, rgba(4, 10, 22, 0.95)),
-    url('/bernabeu-bg.jpg');
+    linear-gradient(90deg, rgba(4, 10, 22, 0.88), rgba(6, 14, 30, 0.72) 45%, rgba(4, 10, 22, 0.90)),
+    url('/stadium-lights.jpg');
   background-size: cover;
-  background-position: center 42%;
+  background-position: center 34%;
   border: 0;
   /* The gold identity rides on this rule rather than on a span inside the
      wordmark, so the wordmark stays one text node. */
@@ -520,18 +526,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 108px;
-  max-height: 128px;
-  padding: 14px 20px;
+  min-height: 120px;
+  max-height: 140px;
+  margin: 0 20px;
+  padding: 16px 24px;
   flex-shrink: 0;
   /* One lit royal-blue plate: the navy at near full strength across the middle,
      falling away only at the ends. */
+  /* Royal blue, not near-black navy. The reference plate reads as a lit blue
+     board: the navy lifted toward white across the middle and only falling
+     back at the ends. */
   background:
-    radial-gradient(ellipse at 50% -20%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 62%),
+    radial-gradient(ellipse at 50% -10%, color-mix(in srgb, var(--cyan) 12%, transparent), transparent 66%),
     linear-gradient(100deg,
-      color-mix(in srgb, var(--ansar-navy) 78%, #000000),
-      var(--ansar-navy) 42%,
-      color-mix(in srgb, var(--ansar-navy) 86%, #000000));
+      color-mix(in srgb, var(--ansar-navy) 88%, #000000),
+      color-mix(in srgb, var(--ansar-navy) 62%, var(--ansar-royal)) 46%,
+      color-mix(in srgb, var(--ansar-navy) 90%, #000000));
   border: 1px solid color-mix(in srgb, var(--ansar-gold) 34%, transparent);
   border-radius: var(--ansar-radius-panel);
   box-shadow:
@@ -700,10 +710,10 @@
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  min-height: 54px;
-  padding: 0 14px;
+  min-height: 58px;
+  padding: 0 16px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -766,8 +776,8 @@
 }
 
 .habitBox {
-  width: 24px;
-  height: 24px;
+  width: 27px;
+  height: 27px;
   border-radius: 50%;
   flex-shrink: 0;
   display: flex;
@@ -782,24 +792,29 @@
 }
 .habitRowMissed .habitBox { border-color: color-mix(in srgb, var(--ansar-danger) 40%, transparent); }
 
-.habitTick { font-size: 13px; font-weight: 800; color: color-mix(in srgb, var(--ansar-success) 82%, #ffffff); }
-.habitGlyph { font-size: 11px; }
+.habitTick { font-size: 15px; font-weight: 700; color: color-mix(in srgb, var(--ansar-success) 82%, #ffffff); }
+.habitGlyph { font-size: 12px; }
 
-.habitIcon { font-size: 17px; flex-shrink: 0; line-height: 1; }
+.habitIcon { font-size: 19px; flex-shrink: 0; line-height: 1; }
 
 .habitText {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .habitName {
   display: block;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
-  line-height: 1.3;
+  line-height: 1.35;
   color: #ffffff;
+  /* Crisper glyph edges on the dark plate — the default subpixel pass on a
+     near-black background is what was reading as soft. */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 .habitRowDone .habitName { color: var(--ansar-muted); }
 .habitRowLocked .habitName { color: #b0b5c1; }
@@ -842,14 +857,14 @@
 .pointChip {
   flex-shrink: 0;
   padding: 0;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   white-space: nowrap;
-  color: var(--cyan);
+  color: color-mix(in srgb, var(--ansar-success) 70%, #ffffff);
   background: none;
   border: 0;
 }
-.habitRowDone .pointChip { color: var(--row-accent); }
+.habitRowDone .pointChip { color: color-mix(in srgb, var(--ansar-success) 70%, #ffffff); }
 
 /* ── Panel summary and the morning feasibility banner ───────────────────────*/
 .panelCount {
@@ -916,11 +931,10 @@
 /* Evidence language, not a gate reason. Cyan rather than the muted grey a lock
    caption uses, because "Recorded" is a positive fact about today's work. */
 .habitNote {
-  margin-left: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ansar-muted);
-  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: color-mix(in srgb, #ffffff 46%, transparent);
 }
 
 /* ── Work + Week ────────────────────────────────────────────────────────────*/
@@ -1129,8 +1143,7 @@
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
   text-align: left;
 }
 
@@ -1170,10 +1183,11 @@
 .walletTick { font-size: 13px; font-weight: 800; color: var(--ansar-base); }
 
 .walletItemName {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.25;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
 }
 .walletItemNote {
   display: block;
@@ -1392,11 +1406,10 @@
      band, not a strip. Measured against the reference at 1440 wide, its plate
      is ~97px tall with a ~62px crest, and that is what this is. */
   .matchCentre {
-    /* min-height as well as max: the cap alone let the plate collapse to 82px
-       around its content, which is what still read as too small. */
-    min-height: 98px;
-    max-height: 106px;
-    padding: 12px 18px;
+    min-height: 104px;
+    max-height: 112px;
+    margin: 0 12px;
+    padding: 12px 20px;
   }
   .matchFixture { gap: 28px; }
   .matchTeam { gap: 15px; }
@@ -1468,7 +1481,10 @@
   .panelTitle { font-size: 19px; }
   .panelIcon { font-size: 17px; margin-right: 8px; }
   .panelSubtitle { font-size: 12.5px; line-height: 1.25; }
-  .habitName { font-size: 14px; line-height: 1.28; }
+  .habitName { font-size: 15px; line-height: 1.3; }
+  .habitRow { min-height: 48px; padding: 0 14px; gap: 12px; }
+  .habitBox { width: 25px; height: 25px; }
+  .habitNote { font-size: 12px; }
   .panelSubtitle { font-size: 12px; }
   .panelProgress { height: 6px; margin: 0 14px 6px; }
   .panelFooter { padding: 4px 13px 4px; }

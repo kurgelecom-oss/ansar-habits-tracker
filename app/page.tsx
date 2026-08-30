@@ -1037,7 +1037,7 @@ export default function AnsarPage() {
       // #0f1419 page colour) sits on top of the photo and does ALL the work of
       // preserving contrast — no text/card styling is changed.
       backgroundColor: "#0f1419",
-      backgroundImage: "linear-gradient(rgba(15,20,25,0.92), rgba(15,20,25,0.92)), url('/bernabeu-bg.jpg')",
+      backgroundImage: "linear-gradient(rgba(8,12,20,0.88), rgba(6,9,16,0.94)), url('/stadium-lights.jpg')",
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
