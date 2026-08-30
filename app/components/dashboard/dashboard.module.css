@@ -1471,7 +1471,7 @@
   .habitName { font-size: 14px; line-height: 1.28; }
   .panelSubtitle { font-size: 12px; }
   .panelProgress { height: 6px; margin: 0 14px 6px; }
-  .panelFooter { padding: 5px 13px 6px; }
+  .panelFooter { padding: 4px 13px 4px; }
   .panelScore { font-size: 12px; }
   .panelBody { padding: 1px 11px 4px; gap: 3px; }
 }
