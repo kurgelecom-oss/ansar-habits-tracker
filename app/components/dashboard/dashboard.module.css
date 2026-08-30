@@ -1496,4 +1496,5 @@
   .walletSpend, .walletSpendOpen { min-height: 40px; margin-top: 0; }
   .panelScore { font-size: 12px; }
   .panelBody { padding: 1px 11px 4px; gap: 3px; }
+  .programmeSection + .programmeSection { margin-top: 4px; padding-top: 4px; }
 }
