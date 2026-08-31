@@ -25,12 +25,19 @@ function habit(overrides: Partial<DashboardHabit> & Pick<DashboardHabit, "id">):
 }
 
 describe("groupHabitsByBlock", () => {
-  it("keeps zero-point journal first", () => {
+  /**
+   * The journal's Notion Order is FRACTIONAL — 16.5, so that it lands between
+   * teeth (16) and reading (17) without renumbering the rows around it. A sort
+   * that coerced orders to integers would put it either side of reading and
+   * nothing else would complain, so the fraction is asserted directly.
+   */
+  it("sorts on the fractional order, so the journal lands between teeth and reading", () => {
     const grouped = groupHabitsByBlock([
-      habit({ id: "homeschool_session", block: "homeschool", order: 8, points: 5 }),
-      habit({ id: "journal", block: "homeschool", order: 7.5, points: 0, pointType: "prerequisite" }),
+      habit({ id: "reading", block: "afternoon_evening", order: 17, points: 0, pointType: "perfect_day_only" }),
+      habit({ id: "journal", block: "afternoon_evening", order: 16.5, points: 0, pointType: "perfect_day_only" }),
+      habit({ id: "teeth", block: "afternoon_evening", order: 16, points: 0, pointType: "perfect_day_only" }),
     ]);
-    expect(grouped.homeschool.map(h => h.id)).toEqual(["journal", "homeschool_session"]);
+    expect(grouped.afternoon_evening.map(h => h.id)).toEqual(["teeth", "journal", "reading"]);
   });
 
   /**
