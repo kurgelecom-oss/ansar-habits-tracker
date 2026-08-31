@@ -16,6 +16,9 @@ import type {
   DashboardGate, DashboardGoldenBoot, DashboardHabit, DashboardServerTime,
   DashboardStretchItem, DashboardWallet,
 } from "./types";
+// Read, not re-typed. /api/tick computes this field from the same list, so a
+// fixture that hardcoded it could preview a board production never renders.
+import { requiresParentVerification } from "../lib/parent-verified";
 
 /** Everything one screen of Dashboard V2 renders from. */
 export type DashboardFixture = {
@@ -46,18 +49,35 @@ const MORNING: HabitSeed[] = [
 ];
 
 const HOMESCHOOL: HabitSeed[] = [
-  { id: "journal", name: "Daily learning journal entry written", block: "homeschool", order: 7.5, points: 0, pointType: "prerequisite" },
   { id: "homeschool_session", name: "Homeschool session completed (4 hrs)", block: "homeschool", order: 8, points: 5, pointType: "solo" },
 ];
 
+/* The journal sits at 16.5 — after "Teeth brushed" and before "Reading in bed"
+   — because that is where it is configured in Notion (tk, 31 Aug). It moved out
+   of Homeschool and stopped being a `prerequisite` in the same edit, and the two
+   halves are not separable: a prerequisite gates every SCORING habit in its own
+   block, so a journal filed in Afternoon / Evening would have held btn_cornell
+   and all_namaz shut until it was ticked — and it opens at 21:00, which is after
+   both of their windows have closed. As `perfect_day_only` it gates nothing and
+   is instead required for the perfect-day bonus, exactly like teeth and reading
+   beside it.
+
+   It is still the only Mon–Fri row in this block, so a weekend build must drop
+   it — see WEEKEND_ARVO below. */
 const AFTERNOON_EVENING: HabitSeed[] = [
   { id: "btn_cornell", name: "BTN episode + Cornell notes done", block: "afternoon_evening", order: 12, points: 1, pointType: "solo" },
   { id: "shower", name: "Shower done", block: "afternoon_evening", order: 13, points: 0, pointType: "perfect_day_only" },
   { id: "all_namaz", name: "All Namaz done (Fajr, Duhr, Asr, Maghrib, Isha)", block: "afternoon_evening", order: 14, points: 1, pointType: "solo" },
   { id: "room_tidy", name: "Room tidy", block: "afternoon_evening", order: 15, points: 0, pointType: "perfect_day_only" },
   { id: "teeth", name: "Teeth brushed", block: "afternoon_evening", order: 16, points: 0, pointType: "perfect_day_only" },
+  { id: "journal", name: "Daily learning journal entry written", block: "afternoon_evening", order: 16.5, points: 0, pointType: "perfect_day_only" },
   { id: "reading", name: "Reading in bed (15+ min)", block: "afternoon_evening", order: 17, points: 0, pointType: "perfect_day_only" },
 ];
+
+/* Saturday and Sunday. The journal's Notion "Days" is Mon–Fri, so habitsForDay()
+   drops it on a weekend and the board never draws it — a weekend fixture that
+   showed it would be previewing a row production cannot produce. */
+const WEEKEND_ARVO: HabitSeed[] = AFTERNOON_EVENING.filter(h => h.id !== "journal");
 
 const CONDITIONAL: HabitSeed[] = [
   { id: "soccer_training", name: "Soccer training attended (Mon & Wed only)", block: "conditional", order: 18, points: 1, pointType: "per_session" },
@@ -72,7 +92,7 @@ const WINDOWS: Record<string, string> = {
 };
 
 /** The late group opens at 21:00 even though its block window starts earlier. */
-const LATE_IDS = new Set(["room_tidy", "teeth", "reading"]);
+const LATE_IDS = new Set(["room_tidy", "teeth", "journal", "reading"]);
 
 type StateSeed = {
   state: DashboardHabit["state"];
@@ -93,6 +113,7 @@ function build(seeds: HabitSeed[], states: Record<string, StateSeed>): Dashboard
       window,
       dwellSeconds: null,
       overridden: seeded.overridden ?? false,
+      parentVerifyRequired: requiresParentVerification(seed.id),
     };
   });
 }
@@ -127,7 +148,9 @@ const STRETCH_ITEMS: DashboardStretchItem[] = [
 /* ── Wednesday, mid-afternoon ────────────────────────────────────────────────
    A training day, so the Conditional subsection is applicable. The morning is
    behind us: one habit was missed, one carries a parent override, the rest
-   were earned. Homeschool is in progress with the journal already recorded.
+   were earned. Homeschool is in progress. The journal is LOCKED with the rest of
+   the 21:00 group, which is what mid-afternoon looks like now that it sits
+   between "Teeth brushed" and "Reading in bed".
    Between them these 16 rows exercise DONE, LIVE, LOCKED, MISSED and OVERRIDE
    — every per-habit state the baseline requires. */
 export const weekdayFixture: DashboardFixture = {
@@ -146,7 +169,6 @@ export const weekdayFixture: DashboardFixture = {
         goals: { state: "MISSED", message: "Window closed 8:30am" },
       }),
       ...build(HOMESCHOOL, {
-        journal: { state: "DONE" },
         homeschool_session: { state: "LIVE" },
       }),
       ...build(AFTERNOON_EVENING, {
@@ -155,6 +177,7 @@ export const weekdayFixture: DashboardFixture = {
         all_namaz: { state: "LIVE" },
         room_tidy: { state: "LOCKED", message: "Opens 9:00pm" },
         teeth: { state: "LOCKED", message: "Opens 9:00pm" },
+        journal: { state: "LOCKED", message: "Opens 9:00pm" },
         reading: { state: "LOCKED", message: "Opens 9:00pm" },
       }),
       ...build(CONDITIONAL, {
@@ -200,7 +223,7 @@ export const weekendFixture: DashboardFixture = {
         breakfast: { state: "LIVE" },
         goals: { state: "LIVE" },
       }),
-      ...build(AFTERNOON_EVENING, {
+      ...build(WEEKEND_ARVO, {
         btn_cornell: { state: "LOCKED", message: "Opens 1:30pm" },
         shower: { state: "LOCKED", message: "Opens 1:30pm" },
         all_namaz: { state: "LOCKED", message: "Opens 1:30pm" },

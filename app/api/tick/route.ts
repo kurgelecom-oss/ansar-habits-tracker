@@ -17,8 +17,11 @@
 
    THE CONTRACT
    ────────────
-   POST /api/tick   { habitId, date, overridePin? }
+   POST /api/tick   { habitId, date, overridePin?, parentPin? }
      • `date` is VALIDATED against the server's Sydney date, never trusted.
+     • `overridePin` BYPASSES gates 1–4 and files an override_log row.
+       `parentPin` bypasses nothing: it satisfies the parent sign-off some
+       habits require (lib/parent-verified.ts) and then lets every gate run.
      • No timestamp is accepted from the client. Any `timestamp`, `completedAt`
        or `now` in the body is ignored outright — the value written is
        new Date() on this server.
@@ -43,6 +46,7 @@ import {
 } from "../../lib/gating";
 import { getHabits, getSettings, habitsForDay, SETTINGS_FALLBACK, type Habit } from "../../lib/notion";
 import { isPrerequisite } from "../../lib/days";
+import { requiresParentVerification } from "../../lib/parent-verified";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
 import { lockoutState, recordFailure, clearFailures, lockoutBackend, LOCKOUT_MAX_FAILURES } from "../../lib/pin-lockout";
 
@@ -323,6 +327,14 @@ export async function GET(request: Request) {
           // The board needs this to keep a prerequisite out of the Today %
           // denominator and out of the perfect-day set. See lib/days.ts.
           pointType: h.pointType,
+          /* Does a tap on this row need the parent PIN before it is worth
+             sending? The board reads this rather than importing the list a
+             second time, so a habit added to lib/parent-verified.ts starts
+             asking for a PIN on the board and at the route in the same deploy.
+             It is a REQUIREMENT, not a verdict: the POST re-decides it, and the
+             answer here changes no gate — a row needing a PIN is still LIVE or
+             LOCKED on exactly the grounds it was before. */
+          parentVerifyRequired: requiresParentVerification(h.id),
           window: h.windowStart && h.windowEnd ? `${h.windowStart}-${h.windowEnd}` : null,
           dwellSeconds: h.dwellSeconds,
           state,
@@ -354,12 +366,18 @@ export async function POST(request: Request) {
       { status: 400, headers: noStore });
   }
 
-  // Exactly three fields are read. Anything else in the body — including a
+  // Exactly four fields are read. Anything else in the body — including a
   // `timestamp`, `completedAt` or `now` a client might hopefully attach — is
   // never assigned to anything and cannot influence the outcome.
   const habitId = typeof body.habitId === "string" ? body.habitId : "";
   const date = typeof body.date === "string" ? body.date : "";
   const overridePin = typeof body.overridePin === "string" ? body.overridePin : "";
+  /* Parent SIGN-OFF, not override. Same secret, different consequence: this one
+     proves a parent is present and then lets the ordinary gauntlet run, where
+     `overridePin` skips gates 1–4 and files an override_log row. They are
+     separate fields so a client cannot get a bypass by mislabelling a sign-off,
+     and so the ledger can tell the two apart later. */
+  const parentPin = typeof body.parentPin === "string" ? body.parentPin : "";
 
   if (!habitId || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return NextResponse.json(
@@ -419,47 +437,46 @@ export async function POST(request: Request) {
      A correct PIN bypasses gates 1–4 and nothing else. The PIN lives only in
      the Netlify env var PARENT_OVERRIDE_PIN: it is never in Notion, never in
      the client bundle, and never echoed back in a response. */
-  const expectedPin = process.env.PARENT_OVERRIDE_PIN;
   const attemptKey = clientKey(request);
   let overrideUsed = false;
   if (overridePin) {
-    // Lockout is checked BEFORE the PIN is compared, so a locked-out caller
-    // learns nothing about whether their guess was right.
-    const { remainingMs: remaining } = await lockoutState(attemptKey, now.ms)
-      .catch(() => ({ remainingMs: 0 }));
-    if (remaining > 0) {
-      return NextResponse.json({
-        ok: false,
-        reason: "locked_out",
-        message: `Too many incorrect PINs. Try again in ${Math.ceil(remaining / 60000)} min.`,
-        lockedMs: remaining,
-      }, { status: 429, headers: noStore });
-    }
-    if (!expectedPin) {
+    const refusal = await checkPin(overridePin, attemptKey, now.ms, noStore);
+    if (refusal) return refusal;
+    overrideUsed = true;
+  }
+
+  /* ── Parent sign-off (verify only) ──────────────────────────────────────
+     Some habits are the PARENT's word, not the child's — BTN's Cornell notes
+     are the case this was built for: only someone who has seen the page knows
+     whether they were written. lib/parent-verified.ts holds the list.
+
+     THIS IS A REQUIREMENT ADDED IN FRONT OF THE GAUNTLET, NOT A BYPASS. It runs
+     before evaluateGates and leaves `overrideUsed` false, so the window, the
+     dwell, the order and the cascade all still get their say afterwards — a
+     parent with the correct PIN still cannot tick BTN at 7am. Nothing is
+     written to override_log either: this is an ordinary completion that needed
+     a witness, and the gold audit badge has to keep meaning "a parent restored
+     something", which it would not if it appeared here every single day.
+
+     An override PIN already satisfies it. Someone who just proved themselves
+     well enough to skip four gates is not asked to prove themselves again for
+     the same tick. */
+  let parentVerified = false;
+  if (!overrideUsed && requiresParentVerification(habitId)) {
+    if (!parentPin) {
+      const message = "A parent needs to enter the PIN for this one";
+      await logRejection({
+        habitId, serverDate: ctx.serverDate, reason: "parent_pin_required",
+        detail: message, nowMinutes: ctx.nowMinutes,
+      });
       return NextResponse.json(
-        { ok: false, reason: "no_override", message: "Parent override is not configured on this deploy." },
-        { status: 503, headers: noStore },
+        { ok: false, reason: "parent_pin_required", message, serverDate: ctx.serverDate },
+        { status: 403, headers: noStore },
       );
     }
-    if (!timingSafeEqual(overridePin, expectedPin)) {
-      await recordFailure(attemptKey, now.ms).catch(() => {});
-      const after = await lockoutState(attemptKey, now.ms)
-        .catch(() => ({ remainingMs: 0, failures: 0 }));
-      const failures = after.failures;
-      const nowLocked = after.remainingMs;
-      return NextResponse.json({
-        ok: false,
-        reason: nowLocked > 0 ? "locked_out" : "bad_pin",
-        message: nowLocked > 0
-          ? `Too many incorrect PINs. Try again in ${Math.ceil(nowLocked / 60000)} min.`
-          : "Incorrect PIN.",
-        attemptsRemaining: Math.max(0, LOCKOUT_MAX_FAILURES - failures),
-        lockedMs: nowLocked,
-      }, { status: nowLocked > 0 ? 429 : 403, headers: noStore });
-    }
-    // A correct PIN clears the counter — the parent has proved themselves.
-    await clearFailures(attemptKey).catch(() => {});
-    overrideUsed = true;
+    const refusal = await checkPin(parentPin, attemptKey, now.ms, noStore);
+    if (refusal) return refusal;
+    parentVerified = true;
   }
 
   if (!overrideUsed) {
@@ -548,6 +565,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: true,
         override: true,
+        parentVerified,
         warning: `Tick recorded, but override_log write failed: ${logErr.message}`,
         habitId,
         date: ctx.serverDate,
@@ -559,6 +577,9 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     override: overrideUsed,
+    // A parent typed the PIN and the ordinary gauntlet still ran. Distinct from
+    // `override`, which means the gauntlet was skipped.
+    parentVerified,
     habitId,
     date: ctx.serverDate,
     // Echoed so a caller can see for itself that the stored time is the
@@ -566,6 +587,69 @@ export async function POST(request: Request) {
     completedAt: new Date(now.ms).toISOString(),
     serverClock: `${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")} ${now.weekday} (Australia/Sydney)`,
   }, { headers: noStore });
+}
+
+/**
+ * Compare a submitted PIN against PARENT_OVERRIDE_PIN, with the lockout.
+ *
+ * Returns null when the PIN is good, or the NextResponse to send when it is
+ * not. Extracted so the override path and the parent sign-off path cannot drift
+ * apart: one lockout tally, one constant-time compare, one set of reason
+ * strings. A second hand-rolled copy of this is how a new PIN entry point ends
+ * up with no brute-force protection at all, which is precisely the bug
+ * lib/pin-lockout.ts was written to end.
+ *
+ * The env var is shared on purpose — there is one parent PIN, and a second
+ * secret to distribute is a second secret to leak. What differs between the two
+ * callers is what a correct PIN then BUYS, and that is decided by the caller,
+ * not here.
+ */
+async function checkPin(
+  pin: string,
+  attemptKey: string,
+  nowMs: number,
+  noStore: Record<string, string>,
+): Promise<NextResponse | null> {
+  // Lockout is checked BEFORE the PIN is compared, so a locked-out caller
+  // learns nothing about whether their guess was right.
+  const { remainingMs: remaining } = await lockoutState(attemptKey, nowMs)
+    .catch(() => ({ remainingMs: 0 }));
+  if (remaining > 0) {
+    return NextResponse.json({
+      ok: false,
+      reason: "locked_out",
+      message: `Too many incorrect PINs. Try again in ${Math.ceil(remaining / 60000)} min.`,
+      lockedMs: remaining,
+    }, { status: 429, headers: noStore });
+  }
+
+  const expectedPin = process.env.PARENT_OVERRIDE_PIN;
+  if (!expectedPin) {
+    return NextResponse.json(
+      { ok: false, reason: "no_override", message: "Parent override is not configured on this deploy." },
+      { status: 503, headers: noStore },
+    );
+  }
+
+  if (!timingSafeEqual(pin, expectedPin)) {
+    await recordFailure(attemptKey, nowMs).catch(() => {});
+    const after = await lockoutState(attemptKey, nowMs)
+      .catch(() => ({ remainingMs: 0, failures: 0 }));
+    const nowLocked = after.remainingMs;
+    return NextResponse.json({
+      ok: false,
+      reason: nowLocked > 0 ? "locked_out" : "bad_pin",
+      message: nowLocked > 0
+        ? `Too many incorrect PINs. Try again in ${Math.ceil(nowLocked / 60000)} min.`
+        : "Incorrect PIN.",
+      attemptsRemaining: Math.max(0, LOCKOUT_MAX_FAILURES - after.failures),
+      lockedMs: nowLocked,
+    }, { status: nowLocked > 0 ? 429 : 403, headers: noStore });
+  }
+
+  // A correct PIN clears the counter — the parent has proved themselves.
+  await clearFailures(attemptKey).catch(() => {});
+  return null;
 }
 
 /** Constant-time string compare, so a wrong PIN leaks nothing through timing. */

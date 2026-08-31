@@ -54,6 +54,16 @@ export type DashboardHabit = {
   window: string | null;
   dwellSeconds: number | null;
   overridden: boolean;
+  /**
+   * Does a tap on this row need the parent PIN first? From /api/tick, which
+   * reads lib/parent-verified.ts — the board never decides this for itself.
+   *
+   * Optional so a response from an older deploy still parses; absent reads as
+   * "no PIN needed", which is safe in the only direction that matters: the
+   * POST asks for the PIN again regardless, so a stale board can at worst be
+   * refused, never wave a tick through.
+   */
+  parentVerifyRequired?: boolean;
 };
 
 /** Habits split by block. Every known block is always present, possibly empty. */

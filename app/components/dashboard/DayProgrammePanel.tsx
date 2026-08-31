@@ -1,4 +1,5 @@
 import type { DashboardHabit } from "../../dashboard/types";
+import { guidanceFor, noteFor } from "../../dashboard/rowCopy";
 import { DEFAULT_ICON, HABIT_ICONS } from "../../dashboard/icons";
 import HabitRow from "./HabitRow";
 import HomeschoolSection from "./HomeschoolSection";
@@ -19,6 +20,11 @@ import styles from "./dashboard.module.css";
  * Order is fixed: Homeschool, Afternoon / Evening, Conditional. A weekend
  * removes ONLY Homeschool — Afternoon / Evening is scheduled seven days a week
  * and stays. Conditional appears when the day actually schedules it.
+ *
+ * Within a section the rows are in Notion's Order, which is what puts the daily
+ * journal between "Teeth brushed" and "Reading in bed" rather than up in
+ * Homeschool. Nothing here hardcodes that position: move the row in Notion and
+ * it moves on screen, and dashboard/rowCopy.ts carries its words along with it.
  *
  * Rows are the same HabitRow the Morning panel uses, so LOCKED and MISSED stay
  * pointer-reachable and the parent's override hold works identically here.
@@ -52,6 +58,11 @@ export default function DayProgrammePanel({
           icon={HABIT_ICONS[habit.id] ?? DEFAULT_ICON}
           saving={savingId === habit.id}
           holding={holdId === habit.id}
+          // Same source the Homeschool subsection reads. The journal's
+          // "Recorded" caption and BTN's "Parent PIN" marker have to render
+          // here now that both habits live in this section.
+          note={noteFor(habit)}
+          description={guidanceFor(habit)}
           onTick={onTick}
           onHoldStart={onHoldStart}
           onHoldCancel={onHoldCancel}

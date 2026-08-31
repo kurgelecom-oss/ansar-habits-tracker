@@ -27,7 +27,7 @@ import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import dashboardStyles from "./components/dashboard/dashboard.module.css";
 import { deriveMatchReadiness, journalEvidenceState } from "./dashboard/model";
-import type { DashboardHabit } from "./dashboard/types";
+import { HABIT_BLOCKS, type DashboardHabit } from "./dashboard/types";
 import type { MatchCentreData } from "./lib/football/types";
 // The squad week, Mon–Fri. This file used to declare its own copy beside the
 // /55 note below; lib/goldenBoot.ts asked for the collapse the moment page.tsx
@@ -124,6 +124,9 @@ type GateHabitView = {
   window: string | null; dwellSeconds: number | null;
   state: ButtonState; label: string;
   reason: string | null; message: string | null;
+  /** True when /api/tick will refuse this tick without the parent PIN.
+   *  Optional so an older deploy's response still parses — see types.ts. */
+  parentVerifyRequired?: boolean;
 };
 
 type GateSnapshot = {
@@ -265,6 +268,22 @@ export default function AnsarPage() {
   // Parent override. The PIN is typed here and sent to the server; it is never
   // compared here and never stored. The server holds PARENT_OVERRIDE_PIN.
   const [overrideFor, setOverrideFor] = useState<Rejection | null>(null);
+  /**
+   * Which errand the PIN dialog is on.
+   *
+   *   "override"  the two-second hold on a refused row. A correct PIN skips
+   *               gates 1–4 and files an override_log row, and the habit then
+   *               carries the gold audit badge for the rest of the day.
+   *   "verify"    a plain tap on a habit that requires a parent's sign-off
+   *               (BTN). A correct PIN proves a parent is present and NOTHING
+   *               else: every gate still runs, and the completion is an
+   *               ordinary one with no badge.
+   *
+   * One dialog, because it is one PIN and one keypad. One flag, because the two
+   * must never be confused — a sign-off that quietly bypassed the window would
+   * make the 1:30pm rule advisory.
+   */
+  const [overrideMode, setOverrideMode] = useState<"override" | "verify">("override");
   const [pin, setPin] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
   const [overrideError, setOverrideError] = useState("");
@@ -615,6 +634,7 @@ export default function AnsarPage() {
     if (holdTimer.current) clearTimeout(holdTimer.current);
     holdTimer.current = setTimeout(() => {
       setHoldId(null);
+      setOverrideMode("override");
       setOverrideFor({
         habitId: h.id,
         habitName: h.name,
@@ -663,6 +683,26 @@ export default function AnsarPage() {
     // rejected here instead of relying on the button being inert.
     const view = gate.habits.find(h => h.id === habitId);
     if (view && view.state !== "LIVE") return;
+
+    /* Some habits are the parent's word, not Ansar's — BTN's Cornell notes are
+       the one this was built for. The server refuses these without the PIN
+       (403 parent_pin_required), so posting first and asking after would spend
+       a round trip to be told what the gate view already said. Ask here, post
+       once. The server still re-decides it: this branch is a shortcut to the
+       keypad, never the thing that grants the tick. */
+    if (view?.parentVerifyRequired && gate.overridePinConfigured) {
+      setOverrideMode("verify");
+      setOverrideFor({
+        habitId, habitName,
+        reason: "parent_pin_required",
+        message: "A parent needs to enter the PIN for this one",
+      });
+      setPin("");
+      setOverrideReason("");
+      setOverrideError("");
+      return;
+    }
+
     setSaving(habitId);
     setReject(null);
     try {
@@ -703,7 +743,16 @@ export default function AnsarPage() {
     setOverrideError("");
   }
 
-  /** Parent override. Correct PIN bypasses gates 1–4 and writes to override_log. */
+  /**
+   * Submit the PIN.
+   *
+   * `overrideMode` decides which FIELD carries it, and the field is what decides
+   * the consequence at the server — `overridePin` bypasses gates 1–4 and files
+   * an override_log row, `parentPin` bypasses nothing and files nothing. Sending
+   * the wrong one is the only way this screen could turn a routine BTN sign-off
+   * into a silent bypass of the 1:30pm window, so the two are never merged into
+   * one hopeful field.
+   */
   async function submitOverride() {
     if (!overrideFor || !gate || overrideBusy) return;
     setOverrideBusy(true);
@@ -715,8 +764,9 @@ export default function AnsarPage() {
         body: JSON.stringify({
           habitId: overrideFor.habitId,
           date: gate.serverTime.date,
-          overridePin: pin,
-          reason: overrideReason,
+          ...(overrideMode === "verify"
+            ? { parentPin: pin }
+            : { overridePin: pin, reason: overrideReason }),
         }),
       });
       const body = await res.json();
@@ -731,7 +781,8 @@ export default function AnsarPage() {
         // bad_pin clears the field and keeps the dialog open so Nihal can
         // simply retype. Anything else is surfaced verbatim — the one thing
         // this must never do is fail silently.
-        setOverrideError(body?.message ?? "Override refused");
+        setOverrideError(body?.message
+          ?? (overrideMode === "verify" ? "Not recorded" : "Override refused"));
         if (body?.reason === "bad_pin" || body?.reason === "locked_out") setPin("");
         if (typeof body?.lockedMs === "number" && body.lockedMs > 0) setLockedMs(body.lockedMs);
       }
@@ -1066,9 +1117,25 @@ export default function AnsarPage() {
       ...h,
       points: pointsById[h.id] ?? 0,
       overridden: overriddenIds.has(h.id),
+      // Spread already carries this from the gate view; naming it keeps the
+      // field visible at the one place rows are built, next to the two facts
+      // the gate does not supply.
+      parentVerifyRequired: h.parentVerifyRequired ?? false,
     }));
   const morningRows = rowsFor("pre_homeschool");
   const homeschoolRows = rowsFor("homeschool");
+  /**
+   * The journal row, wherever Notion currently files it.
+   *
+   * It used to be looked up inside homeschoolRows, which was true only for as
+   * long as the journal sat in the Homeschool block. It now sits in Afternoon /
+   * Evening, between "Teeth brushed" and "Reading in bed", and a lookup scoped
+   * to the wrong block does not fail loudly — journalEvidenceState(undefined)
+   * reads NOT_REQUIRED, which scores FULL journal credit. Match Readiness would
+   * have quietly read 100% on a day the journal was never written. Searching
+   * every block keeps the answer true wherever the row is moved next.
+   */
+  const journalRow = HABIT_BLOCKS.flatMap(b => rowsFor(b)).find(h => h.id === "journal");
   /**
    * Match Readiness — a DISPLAY summary of today's learning state, never a
    * football result and never an input to a gate. workSubmissionCount is 0
@@ -1079,7 +1146,7 @@ export default function AnsarPage() {
     morningDone: morningRows.filter(h => h.state === "DONE").length,
     morningTotal: morningRows.length,
     homeschoolDone: homeschoolRows.some(h => h.id === "homeschool_session" && h.state === "DONE"),
-    journalState: journalEvidenceState(homeschoolRows.find(h => h.id === "journal")),
+    journalState: journalEvidenceState(journalRow),
     workSubmissionCount: 0,
   });
 
@@ -1324,19 +1391,28 @@ export default function AnsarPage() {
         >
           <div className="ab-ov" role="dialog" aria-modal="true" aria-labelledby="ab-ov-title">
             <div id="ab-ov-title" style={{ fontSize: 16, fontWeight: 800, color: "#ffffff" }}>
-              Parent override
+              {overrideMode === "verify" ? "Parent sign-off" : "Parent override"}
             </div>
             <div style={{ fontSize: 13, color: "#ffffff", marginTop: 10, fontWeight: 700 }}>
               {overrideFor.habitName}
             </div>
             {/* The server's own refusal, quoted back, so Nihal can see what she
-                is overriding rather than taking it on trust. */}
-            <div style={{ fontSize: 12, color: "#ff4444", marginTop: 4, fontWeight: 600 }}>
+                is overriding rather than taking it on trust. In verify mode the
+                same line carries the ask instead, in the calmer colour — a
+                routine daily sign-off is not an error and must not look like
+                one. */}
+            <div style={{
+              fontSize: 12,
+              color: overrideMode === "verify" ? "#757f8f" : "#ff4444",
+              marginTop: 4,
+              fontWeight: 600,
+            }}>
               {overrideFor.message}
             </div>
             <div className="ab-ov-note">
-              Unlocking marks this done for today and bypasses the window, dwell,
-              order and cascade checks. It is recorded.
+              {overrideMode === "verify"
+                ? "Confirms you have seen the Cornell notes. Nothing is bypassed — the window, dwell and order checks all still apply."
+                : "Unlocking marks this done for today and bypasses the window, dwell, order and cascade checks. It is recorded."}
             </div>
 
             {lockedMs > 0 ? (
@@ -1364,6 +1440,11 @@ export default function AnsarPage() {
                   />
                 </label>
 
+                {/* Override-only. A reason belongs on the exception, not on the
+                    thing that happens every afternoon — a free-text box asked
+                    365 times a year gets filled with "." and stops being
+                    evidence of anything. */}
+                {overrideMode === "override" ? (
                 <label style={{ display: "block", marginTop: 12, fontSize: 11, fontWeight: 800, color: "#757f8f", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                   Reason <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 600, color: "#565f70" }}>· optional</span>
                   <input
@@ -1374,6 +1455,7 @@ export default function AnsarPage() {
                     placeholder="Sick, travelling, power out…"
                   />
                 </label>
+                ) : null}
               </>
             )}
 
@@ -1391,7 +1473,7 @@ export default function AnsarPage() {
                 onClick={submitOverride}
                 disabled={pin.length !== 4 || overrideBusy || lockedMs > 0}
               >
-                {overrideBusy ? "Working…" : "Unlock"}
+                {overrideBusy ? "Working…" : overrideMode === "verify" ? "Confirm" : "Unlock"}
               </button>
             </div>
           </div>

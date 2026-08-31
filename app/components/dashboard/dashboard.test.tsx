@@ -18,6 +18,8 @@ import { weekdayFixture, weekendFixture } from "../../dashboard/fixtures";
 import type { DashboardHabit } from "../../dashboard/types";
 import type { MatchCentreData } from "../../lib/football/types";
 import { deriveMatchReadiness, groupHabitsByBlock } from "../../dashboard/model";
+import { guidanceFor, noteFor } from "../../dashboard/rowCopy";
+import { requiresParentVerification } from "../../lib/parent-verified";
 
 const FUTURE_ITEMS = ["Habits", "Quests", "Teams", "Leaderboards", "History", "Settings"];
 
@@ -149,15 +151,29 @@ describe("fixtures", () => {
     expect(weekdayFixture.gate.serverTime.timeZone).toBe("Australia/Sydney");
   });
 
-  it("covers every configured weekday habit, journal before the session", () => {
+  /**
+   * The journal's position is the point of this assertion, not incidental to
+   * it: it sits between "Teeth brushed" and "Reading in bed" (Notion Order
+   * 16.5), and it is in Afternoon / Evening rather than Homeschool. A sort that
+   * dropped the fractional order, or a regrouping that sent it back up to
+   * Homeschool, both read as a passing board and a bedtime routine in the wrong
+   * order.
+   */
+  it("covers every configured weekday habit, journal between teeth and reading", () => {
     const grouped = groupHabitsByBlock(weekdayFixture.gate.habits);
     expect(weekdayFixture.gate.habits).toHaveLength(16);
     expect(grouped.pre_homeschool).toHaveLength(7);
-    expect(grouped.homeschool.map(h => h.id)).toEqual(["journal", "homeschool_session"]);
+    expect(grouped.homeschool.map(h => h.id)).toEqual(["homeschool_session"]);
     expect(grouped.afternoon_evening.map(h => h.id)).toEqual([
-      "btn_cornell", "shower", "all_namaz", "room_tidy", "teeth", "reading",
+      "btn_cornell", "shower", "all_namaz", "room_tidy", "teeth", "journal", "reading",
     ]);
     expect(grouped.conditional.map(h => h.id)).toEqual(["soccer_training"]);
+  });
+
+  /** The journal is Mon–Fri in Notion, so a Saturday board must not draw it. */
+  it("drops the weekday-only journal on the weekend", () => {
+    const ids = weekendFixture.gate.habits.map(h => h.id);
+    expect(ids).not.toContain("journal");
   });
 
   /**
@@ -880,20 +896,44 @@ function programme(fixture: typeof weekdayFixture) {
 }
 
 describe("DayProgrammePanel", () => {
-  it("puts the journal first and the session second", () => {
+  /**
+   * The journal's position IS the requirement (tk, 31 Aug): last thing before
+   * reading, straight after teeth. It is asserted against its neighbours rather
+   * than against an index, so the day another evening habit is added the test
+   * still says the thing it was written to say.
+   */
+  it("puts the journal between teeth and reading", () => {
     render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
-    const items = screen.getAllByTestId("homeschool-item");
-    expect(items[0]).toHaveTextContent("Daily learning journal entry written");
-    expect(items[1]).toHaveTextContent("Homeschool session completed");
+    const evening = screen.getAllByTestId("programme-section")[1];
+    const names = within(evening).getAllByRole("button").map(b => b.textContent ?? "");
+    const journal = names.findIndex(n => n.includes("Daily learning journal"));
+    expect(journal).toBeGreaterThan(-1);
+    expect(names[journal - 1]).toContain("Teeth brushed");
+    expect(names[journal + 1]).toContain("Reading in bed");
   });
 
-  it("uses the reference's white-primary and grey-guidance structure for both homeschool rows", () => {
+  it("leaves the session as the only Homeschool row", () => {
     render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
     const items = screen.getAllByTestId("homeschool-item");
-    expect(within(items[0]).getByText("Daily learning journal entry written")).toBeVisible();
-    expect(within(items[0]).getByText("Tap when your journal entry is written")).toBeVisible();
-    expect(within(items[1]).getByText("Homeschool session completed (4 hrs)")).toBeVisible();
-    expect(within(items[1]).getByText("Tap when 4 hours are completed")).toBeVisible();
+    expect(items).toHaveLength(1);
+    expect(items[0]).toHaveTextContent("Homeschool session completed");
+  });
+
+  /**
+   * The guidance line travels with the habit, not with the heading it sits
+   * under. This is what broke silently when the journal moved: the copy used to
+   * live inside HomeschoolSection, so the row arrived in Afternoon / Evening
+   * with no prompt at all. See dashboard/rowCopy.ts.
+   */
+  it("uses the reference's white-primary and grey-guidance structure in both sections", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    const session = screen.getAllByTestId("homeschool-item")[0];
+    expect(within(session).getByText("Homeschool session completed (4 hrs)")).toBeVisible();
+    expect(within(session).getByText("Tap when 4 hours are completed")).toBeVisible();
+
+    const journal = screen.getByTestId("programme-journal");
+    expect(within(journal).getByText("Daily learning journal entry written")).toBeVisible();
+    expect(within(journal).getByText("Tap when your journal entry is written")).toBeVisible();
   });
 
   /**
@@ -902,7 +942,13 @@ describe("DayProgrammePanel", () => {
    * anywhere until a real Tally record is matched against it.
    */
   it("calls a completed journal Recorded and never Verified", () => {
-    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    const grouped = programme(weekdayFixture);
+    // The fixture has the journal LOCKED at 1:45pm — it opens at 9pm with the
+    // rest of the bedtime group — so the DONE state is set here rather than
+    // moving the fixture off the time of day it is meant to depict.
+    const evening = grouped.afternoonEvening.map(h =>
+      h.id === "journal" ? { ...h, state: "DONE" as const } : h);
+    render(<DayProgrammePanel {...grouped} afternoonEvening={evening} {...rowHandlers} />);
     expect(screen.getByText("Recorded")).toBeInTheDocument();
     expect(screen.queryByText("Verified")).not.toBeInTheDocument();
   });
@@ -910,10 +956,10 @@ describe("DayProgrammePanel", () => {
   /** Amendment 8027d53: no configured habit may vanish to protect the layout. */
   it("renders every non-morning habit the day configures", () => {
     render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
-    for (const id of ["btn_cornell", "shower", "all_namaz", "room_tidy", "teeth", "reading", "soccer_training"]) {
+    for (const id of ["btn_cornell", "shower", "all_namaz", "room_tidy", "teeth", "journal", "reading", "soccer_training"]) {
       expect(screen.getByTestId(`programme-${id}`)).toBeInTheDocument();
     }
-    expect(screen.getAllByTestId("homeschool-item")).toHaveLength(2);
+    expect(screen.getAllByTestId("homeschool-item")).toHaveLength(1);
   });
 
   it("orders the subsections Homeschool, Afternoon / Evening, Conditional", () => {
@@ -927,7 +973,7 @@ describe("DayProgrammePanel", () => {
     const evening = screen.getAllByTestId("programme-section")[1];
     const names = within(evening).getAllByRole("button").map(b => b.textContent ?? "");
     expect(names[0]).toContain("BTN episode");
-    expect(names[5]).toContain("Reading in bed");
+    expect(names[6]).toContain("Reading in bed");
   });
 
   /* ── Weekend: only Homeschool goes ────────────────────────────────────────*/
@@ -969,14 +1015,16 @@ describe("DayProgrammePanel", () => {
     render(<DayProgrammePanel {...programme(weekdayFixture)}
       onTick={id => ticks.push(id)} onHoldStart={noop} onHoldCancel={noop} />);
     fireEvent.click(within(screen.getByTestId("programme-soccer_training")).getByRole("button"));
-    fireEvent.click(screen.getAllByTestId("homeschool-item")[1].querySelector("button")!);
+    fireEvent.click(screen.getAllByTestId("homeschool-item")[0].querySelector("button")!);
     expect(ticks).toEqual(["soccer_training", "homeschool_session"]);
   });
 
   it("summarises completion across the whole programme", () => {
     render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
-    // Weekday fixture: journal DONE, session LIVE, six evening rows, soccer LIVE.
-    expect(screen.getByText("1/9")).toBeVisible();
+    // Weekday fixture at 1:45pm: session LIVE, seven evening rows (the journal
+    // among them, LOCKED until 9pm), soccer LIVE. Nothing in the programme is
+    // done yet — the morning is the block with completions at this hour.
+    expect(screen.getByText("0/9")).toBeVisible();
   });
 
   it("renders nothing when the day configures no programme at all", () => {
@@ -991,11 +1039,33 @@ describe("DayProgrammePanel", () => {
     expect(screen.getByRole("heading", { name: "Today's Programme" })).toBeInTheDocument();
   });
 
+  /**
+   * BTN's Cornell notes are checked by a parent, so the row says so before it is
+   * tapped rather than surprising the tapper with a keypad. Once it is DONE the
+   * marker goes: at that point it describes how the tick was made, not anything
+   * still to do, and these rows have to stay one line.
+   */
+  it("marks the parent-verified row so the PIN prompt is not a surprise", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    const btn = screen.getByTestId("programme-btn_cornell");
+    expect(within(btn).getByText("Parent PIN")).toBeVisible();
+    expect(within(btn).getByText("A parent enters the PIN once the notes are checked")).toBeVisible();
+  });
+
+  it("drops the Parent PIN marker once the row is done", () => {
+    const grouped = programme(weekdayFixture);
+    const evening = grouped.afternoonEvening.map(h =>
+      h.id === "btn_cornell" ? { ...h, state: "DONE" as const } : h);
+    render(<DayProgrammePanel {...grouped} afternoonEvening={evening} {...rowHandlers} />);
+    expect(within(screen.getByTestId("programme-btn_cornell")).queryByText("Parent PIN"))
+      .not.toBeInTheDocument();
+  });
+
   it("marks an overridden journal without claiming it was earned", () => {
     const grouped = programme(weekdayFixture);
-    const overridden = grouped.homeschool.map(h =>
-      h.id === "journal" ? { ...h, overridden: true } : h);
-    render(<DayProgrammePanel {...grouped} homeschool={overridden} {...rowHandlers} />);
+    const overridden = grouped.afternoonEvening.map(h =>
+      h.id === "journal" ? { ...h, state: "DONE" as const, overridden: true } : h);
+    render(<DayProgrammePanel {...grouped} afternoonEvening={overridden} {...rowHandlers} />);
     expect(screen.getByText("Parent override")).toBeVisible();
     expect(screen.queryByText("Recorded")).not.toBeInTheDocument();
     expect(screen.queryByText("Verified")).not.toBeInTheDocument();
@@ -1419,5 +1489,73 @@ describe("visual parity contracts", () => {
       <HabitRow habit={session} accent="var(--cyan)" {...rowHandlers} /></>);
     expect(screen.getByRole("button", { name: journal.name })).toHaveAttribute("data-emphasis", "journal");
     expect(screen.getByRole("button", { name: session.name })).toHaveAttribute("data-emphasis", "homeschool");
+  });
+});
+
+/* ── Parent sign-off ────────────────────────────────────────────────────────*/
+
+/**
+ * The list of habits a parent must sign off lives in lib/parent-verified.ts and
+ * is read by BOTH /api/tick (which enforces it) and app/page.tsx (which decides
+ * which taps open the keypad). These assertions are about the SHARED list, not
+ * about either consumer: a second, drifting copy is how the board ends up
+ * posting a tick the server will refuse — or tapping straight through a habit
+ * the server still expects a PIN for.
+ */
+describe("parent verification", () => {
+  it("requires the parent PIN for BTN", () => {
+    expect(requiresParentVerification("btn_cornell")).toBe(true);
+  });
+
+  /** Everything else stays a plain tap. A creeping list is a board nobody uses. */
+  it("leaves every other habit tappable without a PIN", () => {
+    for (const id of ["journal", "reading", "teeth", "homeschool_session", "quran", "all_namaz"]) {
+      expect(requiresParentVerification(id)).toBe(false);
+    }
+  });
+
+  it("keeps the fixture in step with the list", () => {
+    for (const h of weekdayFixture.gate.habits) {
+      expect(noteFor({ ...h, parentVerifyRequired: requiresParentVerification(h.id) }) === "Parent PIN")
+        .toBe(requiresParentVerification(h.id) && h.state !== "DONE");
+    }
+  });
+});
+
+/* ── Row copy travels with the habit ────────────────────────────────────────*/
+
+describe("rowCopy", () => {
+  const row = (over: Partial<DashboardHabit>): DashboardHabit => ({
+    id: "journal", name: "Daily learning journal entry written",
+    block: "afternoon_evening", order: 16.5, points: 0,
+    pointType: "perfect_day_only", state: "LIVE", label: "", message: null,
+    reason: null, window: "21:00–21:30", dwellSeconds: null, overridden: false,
+    ...over,
+  });
+
+  /**
+   * The regression this file was created for. The journal's guidance and its
+   * "Recorded" caption used to be keyed to the Homeschool SECTION, so moving the
+   * row to Afternoon / Evening dropped both without failing anything.
+   */
+  it("keeps the journal's words with it in any block", () => {
+    expect(guidanceFor(row({ block: "afternoon_evening" })))
+      .toBe("Tap when your journal entry is written");
+    expect(guidanceFor(row({ block: "homeschool", order: 7.5 })))
+      .toBe("Tap when your journal entry is written");
+  });
+
+  it("calls a ticked journal Recorded, never Verified", () => {
+    expect(noteFor(row({ state: "DONE" }))).toBe("Recorded");
+  });
+
+  /** The gold badge already says "Parent override"; saying it twice blurs it. */
+  it("leaves an overridden journal to the audit badge alone", () => {
+    expect(noteFor(row({ state: "DONE", overridden: true }))).toBeUndefined();
+  });
+
+  it("says nothing about a journal that is not written yet", () => {
+    expect(noteFor(row({ state: "LOCKED" }))).toBeUndefined();
+    expect(noteFor(row({ state: "MISSED" }))).toBeUndefined();
   });
 });
