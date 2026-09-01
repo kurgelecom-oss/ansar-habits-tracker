@@ -21,7 +21,7 @@ export const JOURNAL_ID = "journal";
 
 /** The small line under a habit's name. Absent for rows that need no prompt. */
 const GUIDANCE: Record<string, string> = {
-  journal: "Tap when your journal entry is written",
+  journal: "Write it in Log Work, then tap here",
   homeschool_session: "Tap when 4 hours are completed",
   btn_cornell: "A parent enters the PIN once the notes are checked",
 };
@@ -33,20 +33,26 @@ export function guidanceFor(habit: DashboardHabit): string | undefined {
 /**
  * The caption beside the row.
  *
- * "Recorded", never "Verified". A ticked journal is Ansar's own word for it and
- * nothing here reads a Tally record to check — spec §5 and §10.3 forbid
- * describing a self-certified tick in the language of evidence. An OVERRIDDEN
- * journal gets no caption: HabitRow's gold badge already says "Parent override"
- * and saying it twice only blurs what it means.
+ * "Verified" ONLY WHEN A TALLY SUBMISSION SAYS SO. Spec §5 and §10.3 forbid
+ * describing a self-certified tick in the language of evidence, so the two
+ * captions stay two different words for two different facts: "Recorded" is
+ * Ansar's own word for it, "Verified ✓" means the journal was found on the form.
+ * `tallyVerified` defaults to false, so a caller that does not pass the evidence
+ * gets the modest caption rather than the flattering one.
+ *
+ * An OVERRIDDEN journal gets no caption: HabitRow's gold badge already says
+ * "Parent override" and saying it twice only blurs what it means.
  *
  * "Parent PIN" marks a row that will ask for the PIN when tapped, so the keypad
  * is never a surprise. It is dropped once the row is DONE — at that point it
  * would describe how the tick was made rather than anything still to do, and the
  * daily rows have to stay one line.
  */
-export function noteFor(habit: DashboardHabit): string | undefined {
-  if (habit.id === JOURNAL_ID && journalEvidenceState(habit) === "RECORDED") {
-    return "Recorded";
+export function noteFor(habit: DashboardHabit, tallyVerified = false): string | undefined {
+  if (habit.id === JOURNAL_ID) {
+    const state = journalEvidenceState(habit, tallyVerified);
+    if (state === "VERIFIED") return "Verified ✓";
+    if (state === "RECORDED") return "Recorded";
   }
   if (habit.parentVerifyRequired && habit.state !== "DONE") return "Parent PIN";
   return undefined;

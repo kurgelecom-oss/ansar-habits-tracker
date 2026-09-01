@@ -216,12 +216,35 @@ describe("journalEvidenceState", () => {
   });
 
   /**
-   * The whole point of this function. A self-certified tick is RECORDED, never
-   * VERIFIED — nothing in this plan matches a Tally journal entry, so claiming
-   * verification would be a lie the spec explicitly forbids.
+   * The whole point of this function. A self-certified tick is RECORDED. Only a
+   * matching Tally journal submission — passed in, never assumed — makes it
+   * VERIFIED, because the spec forbids describing a tick in the language of
+   * evidence.
    */
-  it("calls a completed journal RECORDED, never VERIFIED", () => {
+  it("calls a completed journal RECORDED without evidence", () => {
     expect(journalEvidenceState(journal({ state: "DONE" }))).toBe("RECORDED");
+    expect(journalEvidenceState(journal({ state: "DONE" }), false)).toBe("RECORDED");
+  });
+
+  it("calls a completed journal VERIFIED once Tally evidence is supplied", () => {
+    expect(journalEvidenceState(journal({ state: "DONE" }), true)).toBe("VERIFIED");
+  });
+
+  /**
+   * Evidence is not a completion. A journal submitted on the form but never
+   * ticked on the board is still MISSING — gate 6 unlocks the row, it does not
+   * press it, and a state that claimed otherwise would score 20 points for a
+   * habit nobody marked done.
+   */
+  it.each(["LIVE", "LOCKED", "MISSED"] as const)(
+    "stays MISSING while %s even with Tally evidence", state => {
+      expect(journalEvidenceState(journal({ state }), true)).toBe("MISSING");
+    });
+
+  /** A parent restoration is its own answer, and it outranks the evidence. */
+  it("still reports OVERRIDE when evidence also exists", () => {
+    expect(journalEvidenceState(journal({ state: "DONE", overridden: true }), true))
+      .toBe("OVERRIDE");
   });
 
   it("distinguishes a parent override from an earned entry", () => {
@@ -232,7 +255,13 @@ describe("journalEvidenceState", () => {
     expect(journalEvidenceState(journal({ state }))).toBe("MISSING");
   });
 
-  it("never returns VERIFIED for any state this plan can produce", () => {
+  /**
+   * The default is the safe one. Every call site that has not been taught to
+   * thread the evidence through degrades to the modest answer rather than to
+   * the flattering one — which is what keeps a forgotten prop from quietly
+   * awarding 20 points instead of 10.
+   */
+  it("never returns VERIFIED when the evidence argument is omitted", () => {
     const states = ["DONE", "LIVE", "LOCKED", "MISSED"] as const;
     for (const state of states) {
       for (const overridden of [true, false]) {

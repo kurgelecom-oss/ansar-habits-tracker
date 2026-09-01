@@ -74,9 +74,10 @@ export type HabitBlockGroups =
  * How much evidence stands behind today's journal.
  *
  * `RECORDED` and `VERIFIED` are deliberately different values because the spec
- * forbids calling a self-certified tick "Verified". Nothing in this plan may
- * produce `VERIFIED`; the state exists so the future Tally-matching phase has
- * somewhere to put a real answer rather than redefining `RECORDED`.
+ * forbids calling a self-certified tick "Verified". `VERIFIED` is now produced,
+ * and only by the Tally match: /api/tick reads the form server-side and reports
+ * `journalEvidence.found`, and model.ts turns a DONE tick plus that flag into
+ * `VERIFIED`. A tick on its own is still `RECORDED`, exactly as before.
  */
 export type JournalEvidenceState =
   | "NOT_REQUIRED" | "MISSING" | "RECORDED" | "VERIFIED" | "OVERRIDE";
@@ -100,6 +101,21 @@ export type DashboardGate = {
   warnings: string[];
   habits: DashboardHabit[];
   defaultDwellSeconds?: number;
+  /**
+   * Today's journal evidence, from lib/tally.ts via /api/tick.
+   *
+   * Optional so a response from an older deploy still parses; absent reads as
+   * "no evidence", which errs toward RECORDED rather than toward claiming a
+   * verification that was never checked. `error` being non-null means `found`
+   * is meaningless — Tally could not be reached — and must not be read as a
+   * negative answer.
+   */
+  journalEvidence?: {
+    configured: boolean;
+    found: boolean;
+    submittedAt: string | null;
+    error: string | null;
+  };
 };
 
 /** /api/stretch. Rendered verbatim — the panel computes none of these. */

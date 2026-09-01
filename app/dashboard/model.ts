@@ -106,9 +106,12 @@ export function getTier(points: number): Tier {
  * Weights: morning 40, homeschool 30, journal 20, work 10.
  *
  * The journal earns half credit at RECORDED because a self-certified tick is
- * not evidence. Only VERIFIED — which nothing in this plan produces — earns
- * full credit. NOT_REQUIRED also credits in full: on a weekend there is no
- * journal to write, and an absent obligation must not read as a failure.
+ * not evidence. Only VERIFIED earns full credit — a tick with a matching Tally
+ * journal submission standing behind it. That state used to be unreachable and
+ * is now produced by journalEvidenceState() below; the 20-vs-10 split is the
+ * whole reward for writing the thing rather than only ticking it.
+ * NOT_REQUIRED also credits in full: on a weekend there is no journal to write,
+ * and an absent obligation must not read as a failure.
  *
  * The result is clamped to 0..100. The weights sum to exactly 100, so anything
  * outside that range means the inputs disagreed with themselves — more habits
@@ -138,19 +141,27 @@ export function deriveMatchReadiness(input: ReadinessInput): MatchReadiness {
 /**
  * How much evidence stands behind today's journal.
  *
- * RECORDED, NEVER VERIFIED. A ticked journal is the child's own word for it,
- * and nothing in this plan reads a Tally record to check. Spec §10.3 and §13
- * are explicit that the two must not be described in the same language, so the
- * VERIFIED branch is deliberately unreachable here — it exists in the type for
- * the future evidence-matching phase to fill in, not for this one to claim.
+ * RECORDED AND VERIFIED ARE STILL DIFFERENT WORDS, and this is the function
+ * that finally earns the second one. Spec §10.3 and §13 forbid describing a
+ * self-certified tick in the language of evidence, so VERIFIED requires a
+ * SECOND, INDEPENDENT record: a matching "Daily Journal" submission on the
+ * Tally form, read server-side by lib/tally.ts and reported by /api/tick as
+ * `journalEvidence.found`. A tick alone is still only RECORDED.
  *
- * An override is its own answer rather than a kind of completion: a parent
- * restored it, and the board says so.
+ * `tallyVerified` DEFAULTS TO FALSE, which is what keeps that honest. A caller
+ * that has not been given the evidence cannot accidentally claim it, and every
+ * call site that forgets to thread it through degrades to the old, more modest
+ * answer rather than to the flattering one.
+ *
+ * An override outranks both: a parent restored it, and the board says so rather
+ * than dressing a restoration up as either kind of completion.
  */
 export function journalEvidenceState(
   journal: DashboardHabit | undefined,
+  tallyVerified = false,
 ): JournalEvidenceState {
   if (!journal) return "NOT_REQUIRED";
   if (journal.overridden) return "OVERRIDE";
-  return journal.state === "DONE" ? "RECORDED" : "MISSING";
+  if (journal.state !== "DONE") return "MISSING";
+  return tallyVerified ? "VERIFIED" : "RECORDED";
 }

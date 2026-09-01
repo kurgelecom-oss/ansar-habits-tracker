@@ -958,7 +958,7 @@ describe("DayProgrammePanel", () => {
 
     const journal = screen.getByTestId("programme-journal");
     expect(within(journal).getByText("Daily learning journal entry written")).toBeVisible();
-    expect(within(journal).getByText("Tap when your journal entry is written")).toBeVisible();
+    expect(within(journal).getByText("Write it in Log Work, then tap here")).toBeVisible();
   });
 
   /**
@@ -1565,13 +1565,28 @@ describe("rowCopy", () => {
    */
   it("keeps the journal's words with it in any block", () => {
     expect(guidanceFor(row({ block: "afternoon_evening" })))
-      .toBe("Tap when your journal entry is written");
+      .toBe("Write it in Log Work, then tap here");
     expect(guidanceFor(row({ block: "homeschool", order: 7.5 })))
-      .toBe("Tap when your journal entry is written");
+      .toBe("Write it in Log Work, then tap here");
   });
 
-  it("calls a ticked journal Recorded, never Verified", () => {
+  /**
+   * "Verified" is a claim about evidence, and the caller has to produce the
+   * evidence to make it. A tick alone is still the child's own word.
+   */
+  it("calls a ticked journal Recorded until Tally says otherwise", () => {
     expect(noteFor(row({ state: "DONE" }))).toBe("Recorded");
+    expect(noteFor(row({ state: "DONE" }), false)).toBe("Recorded");
+  });
+
+  it("calls a ticked journal Verified once a Tally submission stands behind it", () => {
+    expect(noteFor(row({ state: "DONE" }), true)).toBe("Verified ✓");
+  });
+
+  /** Evidence does not manufacture a completion — the row still has to be ticked. */
+  it("says nothing about an unticked journal even with a Tally submission", () => {
+    expect(noteFor(row({ state: "LIVE" }), true)).toBeUndefined();
+    expect(noteFor(row({ state: "LOCKED" }), true)).toBeUndefined();
   });
 
   /** The gold badge already says "Parent override"; saying it twice blurs it. */

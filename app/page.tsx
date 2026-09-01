@@ -104,9 +104,20 @@ const STRETCH_DAILY_REDEEM_CAP_MIN = 75;
 const STRETCH_SPEND_STEP_MIN = 10;
 
 // ── LOG WORK ────────────────────────────────────────────────────────────────
-// Tally intake form, opened in a modal so Ansar never leaves the board. Purely
-// additive: nothing here reads or writes points, tiers, streak, screen time or
-// the Stretch Wallet. `TALLY_ORIGIN` is the postMessage allow-list of one.
+// Tally intake form, opened in a modal so Ansar never leaves the board. It
+// still reads and writes no points, tier, streak, screen time or wallet — but
+// it is no longer inert: a "Daily Journal" submission on THIS form is what
+// unlocks the journal row (gate 6 in /api/tick) and what promotes a ticked
+// journal from "Recorded" to "Verified ✓". `TALLY_ORIGIN` is the postMessage
+// allow-list of one.
+//
+// THE FORM ID IS WRITTEN DOWN TWICE, deliberately: here and as FORM_ID in
+// app/lib/tally.ts. This file is a client component and that module holds the
+// server-side reader and the API key it uses, so importing one into the other
+// would pull the reader into the browser bundle to save a string. If the form
+// is ever replaced, both must move together — the failure otherwise is a board
+// that embeds one form and gates on another, which looks like "the gate is
+// broken" rather than like a typo.
 const TALLY_ORIGIN = "https://tally.so";
 const TALLY_EMBED_JS = `${TALLY_ORIGIN}/widgets/embed.js`;
 const TALLY_FORM_SRC = `${TALLY_ORIGIN}/embed/ODKlVa?alignLeft=1&hideTitle=1&dynamicHeight=1`;
@@ -145,6 +156,15 @@ type GateSnapshot = {
   // rather than a literal 90 so that retuning the dwell in Notion moves the
   // warning at the same moment it moves gateDwell().
   defaultDwellSeconds?: number;
+  /* Today's journal evidence, read server-side from the Tally form. Optional so
+     a response from an older deploy still parses; absent reads as "no evidence",
+     which errs toward "Recorded" rather than claiming a verification nobody
+     checked. `error` non-null means Tally was unreachable and `found` says
+     nothing — it must never be read as a negative answer. */
+  journalEvidence?: {
+    configured: boolean; found: boolean;
+    submittedAt: string | null; error: string | null;
+  };
 };
 
 /**
@@ -324,9 +344,15 @@ export default function AnsarPage() {
   // reached, `gate` stays null and every button renders non-tappable, because a
   // board that guesses LIVE while the server is unreachable is a board that
   // teaches Ansar to tap and hope.
-  const loadGate = useCallback(async () => {
+  const loadGate = useCallback(async (fresh = false) => {
     try {
-      const res = await fetch("/api/tick", { cache: "no-store" });
+      // `fresh` reaches the route as ?fresh=1, which bypasses BOTH server-side
+      // memos — Notion's five minutes and the Tally reader's thirty seconds. It
+      // is used on exactly one path: the moment Tally reports a submission, so
+      // the journal row unlocks while the child is still looking at it rather
+      // than up to half a minute later. The ordinary 30-second poll stays
+      // cached, because a fresh read on every poll is a Notion query every 30s.
+      const res = await fetch(fresh ? "/api/tick?fresh=1" : "/api/tick", { cache: "no-store" });
       if (!res.ok) { setOnline(false); return; }
       const snap = (await res.json()) as GateSnapshot;
       if (snap?.ok) {
@@ -597,11 +623,23 @@ export default function AnsarPage() {
       if (typeof payload === "string") {
         try { payload = JSON.parse(payload); } catch { return; }
       }
-      if ((payload as { event?: string } | null)?.event === "Tally.FormSubmitted") setLogSaved(true);
+      if ((payload as { event?: string } | null)?.event === "Tally.FormSubmitted") {
+        setLogSaved(true);
+        /* Re-read the gates, bypassing the Tally memo. If that submission was
+           the daily journal, gate 6 has just stopped refusing the journal row —
+           and the whole design rests on the child seeing that happen. Without
+           this the row stays LOCKED for up to one 30-second poll after the form
+           they just filled in, which reads as "it didn't work". Harmless for the
+           other two submission kinds: nothing else on the board turns on it. */
+        void loadGate(true);
+      }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [logOpen]);
+    // loadGate is a stable useCallback with no deps of its own, so naming it
+    // here re-subscribes nothing — it only keeps exhaustive-deps honest now
+    // that the listener calls it.
+  }, [logOpen, loadGate]);
 
   useEffect(() => {
     if (!logSaved) return;
@@ -1157,16 +1195,33 @@ export default function AnsarPage() {
    */
   const journalRow = HABIT_BLOCKS.flatMap(b => rowsFor(b)).find(h => h.id === "journal");
   /**
+   * Does a real Tally journal submission stand behind today's journal?
+   *
+   * READ FROM THE SERVER, NEVER COMPUTED HERE. /api/tick holds the API key and
+   * does the matching; this is the answer, not a second opinion about it.
+   *
+   * Both guards matter and neither is redundant. `error` non-null means Tally
+   * could not be reached, and `found` is then false for a reason that has
+   * nothing to do with whether a journal exists — treating that as "not
+   * verified" would silently downgrade a real journal to half credit on an
+   * outage. `found` alone is the positive answer. An older deploy that returns
+   * no journalEvidence at all lands on false, which is the modest answer.
+   */
+  const journalVerified =
+    gate?.journalEvidence?.error == null && gate?.journalEvidence?.found === true;
+
+  /**
    * Match Readiness — a DISPLAY summary of today's learning state, never a
    * football result and never an input to a gate. workSubmissionCount is 0
-   * because nothing in this app counts Tally submissions yet; claiming a
-   * number here would be inventing evidence.
+   * because nothing in this app counts Tally WORK submissions yet; the journal
+   * is counted (above) because /api/tick now matches that one specifically, and
+   * claiming a number for the rest would still be inventing evidence.
    */
   const readiness = deriveMatchReadiness({
     morningDone: morningRows.filter(h => h.state === "DONE").length,
     morningTotal: morningRows.length,
     homeschoolDone: homeschoolRows.some(h => h.id === "homeschool_session" && h.state === "DONE"),
-    journalState: journalEvidenceState(journalRow),
+    journalState: journalEvidenceState(journalRow, journalVerified),
     workSubmissionCount: 0,
   });
 
@@ -1300,6 +1355,7 @@ export default function AnsarPage() {
           homeschool={homeschoolRows}
           afternoonEvening={rowsFor("afternoon_evening")}
           conditional={rowsFor("conditional")}
+          journalVerified={journalVerified}
           savingId={saving}
           holdId={holdId}
           onTick={tick}

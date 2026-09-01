@@ -34,6 +34,15 @@ type DayProgrammePanelProps = {
   homeschool: DashboardHabit[];
   afternoonEvening: DashboardHabit[];
   conditional: DashboardHabit[];
+  /**
+   * Does a matching Tally journal submission stand behind today's journal tick?
+   *
+   * Passed down rather than fetched here: /api/tick is the one place that reads
+   * the form, and a component that fetched its own copy would be a second
+   * opinion about the same fact. Defaults to false, so the caption degrades to
+   * "Recorded" rather than claiming a verification nobody checked.
+   */
+  journalVerified?: boolean;
   savingId?: string | null;
   holdId?: string | null;
   onTick: (id: string, name: string) => void;
@@ -42,7 +51,7 @@ type DayProgrammePanelProps = {
 };
 
 export default function DayProgrammePanel({
-  homeschool, afternoonEvening, conditional,
+  homeschool, afternoonEvening, conditional, journalVerified = false,
   savingId = null, holdId = null, onTick, onHoldStart, onHoldCancel,
 }: DayProgrammePanelProps) {
   const all = [...homeschool, ...afternoonEvening, ...conditional];
@@ -60,9 +69,11 @@ export default function DayProgrammePanel({
           saving={savingId === habit.id}
           holding={holdId === habit.id}
           // Same source the Homeschool subsection reads. The journal's
-          // "Recorded" caption and BTN's "Parent PIN" marker have to render
-          // here now that both habits live in this section.
-          note={noteFor(habit)}
+          // "Recorded"/"Verified ✓" caption and BTN's "Parent PIN" marker have
+          // to render here now that both habits live in this section — and the
+          // journal is filed in Afternoon / Evening, so THIS is the call that
+          // actually draws it.
+          note={noteFor(habit, journalVerified)}
           description={guidanceFor(habit)}
           onTick={onTick}
           onHoldStart={onHoldStart}
@@ -106,6 +117,9 @@ export default function DayProgrammePanel({
           <h3 className={styles.programmeSectionTitle}>📚 Homeschool</h3>
           <HomeschoolSection
             habits={homeschool}
+            // Handed on rather than assumed absent: the journal has lived in
+            // Homeschool before and Notion can move it back at any time.
+            journalVerified={journalVerified}
             savingId={savingId}
             holdId={holdId}
             onTick={onTick}

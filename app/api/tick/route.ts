@@ -49,6 +49,8 @@ import { isPrerequisite } from "../../lib/days";
 import { requiresParentVerification } from "../../lib/parent-verified";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
 import { lockoutState, recordFailure, clearFailures, lockoutBackend, LOCKOUT_MAX_FAILURES } from "../../lib/pin-lockout";
+import { getJournalEvidence, type JournalEvidence } from "../../lib/tally";
+import { evidenceRefusal, evidenceWarnings } from "../../lib/evidence-gate";
 
 // Never prerendered, never cached: the answer depends on the current second.
 export const dynamic = "force-dynamic";
@@ -167,6 +169,19 @@ function gatePrerequisite(
   return { reason: "journal_required", message: `Do “${blocking.name}” first` };
 }
 
+/* ── GATE 6 — EVIDENCE ───────────────────────────────────────────────────────
+   Lives in lib/evidence-gate.ts, not here, for the same two reasons gate 5's
+   habit list would if it had one: a route.ts may export only Next's own route
+   fields, so a gate declared inside one cannot be unit-tested without going
+   through HTTP — and the list of habits that need outside evidence belongs in
+   code beside lib/parent-verified.ts, which has exactly this shape.
+
+   It is the LOWEST-PRECEDENCE gate in both the GET and the POST below: it
+   speaks only once every other gate has allowed the tick. At 7am "Opens 9pm" is
+   the useful sentence even with no journal written; at 21:10 with teeth still
+   unticked, "Do 'Teeth brushed' first" is the next action. "Write your journal
+   in Log Work first" is right only when the row is otherwise ready to tap. */
+
 /**
  * Today's context, plus the RICH habit rows it was built from.
  *
@@ -175,10 +190,12 @@ function gatePrerequisite(
  * objects at runtime (habitsForDay returns them), so this hands both views back
  * rather than casting the narrow one back up somewhere less visible.
  */
-async function loadContext(fresh: boolean): Promise<{ ctx: GateContext; habits: Habit[] }> {
+async function loadContext(
+  fresh: boolean,
+): Promise<{ ctx: GateContext; habits: Habit[]; evidence: JournalEvidence }> {
   const now = sydneyNow();                       // ← the server's own clock
 
-  const [habitsAll, settings] = await Promise.all([
+  const [habitsAll, settings, evidence] = await Promise.all([
     getHabits(fresh).then(h => { lastHabitsError = null; return h; }).catch((e: unknown) => {
       // The message is Notion's status line ("Notion <id>: 401 Unauthorized") or
       // "Missing NOTION_TOKEN". Neither contains the token itself.
@@ -186,6 +203,11 @@ async function loadContext(fresh: boolean): Promise<{ ctx: GateContext; habits: 
       return [] as Awaited<ReturnType<typeof getHabits>>;
     }),
     getSettings(fresh).catch(() => SETTINGS_FALLBACK),
+    // Never throws — a failure comes back as { found: false, error }, and gate 6
+    // reads the error rather than the false. No catch here would be a lie about
+    // which of the two happened. `fresh` rides along so the board's post-submit
+    // refetch and the POST's pre-refusal re-check both bypass the 30s memo.
+    getJournalEvidence(now.date, fresh),
   ]);
   const habits = habitsForDay(habitsAll, now.weekday);
 
@@ -208,6 +230,10 @@ async function loadContext(fresh: boolean): Promise<{ ctx: GateContext; habits: 
       habitsLoaded: lastHabitsError === null,
     },
     habits,
+    // Deliberately NOT folded into GateContext. That interface is the frozen
+    // four-gate contract; gate 5 kept `pointType` out of it for the same reason
+    // and takes the rich rows separately.
+    evidence,
   };
 }
 
@@ -217,7 +243,7 @@ export async function GET(request: Request) {
   const fresh = new URL(request.url).searchParams.get("fresh") === "1";
   try {
     const now = sydneyNow();
-    const { ctx, habits: richHabits } = await loadContext(fresh);
+    const { ctx, habits: richHabits, evidence } = await loadContext(fresh);
 
     let lock = { remainingMs: 0, failures: 0 };
     let lockBackend: string | null = null;
@@ -294,7 +320,20 @@ export async function GET(request: Request) {
       // have said "configured" while every write still 503'd. Test the value,
       // never the key's existence.
       defaultDwellSeconds: ctx.defaultDwellSeconds,
-      warnings: windowWarnings(ctx.habits),
+      /* Today's journal evidence, verbatim from lib/tally.ts. The board reads
+         `found` to decide whether a DONE journal is RECORDED or VERIFIED — the
+         one place the VERIFIED state reserved in dashboard/types.ts is produced.
+         It is REPORTED here, never decided here: the gate above already had its
+         say, and a second opinion computed on the client is how the caption and
+         the button end up disagreeing about the same fact. */
+      journalEvidence: evidence,
+      // A silent gate 6 is worth saying out loud, exactly as an unparseable
+      // window is. Both live in the same array because both mean the same
+      // thing to whoever reads it: a habit is less gated than it looks.
+      warnings: [
+        ...windowWarnings(ctx.habits),
+        ...evidenceWarnings(ctx.habits.map(h => h.id), evidence),
+      ],
       habits: richHabits.map(h => {
         const verdict = evaluateGates(h, ctx, ctx.serverDate);
         let state: string = buttonState(h, ctx);
@@ -317,6 +356,21 @@ export async function GET(request: Request) {
           label = prereq.message;
           reason = prereq.reason;
           message = prereq.message;
+        }
+
+        /* Gate 6, last word and lowest precedence — it speaks only when nothing
+           else refused. At 7am "Opens 9pm" is the useful sentence even with no
+           journal written; at 21:10 with teeth still unticked, "Do 'Teeth
+           brushed' first" is the next action. "Write your journal in Log Work
+           first" is right only once the row is otherwise ready to tap, and that
+           is exactly the LIVE case. Same precedence the POST applies, so the
+           button the board draws and the answer a tap gets cannot disagree. */
+        const ev = evidenceRefusal(h.id, evidence);
+        if (ev && state === "LIVE") {
+          state = "LOCKED";
+          label = ev.message;
+          reason = ev.reason;
+          message = ev.message;
         }
 
         return {
@@ -415,8 +469,9 @@ export async function POST(request: Request) {
 
   let ctx: GateContext;
   let richHabits: Habit[];
+  let evidence: JournalEvidence;
   try {
-    ({ ctx, habits: richHabits } = await loadContext(false));
+    ({ ctx, habits: richHabits, evidence } = await loadContext(false));
   } catch (err) {
     return NextResponse.json(
       { ok: false, reason: "unavailable", message: err instanceof Error ? err.message : "load failed" },
@@ -497,6 +552,20 @@ export async function POST(request: Request) {
        the more useful answer at 7am, whatever else is also unfinished. */
     const prereq = gatePrerequisite(habit, richHabits, ctx);
     if (prereq && (!refusal || refusal.reason === "out_of_order")) refusal = prereq;
+
+    /* Gate 6 — evidence. Lowest precedence: it speaks only when every other gate
+       has already allowed the tick, which matches what the GET diagnostic drew.
+
+       IT RE-READS BEFORE IT REFUSES. loadContext used the 30-second memo, and
+       the tap that matters most is the one that arrives seconds after the form
+       was submitted in the Log Work modal. Refusing a journal that exists,
+       because the answer was half a minute old, would be the one bug certain to
+       get this whole gate switched off. One extra request, only on the path
+       that is about to say no. */
+    if (!refusal && evidenceRefusal(habitId, evidence)) {
+      const rechecked = evidenceRefusal(habitId, await getJournalEvidence(ctx.serverDate, true));
+      if (rechecked) refusal = rechecked;
+    }
 
     if (refusal) {
       await logRejection({

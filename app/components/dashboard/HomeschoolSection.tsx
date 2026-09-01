@@ -18,6 +18,15 @@ import styles from "./dashboard.module.css";
  */
 type HomeschoolSectionProps = {
   habits: DashboardHabit[];
+  /**
+   * Does a matching Tally journal submission stand behind today's journal tick?
+   *
+   * Passed down rather than fetched here: /api/tick is the one place that reads
+   * the form, and a component that fetched its own copy would be a second
+   * opinion about the same fact. Defaults to false, so the caption degrades to
+   * "Recorded" rather than claiming a verification nobody checked.
+   */
+  journalVerified?: boolean;
   savingId?: string | null;
   holdId?: string | null;
   onTick: (id: string, name: string) => void;
@@ -26,7 +35,8 @@ type HomeschoolSectionProps = {
 };
 
 export default function HomeschoolSection({
-  habits, savingId = null, holdId = null, onTick, onHoldStart, onHoldCancel,
+  habits, journalVerified = false,
+  savingId = null, holdId = null, onTick, onHoldStart, onHoldCancel,
 }: HomeschoolSectionProps) {
   if (habits.length === 0) return null;
 
@@ -40,7 +50,7 @@ export default function HomeschoolSection({
             icon={HABIT_ICONS[habit.id] ?? DEFAULT_ICON}
             saving={savingId === habit.id}
             holding={holdId === habit.id}
-            note={noteFor(habit)}
+            note={noteFor(habit, journalVerified)}
             description={guidanceFor(habit)}
             onTick={onTick}
             onHoldStart={onHoldStart}
