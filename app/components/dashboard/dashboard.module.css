@@ -1902,3 +1902,25 @@
   .sheetTitle { font-size: 18px; }
   .sheetDetail { font-size: 15px; }
 }
+
+/* The sheet's section labels and the standing subject guide under the task. */
+.sheetLabel {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.sheetLabel + .sheetDetail { margin-bottom: 24px; }
+.sheetGuide {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ansar-subtext);
+}
+.sheetGuide li::marker { color: var(--cyan); }

@@ -22,7 +22,11 @@ import styles from "./dashboard.module.css";
  * explainer is the only thing being read, without becoming a second page.
  */
 
-type Subject = { id: string; name: string; duration: string | null; detail: string };
+type Subject = {
+  id: string; name: string; duration: string | null; detail: string;
+  /** Standing notes from the week page's 📚 Subject Guides. May be empty. */
+  guide?: string[];
+};
 
 type SchoolDay = {
   ok: boolean;
@@ -145,7 +149,21 @@ export default function SchoolProgramme({ day = null }: { day?: string | null })
             </header>
 
             <div className={styles.sheetBody}>
+              <h3 className={styles.sheetLabel}>Today&apos;s task</h3>
               <p className={styles.sheetDetail}>{open.detail}</p>
+
+              {/* The standing guide, when the week page carries one. A day's
+                  task is often a single line — this is the context around it,
+                  and it comes from the SAME page, so it can never drift out of
+                  step with what he is actually being asked to do. */}
+              {open.guide && open.guide.length > 0 && (
+                <>
+                  <h3 className={styles.sheetLabel}>How this subject works</h3>
+                  <ul className={styles.sheetGuide}>
+                    {open.guide.map((line, i) => <li key={i}>{line}</li>)}
+                  </ul>
+                </>
+              )}
             </div>
 
             <footer className={styles.sheetFoot}>

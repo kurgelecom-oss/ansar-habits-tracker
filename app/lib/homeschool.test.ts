@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { parseSubject, subjectsForDay, pageIdFromUrl } from "./homeschool";
+import {
+  parseSubject, subjectsForDay, pageIdFromUrl,
+  parseGuides, guideKeysFor, attachGuides,
+} from "./homeschool";
 
 /* The parser is the whole risk surface of the school programme: a week page is
    rewritten by hand every Friday, and a heading or bullet that drifts out of
@@ -36,6 +39,7 @@ describe("parseSubject", () => {
       name: "Block 1 — Maths",
       duration: "45 min",
       detail: "Khan Academy — next lesson.",
+      guide: [],
     });
   });
 
@@ -89,5 +93,103 @@ describe("subjectsForDay", () => {
 
   it("returns nothing for a day the page does not carry", () => {
     expect(subjectsForDay(page, "Thursday").subjects).toEqual([]);
+  });
+});
+
+
+/* The Subject Guides section is what stops a one-line day task ("Khan Academy —
+   next lesson") from filling a full-screen sheet with six words. It is read
+   from the SAME week page, so the context can never drift out of step with the
+   task it sits under. */
+
+const h3 = (text: string) => ({
+  type: "heading_3", heading_3: { rich_text: [{ plain_text: text }] },
+});
+const bullet = (text: string) => ({
+  type: "bulleted_list_item", bulleted_list_item: { rich_text: [{ plain_text: text }] },
+});
+const h2 = (text: string) => ({
+  type: "heading_2", heading_2: { rich_text: [{ plain_text: text }] },
+});
+
+describe("parseGuides", () => {
+  const page = [
+    h2('Monday 31 August — "Hagia Sophia"'),
+    bullet("**Block 1 — Maths (45 min):** Khan Academy — next lesson."),
+    h2("📚 Subject Guides"),
+    h3("Maths"),
+    bullet("**Engine:** Khan Academy mastery path."),
+    bullet("**Tracking:** Khan's own mastery % is the tracker."),
+    h3("English"),
+    bullet("**Grammar:** Tuesday and Thursday only, before the writing task."),
+    bullet("**Rule:** every written piece saved to OneDrive → English."),
+    h2("📊 Progress Tracking"),
+    h3("Daily"),
+    bullet("Should not be collected — this is a different section."),
+  ];
+
+  it("collects each guide's bullets under its heading", () => {
+    const guides = parseGuides(page);
+    expect(guides["maths"]).toEqual([
+      "Engine: Khan Academy mastery path.",
+      "Tracking: Khan's own mastery % is the tracker.",
+    ]);
+  });
+
+  it("drops OneDrive lines, which are retired", () => {
+    expect(parseGuides(page)["english"]).toEqual([
+      "Grammar: Tuesday and Thursday only, before the writing task.",
+    ]);
+  });
+
+  it("stops at the next section, so Progress Tracking never leaks in", () => {
+    expect(parseGuides(page)["daily"]).toBeUndefined();
+  });
+
+  it("does not collect the day cards above it", () => {
+    expect(Object.keys(parseGuides(page))).toEqual(["maths", "english"]);
+  });
+});
+
+describe("guideKeysFor", () => {
+  it("takes the subject off a block label", () => {
+    expect(guideKeysFor("Block 3 — HASS")).toEqual(["hass"]);
+  });
+  it("splits a combined Block 4 into both of its learning areas", () => {
+    expect(guideKeysFor("Block 4 — Technologies + Languages"))
+      .toEqual(["technologies", "languages"]);
+  });
+  it("maps Grammar to English, where the week page documents its rule", () => {
+    expect(guideKeysFor("Grammar")).toEqual(["english"]);
+  });
+  it("strips a duration the label kept", () => {
+    expect(guideKeysFor("Block 1 — Maths (45 min)")).toEqual(["maths"]);
+  });
+});
+
+describe("attachGuides", () => {
+  const guides = {
+    maths: ["Engine: Khan Academy mastery path."],
+    technologies: ["Scratch — Block 4 Mondays."],
+    languages: ["Duolingo — Turkish only."],
+  };
+  const subject = (name: string) =>
+    ({ id: "x", name, duration: null, detail: "d", guide: [] });
+
+  it("attaches a single guide unlabelled", () => {
+    expect(attachGuides([subject("Block 1 — Maths")], guides)[0].guide)
+      .toEqual(["Engine: Khan Academy mastery path."]);
+  });
+
+  it("labels each guide when a block carries two", () => {
+    expect(attachGuides([subject("Block 4 — Technologies + Languages")], guides)[0].guide)
+      .toEqual([
+        "Technologies — Scratch — Block 4 Mondays.",
+        "Languages — Duolingo — Turkish only.",
+      ]);
+  });
+
+  it("leaves a block with no matching guide untouched", () => {
+    expect(attachGuides([subject("Block 4 — Skills mix")], guides)[0].guide).toEqual([]);
   });
 });
