@@ -18,11 +18,11 @@
 
 import { sydneyWeekday, sydneyDateKey } from "./time";
 
+/** ⚙️ ANSAR OS — App Settings. Declared once, in lib/notion-sources.ts. */
+import { SETTINGS_DS } from "./notion-sources";
+
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_VERSION = "2025-09-03";
-
-/** ⚙️ ANSAR OS — App Settings. The same data source lib/notion.ts queries. */
-const SETTINGS_DS = "0415a499-d4ee-49e8-baf6-a3f38ec27235";
 
 /** Five minutes, matching /api/habits and lib/notion.ts. */
 const CACHE_MS = 5 * 60 * 1000;

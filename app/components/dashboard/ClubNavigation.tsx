@@ -1,5 +1,6 @@
 import type React from "react";
 import styles from "./dashboard.module.css";
+import { CONTROL_ROOM_FALLBACK_URL } from "../../lib/notion-sources";
 
 /**
  * The dashboard's own club navigation.
@@ -15,19 +16,21 @@ import styles from "./dashboard.module.css";
  * aria-disabled with a quiet "Coming later". They are shown rather than hidden
  * so the shape of the finished product is legible from day one.
  *
- * TEMPORARY (2026-09-01): Settings is the one exception. Until the real
- * settings screen exists it opens the Notion page that actually owns the
- * board's configuration — ANSAR OS — Content Spine, the parent of all three
- * App Source databases (Habit Blocks, App Settings, Stretch Items) — so a
- * parent mid-edit reaches the tables from the top bar instead of scrolling to
- * the source strip at the foot of the board. It leaves the app, so it opens in
- * its own tab and is NOT aria-current. Remove `href`/`external` from the
- * Settings row to put it back with the future items.
+ * Settings is the one exception. Until a real settings screen exists it opens
+ * the Notion page that actually owns the board's configuration — 🎛️ ANSAR OS —
+ * Control Room, which holds all three App Source tables — so a parent mid-edit
+ * reaches them from the top bar instead of scrolling to the source strip at the
+ * foot of the board. It leaves the app, so it opens in its own tab and is NOT
+ * aria-current.
+ *
+ * The URL is a PROP, fed from App Settings → "Control Room" via /api/settings.
+ * It was briefly a constant in this file, which is exactly the pattern the
+ * 2 Sept 2026 reorganisation was undoing: a link that moves in Notion and goes
+ * stale in a component nobody thinks to grep. The default only covers the first
+ * paint, before settings have loaded.
  *
  * `Table`, never `Leaderboards` (spec §7.1).
  */
-const NOTION_CONTROL_HUB = "https://www.notion.so/3945429afa90810ca6aff5f5f878797a";
-
 const ITEMS: { label: string; icon: string; href?: string; external?: boolean }[] = [
   { label: "Dashboard", icon: "\u{1F3E0}", href: "/" },
   { label: "Habits", icon: "\u{1F4CB}" },
@@ -35,10 +38,13 @@ const ITEMS: { label: string; icon: string; href?: string; external?: boolean }[
   { label: "Teams", icon: "\u{1F465}" },
   { label: "Leaderboards", icon: "\u{1F3C6}" },
   { label: "History", icon: "\u{1F551}" },
-  { label: "Settings", icon: "\u2699\uFE0F", href: NOTION_CONTROL_HUB, external: true },
+  { label: "Settings", icon: "\u2699\uFE0F", external: true },
 ];
 
-export default function ClubNavigation({ status = null }: { status?: React.ReactNode }) {
+export default function ClubNavigation(
+  { status = null, controlRoomUrl = CONTROL_ROOM_FALLBACK_URL }:
+    { status?: React.ReactNode; controlRoomUrl?: string },
+) {
   return (
     <nav className={styles.clubNav} aria-label="ANSAR FC sections">
       {/* Crest only. The wordmark lives in ClubHeader, which is the dominant
@@ -56,9 +62,9 @@ export default function ClubNavigation({ status = null }: { status?: React.React
       <ul className={styles.clubNavList}>
         {ITEMS.map(item => (
           <li key={item.label}>
-            {item.href ? (
+            {item.href || item.external ? (
               <a
-                href={item.href}
+                href={item.external ? controlRoomUrl : item.href}
                 {...(item.external
                   ? { target: "_blank", rel: "noopener noreferrer", title: "Edit the board's Notion tables" }
                   : { "aria-current": "page" as const })}

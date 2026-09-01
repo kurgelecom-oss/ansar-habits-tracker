@@ -21,11 +21,10 @@ import { habitsOnDay } from "./days";
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_VERSION = "2025-09-03";
 
-// Data sources. All query-only: GET /v1/databases/{id} 404s for a
-// data_source id, only the POST .../query endpoint works.
-const HABITS_DS = "470a7eba-f14b-42c5-92fb-79a006720240";  // ANSAR OS — Habit Blocks
-const SETTINGS_DS = "0415a499-d4ee-49e8-baf6-a3f38ec27235"; // ANSAR OS — App Settings
-const STRETCH_DS = "11bea89f-f327-4cf7-9a13-dafc9211d86d"; // ANSAR OS — Stretch Items
+// Data sources live in lib/notion-sources.ts, the one file that declares them.
+// All query-only: GET /v1/databases/{id} 404s for a data_source id, only the
+// POST .../query endpoint works.
+import { HABITS_DS, SETTINGS_DS, STRETCH_DS, CONTROL_ROOM_FALLBACK_URL } from "./notion-sources";
 
 /** Five minutes, matching family-dashboard's /api/habits revalidate window. */
 const CACHE_MS = 5 * 60 * 1000;
@@ -38,10 +37,32 @@ export interface Habit extends GateHabit {
   days: string[];
 }
 
+/**
+ * The links the board points at, from the App Settings row.
+ *
+ * These are URLs, not ids: they are for a human to click, and every one of them
+ * used to be a string literal in a component. Holding them here means a page
+ * that moves in Notion is repointed by pasting a link into one row — no PR, no
+ * deploy, no stale link surviving in a file nobody thinks to grep.
+ *
+ * Every field is optional. A blank cell renders no link, which is the right
+ * failure: a link to nowhere is worse than no link at all.
+ */
+export interface AppLinks {
+  /** 🎛️ ANSAR OS — Control Room. Where the ⚙️ Settings button in the nav goes. */
+  controlRoom: string;
+  /** The live homeschool week. Also read by lib/homeschool.ts as the parse target. */
+  activeWeekPage: string | null;
+  weeksArchive: string | null;
+  workLogForm: string | null;
+  dailyRoutine: string | null;
+}
+
 export interface AppSettings {
   pointsActive: boolean;
   defaultDwellSeconds: number;
   weekendRedemptionOnly: boolean;
+  links: AppLinks;
 }
 
 export interface StretchItem {
@@ -57,6 +78,16 @@ export const SETTINGS_FALLBACK: AppSettings = {
   pointsActive: true,
   defaultDwellSeconds: 90,
   weekendRedemptionOnly: true,
+  // Only the Control Room has a fallback. It is the one link whose absence
+  // would strand a parent with no way back to the tables; the rest degrade to
+  // "no link shown", which is honest.
+  links: {
+    controlRoom: CONTROL_ROOM_FALLBACK_URL,
+    activeWeekPage: null,
+    weeksArchive: null,
+    workLogForm: null,
+    dailyRoutine: null,
+  },
 };
 
 async function queryDataSource(id: string, body: unknown): Promise<any> {
@@ -80,6 +111,11 @@ async function queryDataSource(id: string, body: unknown): Promise<any> {
 const text = (props: any, name: string): string => {
   const arr = props?.[name]?.rich_text;
   return Array.isArray(arr) && arr.length ? arr[0].plain_text : "";
+};
+/** A URL property, trimmed. Blank and whitespace-only both read as absent. */
+const url = (props: any, name: string): string | null => {
+  const v = props?.[name]?.url;
+  return typeof v === "string" && v.trim() ? v.trim() : null;
 };
 const title = (props: any, name: string): string => {
   const arr = props?.[name]?.title;
@@ -146,6 +182,13 @@ export async function getSettings(fresh = false): Promise<AppSettings> {
       typeof dwell === "number" ? dwell : SETTINGS_FALLBACK.defaultDwellSeconds,
     weekendRedemptionOnly:
       p?.["Weekend Redemption Only"]?.checkbox ?? SETTINGS_FALLBACK.weekendRedemptionOnly,
+    links: {
+      controlRoom: url(p, "Control Room") ?? SETTINGS_FALLBACK.links.controlRoom,
+      activeWeekPage: url(p, "Active Week Page"),
+      weeksArchive: url(p, "Weeks Archive"),
+      workLogForm: url(p, "Work Log Form"),
+      dailyRoutine: url(p, "Daily Routine"),
+    },
   };
   settingsCache = { at: Date.now(), value };
   return value;

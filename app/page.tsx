@@ -147,6 +147,21 @@ type GateSnapshot = {
   defaultDwellSeconds?: number;
 };
 
+/**
+ * The links half of /api/settings. Mirrors AppLinks in lib/notion.ts.
+ *
+ * Declared structurally rather than imported because lib/notion.ts is a
+ * server-only module — importing its types here would pull NOTION_TOKEN into
+ * the client bundle's module graph.
+ */
+type AppLinksView = {
+  controlRoom?: string;
+  activeWeekPage?: string | null;
+  weeksArchive?: string | null;
+  workLogForm?: string | null;
+  dailyRoutine?: string | null;
+};
+
 /** Notion habit, from /api/habits. Supplies the point values the chips show. */
 type NotionHabit = {
   id: string; name: string; block: string; order: number; points: number;
@@ -237,6 +252,10 @@ export default function AnsarPage() {
   const [stretchItems, setStretchItems] = useState<StretchItem[]>([]);
   // null until /api/settings answers — see the POINTS_ACTIVE note at the top.
   const [pointsActive, setPointsActive] = useState<boolean | null>(null);
+  // Notion destinations, from App Settings. Null until /api/settings answers;
+  // the nav falls back to the Control Room's last known URL for that first
+  // paint, and the source strip simply omits a link it does not have yet.
+  const [links, setLinks] = useState<AppLinksView | null>(null);
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState("");
   /**
@@ -345,8 +364,12 @@ export default function AnsarPage() {
     try {
       const res = await fetch("/api/settings");
       if (!res.ok) return;
-      const s = (await res.json()) as { pointsActive?: boolean };
+      const s = (await res.json()) as { pointsActive?: boolean; links?: AppLinksView };
       if (typeof s?.pointsActive === "boolean") setPointsActive(s.pointsActive);
+      // Every Notion destination the board offers now arrives here rather than
+      // being written into the markup. Moving a page in Notion is a paste into
+      // the App Settings row; nothing in this repo has to change.
+      if (s?.links) setLinks(s.links);
     } catch { /* best-effort: the chip stays hidden rather than lying */ }
   }, []);
 
@@ -1182,6 +1205,7 @@ export default function AnsarPage() {
       <style>{BOARD_CSS}</style>
 
       <DashboardShell
+        controlRoomUrl={links?.controlRoom}
         status={
           <>
           <DayViewToggle
@@ -1315,22 +1339,32 @@ export default function AnsarPage() {
       </div>
 
       {/* ── NOTION SOURCE STRIP ─────────────────────────────────────────────
-          The three Notion databases behind this board, one click away for a
-          parent mid-edit. In normal flow at the bottom of .ab-root, below the
-          board and above the fixed overlays.
+          Where the board's own settings live, one click away for a parent
+          mid-edit. In normal flow at the bottom of .ab-root, below the board
+          and above the fixed overlays.
 
-          These are the human-facing database URLs, which are NOT the
-          data_source ids lib/notion.ts queries (a database and its data source
-          carry different ids under Notion-Version 2025-09-03). Changing one
-          does not change the other — editing a link here does not repoint the
-          board, and repointing the board does not update these links. */}
+          It used to list all three databases by hard-coded URL, which made this
+          strip a fourth place a Notion link could rot. It now offers the one
+          destination that contains all three — the Control Room — and takes
+          even that from App Settings, so a page moved in Notion is repointed
+          without a deploy. The week link sits beside it because "what is Ansar
+          doing today" and "how is the board configured" are the two questions
+          that bring anyone down here. */}
       <div className="ab-src">
         <span>Notion:</span>
-        <a href="https://www.notion.so/060adb487ef5451b8fdccaa95f60514c" target="_blank" rel="noopener noreferrer">Habits</a>
-        <span aria-hidden>·</span>
-        <a href="https://www.notion.so/f4d6ca41a1a24e08b597abfd77d1e78e" target="_blank" rel="noopener noreferrer">Settings</a>
-        <span aria-hidden>·</span>
-        <a href="https://www.notion.so/3dacc9966756478db29604840c39c08a" target="_blank" rel="noopener noreferrer">Stretch</a>
+        {links?.controlRoom && (
+          <a href={links.controlRoom} target="_blank" rel="noopener noreferrer" title="Habits, settings and stretch items — all three tables">
+            Control Room
+          </a>
+        )}
+        {links?.activeWeekPage && (
+          <>
+            <span aria-hidden>·</span>
+            <a href={links.activeWeekPage} target="_blank" rel="noopener noreferrer" title="The homeschool week the board is reading">
+              This week
+            </a>
+          </>
+        )}
         {/* The monthly record. It rides in THIS strip rather than the scoreboard
             because the strip is a horizontal flex row — one more child costs no
             height at all, and .ab-root is 100dvh with overflow:hidden, so any

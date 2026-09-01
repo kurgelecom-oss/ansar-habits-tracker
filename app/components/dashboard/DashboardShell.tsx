@@ -10,11 +10,16 @@ import styles from "./dashboard.module.css";
  * the two must not read as one region.
  */
 export default function DashboardShell(
-  { children, status = null }: { children: React.ReactNode; status?: React.ReactNode },
+  { children, status = null, controlRoomUrl }:
+    { children: React.ReactNode; status?: React.ReactNode; controlRoomUrl?: string },
 ) {
   return (
     <main className={styles.shell} aria-label="ANSAR FC Dashboard">
-      <ClubNavigation status={status} />
+      {/* controlRoomUrl is passed straight through: the shell has no opinion
+          about where the Notion back end lives, it just carries the value the
+          page read from App Settings. Undefined until settings load, which is
+          why ClubNavigation keeps a default rather than rendering nothing. */}
+      <ClubNavigation status={status} controlRoomUrl={controlRoomUrl} />
       {children}
     </main>
   );
