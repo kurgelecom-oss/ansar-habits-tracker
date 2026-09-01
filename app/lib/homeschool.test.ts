@@ -120,6 +120,8 @@ describe("parseGuides", () => {
     h3("Maths"),
     bullet("**Engine:** Khan Academy mastery path."),
     bullet("**Tracking:** Khan's own mastery % is the tracker."),
+    h3("HASS — interest-led topic menu"),
+    bullet("Ottoman Empire — deep dive, running now."),
     h3("English"),
     bullet("**Grammar:** Tuesday and Thursday only, before the writing task."),
     bullet("**Rule:** every written piece saved to OneDrive → English."),
@@ -147,7 +149,14 @@ describe("parseGuides", () => {
   });
 
   it("does not collect the day cards above it", () => {
-    expect(Object.keys(parseGuides(page))).toEqual(["maths", "english"]);
+    expect(Object.keys(parseGuides(page)))
+      .toEqual(["maths", "hass — interest-led topic menu", "hass", "english"]);
+  });
+
+  it("registers the short head of a subtitled heading, so HASS still matches", () => {
+    const guides = parseGuides(page);
+    expect(guides["hass"]).toEqual(["Ottoman Empire — deep dive, running now."]);
+    expect(guides["hass"]).toBe(guides["hass — interest-led topic menu"]);
   });
 });
 
