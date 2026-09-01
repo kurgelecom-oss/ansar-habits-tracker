@@ -157,9 +157,6 @@ type GateSnapshot = {
 type AppLinksView = {
   controlRoom?: string;
   activeWeekPage?: string | null;
-  weeksArchive?: string | null;
-  workLogForm?: string | null;
-  dailyRoutine?: string | null;
 };
 
 /** Notion habit, from /api/habits. Supplies the point values the chips show. */

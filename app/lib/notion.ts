@@ -40,22 +40,25 @@ export interface Habit extends GateHabit {
 /**
  * The links the board points at, from the App Settings row.
  *
- * These are URLs, not ids: they are for a human to click, and every one of them
- * used to be a string literal in a component. Holding them here means a page
- * that moves in Notion is repointed by pasting a link into one row — no PR, no
+ * These are URLs, not ids: they are for a human to click, and both of them used
+ * to be a string literal in a component. Holding them here means a page that
+ * moves in Notion is repointed by pasting a link into one row — no PR, no
  * deploy, no stale link surviving in a file nobody thinks to grep.
  *
- * Every field is optional. A blank cell renders no link, which is the right
+ * TWO links, because two are rendered. Weeks Archive, Work Log Form and Daily
+ * Routine were carried here for a day and read by nothing — the Tally form is
+ * embedded by id in page.tsx, and the other two have no place on a child's
+ * board. A stored value nobody renders is the same dead weight as a hardcoded
+ * one, minus the grep. Trimmed 2 Sept 2026, columns dropped in Notion too.
+ *
+ * activeWeekPage may be blank. A blank cell renders no link, which is the right
  * failure: a link to nowhere is worse than no link at all.
  */
 export interface AppLinks {
-  /** 🎛️ ANSAR OS — Control Room. Where the ⚙️ Settings button in the nav goes. */
+  /** `🎛️ ANSAR OS — Control Room`. Where the ⚙️ Settings button in the nav goes. */
   controlRoom: string;
-  /** The live homeschool week. Also read by lib/homeschool.ts as the parse target. */
+  /** The live homeschool week — the "Open the full week in Notion" destination. */
   activeWeekPage: string | null;
-  weeksArchive: string | null;
-  workLogForm: string | null;
-  dailyRoutine: string | null;
 }
 
 export interface AppSettings {
@@ -79,14 +82,11 @@ export const SETTINGS_FALLBACK: AppSettings = {
   defaultDwellSeconds: 90,
   weekendRedemptionOnly: true,
   // Only the Control Room has a fallback. It is the one link whose absence
-  // would strand a parent with no way back to the tables; the rest degrade to
-  // "no link shown", which is honest.
+  // would strand a parent with no way back to the tables; the week link
+  // degrades to "no link shown", which is honest.
   links: {
     controlRoom: CONTROL_ROOM_FALLBACK_URL,
     activeWeekPage: null,
-    weeksArchive: null,
-    workLogForm: null,
-    dailyRoutine: null,
   },
 };
 
@@ -185,9 +185,6 @@ export async function getSettings(fresh = false): Promise<AppSettings> {
     links: {
       controlRoom: url(p, "Control Room") ?? SETTINGS_FALLBACK.links.controlRoom,
       activeWeekPage: url(p, "Active Week Page"),
-      weeksArchive: url(p, "Weeks Archive"),
-      workLogForm: url(p, "Work Log Form"),
-      dailyRoutine: url(p, "Daily Routine"),
     },
   };
   settingsCache = { at: Date.now(), value };
