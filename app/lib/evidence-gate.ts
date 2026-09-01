@@ -11,12 +11,14 @@
    was the child's own word, and a row that can be tapped having written nothing
    is not a record of a journal, it is a record of a tap.
 
-   IT IS A GATE, NOT AN AUTO-TICK. A matching submission does not tick the row
-   and writes nothing. It only makes the row tappable, inside its ordinary
-   21:00–21:30 window, after the habits before it. Auto-ticking was considered
-   and rejected: it would have to bypass the window and the order to land at all
-   (the two real journals on record arrived at 21:42 and 07:39 Sydney, one side
-   of the window each), and the tap is the part the child is meant to do.
+   THE JOURNAL IS ALSO AUTO-TICKED NOW (tk, 2 Sep 2026), by /api/journal-sync.
+   Filing the form IS the completion — there is no second tap to make. This gate
+   did not become redundant when that shipped: it still governs the MANUAL path,
+   so a tap that arrives before the sync (or while Tally is unreachable) is
+   judged on exactly the same evidence. Two doors, one rule about what counts.
+
+   SEE AUTO_TICKED_IDS BELOW for what the auto-tick deliberately bypasses and
+   why it has to.
 
    WHY THIS IS ITS OWN FILE. Same reasons as lib/parent-verified.ts, which has
    the identical shape — a list in code and a pure predicate over it. A Notion
@@ -44,6 +46,38 @@ export const EVIDENCE_REQUIRED_IDS: readonly string[] = ["journal"];
 /** Does ticking this habit require a matching outside record? */
 export function requiresEvidence(habitId: string): boolean {
   return EVIDENCE_REQUIRED_IDS.includes(habitId);
+}
+
+/**
+ * Habits that the outside record does not merely UNLOCK but COMPLETES.
+ *
+ * `journal` — filing the Tally journal is the whole deliverable. tk, 2 Sep 2026:
+ * "just complete the tally form journal to earn the tick". So /api/journal-sync
+ * writes the completion itself and the row needs no tap at all.
+ *
+ * WHAT THIS BYPASSES, AND WHY IT MUST. The journal's Notion window is
+ * 21:00–21:30 and its Order is 16.5, behind `teeth`. Neither survives contact
+ * with when journals are actually written: the two on record landed at 21:42
+ * and 07:39 Sydney — one either side of the window, neither inside it. An
+ * auto-tick that honoured the window would therefore almost never fire, and an
+ * auto-tick that fires almost never is worse than none, because it teaches that
+ * the form does not work.
+ *
+ * So the sync writes past gates 1–4. It is not a hole: the evidence IS the
+ * gate. Nothing lands without a completed, non-empty, correctly-dated "Daily
+ * Journal" from Ansar on form ODKlVa, and that is a far higher bar than the tap
+ * it replaces — which required nothing at all.
+ *
+ * THE AUDIT TRAIL IS THE TALLY SUBMISSION. No override_log row is written,
+ * deliberately: the gold badge has to keep meaning "a parent restored this".
+ * `journalEvidence.submittedAt` in /api/tick is the record of where the tick
+ * came from, and it is the child's own writing, timestamped by Tally.
+ */
+export const AUTO_TICKED_IDS: readonly string[] = ["journal"];
+
+/** Does filing the outside record complete this habit outright? */
+export function isAutoTicked(habitId: string): boolean {
+  return AUTO_TICKED_IDS.includes(habitId);
 }
 
 /**

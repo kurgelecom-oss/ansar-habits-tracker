@@ -27,6 +27,10 @@ import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import dashboardStyles from "./components/dashboard/dashboard.module.css";
 import { deriveMatchReadiness, journalEvidenceState } from "./dashboard/model";
+// One written-down copy of the journal's habit id. The auto-sync effect and
+// the Match Readiness lookup below both key off it, and rowCopy.ts already
+// owned it for the row's captions.
+import { JOURNAL_ID } from "./dashboard/rowCopy";
 import { HABIT_BLOCKS, type DashboardHabit } from "./dashboard/types";
 import type { MatchCentreData } from "./lib/football/types";
 // The squad week, Mon–Fri. This file used to declare its own copy beside the
@@ -337,6 +341,12 @@ export default function AnsarPage() {
   const [embedKey, setEmbedKey] = useState(0);
 
   const rejectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* One journal sync at a time. The effect below can be re-entered by the 30s
+     poll, by a Tally submission and by a tab regaining focus within the same
+     second; without this they would each POST the same write. The route is
+     idempotent so a double call is harmless, but "harmless" is not a reason to
+     make three of them. */
+  const journalSyncing = useRef(false);
 
   /* ── Loads ──────────────────────────────────────────────────────────────── */
 
@@ -534,6 +544,53 @@ export default function AnsarPage() {
       });
     }
   }, []);
+
+  /* ── The journal ticks itself ──────────────────────────────────────────────
+     Filing the Tally journal IS the completion (tk, 2 Sep 2026) — there is no
+     second tap. /api/journal-sync does the writing; this only decides when to
+     ask it to.
+
+     IT ASKS ONLY WHEN IT HAS ALREADY SEEN WORK TO DO. Both facts arrive free on
+     the /api/tick poll the board was making anyway: `journalEvidence.found`
+     says Tally has today's journal, and the row's own state says whether
+     anything has recorded it. A POST goes out only when those disagree — so the
+     steady state, all day, every day, is zero extra requests.
+
+     `error` is checked as well as `found`, and the order matters: an
+     unreachable Tally reports `found: false` for a reason that has nothing to
+     do with whether a journal exists, and firing a sync on that would be asking
+     the server a question it has just said it cannot answer.
+
+     It is SELF-HEALING rather than event-driven. A journal filed from a phone
+     with the board shut ticks the next time the board is opened; a sync that
+     failed on a flaky connection is retried by the next poll. Nothing is ever
+     lost, and nothing needs a webhook Tally would charge for. */
+  useEffect(() => {
+    if (!gate?.journalEvidence?.found) return;
+    if (gate.journalEvidence.error) return;
+    const journal = gate.habits.find(h => h.id === JOURNAL_ID);
+    // No journal row today (weekend), or something already recorded it — a
+    // previous sync, a manual tap, or a parent override. All three mean done.
+    if (!journal || journal.state === "DONE") return;
+    if (journalSyncing.current) return;
+
+    journalSyncing.current = true;
+    void (async () => {
+      try {
+        const res = await fetch("/api/journal-sync", { method: "POST", cache: "no-store" });
+        const body = await res.json() as { ticked?: boolean };
+        // Only re-read when something actually changed. Every other answer —
+        // "already_done", "no_journal_today" — is the poll's own next job.
+        if (body?.ticked) await loadGate();
+      } catch {
+        /* Best-effort: the next 30s poll tries again. A failed sync must never
+           break the board — the row simply stays tappable by hand, judged by
+           gate 6 on exactly the same evidence. */
+      } finally {
+        journalSyncing.current = false;
+      }
+    })();
+  }, [gate, loadGate]);
 
   useEffect(() => {
     setMounted(true);
@@ -1193,7 +1250,7 @@ export default function AnsarPage() {
    * have quietly read 100% on a day the journal was never written. Searching
    * every block keeps the answer true wherever the row is moved next.
    */
-  const journalRow = HABIT_BLOCKS.flatMap(b => rowsFor(b)).find(h => h.id === "journal");
+  const journalRow = HABIT_BLOCKS.flatMap(b => rowsFor(b)).find(h => h.id === JOURNAL_ID);
   /**
    * Does a real Tally journal submission stand behind today's journal?
    *

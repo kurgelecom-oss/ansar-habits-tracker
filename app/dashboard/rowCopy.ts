@@ -19,9 +19,16 @@ import { journalEvidenceState } from "./model";
 
 export const JOURNAL_ID = "journal";
 
-/** The small line under a habit's name. Absent for rows that need no prompt. */
+/**
+ * The small line under a habit's name. Absent for rows that need no prompt.
+ *
+ * The journal's line does not tell him to tap, because he does not have to:
+ * filing the Tally journal writes the completion itself (/api/journal-sync).
+ * Telling a child to tap a row that ticks on its own is how he learns the board
+ * is lying to him about one thing or the other.
+ */
 const GUIDANCE: Record<string, string> = {
-  journal: "Write it in Log Work, then tap here",
+  journal: "Ticks itself once you log it in Log Work",
   homeschool_session: "Tap when 4 hours are completed",
   btn_cornell: "A parent enters the PIN once the notes are checked",
 };

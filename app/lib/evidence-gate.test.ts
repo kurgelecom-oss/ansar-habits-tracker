@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evidenceRefusal, evidenceWarnings, requiresEvidence, EVIDENCE_REQUIRED_IDS } from "./evidence-gate";
+import { evidenceRefusal, evidenceWarnings, requiresEvidence, isAutoTicked, EVIDENCE_REQUIRED_IDS, AUTO_TICKED_IDS } from "./evidence-gate";
 import type { JournalEvidence } from "./tally";
 
 /** An evidence answer. Every field defaulted to the reachable, negative case. */
@@ -92,5 +92,32 @@ describe("evidenceWarnings", () => {
     const [warning] = evidenceWarnings(["journal"], ev({ error: "Tally ODKlVa: 401 Unauthorized" }));
     expect(warning).toContain("401 Unauthorized");
     expect(warning).toContain("OFF");
+  });
+});
+
+describe("isAutoTicked", () => {
+  it("covers the journal and nothing else", () => {
+    expect(isAutoTicked("journal")).toBe(true);
+    expect(AUTO_TICKED_IDS).toEqual(["journal"]);
+  });
+
+  /**
+   * The blast radius, again, and it matters more here than for the gate. This
+   * list names habits a background sync will WRITE without anybody tapping
+   * anything. Every id absent from it is a habit no automation can complete.
+   */
+  it.each(["quran", "teeth", "reading", "room_tidy", "btn_cornell", "all_namaz", "homeschool_session"])(
+    "never auto-ticks %s", id => {
+      expect(isAutoTicked(id)).toBe(false);
+    });
+
+  /**
+   * Auto-ticking and evidence-gating are the same habit today, and they should
+   * stay coupled: a habit that completes itself from an outside record must
+   * also be judged against that record on the manual path, or the two doors
+   * into the same completion would apply different rules.
+   */
+  it("only auto-ticks habits that also require evidence", () => {
+    for (const id of AUTO_TICKED_IDS) expect(requiresEvidence(id)).toBe(true);
   });
 });

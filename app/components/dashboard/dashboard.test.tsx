@@ -958,7 +958,7 @@ describe("DayProgrammePanel", () => {
 
     const journal = screen.getByTestId("programme-journal");
     expect(within(journal).getByText("Daily learning journal entry written")).toBeVisible();
-    expect(within(journal).getByText("Write it in Log Work, then tap here")).toBeVisible();
+    expect(within(journal).getByText("Ticks itself once you log it in Log Work")).toBeVisible();
   });
 
   /**
@@ -1565,9 +1565,18 @@ describe("rowCopy", () => {
    */
   it("keeps the journal's words with it in any block", () => {
     expect(guidanceFor(row({ block: "afternoon_evening" })))
-      .toBe("Write it in Log Work, then tap here");
+      .toBe("Ticks itself once you log it in Log Work");
     expect(guidanceFor(row({ block: "homeschool", order: 7.5 })))
-      .toBe("Write it in Log Work, then tap here");
+      .toBe("Ticks itself once you log it in Log Work");
+  });
+
+  /**
+   * It must not tell him to tap. The journal completes itself from the form
+   * (/api/journal-sync), and copy that still asked for a tap would be teaching
+   * a step that does nothing.
+   */
+  it("does not ask for a tap on a row that ticks itself", () => {
+    expect(guidanceFor(row({ block: "afternoon_evening" }))).not.toMatch(/tap/i);
   });
 
   /**
