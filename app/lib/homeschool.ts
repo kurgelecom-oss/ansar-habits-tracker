@@ -18,8 +18,8 @@
    A table cannot be malformed that way. A column is either filled or it is not.
 
    Two sources, both under 🎛️ ANSAR OS — Control Room:
-     · 📆 Daily Programme — one row per subject per day.
-     · 📚 Subject Guides  — standing explainers, related from a programme row.
+     · 📆 2 · Daily Programme — one row per subject per day.
+     · 📚 3 · Subject Guides  — standing explainers, related from a programme row.
 
    The week page survives as a LINK — App Settings → "Active Week Page" — which
    the sheet offers as "Open the full week in Notion". Read by a human, never by
@@ -311,7 +311,7 @@ export async function getSchoolDay(fresh = false, weekdayOverride?: string): Pro
       subjects,
       stale: old,
       message: subjects.length === 0
-        ? `No ${weekday} rows in the Control Room yet — load this week into 📆 Daily Programme.`
+        ? `No ${weekday} rows in the Control Room yet — load this week into 📆 2 · Daily Programme.`
         : old
           ? "Showing an old week — the Control Room hasn't been loaded with this week yet."
           : null,

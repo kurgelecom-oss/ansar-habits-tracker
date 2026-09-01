@@ -13,17 +13,22 @@
    Room needed no deploy. They do NOT survive a table being deleted and rebuilt.
 
    Everything else that points at Notion — which week is live, where the Control
-   Room is, where the archive is — is a URL in the App Settings row instead, so
-   it can be repointed without touching code at all. See AppSettings.links.
+   Room is, where the archive is — is a URL in the settings row instead, so it
+   can be repointed without touching code at all. See AppSettings.links.
+
+   The tables are NUMBERED in Notion (`⚙️ 1 · Settings & Links`, `📆 2 · Daily
+   Programme`, …) and 1–5 are this app's; 6 and 7 belong to family-dashboard.
+   The number is the stable way to refer to one in prose — a name can be
+   reworded, and has been. The id below is the only thing code depends on.
    ══════════════════════════════════════════════════════════════════════════ */
 
-/** 📋 ANSAR OS — Habit Blocks. Which habits exist, their windows and points. */
+/** `✅ 4 · Habits` — which habits exist, their windows, days and points. */
 export const HABITS_DS = "470a7eba-f14b-42c5-92fb-79a006720240";
 
-/** ⚙️ ANSAR OS — App Settings. One row: the master switches and every link. */
+/** `⚙️ 1 · Settings & Links` — one row: the master switches and every link. */
 export const SETTINGS_DS = "0415a499-d4ee-49e8-baf6-a3f38ec27235";
 
-/** 🎯 ANSAR OS — Stretch Items. The screen-time earners in the wallet. */
+/** `🎯 5 · Stretch Items` — the screen-time earners in the wallet. */
 export const STRETCH_DS = "11bea89f-f327-4cf7-9a13-dafc9211d86d";
 
 /**
@@ -36,7 +41,7 @@ export const CONTROL_ROOM_FALLBACK_URL =
   "https://www.notion.so/3ce5429afa9081399f1be4e43b977758";
 
 /**
- * 📆 ANSAR OS — Daily Programme. One row per subject, per day.
+ * `📆 2 · Daily Programme` — one row per subject, per day.
  *
  * Added 2 Sept 2026, replacing the week-page parser. The board reads THIS, not
  * the homeschool week page — that page is the human report now, and is reached
@@ -44,5 +49,5 @@ export const CONTROL_ROOM_FALLBACK_URL =
  */
 export const PROGRAMME_DS = "e483c22e-5b63-4ea6-888c-ade5935c174b";
 
-/** 📚 ANSAR OS — Subject Guides. The standing explainers a programme row relates to. */
+/** `📚 3 · Subject Guides` — the standing explainers a programme row relates to. */
 export const GUIDES_DS = "ad64d084-f771-401e-bcd8-1480a6d004f4";
