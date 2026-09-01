@@ -21,7 +21,16 @@ import { deriveMatchReadiness, groupHabitsByBlock } from "../../dashboard/model"
 import { guidanceFor, noteFor } from "../../dashboard/rowCopy";
 import { requiresParentVerification } from "../../lib/parent-verified";
 
-const FUTURE_ITEMS = ["Habits", "Quests", "Teams", "Leaderboards", "History", "Settings"];
+/**
+ * The nav items that are still spans with no destination.
+ *
+ * Settings left this list on 2026-09-01: it now opens the Notion control hub
+ * in a new tab as a temporary shortcut to the board's own configuration
+ * tables. It is asserted separately below, so putting it back here (and
+ * dropping the href in ClubNavigation) is all that reverting takes.
+ */
+const FUTURE_ITEMS = ["Habits", "Quests", "Teams", "Leaderboards", "History"];
+const NAV_ORDER = ["Dashboard", ...FUTURE_ITEMS, "Settings"];
 
 /**
  * The habit row's declared min-height.
@@ -73,7 +82,7 @@ describe("ClubNavigation", () => {
    */
   it("gives future items no link to follow", () => {
     render(<ClubNavigation />);
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.getAllByRole("link")).toHaveLength(2);
     for (const label of FUTURE_ITEMS) {
       expect(screen.getByText(label).tagName).toBe("SPAN");
       expect(screen.getByText(label)).not.toHaveAttribute("href");
@@ -93,7 +102,23 @@ describe("ClubNavigation", () => {
     // unchanged, but it does land in textContent — and this contract is about
     // the words and their order.
     const items = screen.getAllByTestId("club-nav-label").map(el => el.textContent);
-    expect(items).toEqual(["Dashboard", ...FUTURE_ITEMS]);
+    expect(items).toEqual(NAV_ORDER);
+  });
+
+  /**
+   * TEMPORARY shortcut: Settings points at the Notion page that owns the
+   * board's configuration. It must leave the app in its own tab — the board is
+   * a kiosk on an iPad, and navigating it away from the habits is worse than
+   * no shortcut at all — and it must not claim to be the current page.
+   */
+  it("sends Settings out to the Notion control hub in a new tab", () => {
+    render(<ClubNavigation />);
+    const settings = screen.getByRole("link", { name: /Settings/ });
+    expect(settings).toHaveAttribute("href", expect.stringContaining("notion.so"));
+    expect(settings).toHaveAttribute("target", "_blank");
+    expect(settings).toHaveAttribute("rel", expect.stringContaining("noopener"));
+    expect(settings).not.toHaveAttribute("aria-current");
+    expect(settings).not.toHaveAttribute("aria-disabled");
   });
 
   /**

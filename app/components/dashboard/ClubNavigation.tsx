@@ -9,22 +9,33 @@ import styles from "./dashboard.module.css";
  * every repo. This bar is internal to ANSAR FC and names the club's own spaces.
  * Both are on screen at once, which is why this one is not fixed.
  *
- * Spec §7.2: only Dashboard may navigate. The other six are future products
+ * Spec §7.2: only Dashboard may navigate. The other five are future products
  * with their own design contracts, and a link to a blank page is worse than no
  * link — so they are spans with no href, unfocusable and unfollowable, marked
  * aria-disabled with a quiet "Coming later". They are shown rather than hidden
  * so the shape of the finished product is legible from day one.
  *
+ * TEMPORARY (2026-09-01): Settings is the one exception. Until the real
+ * settings screen exists it opens the Notion page that actually owns the
+ * board's configuration — ANSAR OS — Content Spine, the parent of all three
+ * App Source databases (Habit Blocks, App Settings, Stretch Items) — so a
+ * parent mid-edit reaches the tables from the top bar instead of scrolling to
+ * the source strip at the foot of the board. It leaves the app, so it opens in
+ * its own tab and is NOT aria-current. Remove `href`/`external` from the
+ * Settings row to put it back with the future items.
+ *
  * `Table`, never `Leaderboards` (spec §7.1).
  */
-const ITEMS: { label: string; icon: string; href?: string }[] = [
+const NOTION_CONTROL_HUB = "https://www.notion.so/3945429afa90810ca6aff5f5f878797a";
+
+const ITEMS: { label: string; icon: string; href?: string; external?: boolean }[] = [
   { label: "Dashboard", icon: "\u{1F3E0}", href: "/" },
   { label: "Habits", icon: "\u{1F4CB}" },
   { label: "Quests", icon: "\u{1F3AF}" },
   { label: "Teams", icon: "\u{1F465}" },
   { label: "Leaderboards", icon: "\u{1F3C6}" },
   { label: "History", icon: "\u{1F551}" },
-  { label: "Settings", icon: "\u2699\uFE0F" },
+  { label: "Settings", icon: "\u2699\uFE0F", href: NOTION_CONTROL_HUB, external: true },
 ];
 
 export default function ClubNavigation({ status = null }: { status?: React.ReactNode }) {
@@ -48,8 +59,10 @@ export default function ClubNavigation({ status = null }: { status?: React.React
             {item.href ? (
               <a
                 href={item.href}
-                aria-current="page"
-                className={`${styles.clubNavItem} ${styles.clubNavItemActive}`}
+                {...(item.external
+                  ? { target: "_blank", rel: "noopener noreferrer", title: "Edit the board's Notion tables" }
+                  : { "aria-current": "page" as const })}
+                className={`${styles.clubNavItem} ${item.external ? "" : styles.clubNavItemActive}`}
                 data-testid="club-nav-item"
               >
                 <span aria-hidden="true" className={styles.clubNavIcon}>{item.icon}</span>
