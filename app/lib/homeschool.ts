@@ -281,8 +281,19 @@ export function parseGuides(blocks: any[]): Record<string, string[]> {
     if (!inGuides) continue;
 
     if (type === "heading_3") {
-      current = plain(block.heading_3?.rich_text).trim().toLowerCase();
-      if (current) guides[current] = [];
+      const title = plain(block.heading_3?.rich_text).trim().toLowerCase();
+      current = title || null;
+      if (current) {
+        guides[current] = [];
+        // A guide heading may carry a subtitle after an em dash — the live page
+        // has "HASS — interest-led topic menu". The block label is only ever
+        // the bare subject, so the short head is registered as an alias
+        // pointing at the SAME array; without it HASS silently gets no guide,
+        // which looks like a subject nobody documented rather than a key that
+        // did not match.
+        const head = current.split("—")[0].trim();
+        if (head && head !== current) guides[head] = guides[current];
+      }
       continue;
     }
 
