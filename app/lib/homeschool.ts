@@ -46,6 +46,18 @@ export interface Subject {
   duration: string | null;
   /** Everything after the colon — the explainer, in the page's own words. */
   detail: string;
+  /**
+   * The standing "how this subject works" lines from the week page's
+   * 📚 Subject Guides section, matched to this block.
+   *
+   * The day's own text is often a single line — "Khan Academy — next lesson" —
+   * which is the right amount of instruction for a boy who already knows the
+   * routine, and the wrong amount of context for a sheet that fills the screen.
+   * Subject Guides is where the week page ALREADY explains the engine, the
+   * tracking and the real-world layer, so the sheet reads it from there rather
+   * than asking anyone to write the same thing twice every Friday.
+   */
+  guide: string[];
 }
 
 /** Today's card, or the reason there isn't one. */
@@ -198,7 +210,7 @@ export function parseSubject(text: string, index: number): Subject | null {
     name = name.slice(0, dur.index).trim();
   }
 
-  return { id: `${slug(name)}-${index}`, name, duration, detail };
+  return { id: `${slug(name)}-${index}`, name, duration, detail, guide: [] };
 }
 
 /**
@@ -240,6 +252,89 @@ export function subjectsForDay(blocks: any[], weekday: string): {
 
   return { dayLabel, subjects };
 }
+
+/**
+ * The 📚 Subject Guides section, as a lookup keyed by lowercased guide title.
+ *
+ * Guides are `### Maths` style headings with bullets under them, and they sit
+ * BELOW every day card on the page — which is exactly why subjectsForDay stops
+ * at a non-day heading. The two parsers read the same block list from opposite
+ * ends of the page and must never bleed into each other.
+ */
+export function parseGuides(blocks: any[]): Record<string, string[]> {
+  const guides: Record<string, string[]> = {};
+  let inGuides = false;
+  let current: string | null = null;
+
+  for (const block of blocks) {
+    const type = block.type;
+
+    if (type === "heading_1" || type === "heading_2") {
+      const text = plain(block[type]?.rich_text).trim();
+      // Enter on the Subject Guides heading, leave on the next section of the
+      // same rank — Progress Tracking, Reading Log, Resource Hub and so on.
+      inGuides = /subject guides/i.test(text);
+      current = null;
+      continue;
+    }
+
+    if (!inGuides) continue;
+
+    if (type === "heading_3") {
+      current = plain(block.heading_3?.rich_text).trim().toLowerCase();
+      if (current) guides[current] = [];
+      continue;
+    }
+
+    if (!current) continue;
+    if (type !== "bulleted_list_item" && type !== "to_do") continue;
+
+    const line = plain(block[type]?.rich_text).replace(/\*\*/g, "").trim();
+    // OneDrive is retired; its filing rules go with it.
+    if (!line || SKIP.test(line)) continue;
+    guides[current].push(line);
+  }
+
+  return guides;
+}
+
+/**
+ * Which guides belong to a block label.
+ *
+ * "Block 3 — HASS" is guided by HASS; "Block 4 — Technologies + Languages" is
+ * guided by both. Grammar is deliberately mapped to English: the week page
+ * documents it as a rule INSIDE the English guide ("Tuesday and Thursday only,
+ * always immediately before the writing task"), and that rule is the single
+ * most useful thing the sheet can tell him about a 15-minute grammar block.
+ */
+export function guideKeysFor(name: string): string[] {
+  const tail = name.includes("—") ? name.split("—").pop()! : name;
+  const cleaned = tail.replace(/\(.*?\)/g, "").trim();
+  if (!cleaned) return [];
+  if (/^grammar$/i.test(cleaned)) return ["english"];
+  return cleaned
+    .split(/\s*[+&·]\s*/)
+    .map(part => part.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/** Attach each subject's standing guide lines, in place of nothing. */
+export function attachGuides(subjects: Subject[], guides: Record<string, string[]>): Subject[] {
+  return subjects.map(subject => {
+    const keys = guideKeysFor(subject.name).filter(k => guides[k]?.length);
+    if (keys.length === 0) return subject;
+    // One matching guide reads as the subject's own notes and needs no label.
+    // Two or more have to say which is which, or "Duolingo — Turkish only"
+    // arrives looking like a rule about Scratch.
+    const lines = keys.length === 1
+      ? [...guides[keys[0]]]
+      : keys.flatMap(k => guides[k].map(line => `${titleCase(k)} — ${line}`));
+    return { ...subject, guide: lines };
+  });
+}
+
+const titleCase = (s: string): string =>
+  s.replace(/\b[a-z]/g, c => c.toUpperCase());
 
 /* ── The public read ──────────────────────────────────────────────────────── */
 
@@ -290,7 +385,9 @@ export async function getSchoolDay(fresh = false, weekdayOverride?: string): Pro
     const titleProp = Object.values(page.properties ?? {})
       .find((p: any) => p?.type === "title") as { title?: any[] } | undefined;
     const weekTitle = plain(titleProp?.title ?? []);
-    const { dayLabel, subjects } = subjectsForDay(blocks, weekday);
+    const parsed = subjectsForDay(blocks, weekday);
+    const dayLabel = parsed.dayLabel;
+    const subjects = attachGuides(parsed.subjects, parseGuides(blocks));
 
     const value: SchoolDay = {
       ok: true, weekTitle, weekUrl, dayLabel, weekday, date, subjects, stale: false,
