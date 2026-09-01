@@ -34,3 +34,15 @@ export const STRETCH_DS = "11bea89f-f327-4cf7-9a13-dafc9211d86d";
  */
 export const CONTROL_ROOM_FALLBACK_URL =
   "https://www.notion.so/3ce5429afa9081399f1be4e43b977758";
+
+/**
+ * 📆 ANSAR OS — Daily Programme. One row per subject, per day.
+ *
+ * Added 2 Sept 2026, replacing the week-page parser. The board reads THIS, not
+ * the homeschool week page — that page is the human report now, and is reached
+ * only through the "Active Week Page" link.
+ */
+export const PROGRAMME_DS = "e483c22e-5b63-4ea6-888c-ade5935c174b";
+
+/** 📚 ANSAR OS — Subject Guides. The standing explainers a programme row relates to. */
+export const GUIDES_DS = "ad64d084-f771-401e-bcd8-1480a6d004f4";

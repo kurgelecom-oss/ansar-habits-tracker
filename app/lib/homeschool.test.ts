@@ -1,204 +1,167 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  parseSubject, subjectsForDay, pageIdFromUrl,
-  parseGuides, guideKeysFor, attachGuides,
+  buildDayLabel, daysSince, guideLines, mapProgramme, subjectId, SCHOOL_DAYS,
 } from "./homeschool";
 
-/* The parser is the whole risk surface of the school programme: a week page is
-   rewritten by hand every Friday, and a heading or bullet that drifts out of
-   shape must fail loudly (nothing rendered for that day) rather than quietly
-   promoting a note to a subject. These cases are taken from the live Week 8
-   page, including its callout-wrapped Monday. */
+/* ════════════════════════════════════════════════════════════════════════════
+   These replaced the week-page parser's tests on 2 Sept 2026.
 
-const heading = (text: string) => ({
-  type: "heading_2", heading_2: { rich_text: [{ plain_text: text }] },
-});
-const todo = (text: string) => ({
-  type: "to_do", to_do: { rich_text: [{ plain_text: text }] },
-});
+   The old suite pinned regexes against prose — day headings, bold labels,
+   colons, one level of callout nesting. All of that is gone: the board reads
+   the 📆 Daily Programme table now, so the thing worth pinning is the MAPPING.
+   A renamed column does not throw. It returns undefined, and undefined renders
+   as an empty row on Ansar's board with no error anywhere, which is precisely
+   the failure the table was meant to end.
+   ══════════════════════════════════════════════════════════════════════════ */
 
-describe("pageIdFromUrl", () => {
-  it("takes the 32-hex id off a Notion page URL", () => {
-    expect(pageIdFromUrl("https://app.notion.com/p/3cd5429afa9081538562f2a672eee2c6"))
-      .toBe("3cd5429afa9081538562f2a672eee2c6");
-  });
-  it("takes it off a dashed URL with a query string", () => {
-    expect(pageIdFromUrl("https://www.notion.so/Week-8-3cd5429a-fa90-8153-8562-f2a672eee2c6?pvs=4"))
-      .toBe("3cd5429afa9081538562f2a672eee2c6");
-  });
-  it("returns null for a link that is not a Notion page", () => {
-    expect(pageIdFromUrl("https://example.com/week")).toBeNull();
-  });
-});
+const text = (s: string) => ({ rich_text: [{ plain_text: s }] });
+const title = (s: string) => ({ title: [{ plain_text: s }] });
 
-describe("parseSubject", () => {
-  it("splits the bold label from the explainer and lifts the duration out", () => {
-    const s = parseSubject("**Block 1 — Maths (45 min):** Khan Academy — next lesson.", 0);
-    expect(s).toEqual({
-      id: "block-1-maths-0",
+/** A programme row shaped the way the Notion query returns one. */
+function row(over: Record<string, any> = {}) {
+  return {
+    id: "row-1",
+    properties: {
+      Name: title("Wed — Block 1 — Maths"),
+      Label: text("Block 1 — Maths"),
+      Duration: text("45 min"),
+      Task: text("Khan Academy — next lesson."),
+      "Day Topic": text("Military forts: defence and design"),
+      Note: text(""),
+      Week: text("Phase 1 — Week 8 (31 Aug–4 Sept)"),
+      Date: { date: { start: "2026-09-02" } },
+      Guide: { relation: [{ id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" }] },
+      ...over,
+    },
+  };
+}
+
+const GUIDES = new Map([["aaaaaaaabbbbccccddddeeeeeeeeeeee", ["Engine: Khan.", "Tracking: mastery %."]]]);
+
+describe("mapProgramme", () => {
+  it("maps a row onto the shape the sheet renders", () => {
+    const { subjects } = mapProgramme([row()], GUIDES);
+    expect(subjects).toHaveLength(1);
+    expect(subjects[0]).toMatchObject({
       name: "Block 1 — Maths",
       duration: "45 min",
       detail: "Khan Academy — next lesson.",
-      guide: [],
+      guide: ["Engine: Khan.", "Tracking: mastery %."],
     });
   });
 
-  it("keeps a label that carries no duration", () => {
-    expect(parseSubject("**Grammar:** One Khan lesson.", 1)?.duration).toBeNull();
+  it("lifts the day's topic, note, week and date off the rows", () => {
+    const { topic, week, isoDate } = mapProgramme([row()], GUIDES);
+    expect(topic).toBe("Military forts: defence and design");
+    expect(week).toBe("Phase 1 — Week 8 (31 Aug–4 Sept)");
+    expect(isoDate).toBe("2026-09-02");
   });
 
-  it("drops a bullet with no colon — that is a note, not a block", () => {
-    expect(parseSubject("Times are a guide, not a cage", 0)).toBeNull();
+  /**
+   * Monday's Block 4 is "Technologies + Languages" — two learning areas, two
+   * guides. Concatenating rather than picking the first is what stops half the
+   * explainer silently going missing.
+   */
+  it("concatenates every related guide, in relation order", () => {
+    const guides = new Map([
+      ["11111111111111111111111111111111", ["Scratch and Code.org."]],
+      ["22222222222222222222222222222222", ["Duolingo Turkish."]],
+    ]);
+    const { subjects } = mapProgramme([row({
+      Guide: { relation: [{ id: "11111111-1111-1111-1111-111111111111" }, { id: "22222222-2222-2222-2222-222222222222" }] },
+    })], guides);
+    expect(subjects[0].guide).toEqual(["Scratch and Code.org.", "Duolingo Turkish."]);
   });
 
-  it("drops a sentence that merely contains a colon", () => {
-    const long = "The rule he has to hold to every single morning without fail is this: no screens.";
-    expect(parseSubject(long, 0)).toBeNull();
+  it("falls back to the row title when Label is blank", () => {
+    const { subjects } = mapProgramme([row({ Label: text("") })], GUIDES);
+    expect(subjects[0].name).toBe("Wed — Block 1 — Maths");
   });
 
-  it("drops the retired OneDrive save step wherever it survives on a page", () => {
-    expect(parseSubject("**Save:** Essay → *HASS*. Reading essay → *English*.", 4)).toBeNull();
-    expect(parseSubject("**Block 5 — Filing:** Put it in OneDrive.", 5)).toBeNull();
-  });
-});
-
-describe("subjectsForDay", () => {
-  const page = [
-    heading("⏱️ The daily skeleton"),
-    todo("**Ignored — before any day:** should not appear"),
-    heading('Monday 31 August — "Hagia Sophia: the greatest building"'),
-    todo("**Block 1 — Maths (45 min):** Khan Academy — next lesson."),
-    todo("**Block 2 — English (45 min):** ReadTheory 2 passages."),
-    todo("**Save:** Essay → HASS."),
-    heading('Tuesday 1 September — "Water systems"'),
-    todo("**Block 1 — Maths (45 min):** Khan Academy — next lesson."),
-    heading("📚 Subject Guides"),
-    todo("**Maths engine:** Khan Academy mastery path."),
-  ];
-
-  it("returns only the asked-for day, in page order", () => {
-    const { dayLabel, subjects } = subjectsForDay(page, "Monday");
-    expect(dayLabel).toBe('Monday 31 August — "Hagia Sophia: the greatest building"');
-    expect(subjects.map(s => s.name)).toEqual(["Block 1 — Maths", "Block 2 — English"]);
+  /** A half-typed row is a blank line on a child's board. Drop it. */
+  it("drops a row with no label at all", () => {
+    const { subjects } = mapProgramme([row({ Label: text(""), Name: title("") })], GUIDES);
+    expect(subjects).toHaveLength(0);
   });
 
-  it("stops at the next day's heading", () => {
-    expect(subjectsForDay(page, "Tuesday").subjects).toHaveLength(1);
+  it("renders a missing duration as null, not an empty string", () => {
+    const { subjects } = mapProgramme([row({ Duration: text("") })], GUIDES);
+    expect(subjects[0].duration).toBeNull();
   });
 
-  it("stops at a non-day heading, so Subject Guides never leaks into a day", () => {
-    const names = subjectsForDay(page, "Tuesday").subjects.map(s => s.name);
-    expect(names).not.toContain("Maths engine");
+  it("survives a relation pointing at a guide that no longer exists", () => {
+    const { subjects } = mapProgramme([row()], new Map());
+    expect(subjects[0].guide).toEqual([]);
+    expect(subjects[0].detail).toBe("Khan Academy — next lesson.");
   });
 
-  it("returns nothing for a day the page does not carry", () => {
-    expect(subjectsForDay(page, "Thursday").subjects).toEqual([]);
+  it("keeps ids unique across two blocks sharing a label", () => {
+    const { subjects } = mapProgramme([row(), row()], GUIDES);
+    expect(subjects[0].id).not.toBe(subjects[1].id);
   });
 });
 
+describe("buildDayLabel", () => {
+  it("rebuilds the heading the week page used to spell out", () => {
+    expect(buildDayLabel("Monday", "2026-08-31", "Hagia Sophia: the greatest building", ""))
+      .toBe('Monday 31 August — "Hagia Sophia: the greatest building"');
+  });
 
-/* The Subject Guides section is what stops a one-line day task ("Khan Academy —
-   next lesson") from filling a full-screen sheet with six words. It is read
-   from the SAME week page, so the context can never drift out of step with the
-   task it sits under. */
+  it("brackets the day's note when there is one", () => {
+    expect(buildDayLabel("Wednesday", "2026-09-02", "Military forts", "soccer training tonight"))
+      .toBe('Wednesday 2 September — "Military forts" (soccer training tonight)');
+  });
 
-const h3 = (text: string) => ({
-  type: "heading_3", heading_3: { rich_text: [{ plain_text: text }] },
+  it("degrades to the bare weekday when the date and topic are missing", () => {
+    expect(buildDayLabel("Friday", null, "", "")).toBe("Friday");
+  });
+
+  /** A cell someone typed into by hand must not produce "Invalid Date". */
+  it("ignores a date that is not a date", () => {
+    expect(buildDayLabel("Friday", "next week", "Flex", "")).toBe('Friday — "Flex"');
+  });
 });
-const bullet = (text: string) => ({
-  type: "bulleted_list_item", bulleted_list_item: { rich_text: [{ plain_text: text }] },
-});
-const h2 = (text: string) => ({
-  type: "heading_2", heading_2: { rich_text: [{ plain_text: text }] },
+
+describe("daysSince", () => {
+  it("counts whole days from a row's date to today", () => {
+    expect(daysSince("2026-08-31", "2026-09-02")).toBe(2);
+  });
+
+  it("is negative for a week loaded ahead of time", () => {
+    expect(daysSince("2026-09-07", "2026-09-02")).toBe(-5);
+  });
+
+  it("returns null when there is no date to compare", () => {
+    expect(daysSince(null, "2026-09-02")).toBeNull();
+  });
 });
 
-describe("parseGuides", () => {
-  const page = [
-    h2('Monday 31 August — "Hagia Sophia"'),
-    bullet("**Block 1 — Maths (45 min):** Khan Academy — next lesson."),
-    h2("📚 Subject Guides"),
-    h3("Maths"),
-    bullet("**Engine:** Khan Academy mastery path."),
-    bullet("**Tracking:** Khan's own mastery % is the tracker."),
-    h3("HASS — interest-led topic menu"),
-    bullet("Ottoman Empire — deep dive, running now."),
-    h3("English"),
-    bullet("**Grammar:** Tuesday and Thursday only, before the writing task."),
-    bullet("**Rule:** every written piece saved to OneDrive → English."),
-    h2("📊 Progress Tracking"),
-    h3("Daily"),
-    bullet("Should not be collected — this is a different section."),
-  ];
-
-  it("collects each guide's bullets under its heading", () => {
-    const guides = parseGuides(page);
-    expect(guides["maths"]).toEqual([
-      "Engine: Khan Academy mastery path.",
-      "Tracking: Khan's own mastery % is the tracker.",
+describe("guideLines", () => {
+  it("splits a guide cell into one bullet per line", () => {
+    expect(guideLines("Engine: Khan.\nTracking: mastery %.")).toEqual([
+      "Engine: Khan.", "Tracking: mastery %.",
     ]);
   });
 
-  it("drops OneDrive lines, which are retired", () => {
-    expect(parseGuides(page)["english"]).toEqual([
-      "Grammar: Tuesday and Thursday only, before the writing task.",
-    ]);
-  });
-
-  it("stops at the next section, so Progress Tracking never leaks in", () => {
-    expect(parseGuides(page)["daily"]).toBeUndefined();
-  });
-
-  it("does not collect the day cards above it", () => {
-    expect(Object.keys(parseGuides(page)))
-      .toEqual(["maths", "hass — interest-led topic menu", "hass", "english"]);
-  });
-
-  it("registers the short head of a subtitled heading, so HASS still matches", () => {
-    const guides = parseGuides(page);
-    expect(guides["hass"]).toEqual(["Ottoman Empire — deep dive, running now."]);
-    expect(guides["hass"]).toBe(guides["hass — interest-led topic menu"]);
+  /** A trailing newline in Notion must not render as an empty bullet. */
+  it("drops blank lines", () => {
+    expect(guideLines("One.\n\n  \nTwo.\n")).toEqual(["One.", "Two."]);
   });
 });
 
-describe("guideKeysFor", () => {
-  it("takes the subject off a block label", () => {
-    expect(guideKeysFor("Block 3 — HASS")).toEqual(["hass"]);
+describe("subjectId", () => {
+  it("slugs a label and pins its position", () => {
+    expect(subjectId("Block 1 — Maths", 0)).toBe("block-1-maths-0");
   });
-  it("splits a combined Block 4 into both of its learning areas", () => {
-    expect(guideKeysFor("Block 4 — Technologies + Languages"))
-      .toEqual(["technologies", "languages"]);
-  });
-  it("maps Grammar to English, where the week page documents its rule", () => {
-    expect(guideKeysFor("Grammar")).toEqual(["english"]);
-  });
-  it("strips a duration the label kept", () => {
-    expect(guideKeysFor("Block 1 — Maths (45 min)")).toEqual(["maths"]);
+
+  it("never returns a bare index for an unslugabble label", () => {
+    expect(subjectId("—", 2)).toBe("subject-2");
   });
 });
 
-describe("attachGuides", () => {
-  const guides = {
-    maths: ["Engine: Khan Academy mastery path."],
-    technologies: ["Scratch — Block 4 Mondays."],
-    languages: ["Duolingo — Turkish only."],
-  };
-  const subject = (name: string) =>
-    ({ id: "x", name, duration: null, detail: "d", guide: [] });
-
-  it("attaches a single guide unlabelled", () => {
-    expect(attachGuides([subject("Block 1 — Maths")], guides)[0].guide)
-      .toEqual(["Engine: Khan Academy mastery path."]);
-  });
-
-  it("labels each guide when a block carries two", () => {
-    expect(attachGuides([subject("Block 4 — Technologies + Languages")], guides)[0].guide)
-      .toEqual([
-        "Technologies — Scratch — Block 4 Mondays.",
-        "Languages — Duolingo — Turkish only.",
-      ]);
-  });
-
-  it("leaves a block with no matching guide untouched", () => {
-    expect(attachGuides([subject("Block 4 — Skills mix")], guides)[0].guide).toEqual([]);
+describe("SCHOOL_DAYS", () => {
+  /** Friday is flex, and still a school day. The weekend is not. */
+  it("runs Monday to Friday", () => {
+    expect(SCHOOL_DAYS).toEqual(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]);
   });
 });
