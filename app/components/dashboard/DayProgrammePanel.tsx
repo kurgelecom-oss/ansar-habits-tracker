@@ -3,6 +3,7 @@ import { guidanceFor, noteFor } from "../../dashboard/rowCopy";
 import { DEFAULT_ICON, HABIT_ICONS } from "../../dashboard/icons";
 import HabitRow from "./HabitRow";
 import HomeschoolSection from "./HomeschoolSection";
+import SchoolProgramme from "./SchoolProgramme";
 import Panel from "./Panel";
 import styles from "./dashboard.module.css";
 
@@ -93,6 +94,13 @@ export default function DayProgrammePanel({
         </>
       }
     >
+      {/* TODAY'S LESSONS. What he is learning, from the live Notion week page,
+          above the habits that gate the session. Read-only and self-fetching —
+          see SchoolProgramme.tsx. It renders nothing on a weekend, nothing when
+          no week page is set, and nothing while its own fetch is in flight, so
+          it can never hold up the rows below it. */}
+      <SchoolProgramme />
+
       {homeschool.length > 0 ? (
         <section data-testid="programme-section" data-section="Homeschool" className={styles.programmeSection}>
           <h3 className={styles.programmeSectionTitle}>📚 Homeschool</h3>
