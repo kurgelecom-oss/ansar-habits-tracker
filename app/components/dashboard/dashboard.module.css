@@ -770,8 +770,80 @@
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
+/* ── The journal row is not a habit row ─────────────────────────────────────
+   It is the ONE row on the board that nobody ticks. Every other row is a thing
+   Ansar does and then taps; this one is a receipt that appears when a Tally
+   submission is found (/api/journal-sync). Drawing it like its neighbours was
+   teaching the wrong thing twice over — it looked tappable, and an untapped one
+   looked forgotten rather than simply not filed yet.
+
+   THE FORM CARRIES THE DIFFERENCE, NOT A NEW COLOUR. The palette is locked and
+   every hue in it is already spoken for: gold is the parent override, green is
+   earned, red is missed, violet is the wallet. So the journal keeps the cyan
+   that .habitNote already uses for evidence and changes its SHAPE instead — a
+   dashed rule, a recessed plate, no hover lift. A dashed outline reads as a slot
+   waiting to be filled, which is exactly what an unfiled journal is.
+
+   The gold inset stripe this replaced was a genuine bug: gold means "parent
+   override" everywhere else on the board, so the journal wore the audit colour
+   every single day whether or not anything had been overridden. */
 .habitRow[data-emphasis="journal"] {
-  box-shadow: inset 3px 0 0 var(--ansar-gold);
+  border: 1px dashed color-mix(in srgb, var(--cyan) 38%, var(--ansar-border));
+  background: var(--ansar-rowflat);
+  /* Squarer than a habit row. Small, but it is the cue the eye picks up in a
+     stack of seven identical 7px corners. */
+  border-radius: 4px;
+  cursor: default;
+}
+
+/* No hover lift and no pointer. The row does not respond to a tap and must not
+   promise that it will — .habitRowLive:hover would say otherwise. */
+.habitRow[data-emphasis="journal"]:hover {
+  border-color: color-mix(in srgb, var(--cyan) 38%, var(--ansar-border));
+}
+
+/* FILED. The dashes close into a solid rule the moment Tally has it: the slot
+   is no longer waiting, and the row now carries a fact rather than an absence. */
+.habitRow[data-emphasis="journal"].habitRowDone {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--cyan) 45%, transparent);
+  background: color-mix(in srgb, var(--cyan) 7%, var(--ansar-rowflat));
+}
+
+/* The name stays at full strength when filed. .habitRowDone mutes every other
+   name to grey because a done habit is spent; a filed journal is the opposite —
+   it is the row's whole point, and greying it hides the one state worth seeing. */
+.habitRow[data-emphasis="journal"].habitRowDone .habitName {
+  color: #ffffff;
+}
+
+/* The caption, as a pill rather than loose text — "Verified ✓" is a stamp on a
+   receipt, and it has to be legible as one from across the room. */
+.habitRow[data-emphasis="journal"] .habitNote {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cyan) 40%, transparent);
+}
+
+/* The journal's own box is square, not the round checkbox its neighbours use.
+   A circle is where a tick is EARNED by tapping; this one is stamped by the
+   form, and the two should not be the same shape. */
+.habitRow[data-emphasis="journal"] .habitBox {
+  border-radius: 5px;
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--cyan) 35%, transparent);
+  background: transparent;
+}
+.habitRow[data-emphasis="journal"].habitRowDone .habitBox {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--ansar-success) 78%, #000000);
+  background: color-mix(in srgb, var(--ansar-success) 12%, transparent);
 }
 
 .habitRow[data-emphasis="homeschool"] {

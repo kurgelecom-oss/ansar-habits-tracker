@@ -1,5 +1,5 @@
 import type { DashboardHabit } from "../../dashboard/types";
-import { guidanceFor, noteFor } from "../../dashboard/rowCopy";
+import { displayNameFor, guidanceFor, noteFor } from "../../dashboard/rowCopy";
 import { DEFAULT_ICON, HABIT_ICONS } from "../../dashboard/icons";
 import HabitRow from "./HabitRow";
 import HomeschoolSection from "./HomeschoolSection";
@@ -75,6 +75,7 @@ export default function DayProgrammePanel({
           // actually draws it.
           note={noteFor(habit, journalVerified)}
           description={guidanceFor(habit)}
+          displayName={displayNameFor(habit)}
           onTick={onTick}
           onHoldStart={onHoldStart}
           onHoldCancel={onHoldCancel}

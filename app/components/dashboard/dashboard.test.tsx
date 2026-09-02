@@ -18,7 +18,7 @@ import { weekdayFixture, weekendFixture } from "../../dashboard/fixtures";
 import type { DashboardHabit } from "../../dashboard/types";
 import type { MatchCentreData } from "../../lib/football/types";
 import { deriveMatchReadiness, groupHabitsByBlock } from "../../dashboard/model";
-import { guidanceFor, noteFor } from "../../dashboard/rowCopy";
+import { displayNameFor, guidanceFor, noteFor } from "../../dashboard/rowCopy";
 import { requiresParentVerification } from "../../lib/parent-verified";
 
 /**
@@ -931,7 +931,7 @@ describe("DayProgrammePanel", () => {
     render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
     const evening = screen.getAllByTestId("programme-section")[1];
     const names = within(evening).getAllByRole("button").map(b => b.textContent ?? "");
-    const journal = names.findIndex(n => n.includes("Daily learning journal"));
+    const journal = names.findIndex(n => n.includes("Journal Entry via Tally"));
     expect(journal).toBeGreaterThan(-1);
     expect(names[journal - 1]).toContain("Teeth brushed");
     expect(names[journal + 1]).toContain("Reading in bed");
@@ -955,10 +955,33 @@ describe("DayProgrammePanel", () => {
     const session = screen.getAllByTestId("homeschool-item")[0];
     expect(within(session).getByText("Homeschool session completed (4 hrs)")).toBeVisible();
     expect(within(session).getByText("Tap when 4 hours are completed")).toBeVisible();
+  });
 
+  /**
+   * THE JOURNAL ROW IS ONE LINE AND FOUR WORDS (tk, 2 Sep 2026).
+   *
+   * It is the only row nobody ticks, so it says what it is — "Journal Entry via
+   * Tally" — and nothing else. Notion's habit sentence and the old guidance line
+   * are both asserted GONE, because a row that ticks itself does not need a
+   * sentence explaining that it ticks itself under a name that already says so.
+   */
+  it("reduces the journal to its Tally name, with no habit sentence or guidance", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
     const journal = screen.getByTestId("programme-journal");
-    expect(within(journal).getByText("Daily learning journal entry written")).toBeVisible();
-    expect(within(journal).getByText("Ticks itself once you log it in Log Work")).toBeVisible();
+    expect(within(journal).getByText("Journal Entry via Tally")).toBeVisible();
+    expect(within(journal).queryByText("Daily learning journal entry written")).toBeNull();
+    expect(within(journal).queryByText("Ticks itself once you log it in Log Work")).toBeNull();
+  });
+
+  /**
+   * The row must not wear the parent-override colour every day of the week.
+   * Its distinctness is carried by data-emphasis, which the stylesheet turns
+   * into a dashed slot rather than the gold stripe it used to draw.
+   */
+  it("marks the journal row as its own kind of row", () => {
+    render(<DayProgrammePanel {...programme(weekdayFixture)} {...rowHandlers} />);
+    const journal = screen.getByTestId("programme-journal");
+    expect(within(journal).getByRole("button")).toHaveAttribute("data-emphasis", "journal");
   });
 
   /**
@@ -1559,24 +1582,33 @@ describe("rowCopy", () => {
   });
 
   /**
-   * The regression this file was created for. The journal's guidance and its
-   * "Recorded" caption used to be keyed to the Homeschool SECTION, so moving the
-   * row to Afternoon / Evening dropped both without failing anything.
+   * The regression this file was created for. The journal's copy used to be
+   * keyed to the Homeschool SECTION, so moving the row to Afternoon / Evening
+   * dropped it without failing anything. The name is now the copy that travels,
+   * and it has to travel the same way the caption does — asserted in both blocks
+   * so a Notion move cannot quietly restore the raw habit sentence.
    */
-  it("keeps the journal's words with it in any block", () => {
-    expect(guidanceFor(row({ block: "afternoon_evening" })))
-      .toBe("Ticks itself once you log it in Log Work");
-    expect(guidanceFor(row({ block: "homeschool", order: 7.5 })))
-      .toBe("Ticks itself once you log it in Log Work");
+  it("keeps the journal's name with it in any block", () => {
+    expect(displayNameFor(row({ block: "afternoon_evening" })))
+      .toBe("Journal Entry via Tally");
+    expect(displayNameFor(row({ block: "homeschool", order: 7.5 })))
+      .toBe("Journal Entry via Tally");
+  });
+
+  /** Every other row keeps the name Notion gave it. */
+  it("leaves every other habit's name alone", () => {
+    expect(displayNameFor(row({ id: "reading", name: "Reading in bed" }))).toBe("Reading in bed");
+    expect(displayNameFor(row({ id: "teeth", name: "Teeth brushed" }))).toBe("Teeth brushed");
   });
 
   /**
-   * It must not tell him to tap. The journal completes itself from the form
-   * (/api/journal-sync), and copy that still asked for a tap would be teaching
-   * a step that does nothing.
+   * No guidance line at all. It must not tell him to tap — the journal completes
+   * itself from the form (/api/journal-sync) — and it no longer explains the
+   * mechanism either, because the row's own name now states it.
    */
-  it("does not ask for a tap on a row that ticks itself", () => {
-    expect(guidanceFor(row({ block: "afternoon_evening" }))).not.toMatch(/tap/i);
+  it("gives the journal no guidance line in any block", () => {
+    expect(guidanceFor(row({ block: "afternoon_evening" }))).toBeUndefined();
+    expect(guidanceFor(row({ block: "homeschool", order: 7.5 }))).toBeUndefined();
   });
 
   /**

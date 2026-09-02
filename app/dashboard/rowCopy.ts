@@ -22,16 +22,38 @@ export const JOURNAL_ID = "journal";
 /**
  * The small line under a habit's name. Absent for rows that need no prompt.
  *
- * The journal's line does not tell him to tap, because he does not have to:
- * filing the Tally journal writes the completion itself (/api/journal-sync).
- * Telling a child to tap a row that ticks on its own is how he learns the board
- * is lying to him about one thing or the other.
+ * THE JOURNAL HAS NO GUIDANCE LINE (tk, 2 Sep 2026). Its row is not a habit the
+ * child works through — it is a receipt for a Tally submission, and it now says
+ * so in its own name ("Journal Entry via Tally", see `displayNameFor`). A second
+ * line explaining the mechanism underneath a name that already states it is the
+ * text tk asked to be gone.
  */
 const GUIDANCE: Record<string, string> = {
-  journal: "Ticks itself once you log it in Log Work",
   homeschool_session: "Tap when 4 hours are completed",
   btn_cornell: "A parent enters the PIN once the notes are checked",
 };
+
+/**
+ * The name a row SHOWS, where that differs from the name Notion stores.
+ *
+ * Only the journal differs, and it differs because its tick mechanism differs.
+ * Every other row on the board is a thing Ansar does and then taps. The journal
+ * is a thing he files on a Tally form, and the row ticks itself off the back of
+ * that submission (/api/journal-sync) — no tap, ever. Notion's sentence
+ * ("Daily learning journal entry written") describes a habit; the row is a
+ * receipt. Naming it for its mechanism is what stops it reading as one more
+ * unticked box he forgot.
+ *
+ * The override is keyed to the habit ID, NOT to a block or a section, so it
+ * survives Notion moving the journal the way the rest of this file does.
+ */
+const DISPLAY_NAME: Record<string, string> = {
+  [JOURNAL_ID]: "Journal Entry via Tally",
+};
+
+export function displayNameFor(habit: DashboardHabit): string {
+  return DISPLAY_NAME[habit.id] ?? habit.name;
+}
 
 export function guidanceFor(habit: DashboardHabit): string | undefined {
   return GUIDANCE[habit.id];

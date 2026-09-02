@@ -1,5 +1,5 @@
 import type { DashboardHabit } from "../../dashboard/types";
-import { guidanceFor, noteFor } from "../../dashboard/rowCopy";
+import { displayNameFor, guidanceFor, noteFor } from "../../dashboard/rowCopy";
 import { DEFAULT_ICON, HABIT_ICONS } from "../../dashboard/icons";
 import HabitRow from "./HabitRow";
 import styles from "./dashboard.module.css";
@@ -52,6 +52,7 @@ export default function HomeschoolSection({
             holding={holdId === habit.id}
             note={noteFor(habit, journalVerified)}
             description={guidanceFor(habit)}
+            displayName={displayNameFor(habit)}
             onTick={onTick}
             onHoldStart={onHoldStart}
             onHoldCancel={onHoldCancel}

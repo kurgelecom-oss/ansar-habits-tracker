@@ -43,6 +43,15 @@ type HabitRowProps = {
   note?: string;
   /** Supporting action copy shown below the primary habit name. */
   description?: string;
+  /**
+   * The name to SHOW, when it differs from the name Notion stores. Only the
+   * journal uses it (dashboard/rowCopy.ts `displayNameFor`), because only the
+   * journal is a receipt for a Tally submission rather than a habit to tap.
+   * Defaults to `habit.name`, so every other row is untouched. The visible text
+   * and the accessible name stay the SAME string — a screen reader announcing a
+   * different sentence from the one on screen is its own bug.
+   */
+  displayName?: string;
   onTick: (id: string, name: string) => void;
   onHoldStart: (habit: DashboardHabit) => void;
   onHoldCancel: () => void;
@@ -50,8 +59,10 @@ type HabitRowProps = {
 
 export default function HabitRow({
   habit, accent, saving = false, holding = false, icon, note, description,
+  displayName,
   onTick, onHoldStart, onHoldCancel,
 }: HabitRowProps) {
+  const shownName = displayName ?? habit.name;
   const isDone = habit.state === "DONE";
   const isLive = habit.state === "LIVE";
   const isMissed = habit.state === "MISSED";
@@ -76,7 +87,7 @@ export default function HabitRow({
       onPointerLeave={onHoldCancel}
       onPointerCancel={onHoldCancel}
       onContextMenu={event => event.preventDefault()}
-      aria-label={habit.overridden ? `${habit.name} — restored by parent override` : habit.name}
+      aria-label={habit.overridden ? `${shownName} — restored by parent override` : shownName}
       data-habit-id={habit.id}
       data-emphasis={emphasis}
       title={[
@@ -94,7 +105,7 @@ export default function HabitRow({
           owner's reference with a smaller guidance line; gate reasons still
           live in the tooltip and state remains visible through ✓ ✕ 🔒. */}
       <span className={styles.habitText}>
-        <span className={styles.habitName}>{habit.name}</span>
+        <span className={styles.habitName}>{shownName}</span>
         {description ? <span className={styles.habitDescription}>{description}</span> : null}
       </span>
 
