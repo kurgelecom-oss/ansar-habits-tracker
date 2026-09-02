@@ -116,9 +116,26 @@ export type JournalEvidence = {
   error: string | null;
 };
 
+const NO_KEY = "TALLY_API_KEY is not set for this deploy";
+
 const UNCONFIGURED: JournalEvidence = {
-  configured: false, found: false, submittedAt: null,
-  error: "TALLY_API_KEY is not set for this deploy",
+  configured: false, found: false, submittedAt: null, error: NO_KEY,
+};
+
+/**
+ * Every day the form currently has a journal for, from ONE read.
+ *
+ * /api/journal-sync asks about more than one day (today and yesterday, its
+ * grace window). Asking day by day would be two round trips to Tally for two
+ * questions the same response already answers, and — worse — two chances for
+ * the answers to disagree if a submission lands between them. One fetch, one
+ * assignment pass, one map.
+ */
+export type JournalEvidenceMap = {
+  configured: boolean;
+  error: string | null;
+  /** Sydney YYYY-MM-DD → the submission that owns that day. */
+  byDate: Record<string, { submittedAt: string | null }>;
 };
 
 /* ── Answer shapes ───────────────────────────────────────────────────────── */
@@ -172,74 +189,91 @@ function answerFor(submission: Submission, questionId: string): string[] {
   return hit ? answerStrings(hit.answer) : [];
 }
 
+/** A calendar date at the start of a string, e.g. "2026-09-01" or an ISO stamp. */
+const DATE_PREFIX = /^(\d{4}-\d{2}-\d{2})/;
+
 /**
- * Does this submission count as today's journal?
+ * WHICH DAY does this submission belong to — or null if it is not a journal?
  *
- * FOUR CONDITIONS, and the date one is deliberately generous:
+ * EXACTLY ONE DAY, NEVER TWO. This used to ask the opposite question ("does this
+ * submission match day D?") and answer it generously: EITHER the child-entered
+ * "Date of work" OR the Sydney date it landed on would do. That was harmless
+ * while only one day was ever evaluated, and became a double-credit the moment
+ * /api/journal-sync grew a one-day grace window — a journal written at 07:39
+ * Thursday and honestly dated Wednesday matched Wednesday by its date field AND
+ * Thursday by its landing time, earning two ticks for one piece of writing.
+ * Turning the question around removes the overlap by construction: a submission
+ * is assigned to one day, and a day then asks which submissions it owns.
  *
+ * THE DATE HE PUTS ON THE FORM IS THE DAY IT COUNTS FOR. That is the whole rule,
+ * and it is short enough to say to a ten-year-old. Tally marks "Date of work"
+ * required and choosing "Daily Journal" is what reveals it, so it is always
+ * present in practice; the landing date is a fallback for a submission that
+ * somehow arrives without one, not a second chance at a different day.
+ *
+ * The other four conditions are unchanged:
  *   1. completed — a partial submission is a form someone opened, not a journal
  *   2. "What are you logging?" is Daily Journal — the whole discriminator
  *   3. Student is Ansar — the form is shared with his sister
  *   4. the "Journal entry" textarea is not empty — choosing "Daily Journal" from
- *      a dropdown is not writing one, and the gate is meant to require the
- *      writing. Tally marks the field required, so this only ever catches a
- *      submission that reached us some other way
- *   5. it belongs to `date`, by EITHER the child-entered "Date of work" OR the
- *      Sydney date the submission actually landed on
- *
- * Condition 5 is an OR because the two fields genuinely disagree in the real
- * data. The journal filed at 07:39 Sydney on 2 Sep carried a "Date of work" of
- * 2 Sep while its prose narrated the 1st; one filed at 21:42 on 31 Aug had them
- * agreeing. Requiring both would refuse a journal that was plainly written, and
- * requiring only the child-entered one puts the gate behind a date picker a
- * ten-year-old is typing at bedtime. Either field naming the day is enough — and
- * being generous here costs nothing, because passing this gate still only earns
- * the right to TAP the row inside its 21:00–21:30 window.
+ *      a dropdown is not writing one, and this is meant to require the writing
  */
-function matches(sub: Submission, ids: Record<keyof typeof Q, string>, date: string): boolean {
-  if (sub.isCompleted === false) return false;
+function journalDayOf(
+  sub: Submission,
+  ids: Record<keyof typeof Q, string>,
+): string | null {
+  if (sub.isCompleted === false) return null;
 
   const kind = answerFor(sub, ids.kind);
-  if (!kind.some(v => JOURNAL_VALUES.includes(v))) return false;
+  if (!kind.some(v => JOURNAL_VALUES.includes(v))) return null;
 
   const student = answerFor(sub, ids.student);
-  if (!student.some(v => ANSAR_VALUES.includes(v))) return false;
+  if (!student.some(v => ANSAR_VALUES.includes(v))) return null;
 
   const entry = answerFor(sub, ids.entry);
-  if (!entry.some(v => v.length > 0)) return false;
+  if (!entry.some(v => v.length > 0)) return null;
 
-  const dateOfWork = answerFor(sub, ids.dateOfWork).some(v => v.startsWith(date));
-  const landedOn = typeof sub.submittedAt === "string"
-    && !Number.isNaN(Date.parse(sub.submittedAt))
-    && sydneyDateKey(new Date(sub.submittedAt)) === date;
+  for (const value of answerFor(sub, ids.dateOfWork)) {
+    const hit = DATE_PREFIX.exec(value);
+    if (hit) return hit[1];
+  }
 
-  return dateOfWork || landedOn;
+  // No usable "Date of work". Fall back to when it landed, in Sydney — never
+  // UTC and never the machine's zone, so it agrees with the clock every gate in
+  // this app is decided against.
+  if (typeof sub.submittedAt === "string" && !Number.isNaN(Date.parse(sub.submittedAt))) {
+    return sydneyDateKey(new Date(sub.submittedAt));
+  }
+  return null;
 }
 
 /* ── The read ────────────────────────────────────────────────────────────── */
 
-let cache: { at: number; date: string; value: JournalEvidence } | null = null;
+let cache: { at: number; value: JournalEvidenceMap } | null = null;
 
 /**
- * Is there a Daily Journal submission for `date` (a Sydney YYYY-MM-DD)?
+ * Every day the form has a journal for, as one map.
  *
  * `fresh` bypasses the 30-second memo. It changes only how stale the read is,
- * never what the gate concludes from it.
+ * never what any caller concludes from it.
  *
  * NEVER THROWS. A network failure, a 401, or a response shaped differently than
- * expected all come back as `{ found: false, error: "..." }`, and the gate reads
- * the error rather than the false. This function's job is to report what it
+ * expected all come back as `{ byDate: {}, error: "..." }`, and callers read the
+ * error rather than the empty map. This function's job is to report what it
  * knows, including that it knows nothing.
+ *
+ * The memo is no longer keyed by date. It does not need to be: the map covers
+ * every day in the fetch window at once, so one read answers today, yesterday
+ * and anything else asked of it — and cannot serve one day's answer for another,
+ * because each day has its own entry.
  */
-export async function getJournalEvidence(date: string, fresh = false): Promise<JournalEvidence> {
+export async function getJournalEvidenceMap(fresh = false): Promise<JournalEvidenceMap> {
   const key = process.env.TALLY_API_KEY;
-  if (!key) return UNCONFIGURED;
+  if (!key) return { configured: false, error: NO_KEY, byDate: {} };
 
-  if (!fresh && cache && cache.date === date && Date.now() - cache.at < CACHE_MS) {
-    return cache.value;
-  }
+  if (!fresh && cache && Date.now() - cache.at < CACHE_MS) return cache.value;
 
-  let value: JournalEvidence;
+  let value: JournalEvidenceMap;
   try {
     const res = await fetch(
       `${API_ROOT}/forms/${FORM_ID}/submissions?page=1&limit=${PAGE_LIMIT}&filter=completed`,
@@ -269,24 +303,48 @@ export async function getJournalEvidence(date: string, fresh = false): Promise<J
       entry: resolveQuestionId(questions, "entry"),
     };
 
-    const hit = submissions.find(s => matches(s, ids, date));
-    value = {
-      configured: true,
-      found: Boolean(hit),
-      submittedAt: typeof hit?.submittedAt === "string" ? hit.submittedAt : null,
-      error: null,
-    };
+    const byDate: JournalEvidenceMap["byDate"] = {};
+    for (const s of submissions) {
+      const day = journalDayOf(s, ids);
+      if (!day) continue;
+      const submittedAt = typeof s.submittedAt === "string" ? s.submittedAt : null;
+      const held = byDate[day];
+      /* Two journals filed for the same day: keep the EARLIER one. It is the
+         submission that actually earned the day, and the recorded time should
+         not drift later because he opened the form again to add a line. */
+      if (held && held.submittedAt && submittedAt && held.submittedAt <= submittedAt) continue;
+      byDate[day] = { submittedAt };
+    }
+    value = { configured: true, error: null, byDate };
   } catch (e) {
     value = {
       configured: true,
-      found: false,
-      submittedAt: null,
       error: e instanceof Error ? e.message : "Tally read failed",
+      byDate: {},
     };
   }
 
-  cache = { at: Date.now(), date, value };
+  cache = { at: Date.now(), value };
   return value;
+}
+
+/**
+ * Is there a Daily Journal submission for `date` (a Sydney YYYY-MM-DD)?
+ *
+ * A single-day view of the map above, kept because gate 6 and /api/tick ask
+ * about exactly one day and have no use for the rest.
+ */
+export async function getJournalEvidence(date: string, fresh = false): Promise<JournalEvidence> {
+  if (!process.env.TALLY_API_KEY) return UNCONFIGURED;
+
+  const map = await getJournalEvidenceMap(fresh);
+  const hit = map.byDate[date];
+  return {
+    configured: map.configured,
+    found: Boolean(hit),
+    submittedAt: hit?.submittedAt ?? null,
+    error: map.error,
+  };
 }
 
 /** Test seam. Drops the memo so a case cannot inherit the previous one's answer. */

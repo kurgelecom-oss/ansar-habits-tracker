@@ -167,37 +167,65 @@ describe("getJournalEvidence — what counts as the journal", () => {
 
 describe("getJournalEvidence — which day a journal belongs to", () => {
   /**
-   * THE 07:39 CASE, from the real data. The journal filed at 2026-09-01T21:39Z
-   * landed at 07:39 the next morning in Sydney. The two date fields genuinely
-   * disagree in practice — "Date of work" is a picker a ten-year-old is tapping
-   * at bedtime — so EITHER naming the day is enough.
+   * THE RULE, in one line: the date he puts on the form is the day it counts
+   * for. It beats the landing time even when the two are days apart, because it
+   * is the only field that says anything about the day the work happened.
    */
-  it("matches on the Sydney date it landed on, even when Date of work disagrees", async () => {
-    // 11:42 UTC is 21:42 Sydney the same day; Date of work names two days prior.
-    respondWith([journal("2026-09-01T11:42:34.000Z", { EDLkD2: "2026-08-30" })]);
-
-    expect((await getJournalEvidence("2026-09-01")).found).toBe(true);
-  });
-
-  it("matches on Date of work, even when it landed on another Sydney day", async () => {
-    // 10:00 UTC on the 31st is 20:00 Sydney on the 31st — but it is filed for
-    // the 1st, and a journal written up the night before still counts.
+  it("counts a journal for its Date of work, not the day it was filed", async () => {
+    // 10:00 UTC on the 31st is 20:00 Sydney on the 31st — filed for the 1st.
     respondWith([journal("2026-08-31T10:00:00.000Z", { EDLkD2: "2026-09-01" })]);
 
     expect((await getJournalEvidence("2026-09-01")).found).toBe(true);
+    expect((await getJournalEvidence("2026-08-31")).found).toBe(false);
   });
 
   /**
-   * Sydney, never UTC and never the machine's zone. 2026-09-01T21:39Z is still
-   * the 1st in London and already the 2nd in Sydney, which is the only reading
-   * that agrees with the clock every gate in this app is decided against.
+   * THE DOUBLE-CREDIT THIS RULE EXISTS TO PREVENT — and the exact case tk asked
+   * about. Under the old "Date of work OR landing date" match, a journal written
+   * at 07:39 Thursday and honestly dated Wednesday satisfied BOTH days: Wednesday
+   * by its date field, Thursday by when it landed. Harmless while only one day
+   * was ever evaluated; two ticks for one piece of writing the moment
+   * /api/journal-sync grew its grace window.
    */
-  it("reads the landing date in Sydney, not UTC", async () => {
-    respondWith([journal("2026-09-01T21:39:10.000Z", { EDLkD2: "1999-01-01" })]);
+  it("never lets one submission count for two days", async () => {
+    // 21:39Z on the 1st is 07:39 Sydney on the 2nd. Dated the 1st.
+    respondWith([journal("2026-09-01T21:39:10.000Z", { EDLkD2: "2026-09-01" })]);
+
+    expect((await getJournalEvidence("2026-09-01")).found).toBe(true);
+    expect((await getJournalEvidence("2026-09-02")).found).toBe(false);
+  });
+
+  /**
+   * The landing date is a FALLBACK, not a second chance at a different day. It
+   * is read in Sydney, never UTC and never the machine's zone: 2026-09-01T21:39Z
+   * is still the 1st in London and already the 2nd in Sydney, and Sydney is the
+   * only reading that agrees with the clock every gate in this app uses.
+   */
+  it("falls back to the Sydney landing date when Date of work is absent", async () => {
+    respondWith([journal("2026-09-01T21:39:10.000Z", { EDLkD2: "" })]);
 
     expect((await getJournalEvidence("2026-09-02")).found).toBe(true);
-    __resetJournalEvidenceCache();
     expect((await getJournalEvidence("2026-09-01")).found).toBe(false);
+  });
+
+  it("ignores a Date of work that is not a date", async () => {
+    respondWith([journal("2026-09-01T21:39:10.000Z", { EDLkD2: "sometime last week" })]);
+
+    // Unparseable, so the landing date decides: 07:39 Sydney on the 2nd.
+    expect((await getJournalEvidence("2026-09-02")).found).toBe(true);
+  });
+
+  /**
+   * Two journals filed for one day: the earlier one earned it. The recorded
+   * time must not drift later because he reopened the form to add a line.
+   */
+  it("keeps the earlier submission when a day has two journals", async () => {
+    respondWith([
+      journal("2026-09-01T12:00:00.000Z", { EDLkD2: "2026-09-01", OYLaBK: "second thoughts" }),
+      journal("2026-09-01T09:00:00.000Z", { EDLkD2: "2026-09-01", OYLaBK: "the first one" }),
+    ]);
+
+    expect((await getJournalEvidence("2026-09-01")).submittedAt).toBe("2026-09-01T09:00:00.000Z");
   });
 });
 
@@ -344,12 +372,17 @@ describe("getJournalEvidence — caching", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  /** A memo keyed on the day, so midnight cannot serve yesterday's answer. */
-  it("does not serve one day's answer for another", async () => {
+  /**
+   * One read answers every day. The memo holds a map keyed by date rather than a
+   * single day's verdict, so it cannot serve one day's answer for another — and
+   * /api/journal-sync's two-day window costs one request, not two, with no
+   * chance of the two disagreeing because a submission landed between them.
+   */
+  it("answers every day in the window from a single read", async () => {
     const fetchMock = respondWith([journal("2026-09-01T11:42:34.000Z", { EDLkD2: "2026-09-01" })]);
 
     expect((await getJournalEvidence("2026-09-01")).found).toBe(true);
     expect((await getJournalEvidence("2026-09-02")).found).toBe(false);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
