@@ -34,7 +34,7 @@ const ITEMS: { label: string; icon: string; href?: string; external?: boolean }[
   { label: "Progress", icon: "\u{1F4C8}", href: "/progress" },
   { label: "Targets", icon: "\u{1F3AF}", href: "/targets" },
   { label: "Tests", icon: "\u{1F4DA}", href: "/tests" },
-  { label: "Leaderboards", icon: "\u{1F3C6}" },
+  { label: "Leaderboards", icon: "\u{1F3C6}", href: "/leaderboards" },
   { label: "History", icon: "\u{1F551}" },
   { label: "Settings", icon: "\u2699\uFE0F", external: true },
 ];
