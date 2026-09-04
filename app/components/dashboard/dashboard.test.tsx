@@ -632,7 +632,7 @@ describe("vertical budget before the panels", () => {
   const FUNDED_CEILING = 362;
 
   it("still funds the raised ceiling by hiding the shared bar", () => {
-    expect(globalCss).toContain('body:has(main[aria-label="ANSAR FC Dashboard"]) .topnav');
+    expect(globalCss).toContain('body:has(main[aria-label^="ANSAR"]) .topnav');
     expect(globalCss).toMatch(/--nav-h:\s*40px/);
     expect(pageSource).toMatch(/\.ab-root\{[^}]*padding-top:0/);
   });
@@ -1496,8 +1496,8 @@ describe("visual parity contracts", () => {
   const globalCss = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
   const pageSource = readFileSync(resolve(process.cwd(), "app/page.tsx"), "utf8");
 
-  it("removes the redundant shared navigation only on the ANSAR dashboard", () => {
-    expect(globalCss).toContain('body:has(main[aria-label="ANSAR FC Dashboard"]) .topnav');
+  it("removes the redundant shared navigation on every ANSAR OS surface", () => {
+    expect(globalCss).toContain('body:has(main[aria-label^="ANSAR"]) .topnav');
     expect(pageSource).toMatch(/\.ab-root\{[^}]*padding-top:0/);
   });
 
