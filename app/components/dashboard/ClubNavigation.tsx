@@ -10,11 +10,9 @@ import { CONTROL_ROOM_FALLBACK_URL } from "../../lib/notion-sources";
  * every repo. This bar is internal to ANSAR FC and names the club's own spaces.
  * Both are on screen at once, which is why this one is not fixed.
  *
- * Spec §7.2: only Dashboard may navigate. The other five are future products
- * with their own design contracts, and a link to a blank page is worse than no
- * link — so they are spans with no href, unfocusable and unfollowable, marked
- * aria-disabled with a quiet "Coming later". They are shown rather than hidden
- * so the shape of the finished product is legible from day one.
+ * Progress is the only new surface that is live in this stage. The remaining
+ * labels deliberately stay disabled until their underlying data model exists:
+ * a link to an empty screen would imply a feature that has not been built.
  *
  * Settings is the one exception. Until a real settings screen exists it opens
  * the Notion page that actually owns the board's configuration — 🎛️ ANSAR OS —
@@ -33,17 +31,17 @@ import { CONTROL_ROOM_FALLBACK_URL } from "../../lib/notion-sources";
  */
 const ITEMS: { label: string; icon: string; href?: string; external?: boolean }[] = [
   { label: "Dashboard", icon: "\u{1F3E0}", href: "/" },
-  { label: "Habits", icon: "\u{1F4CB}" },
-  { label: "Quests", icon: "\u{1F3AF}" },
-  { label: "Teams", icon: "\u{1F465}" },
+  { label: "Progress", icon: "\u{1F4C8}", href: "/progress" },
+  { label: "Targets", icon: "\u{1F3AF}" },
+  { label: "Tests", icon: "\u{1F4DA}" },
   { label: "Leaderboards", icon: "\u{1F3C6}" },
   { label: "History", icon: "\u{1F551}" },
   { label: "Settings", icon: "\u2699\uFE0F", external: true },
 ];
 
 export default function ClubNavigation(
-  { status = null, controlRoomUrl = CONTROL_ROOM_FALLBACK_URL }:
-    { status?: React.ReactNode; controlRoomUrl?: string },
+  { status = null, controlRoomUrl = CONTROL_ROOM_FALLBACK_URL, activeLabel = "Dashboard" }:
+    { status?: React.ReactNode; controlRoomUrl?: string; activeLabel?: string },
 ) {
   return (
     <nav className={styles.clubNav} aria-label="ANSAR FC sections">
@@ -67,8 +65,8 @@ export default function ClubNavigation(
                 href={item.external ? controlRoomUrl : item.href}
                 {...(item.external
                   ? { target: "_blank", rel: "noopener noreferrer", title: "Edit the board's Notion tables" }
-                  : { "aria-current": "page" as const })}
-                className={`${styles.clubNavItem} ${item.external ? "" : styles.clubNavItemActive}`}
+                  : item.label === activeLabel ? { "aria-current": "page" as const } : {})}
+                className={`${styles.clubNavItem} ${item.label === activeLabel ? styles.clubNavItemActive : ""}`}
                 data-testid="club-nav-item"
               >
                 <span aria-hidden="true" className={styles.clubNavIcon}>{item.icon}</span>
@@ -77,7 +75,7 @@ export default function ClubNavigation(
             ) : (
               <span
                 aria-disabled="true"
-                title="Coming later"
+                title="Coming in a later ANSAR OS stage"
                 className={`${styles.clubNavItem} ${styles.clubNavItemFuture}`}
                 data-testid="club-nav-item"
               >

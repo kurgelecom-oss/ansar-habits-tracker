@@ -29,8 +29,8 @@ import { requiresParentVerification } from "../../lib/parent-verified";
  * tables. It is asserted separately below, so putting it back here (and
  * dropping the href in ClubNavigation) is all that reverting takes.
  */
-const FUTURE_ITEMS = ["Habits", "Quests", "Teams", "Leaderboards", "History"];
-const NAV_ORDER = ["Dashboard", ...FUTURE_ITEMS, "Settings"];
+const FUTURE_ITEMS = ["Targets", "Tests", "Leaderboards", "History"];
+const NAV_ORDER = ["Dashboard", "Progress", ...FUTURE_ITEMS, "Settings"];
 
 /**
  * The habit row's declared min-height.
@@ -72,7 +72,7 @@ describe("ClubNavigation", () => {
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
     for (const label of FUTURE_ITEMS) {
       expect(navItem(label)).toHaveAttribute("aria-disabled", "true");
-      expect(navItem(label)).toHaveAttribute("title", "Coming later");
+      expect(navItem(label)).toHaveAttribute("title", "Coming in a later ANSAR OS stage");
     }
   });
 
@@ -80,18 +80,18 @@ describe("ClubNavigation", () => {
    * Spec §7.2: future items must not link anywhere. A disabled span with no
    * href cannot be tabbed to or followed, which is the whole point.
    */
-  it("gives future items no link to follow", () => {
+  it("gives Progress a link and keeps unfinished OS sections disabled", () => {
     render(<ClubNavigation />);
-    expect(screen.getAllByRole("link")).toHaveLength(2);
+    expect(screen.getAllByRole("link")).toHaveLength(3);
+    expect(screen.getByRole("link", { name: "Progress" })).toHaveAttribute("href", "/progress");
     for (const label of FUTURE_ITEMS) {
       expect(screen.getByText(label).tagName).toBe("SPAN");
-      expect(screen.getByText(label)).not.toHaveAttribute("href");
     }
   });
 
   it("uses the reference navigation copy", () => {
     render(<ClubNavigation />);
-    expect(screen.getByText("Teams")).toBeInTheDocument();
+    expect(screen.getByText("Tests")).toBeInTheDocument();
     expect(screen.getByText("Leaderboards")).toBeInTheDocument();
   });
 
