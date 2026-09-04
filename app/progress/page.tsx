@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import ClubNavigation from "../components/dashboard/ClubNavigation";
 import { addDays, sydneyDateKey, weekStartOf } from "../lib/time";
 import styles from "./progress.module.css";
+import EvidenceReviewPanel from "./EvidenceReviewPanel";
 
 type Habit = { id: string; name: string; days: string[]; pointType: string };
 type Completion = { habit_id: string; completed_date: string };
@@ -102,6 +103,7 @@ export default function ProgressPage() {
             </div>
           </section>
           <section className={styles.breakdown}><h2>Compounding record</h2><div className={styles.weekGrid}>{weeks.slice(0, 8).reverse().map(week => { const record = days.filter(day => weekStartOf(day.date) === week); const done = record.reduce((n, d) => n + d.done, 0); const total = record.reduce((n, d) => n + d.planned, 0); const percent = total ? Math.round(done / total * 100) : 0; const score = weekResults.find(row => row.week_start === week); return <article key={week}><span>Week of {week.slice(5)}</span><strong>{score ? `${score.total_points}/55` : `${percent}%`}</strong><div><i style={{ width: `${percent}%` }} /></div><small>{score ? `${score.tier}${score.partial ? " · partial" : ""}` : `${done} of ${total} planned habits`}</small></article>; })}</div></section>
+          <EvidenceReviewPanel selectedWeek={selectedWeek} />
         </> : null}
       </section>
     </main>
