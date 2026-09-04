@@ -32,7 +32,7 @@ import { CONTROL_ROOM_FALLBACK_URL } from "../../lib/notion-sources";
 const ITEMS: { label: string; icon: string; href?: string; external?: boolean }[] = [
   { label: "Dashboard", icon: "\u{1F3E0}", href: "/" },
   { label: "Progress", icon: "\u{1F4C8}", href: "/progress" },
-  { label: "Targets", icon: "\u{1F3AF}" },
+  { label: "Targets", icon: "\u{1F3AF}", href: "/targets" },
   { label: "Tests", icon: "\u{1F4DA}" },
   { label: "Leaderboards", icon: "\u{1F3C6}" },
   { label: "History", icon: "\u{1F551}" },
