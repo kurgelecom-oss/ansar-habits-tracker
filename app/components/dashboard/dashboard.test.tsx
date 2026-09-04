@@ -29,8 +29,8 @@ import { requiresParentVerification } from "../../lib/parent-verified";
  * tables. It is asserted separately below, so putting it back here (and
  * dropping the href in ClubNavigation) is all that reverting takes.
  */
-const FUTURE_ITEMS = ["Tests", "Leaderboards", "History"];
-const NAV_ORDER = ["Dashboard", "Progress", "Targets", ...FUTURE_ITEMS, "Settings"];
+const FUTURE_ITEMS = ["Leaderboards", "History"];
+const NAV_ORDER = ["Dashboard", "Progress", "Targets", "Tests", ...FUTURE_ITEMS, "Settings"];
 
 /**
  * The habit row's declared min-height.
@@ -80,11 +80,12 @@ describe("ClubNavigation", () => {
    * Spec §7.2: future items must not link anywhere. A disabled span with no
    * href cannot be tabbed to or followed, which is the whole point.
    */
-  it("gives Progress and Targets links and keeps unfinished OS sections disabled", () => {
+  it("gives Progress, Targets and Tests links and keeps unfinished OS sections disabled", () => {
     render(<ClubNavigation />);
-    expect(screen.getAllByRole("link")).toHaveLength(4);
+    expect(screen.getAllByRole("link")).toHaveLength(5);
     expect(screen.getByRole("link", { name: "Progress" })).toHaveAttribute("href", "/progress");
     expect(screen.getByRole("link", { name: "Targets" })).toHaveAttribute("href", "/targets");
+    expect(screen.getByRole("link", { name: "Tests" })).toHaveAttribute("href", "/tests");
     for (const label of FUTURE_ITEMS) {
       expect(screen.getByText(label).tagName).toBe("SPAN");
     }
