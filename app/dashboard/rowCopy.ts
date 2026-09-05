@@ -55,8 +55,13 @@ export function displayNameFor(habit: DashboardHabit): string {
   return DISPLAY_NAME[habit.id] ?? habit.name;
 }
 
+/**
+ * The hand-written line wins; otherwise Notion's "Target" (the Saturday Push
+ * ladder) is the guidance. Push targets are edited weekly in Notion, so they
+ * are deliberately NOT written down here.
+ */
 export function guidanceFor(habit: DashboardHabit): string | undefined {
-  return GUIDANCE[habit.id];
+  return GUIDANCE[habit.id] ?? (habit.target || undefined);
 }
 
 /**

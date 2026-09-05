@@ -48,7 +48,7 @@ describe("groupHabitsByBlock", () => {
   it("returns every block key so no configured habit can be silently dropped", () => {
     const grouped = groupHabitsByBlock([]);
     expect(Object.keys(grouped).sort()).toEqual([
-      "afternoon_evening", "conditional", "homeschool", "pre_homeschool",
+      "afternoon_evening", "conditional", "homeschool", "pre_homeschool", "saturday_push",
     ]);
     expect(grouped.conditional).toEqual([]);
   });

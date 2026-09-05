@@ -1997,3 +1997,19 @@
   color: var(--ansar-subtext);
 }
 .sheetGuide li::marker { color: var(--cyan); }
+
+/* ── Rest day (Sunday) ─────────────────────────────────────────────────── */
+.restDay {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 48px 24px;
+  color: #ffffff;
+}
+.restDayGlyph { font-size: 56px; margin: 0; }
+.restDayTitle { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 0.02em; }
+.restDayCopy { font-size: 14px; color: var(--ansar-muted); margin: 0; max-width: 32ch; }

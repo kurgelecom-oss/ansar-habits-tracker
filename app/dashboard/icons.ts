@@ -14,6 +14,7 @@ export const HABIT_ICONS: Record<string, string> = {
   readtheory: "📘", khan: "📐", journal: "📓", btn_cornell: "📰",
   all_namaz: "🕌", room_tidy: "🧹", shower: "🚿", teeth: "🪥",
   reading: "🌙", soccer_training: "⚽",
+  push_engine: "🏃", push_strength: "💪", push_quran: "📖",
 };
 
 export const DEFAULT_ICON = "✅";

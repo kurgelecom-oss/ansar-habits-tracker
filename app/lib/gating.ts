@@ -26,6 +26,8 @@ export const BLOCK_PRE = "pre_homeschool";
 export const BLOCK_SCHOOL = "homeschool";
 export const BLOCK_ARVO = "afternoon_evening";
 export const BLOCK_CONDITIONAL = "conditional";
+/** Saturday-only. Three parent-verified push rows; zero FC points — see lib/weekend.ts. */
+export const BLOCK_PUSH = "saturday_push";
 
 /**
  * Notion "Block" select option → local block id.
@@ -41,6 +43,7 @@ export const NOTION_BLOCK_MAP: Record<string, string> = {
   "Homeschool": BLOCK_SCHOOL,
   "Afternoon/Evening": BLOCK_ARVO,
   "Conditional": BLOCK_CONDITIONAL,
+  "Saturday Push": BLOCK_PUSH,
 };
 
 /** Every way a tick can be refused. These strings are part of the API contract. */
@@ -273,47 +276,31 @@ export function isWeekendDate(date: string): boolean {
 }
 
 /**
- * The Stretch Wallet cascade. What has to be finished before PS5 minutes exist:
+ * The Stretch Wallet cascade — MON–FRI ONLY (tk, 5 Sep 2026).
  *
  *     weekday (Mon–Fri)  →  Qur'an + Morning + Homeschool
- *     weekend (Sat/Sun)  →  Qur'an only
+ *     weekend (Sat/Sun)  →  closed. The wallet does not exist on a weekend.
  *
- * THE WEEKEND IS OPEN BY DESIGN (tk, 21 Aug). The previous rule required the
- * full Morning block AND the full Afternoon/Evening block on Sat/Sun — but
- * room_tidy, teeth and reading sit in a 21:00–21:30 window, so the weekend
- * wallet could not open before 9pm and every stretch item spent the whole
- * weekend day greyed out. The weekend is when banked minutes convert to PS5;
- * a wallet that only opens at bedtime on exactly those days defeated it. Now
- * every stretch item is available all weekend, and finishing them all is what
- * raises the day's redemption cap — see /api/stretch for the +30 bonus.
+ * The weekend used to be the wallet's whole purpose: minutes banked Mon–Fri
+ * converted to PS5 on Sat/Sun. Nobody tracked minutes, so that model is gone.
+ * The wallet is now a daily switch — every item done = 1h15 PS5 that day — and
+ * the weekend runs on two different rules entirely (lib/weekend.ts): the week's
+ * tier decides IF, the Saturday Push decides WHEN. Sunday is switched off.
  *
- * The Afternoon/Evening requirement is NOT applied on a school day either.
- * Requiring it there was tried and reverted for the same 9pm reason. Weekdays
- * keep the original rule: finish the morning, finish homeschool, the wallet is
- * open.
- *
- * The Qur'an daily minimum is an ungamified gate and applies EVERY day,
- * weekend included: it earns nothing and is worth zero points, it only
- * unlocks. On weekdays it sits in pre_homeschool, so requiring that block
- * already requires it — the explicit check below is what keeps it required on
- * a weekend, and stays true even if the habit is ever moved to another block
- * in Notion.
- *
- * The weekend branch still fails closed on a Notion outage: with the habit
- * list not loaded, quranExists is false and the explicit habitsLoaded check
- * refuses — an outage must not be the thing that opens the till.
+ * The Qur'an daily minimum is an ungamified gate: it earns nothing and is worth
+ * zero points, it only unlocks. It sits in pre_homeschool, so requiring that
+ * block already requires it — the explicit check is kept so the rule survives
+ * the habit being moved to another block in Notion.
  */
 export const QURAN_HABIT_ID = "quran";
 
 export function gateWallet(ctx: GateContext): GateVerdict {
+  if (isWeekendDate(ctx.serverDate)) {
+    return deny("closed", "Stretch Wallet runs Monday to Friday");
+  }
   const quranExists = ctx.habits.some(h => h.id === QURAN_HABIT_ID);
   if (quranExists && !isDone(ctx, QURAN_HABIT_ID)) {
     return deny("locked", "Locked — Qur'an recitation first");
-  }
-  if (isWeekendDate(ctx.serverDate)) {
-    return ctx.habitsLoaded === true
-      ? allow
-      : deny("locked", "Locked — habit list unavailable");
   }
   if (!blockSatisfied(ctx, BLOCK_PRE)) {
     return deny("locked", "Locked — finish Morning Habits first");

@@ -36,6 +36,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sydneyNow } from "../../lib/time";
+import { isRestDay } from "../../lib/weekend";
 import {
   evaluateGates,
   buttonState,
@@ -291,6 +292,11 @@ export async function GET(request: Request) {
         minutesOfDay: now.minutesOfDay,
         utcIso: now.iso,
       },
+      /* SUNDAY IS SWITCHED OFF (tk, 5 Sep 2026). The board renders one rest
+         card and nothing else; POST below refuses every tick. Notion Days drop
+         Sun on every habit too, but this flag is decided from the SERVER's
+         weekday so a Notion edit can never bring Sunday back by itself. */
+      restDay: isRestDay(now.weekday),
       serviceRoleConfigured: hasServiceRole(),
       overridePinConfigured: Boolean(process.env.PARENT_OVERRIDE_PIN),
       // Lockout is reported so the dialog can show a live countdown after a
@@ -389,6 +395,8 @@ export async function GET(request: Request) {
              answer here changes no gate — a row needing a PIN is still LIVE or
              LOCKED on exactly the grounds it was before. */
           parentVerifyRequired: requiresParentVerification(h.id),
+          /* Notion "Target" — the Saturday Push ladder. Presentation only. */
+          target: h.target ?? null,
           window: h.windowStart && h.windowEnd ? `${h.windowStart}-${h.windowEnd}` : null,
           dwellSeconds: h.dwellSeconds,
           state,
@@ -464,6 +472,18 @@ export async function POST(request: Request) {
       reason,
       message,
       serverDate: serverToday,
+    }, { status: 409, headers: noStore });
+  }
+
+  /* REST DAY. Sunday exists for nobody — no habit, no wallet, no override.
+     Refused before any lookup so the answer is the same whatever Notion says. */
+  if (isRestDay(now.weekday)) {
+    await logRejection({
+      habitId, serverDate: serverToday, reason: "closed", detail: "Rest day — nothing is ticked on a Sunday",
+      nowMinutes: now.minutesOfDay,
+    });
+    return NextResponse.json({
+      ok: false, reason: "closed", message: "Rest day — the board is back Monday 6:30am", serverDate: serverToday,
     }, { status: 409, headers: noStore });
   }
 

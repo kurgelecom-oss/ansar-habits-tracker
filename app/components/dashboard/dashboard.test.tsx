@@ -10,11 +10,15 @@ import HabitPanel from "./HabitPanel";
 import HabitRow from "./HabitRow";
 import MatchCentre from "./MatchCentre";
 import StretchWalletPanel from "./StretchWalletPanel";
+import SaturdayPanel from "./SaturdayPanel";
+import RestDayCard from "./RestDayCard";
+import { saturdayPs5 } from "../../lib/weekend";
 import WeeklyTierProgress from "./WeeklyTierProgress";
 import WorkWeekPanel from "./WorkWeekPanel";
 import DashboardShell from "./DashboardShell";
 import Panel from "./Panel";
 import { weekdayFixture, weekendFixture } from "../../dashboard/fixtures";
+import { getTier } from "../../dashboard/model";
 import type { DashboardHabit } from "../../dashboard/types";
 import type { MatchCentreData } from "../../lib/football/types";
 import { deriveMatchReadiness, groupHabitsByBlock } from "../../dashboard/model";
@@ -209,13 +213,15 @@ describe("fixtures", () => {
    * else. Afternoon / Evening must survive, or the panel silently loses six
    * configured habits every Saturday.
    */
-  it("removes only Homeschool on the weekend", () => {
+  it("Saturday: Homeschool, BTN and the journal go; the Push arrives", () => {
     const grouped = groupHabitsByBlock(weekendFixture.gate.habits);
     expect(grouped.homeschool).toEqual([]);
     expect(grouped.pre_homeschool).toHaveLength(7);
-    expect(grouped.afternoon_evening).toHaveLength(6);
+    expect(grouped.afternoon_evening.map(h => h.id)).toEqual(["shower", "all_namaz", "room_tidy", "teeth", "reading"]);
     expect(grouped.conditional).toEqual([]);
-    expect(weekendFixture.gate.habits).toHaveLength(13);
+    expect(grouped.saturday_push.map(h => h.id)).toEqual(["push_engine", "push_strength", "push_quran"]);
+    expect(grouped.saturday_push.every(h => h.parentVerifyRequired)).toBe(true);
+    expect(weekendFixture.gate.habits).toHaveLength(15);
   });
 
   it("exercises every habit state the baseline requires", () => {
@@ -917,6 +923,7 @@ const SECTION_TITLES = ["Homeschool", "Afternoon / Evening", "Conditional"];
 function programme(fixture: typeof weekdayFixture) {
   const grouped = groupHabitsByBlock(fixture.gate.habits);
   return {
+    saturdayPush: grouped.saturday_push,
     homeschool: grouped.homeschool,
     afternoonEvening: grouped.afternoon_evening,
     conditional: grouped.conditional,
@@ -1029,18 +1036,27 @@ describe("DayProgrammePanel", () => {
 
   /* ── Weekend: only Homeschool goes ────────────────────────────────────────*/
 
-  it("omits only the Homeschool subsection on a weekend", () => {
+  it("draws the Saturday Push first and no Homeschool on a Saturday", () => {
     render(<DayProgrammePanel {...programme(weekendFixture)} {...rowHandlers} />);
     expect(screen.queryByTestId("homeschool-item")).not.toBeInTheDocument();
     expect(screen.getAllByTestId("programme-section").map(el => el.getAttribute("data-section")))
-      .toEqual(["Afternoon / Evening"]);
+      .toEqual(["Saturday Push", "Afternoon / Evening"]);
   });
 
-  it("still renders all six Afternoon / Evening habits on a weekend", () => {
+  it("renders the Push rows with Notion's Target as guidance and the PIN caption", () => {
     render(<DayProgrammePanel {...programme(weekendFixture)} {...rowHandlers} />);
-    for (const id of ["btn_cornell", "shower", "all_namaz", "room_tidy", "teeth", "reading"]) {
+    const engine = screen.getByTestId("programme-push_engine");
+    expect(engine).toHaveTextContent("2 km continuous run, no walking");
+    expect(within(screen.getByTestId("programme-push_strength")).getByText("Parent PIN")).toBeVisible();
+    expect(within(engine).queryByText("Parent PIN")).not.toBeInTheDocument();
+  });
+
+  it("still renders the five weekend Afternoon / Evening habits, BTN gone", () => {
+    render(<DayProgrammePanel {...programme(weekendFixture)} {...rowHandlers} />);
+    for (const id of ["shower", "all_namaz", "room_tidy", "teeth", "reading"]) {
       expect(screen.getByTestId(`programme-${id}`)).toBeInTheDocument();
     }
+    expect(screen.queryByTestId("programme-btn_cornell")).not.toBeInTheDocument();
   });
 
   it("drops the Conditional subsection when nothing is scheduled", () => {
@@ -1301,83 +1317,50 @@ describe("WeeklyTierProgress", () => {
   });
 });
 
-/* ── Task 8: Stretch Wallet ─────────────────────────────────────────────────*/
+/* ── Task 8: Stretch Wallet — a daily switch (5 Sep 2026) ─────────────────*/
 
 const walletBase = {
   wallet: weekdayFixture.wallet,
   items: weekdayFixture.stretchItems,
   earnedItemIds: new Set(weekdayFixture.wallet.earnedItemIds),
   savingId: null,
-  minPerPoint: 10,
-  spendStepMin: 10,
-  dailyCapMin: 75,
   onEarn: noop,
-  onSpend: noop,
+};
+
+const openWallet = {
+  ...weekdayFixture.wallet,
+  unlocked: true, lockMessage: null,
+  earnedItemIds: ["extra_reading", "ball_work"], itemsDone: 2, itemsTotal: 4, complete: false,
 };
 
 describe("StretchWalletPanel", () => {
-  it("renders the locked state in the server's own words", () => {
+  it("shows the lock reason and hides progress while locked", () => {
     render(<StretchWalletPanel {...walletBase} />);
     expect(screen.getByText("Locked — Qur'an recitation first")).toBeVisible();
-    expect(screen.getByRole("button", { name: /Convert 10 min/ })).toBeDisabled();
-  });
-
-  it("shows the banked balance and the weekend bonus when the server sends one", () => {
-    render(<StretchWalletPanel {...walletBase}
-      wallet={{ ...weekendFixture.wallet, balance: 30 }}
-      earnedItemIds={new Set(weekendFixture.wallet.earnedItemIds)} />);
-    expect(screen.getByText("30 min")).toBeVisible();
-    expect(screen.getByText(/Weekend bonus/)).toBeVisible();
-  });
-
-  /**
-   * Render-only. Every one of these numbers is a decision /api/stretch already
-   * made against the server's Sydney clock. Recomputing any of them here would
-   * give the board a second opinion about what a reward costs.
-   */
-  it("computes no lock, cap, redemption or bonus of its own", () => {
-    const lying = {
-      ...weekdayFixture.wallet,
-      unlocked: true, lockMessage: null,
-      redemptionOpen: true, redemptionMessage: null,
-      weekday: "Wednesday", weekendRedemptionOnly: true,
-      balance: 999,
-    };
-    render(<StretchWalletPanel {...walletBase} wallet={lying} />);
-    // Weekday + weekendRedemptionOnly would be "locked" by any local rule, but
-    // the server said open, so the panel renders open.
-    expect(screen.getByRole("button", { name: /Convert 10 min/ })).toBeEnabled();
-    expect(screen.queryByText(/Locked/)).not.toBeInTheDocument();
-    expect(screen.getByText("999 min")).toBeVisible();
-  });
-
-  it("hides the balance while the wallet is locked rather than guessing it", () => {
-    render(<StretchWalletPanel {...walletBase} />);
     expect(screen.getByTestId("wallet-balance")).toHaveTextContent("—");
-    expect(screen.queryByText("30 min")).not.toBeInTheDocument();
+    expect(screen.getByTestId("wallet-status")).toHaveTextContent("locked");
   });
 
-  it("renders nothing but a placeholder before the wallet has loaded", () => {
+  it("renders a placeholder before the wallet has loaded", () => {
     render(<StretchWalletPanel {...walletBase} wallet={null} />);
     expect(screen.getByTestId("wallet-balance")).toHaveTextContent("—");
-    expect(screen.getByRole("button", { name: /Convert 10 min/ })).toBeDisabled();
+    expect(screen.getByTestId("wallet-status")).toHaveTextContent("—");
   });
 
-  /* ── Earning ──────────────────────────────────────────────────────────────*/
-
-  it("forwards an earn with the item that was pressed", () => {
-    const earned: string[] = [];
-    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet}
-      earnedItemIds={new Set()} onEarn={item => earned.push(item.id)} />);
-    fireEvent.click(screen.getByRole("button", { name: "Help at home" }));
-    expect(earned).toEqual(["help_home"]);
+  it("counts items, never minutes, once unlocked", () => {
+    render(<StretchWalletPanel {...walletBase} wallet={openWallet}
+      earnedItemIds={new Set(openWallet.earnedItemIds)} />);
+    expect(screen.getByTestId("wallet-balance")).toHaveTextContent("2/4");
+    expect(screen.getByText(/finish them all for 1h 15m PS5 today/)).toBeVisible();
+    expect(screen.queryByText(/\+\d+m\b/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Convert/ })).not.toBeInTheDocument();
   });
 
-  it("disables an item already banked today", () => {
-    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet}
-      earnedItemIds={new Set(["extra_reading"])} />);
-    expect(screen.getByRole("button", { name: "Extra reading - 20 min" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Help at home" })).toBeEnabled();
+  it("announces the day's reward when every item is done", () => {
+    const done = { ...openWallet, itemsDone: 4, complete: true };
+    render(<StretchWalletPanel {...walletBase} wallet={done} />);
+    expect(screen.getByTestId("wallet-status")).toHaveTextContent("✅ 1h 15m PS5 today");
+    expect(screen.getByText(/🏆 1h 15m PS5 today — unlocked/)).toBeVisible();
   });
 
   it("disables every item while the wallet is locked", () => {
@@ -1387,87 +1370,48 @@ describe("StretchWalletPanel", () => {
     }
   });
 
-  it("shows each item's minute value from the server's rate", () => {
-    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet} minPerPoint={10} />);
-    expect(screen.getAllByText("+10m")).toHaveLength(4);
+  it("forwards an earn exactly once and disables a done item", () => {
+    const earns: string[] = [];
+    render(<StretchWalletPanel {...walletBase} wallet={openWallet}
+      earnedItemIds={new Set(["extra_reading"])} onEarn={i => earns.push(i.id)} />);
+    expect(screen.getByRole("button", { name: "Extra reading - 20 min" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Ball work - 30 min" }));
+    expect(earns).toEqual(["ball_work"]);
   });
 
-  /**
-   * /api/stretch supplies minPerPoint. The local constant is a pre-load
-   * fallback, NOT a second opinion: if the server retunes the rate, an item
-   * priced from the constant would advertise minutes the server will not pay.
-   * Same rule the daily cap already follows.
-   */
-  it("prices items from the server's rate, not the local constant", () => {
-    render(<StretchWalletPanel {...walletBase}
-      wallet={{ ...weekendFixture.wallet, minPerPoint: 15 }}
-      minPerPoint={10} />);
-    expect(screen.getAllByText("+15m")).toHaveLength(4);
-    expect(screen.queryByText("+10m")).not.toBeInTheDocument();
-  });
-
-  it("falls back to the local rate only while the wallet is unloaded", () => {
-    render(<StretchWalletPanel {...walletBase} wallet={null} minPerPoint={10} />);
-    expect(screen.getAllByText("+10m")).toHaveLength(4);
-  });
-
-  it("uses the server's daily cap the same way", () => {
-    render(<StretchWalletPanel {...walletBase}
-      wallet={{ ...weekendFixture.wallet, dailyRedeemCapMin: 90 }} dailyCapMin={75} />);
-    expect(screen.getByText(/90 min\/day cap/)).toBeInTheDocument();
-  });
-
-  it("says so plainly when there are no stretch items", () => {
+  it("says so when there are no items", () => {
     render(<StretchWalletPanel {...walletBase} items={[]} />);
     expect(screen.getByText("No stretch items available right now.")).toBeVisible();
   });
+});
 
-  /* ── Spending ─────────────────────────────────────────────────────────────*/
+/* ── Saturday card + rest day (5 Sep 2026) ─────────────────────────────────*/
 
-  it("forwards a spend exactly once", () => {
-    let spends = 0;
-    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet} onSpend={() => { spends += 1; }} />);
-    fireEvent.click(screen.getByRole("button", { name: /Convert 10 min/ }));
-    expect(spends).toBe(1);
+describe("SaturdayPanel", () => {
+  it("rule 1: a bad week locks PS5 whatever the Push says", () => {
+    render(<SaturdayPanel weekPoints={20} tier={getTier(20)} ps5={saturdayPs5(20, 3, 3)} saturdayStreak={2} />);
+    expect(screen.getByTestId("ps5-verdict")).toHaveTextContent("PS5 🔒");
+    expect(screen.getByTestId("ps5-week")).toHaveTextContent("weekend not earned");
+    expect(screen.getByTestId("ps5-message")).toHaveTextContent(/No PS5 this weekend/);
+    expect(screen.getByTestId("saturday-streak")).toHaveTextContent("2");
   });
 
-  /**
-   * REGRESSION. /api/stretch sets redemptionMessage to the same string as
-   * lockMessage while the wallet is locked, and the panel printed both — the
-   * lock reason appeared twice on the live preview, once in the banner and
-   * once under it.
-   */
-  it("prints the lock reason once when the server repeats it as the redemption message", () => {
-    const repeated = {
-      ...weekdayFixture.wallet,
-      unlocked: false,
-      lockMessage: "Locked — Qur'an recitation first",
-      redemptionMessage: "Locked — Qur'an recitation first",
-    };
-    render(<StretchWalletPanel {...walletBase} wallet={repeated} />);
-    expect(screen.getAllByText("Locked — Qur'an recitation first")).toHaveLength(1);
+  it("rule 2: a good week waits for the Push, then unlocks", () => {
+    const { rerender } = render(<SaturdayPanel weekPoints={44} tier={getTier(44)} ps5={saturdayPs5(44, 1, 3)} saturdayStreak={null} />);
+    expect(screen.getByTestId("ps5-verdict")).toHaveTextContent("PS5 🔒");
+    expect(screen.getByTestId("ps5-push")).toHaveTextContent("Saturday Push 1/3 verified");
+    expect(screen.getByTestId("saturday-streak")).toHaveTextContent("—");
+    rerender(<SaturdayPanel weekPoints={44} tier={getTier(44)} ps5={saturdayPs5(44, 3, 3)} saturdayStreak={3} />);
+    expect(screen.getByTestId("ps5-verdict")).toHaveTextContent("PS5 ✅");
+    expect(screen.getByTestId("ps5-week")).toHaveTextContent("First Team");
   });
+});
 
-  it("still shows a redemption message that says something the lock does not", () => {
-    const distinct = {
-      ...weekdayFixture.wallet,
-      unlocked: false,
-      lockMessage: "Locked — Qur'an recitation first",
-      redemptionMessage: "Redeem on Saturday or Sunday",
-    };
-    render(<StretchWalletPanel {...walletBase} wallet={distinct} />);
-    expect(screen.getByText("Locked — Qur'an recitation first")).toBeVisible();
-    expect(screen.getByText("Redeem on Saturday or Sunday")).toBeVisible();
-  });
-
-  it("explains when conversion opens instead of only greying out", () => {
-    render(<StretchWalletPanel {...walletBase} />);
-    expect(screen.getByText("Redeem on Saturday or Sunday")).toBeVisible();
-  });
-
-  it("blocks a second spend while one is already in flight", () => {
-    render(<StretchWalletPanel {...walletBase} wallet={weekendFixture.wallet} savingId="__spend__" />);
-    expect(screen.getByRole("button", { name: /Convert 10 min/ })).toBeDisabled();
+describe("RestDayCard", () => {
+  it("renders one card and no habit rows", () => {
+    render(<RestDayCard />);
+    expect(screen.getByTestId("rest-day")).toHaveTextContent("Sunday — rest day");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 });
 

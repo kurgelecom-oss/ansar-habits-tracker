@@ -31,6 +31,8 @@ import styles from "./dashboard.module.css";
  * pointer-reachable and the parent's override hold works identically here.
  */
 type DayProgrammePanelProps = {
+  /** Saturday only. Drawn FIRST — it is what the day is for. */
+  saturdayPush?: DashboardHabit[];
   homeschool: DashboardHabit[];
   afternoonEvening: DashboardHabit[];
   conditional: DashboardHabit[];
@@ -51,10 +53,10 @@ type DayProgrammePanelProps = {
 };
 
 export default function DayProgrammePanel({
-  homeschool, afternoonEvening, conditional, journalVerified = false,
+  saturdayPush = [], homeschool, afternoonEvening, conditional, journalVerified = false,
   savingId = null, holdId = null, onTick, onHoldStart, onHoldCancel,
 }: DayProgrammePanelProps) {
-  const all = [...homeschool, ...afternoonEvening, ...conditional];
+  const all = [...saturdayPush, ...homeschool, ...afternoonEvening, ...conditional];
   if (all.length === 0) return null;
 
   const doneCount = all.filter(h => h.state === "DONE").length;
@@ -86,7 +88,7 @@ export default function DayProgrammePanel({
   return (
     <Panel
       footer={(() => {
-        const all = [...homeschool, ...afternoonEvening, ...conditional];
+        const all = [...saturdayPush, ...homeschool, ...afternoonEvening, ...conditional];
         const earned = all.filter(h => h.state === "DONE").reduce((n, h) => n + h.points, 0);
         return (
           <span className={styles.panelScore}>
@@ -97,7 +99,7 @@ export default function DayProgrammePanel({
       })()}
       title="Today's Programme"
       icon="🗓️"
-      subtitle="Homeschool · Afternoon / Evening · Conditional"
+      subtitle={saturdayPush.length > 0 ? "Saturday Push · Afternoon / Evening" : "Homeschool · Afternoon / Evening · Conditional"}
       accent="var(--ansar-success)"
       summary={
         <>
@@ -112,6 +114,13 @@ export default function DayProgrammePanel({
           no week page is set, and nothing while its own fetch is in flight, so
           it can never hold up the rows below it. */}
       <SchoolProgramme />
+
+      {saturdayPush.length > 0 ? (
+        <section data-testid="programme-section" data-section="Saturday Push" className={styles.programmeSection}>
+          <h3 className={styles.programmeSectionTitle}>🔥 Saturday Push</h3>
+          {rows(saturdayPush, "var(--ansar-warning)")}
+        </section>
+      ) : null}
 
       {homeschool.length > 0 ? (
         <section data-testid="programme-section" data-section="Homeschool" className={styles.programmeSection}>

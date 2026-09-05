@@ -24,10 +24,10 @@ export type ButtonState = "DONE" | "LIVE" | "LOCKED" | "MISSED";
  * Programme in this order — Homeschool, Afternoon / Evening, Conditional.
  */
 export type HabitBlock =
-  | "pre_homeschool" | "homeschool" | "afternoon_evening" | "conditional";
+  | "pre_homeschool" | "homeschool" | "afternoon_evening" | "conditional" | "saturday_push";
 
 export const HABIT_BLOCKS: HabitBlock[] = [
-  "pre_homeschool", "homeschool", "afternoon_evening", "conditional",
+  "pre_homeschool", "homeschool", "afternoon_evening", "conditional", "saturday_push",
 ];
 
 /**
@@ -64,6 +64,12 @@ export type DashboardHabit = {
    * refused, never wave a tick through.
    */
   parentVerifyRequired?: boolean;
+  /**
+   * Notion "Target" — the Saturday Push ladder for this row ("2 km continuous
+   * run"). Presentation only; rendered as the guidance line. Optional so an
+   * older deploy's response still parses.
+   */
+  target?: string | null;
 };
 
 /** Habits split by block. Every known block is always present, possibly empty. */
@@ -101,6 +107,8 @@ export type DashboardGate = {
   warnings: string[];
   habits: DashboardHabit[];
   defaultDwellSeconds?: number;
+  /** Sunday. The server says so; the board renders one rest card and nothing else. */
+  restDay?: boolean;
   /**
    * Today's journal evidence, from lib/tally.ts via /api/tick.
    *
@@ -118,17 +126,20 @@ export type DashboardGate = {
   };
 };
 
-/** /api/stretch. Rendered verbatim — the panel computes none of these. */
+/**
+ * /api/stretch. Rendered verbatim — the panel computes none of these.
+ *
+ * A DAILY SWITCH, not a bank (tk, 5 Sep 2026): every item done today = the
+ * day's reward, named by `rewardLabel`. No minutes, no balance, no spend.
+ * `available` is false on a weekend, when the panel is not drawn at all.
+ */
 export type DashboardWallet = {
-  ok: boolean; serverDate: string; weekday: string; weekStart: string;
-  balance: number; earnedWeek: number; spentWeek: number; spentToday: number;
-  remainingToday: number; dailyRedeemCapMin: number; minPerPoint: number;
-  earnedItemIds: string[];
+  ok: boolean; serverDate: string; weekday: string;
+  available: boolean;
   unlocked: boolean; lockMessage: string | null;
-  weekendRedemptionOnly: boolean; redemptionOpen: boolean;
-  redemptionMessage: string | null;
-  weekendBonusMin?: number; weekendBonusActive?: boolean;
-  weekendBonusItemsDone?: number; weekendBonusItemsTotal?: number;
+  earnedItemIds: string[];
+  itemsDone: number; itemsTotal: number; complete: boolean;
+  rewardLabel: string;
 };
 
 /** One redeemable stretch item, from /api/stretch-items. */

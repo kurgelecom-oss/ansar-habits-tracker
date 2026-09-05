@@ -24,9 +24,12 @@ import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
 import MatchCentre from "./components/dashboard/MatchCentre";
 import HabitPanel from "./components/dashboard/HabitPanel";
 import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
+import SaturdayPanel from "./components/dashboard/SaturdayPanel";
+import RestDayCard from "./components/dashboard/RestDayCard";
+import { saturdayPs5, saturdayStreak as saturdayStreakOf } from "./lib/weekend";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import dashboardStyles from "./components/dashboard/dashboard.module.css";
-import { deriveMatchReadiness, journalEvidenceState } from "./dashboard/model";
+import { deriveMatchReadiness, getTier, journalEvidenceState } from "./dashboard/model";
 // One written-down copy of the journal's habit id. The auto-sync effect and
 // the Match Readiness lookup below both key off it, and rowCopy.ts already
 // owned it for the row's captions.
@@ -94,18 +97,15 @@ const BLOCKS = [
   { id: "homeschool",        label: "Homeschool", icon: "📚",        subtitle: "8:30am–1:30pm · +5 pts",     color: CYAN },
   { id: "afternoon_evening", label: "Afternoon / Evening", icon: "🌆", subtitle: "1:30–8:30pm",               color: "#00ff88" },
   { id: "conditional",       label: "Conditional", icon: "⚽",        subtitle: "Mon & Wed · 3:00–8:00pm",    color: "#a78bfa" },
+  { id: "saturday_push",     label: "Saturday Push", icon: "🔥",      subtitle: "Sat · 9:00am–5:00pm · parent PIN", color: "#ffa500" },
 ];
 
 /* ── Stretch Wallet ────────────────────────────────────────────────────────
-   1 stretch point = 10 minutes. Points BANK across the week and convert to
-   PS5 minutes on Saturday and Sunday only, capped at 75 redeemed minutes a day
-   — except that earning EVERY active item on a weekend day lifts that day's
-   cap by 30 (the server reports the lifted cap in dailyRedeemCapMin). All
-   rules are enforced in /api/stretch against the server's Sydney clock — the
-   values below are display fallbacks only. */
-const STRETCH_MIN_PER_POINT = 10;
-const STRETCH_DAILY_REDEEM_CAP_MIN = 75;
-const STRETCH_SPEND_STEP_MIN = 10;
+   A DAILY SWITCH, Mon–Fri (tk, 5 Sep 2026): every item done = the day's reward,
+   which /api/stretch names. No minutes, no bank, no cap, no Spend — nobody was
+   tracking minutes. The weekend runs on lib/weekend.ts instead: the week's tier
+   decides IF there is PS5 on Saturday, the Saturday Push decides WHEN, and
+   Sunday is switched off entirely. */
 
 // ── LOG WORK ────────────────────────────────────────────────────────────────
 // Tally intake form, opened in a modal so Ansar never leaves the board. It
@@ -155,6 +155,8 @@ type GateSnapshot = {
   overriddenHabitIds: string[];
   warnings: string[];
   habits: GateHabitView[];
+  /** Sunday, decided by the server. The board draws one rest card and nothing else. */
+  restDay?: boolean;
   // The dwell the gates actually use, from Notion App Settings. The route has
   // always returned it; this type simply never declared it. The banner needs it
   // rather than a literal 90 so that retuning the dwell in Notion moves the
@@ -188,21 +190,18 @@ type NotionHabit = {
   id: string; name: string; block: string; order: number; points: number;
   pointType: string; days: string[];
   windowStart: string | null; windowEnd: string | null; dwellSeconds: number | null;
+  target?: string | null;
 };
 
 type StretchItem = { id: string; name: string; category: string; points: number; whatCountsAsDone: string };
 
 type WalletState = {
-  ok: boolean; serverDate: string; weekday: string; weekStart: string;
-  balance: number; earnedWeek: number; spentWeek: number; spentToday: number;
-  remainingToday: number; dailyRedeemCapMin: number; minPerPoint: number;
-  earnedItemIds: string[];
+  ok: boolean; serverDate: string; weekday: string;
+  available: boolean;
   unlocked: boolean; lockMessage: string | null;
-  weekendRedemptionOnly: boolean; redemptionOpen: boolean; redemptionMessage: string | null;
-  // Weekend all-items bonus. Optional so a board served ahead of a stale
-  // function deploy renders the card without the bonus line instead of crashing.
-  weekendBonusMin?: number; weekendBonusActive?: boolean;
-  weekendBonusItemsDone?: number; weekendBonusItemsTotal?: number;
+  earnedItemIds: string[];
+  itemsDone: number; itemsTotal: number; complete: boolean;
+  rewardLabel: string;
 };
 
 /**
@@ -295,6 +294,8 @@ export default function AnsarPage() {
   const [online, setOnline] = useState(true);
   const [weeklyPts, setWeeklyPts] = useState<number | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
+  /** Saturdays in a row with the full Push verified. null until known. */
+  const [satStreak, setSatStreak] = useState<number | null>(null);
   const [goldenBoot, setGoldenBoot] = useState<GoldenBootState | null>(null);
   /**
    * Real Madrid's live fixture, from /api/football/real-madrid. `null` only
@@ -525,6 +526,29 @@ export default function AnsarPage() {
   }, []);
 
   /**
+   * Saturdays in a row with every Push row done. The Push ids come from Notion
+   * (block saturday_push), the rows from habit_completions, the rule from
+   * lib/weekend.ts. 13 weeks of history is plenty for a number that is shown,
+   * never scored.
+   */
+  const loadSaturdayStreak = useCallback(async (today: string) => {
+    const pushIds = notionHabits.filter(h => h.block === "saturday_push").map(h => h.id);
+    if (pushIds.length === 0) { setSatStreak(null); return; }
+    const { data, error } = await supabase
+      .from("habit_completions")
+      .select("habit_id, completed_date")
+      .in("habit_id", pushIds)
+      .gte("completed_date", addDays(today, -91));
+    if (error || !data) return;
+    const byDate: Record<string, Set<string>> = {};
+    data.forEach((r: { habit_id: string; completed_date: string }) => {
+      (byDate[r.completed_date] ??= new Set()).add(r.habit_id);
+    });
+    const full = new Set(Object.keys(byDate).filter(d => pushIds.every(id => byDate[d].has(id))));
+    setSatStreak(saturdayStreakOf(full, today));
+  }, [notionHabits]);
+
+  /**
    * The Match Centre feed. A failed fetch is NOT an empty bar: it becomes the
    * same honest "unavailable" shape the route returns, so the plate keeps its
    * geometry and says why instead of showing a stale or invented score.
@@ -644,7 +668,8 @@ export default function AnsarPage() {
     if (!serverDate || notionHabits.length === 0) return;
     loadWeeklyData(serverDate);
     loadStreak(serverDate);
-  }, [serverDate, notionHabits, loadWeeklyData, loadStreak]);
+    loadSaturdayStreak(serverDate);
+  }, [serverDate, notionHabits, loadWeeklyData, loadStreak, loadSaturdayStreak]);
 
   // The Golden Boot is keyed on the SERVER's date and nothing else. It is not on
   // the 30-second poll beside gate and wallet: a finalised week changes at most
@@ -915,7 +940,7 @@ export default function AnsarPage() {
       const res = await fetch("/api/stretch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "earn", itemId: item.id, points: item.points }),
+        body: JSON.stringify({ action: "earn", itemId: item.id }),
       });
       const body = await res.json();
       if (!res.ok || !body?.ok) {
@@ -924,27 +949,6 @@ export default function AnsarPage() {
       await loadWallet();
     } catch {
       showRejection({ habitId: item.id, habitName: item.name, reason: "offline", message: "No connection" });
-    } finally {
-      setSaving(null);
-    }
-  }
-
-  async function spendStretch() {
-    if (saving) return;
-    setSaving("__spend__");
-    try {
-      const res = await fetch("/api/stretch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "spend" }),
-      });
-      const body = await res.json();
-      if (!res.ok || !body?.ok) {
-        showRejection({ habitId: "__spend__", habitName: "PS5 minutes", reason: body?.reason ?? "error", message: body?.message ?? "Not right now" });
-      }
-      await loadWallet();
-    } catch {
-      showRejection({ habitId: "__spend__", habitName: "PS5 minutes", reason: "offline", message: "No connection" });
     } finally {
       setSaving(null);
     }
@@ -1154,6 +1158,7 @@ export default function AnsarPage() {
         window: h.windowStart && h.windowEnd ? `${h.windowStart}-${h.windowEnd}` : null,
         dwellSeconds: h.dwellSeconds ?? null,
         overridden: false,
+        target: h.target ?? null,
       }))
     : [];
 
@@ -1163,6 +1168,19 @@ export default function AnsarPage() {
 
   const inBlock = (blockId: string) =>
     viewHabits.filter(h => h.block === blockId).sort((a, b) => a.order - b.order);
+
+  /* The day the board is SHOWING — the server's, or the previewed one. */
+  const viewDayName = previewing ? previewDayName : dayName;
+  const viewIsSaturday = viewDayName === "Saturday";
+  /* Rule 1 + rule 2, from lib/weekend.ts: the week's Mon–Fri total (weeklyPts is
+     already summed over SQUAD_DAYS, so on a Saturday it IS the finished week)
+     and the DONE count of the Saturday Push block as /api/tick reports it. */
+  const pushRows = inBlock("saturday_push");
+  const ps5 = saturdayPs5(
+    weeklyPts ?? 0,
+    pushRows.filter(h => h.state === "DONE").length,
+    pushRows.length,
+  );
 
   /* ── MORNING FEASIBILITY ────────────────────────────────────────────────────
      Can the morning block still be finished before its window shuts?
@@ -1381,7 +1399,10 @@ export default function AnsarPage() {
         </div>
       )}
 
-      {/* BOARD — four columns, no scroll on either axis at 1440px+ */}
+      {/* SUNDAY. One card, nothing else. The server refuses every tick anyway;
+          this just stops the board pretending there is a day to run. */}
+      {gate?.restDay ? <RestDayCard /> : (
+      /* BOARD — four columns, no scroll on either axis at 1440px+ */
       <div className={dashboardStyles.grid}>
 
         {/* 1 — Morning Habits */}
@@ -1409,6 +1430,7 @@ export default function AnsarPage() {
             in one panel. Amendment 8027d53: the weekend removes only the
             Homeschool subsection; nothing else is allowed to disappear. */}
         <DayProgrammePanel
+          saturdayPush={rowsFor("saturday_push")}
           homeschool={homeschoolRows}
           afternoonEvening={rowsFor("afternoon_evening")}
           conditional={rowsFor("conditional")}
@@ -1433,20 +1455,27 @@ export default function AnsarPage() {
           onOpenLogWork={() => setLogOpen(true)}
         />
 
-        {/* 4 — STRETCH WALLET. Render-only: every lock, cap, redemption and
-            bonus below is the server's decision, passed through verbatim. */}
-        <StretchWalletPanel
-          wallet={wallet}
-          items={stretchItems}
-          earnedItemIds={earnedItemIds}
-          savingId={saving}
-          minPerPoint={STRETCH_MIN_PER_POINT}
-          spendStepMin={STRETCH_SPEND_STEP_MIN}
-          dailyCapMin={STRETCH_DAILY_REDEEM_CAP_MIN}
-          onEarn={earnStretch}
-          onSpend={spendStretch}
-        />
+        {/* 4 — SATURDAY or STRETCH WALLET, never both. On a Saturday the
+            wallet does not exist (Mon–Fri only) and its slot carries the two
+            weekend rules instead. Both cards are render-only. */}
+        {viewIsSaturday ? (
+          <SaturdayPanel
+            weekPoints={weeklyPts}
+            tier={weeklyPts === null ? null : getTier(weeklyPts)}
+            ps5={ps5}
+            saturdayStreak={satStreak}
+          />
+        ) : (
+          <StretchWalletPanel
+            wallet={wallet}
+            items={stretchItems}
+            earnedItemIds={earnedItemIds}
+            savingId={saving}
+            onEarn={earnStretch}
+          />
+        )}
       </div>
+      )}
 
       {/* ── NOTION SOURCE STRIP ─────────────────────────────────────────────
           Where the board's own settings live, one click away for a parent
