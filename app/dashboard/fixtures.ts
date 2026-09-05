@@ -35,7 +35,7 @@ export type DashboardFixture = {
   online: boolean;
 };
 
-type HabitSeed = Pick<DashboardHabit, "id" | "name" | "block" | "order" | "points" | "pointType">;
+type HabitSeed = Pick<DashboardHabit, "id" | "name" | "block" | "order" | "points" | "pointType" | "target">;
 
 /** The live programme, in Notion order. Weekday-only rows are marked. */
 const MORNING: HabitSeed[] = [
@@ -74,10 +74,19 @@ const AFTERNOON_EVENING: HabitSeed[] = [
   { id: "reading", name: "Reading in bed (15+ min)", block: "afternoon_evening", order: 17, points: 0, pointType: "perfect_day_only" },
 ];
 
-/* Saturday and Sunday. The journal's Notion "Days" is Mon–Fri, so habitsForDay()
-   drops it on a weekend and the board never draws it — a weekend fixture that
-   showed it would be previewing a row production cannot produce. */
-const WEEKEND_ARVO: HabitSeed[] = AFTERNOON_EVENING.filter(h => h.id !== "journal");
+/* Saturday. The journal AND btn_cornell are Mon–Fri in Notion (BTN since 5 Sep
+   2026), so habitsForDay() drops both on a Saturday and the board never draws
+   them — a fixture that showed them would be previewing rows production cannot
+   produce. There is no Sunday fixture: Sunday renders one rest card. */
+const WEEKEND_ARVO: HabitSeed[] = AFTERNOON_EVENING.filter(h => h.id !== "journal" && h.id !== "btn_cornell");
+
+/* The Saturday Push (5 Sep 2026). Three parent-PIN rows, zero FC points; the
+   Target text is Notion's and is the row's guidance line. */
+const SATURDAY_PUSH: HabitSeed[] = [
+  { id: "push_engine", name: "Engine", block: "saturday_push", order: 9, points: 0, pointType: "perfect_day_only", target: "2 km continuous run, no walking" },
+  { id: "push_strength", name: "Strength & skill", block: "saturday_push", order: 10, points: 0, pointType: "perfect_day_only", target: "3 rounds: 10 push-ups, 30s plank, 50 juggles" },
+  { id: "push_quran", name: "Qur'an memorisation", block: "saturday_push", order: 11, points: 0, pointType: "perfect_day_only", target: "5 new ayat from memory + this week's revision" },
+];
 
 const CONDITIONAL: HabitSeed[] = [
   { id: "soccer_training", name: "Soccer training attended (Mon & Wed only)", block: "conditional", order: 18, points: 1, pointType: "per_session" },
@@ -89,6 +98,7 @@ const WINDOWS: Record<string, string> = {
   homeschool: "08:30–13:30",
   afternoon_evening: "13:30–21:30",
   conditional: "15:00–20:00",
+  saturday_push: "09:00–17:00",
 };
 
 /** The late group opens at 21:00 even though its block window starts earlier. */
@@ -187,13 +197,12 @@ export const weekdayFixture: DashboardFixture = {
     serverTime("2026-09-02", "Wednesday", "1:45pm", 825),
   ),
   wallet: {
-    ok: true, serverDate: "2026-09-02", weekday: "Wednesday", weekStart: "2026-08-31",
-    balance: 30, earnedWeek: 4, spentWeek: 20, spentToday: 0,
-    remainingToday: 30, dailyRedeemCapMin: 30, minPerPoint: 10,
-    earnedItemIds: ["extra_reading"],
+    ok: true, serverDate: "2026-09-02", weekday: "Wednesday",
+    available: true,
     unlocked: false, lockMessage: "Locked — Qur'an recitation first",
-    weekendRedemptionOnly: true, redemptionOpen: false,
-    redemptionMessage: "Redeem on Saturday or Sunday",
+    earnedItemIds: ["extra_reading"],
+    itemsDone: 1, itemsTotal: 4, complete: false,
+    rewardLabel: "1h 15m PS5 today",
   },
   stretchItems: STRETCH_ITEMS,
   goldenBoot: { ok: true, target: 4, streak: 3, progress: 3 },
@@ -205,11 +214,9 @@ export const weekdayFixture: DashboardFixture = {
 };
 
 /* ── Saturday, mid-morning ───────────────────────────────────────────────────
-   Contract amendment 8027d53: the weekend removes Homeschool and NOTHING else.
-   Afternoon / Evening is still scheduled seven days a week, so all six of its
-   habits remain; Conditional is empty because soccer is Mon/Wed only. 13 rows,
-   which is what a fully-ticked Saturday resolves. The wallet is open, because
-   redemption is what a weekend actually earns. */
+   Push Day (5 Sep 2026). Morning Habits, the three Push rows, and Afternoon /
+   Evening minus BTN and the journal — 15 rows. The wallet is Mon–Fri and is
+   NOT drawn; its slot carries the Saturday card (week tier + Push verdict). */
 export const weekendFixture: DashboardFixture = {
   name: "Saturday 9:20am",
   gate: gate(
@@ -223,8 +230,12 @@ export const weekendFixture: DashboardFixture = {
         breakfast: { state: "LIVE" },
         goals: { state: "LIVE" },
       }),
+      ...build(SATURDAY_PUSH, {
+        push_engine: { state: "DONE" },
+        push_strength: { state: "LIVE" },
+        push_quran: { state: "LIVE" },
+      }),
       ...build(WEEKEND_ARVO, {
-        btn_cornell: { state: "LOCKED", message: "Opens 1:30pm" },
         shower: { state: "LOCKED", message: "Opens 1:30pm" },
         all_namaz: { state: "LOCKED", message: "Opens 1:30pm" },
         room_tidy: { state: "LOCKED", message: "Opens 9:00pm" },
@@ -235,15 +246,12 @@ export const weekendFixture: DashboardFixture = {
     serverTime("2026-09-05", "Saturday", "9:20am", 560),
   ),
   wallet: {
-    ok: true, serverDate: "2026-09-05", weekday: "Saturday", weekStart: "2026-08-31",
-    balance: 40, earnedWeek: 6, spentWeek: 20, spentToday: 10,
-    remainingToday: 20, dailyRedeemCapMin: 30, minPerPoint: 10,
-    earnedItemIds: ["extra_reading", "ball_work"],
-    unlocked: true, lockMessage: null,
-    weekendRedemptionOnly: true, redemptionOpen: true,
-    redemptionMessage: null,
-    weekendBonusMin: 30, weekendBonusActive: false,
-    weekendBonusItemsDone: 2, weekendBonusItemsTotal: 4,
+    ok: true, serverDate: "2026-09-05", weekday: "Saturday",
+    available: false,
+    unlocked: false, lockMessage: "Stretch Wallet runs Monday to Friday",
+    earnedItemIds: [],
+    itemsDone: 0, itemsTotal: 4, complete: false,
+    rewardLabel: "1h 15m PS5 today",
   },
   stretchItems: STRETCH_ITEMS,
   goldenBoot: { ok: true, target: 4, streak: 3, progress: 3 },

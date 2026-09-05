@@ -35,6 +35,12 @@ export interface Habit extends GateHabit {
   pointType: string;
   /** Notion "Days" multi-select, e.g. ["Mon","Wed"]. Empty means every day. */
   days: string[];
+  /**
+   * Notion "Target" rich text — the Saturday Push ladder ("2 km continuous run").
+   * Rendered as the row's guidance line. Edited weekly in Notion, no deploy.
+   * null when the column is blank or absent, which every non-Push row is.
+   */
+  target: string | null;
 }
 
 /**
@@ -64,7 +70,6 @@ export interface AppLinks {
 export interface AppSettings {
   pointsActive: boolean;
   defaultDwellSeconds: number;
-  weekendRedemptionOnly: boolean;
   links: AppLinks;
 }
 
@@ -80,7 +85,6 @@ export interface StretchItem {
 export const SETTINGS_FALLBACK: AppSettings = {
   pointsActive: true,
   defaultDwellSeconds: 90,
-  weekendRedemptionOnly: true,
   // Only the Control Room has a fallback. It is the one link whose absence
   // would strand a parent with no way back to the tables; the week link
   // degrades to "no link shown", which is honest.
@@ -139,6 +143,7 @@ function mapHabit(page: any): Habit {
     days: (p?.Days?.multi_select ?? []).map((o: any) => o.name),
     windowStart: text(p, "Window Start") || null,
     windowEnd: text(p, "Window End") || null,
+    target: text(p, "Target") || null,
     dwellSeconds: typeof dwell === "number" ? dwell : null,
   };
 }
@@ -180,8 +185,6 @@ export async function getSettings(fresh = false): Promise<AppSettings> {
     pointsActive: p?.["Points Active"]?.checkbox ?? SETTINGS_FALLBACK.pointsActive,
     defaultDwellSeconds:
       typeof dwell === "number" ? dwell : SETTINGS_FALLBACK.defaultDwellSeconds,
-    weekendRedemptionOnly:
-      p?.["Weekend Redemption Only"]?.checkbox ?? SETTINGS_FALLBACK.weekendRedemptionOnly,
     links: {
       controlRoom: url(p, "Control Room") ?? SETTINGS_FALLBACK.links.controlRoom,
       activeWeekPage: url(p, "Active Week Page"),

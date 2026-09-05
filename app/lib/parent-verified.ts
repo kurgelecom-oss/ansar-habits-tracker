@@ -29,7 +29,14 @@
  * only a parent can see whether they were actually written, so the tick is the
  * parent's word, not the child's.
  */
-export const PARENT_VERIFIED_IDS: readonly string[] = ["btn_cornell"];
+export const PARENT_VERIFIED_IDS: readonly string[] = [
+  "btn_cornell",
+  // Saturday Push (5 Sep 2026). A push without a witness is a tap. Saturday is
+  // the one day a parent is reliably home, so every Push row needs the PIN.
+  "push_engine",
+  "push_strength",
+  "push_quran",
+];
 
 /** Does ticking this habit require the parent PIN? */
 export function requiresParentVerification(habitId: string): boolean {

@@ -1,7 +1,8 @@
 import styles from "./dashboard.module.css";
 
 /**
- * Weekday / Weekend view switch.
+ * Weekday / Saturday view switch. (There is no Sunday to preview — the board
+ * is switched off that day, see lib/weekend.ts.)
  *
  * PREVIEW ONLY, AND IT SAYS SO. The board's habits come from /api/tick, which
  * the SERVER has already filtered to its own Sydney weekday. This control does
@@ -30,7 +31,7 @@ export default function DayViewToggle(
           className={value === v ? styles.dayToggleOn : styles.dayToggleOff}
           title={v === live ? "Today's real programme" : `Preview the ${v} programme — taps stay disabled`}
         >
-          {v === "weekday" ? "Weekday" : "Weekend"}
+          {v === "weekday" ? "Weekday" : "Saturday"}
         </button>
       ))}
     </div>

@@ -1,33 +1,29 @@
 /* ════════════════════════════════════════════════════════════════════════════
    /api/stretch — the Stretch Wallet, server-authoritative.
 
-   THE MODEL CHANGED HERE. It used to be a per-day wallet: earn minutes today,
-   spend them today, balance resets at midnight. It is now a WEEKLY BANK with a
-   WEEKEND-ONLY TILL:
+   THE MODEL CHANGED AGAIN HERE (tk, 5 Sep 2026), and it got simpler:
 
-     • EARN   — any day, any time the wallet cascade is open. Points bank.
-                Uncapped at earn time; banking all week is the point.
-     • SPEND  — Saturday and Sunday only, checked against Australia/Sydney on
-                THIS server, and capped at 75 redeemed minutes per day —
-                EXCEPT: earning EVERY active stretch item on a weekend day
-                raises that day's cap by 30 (75 → 105). That is the weekend
-                loop (tk, 21 Aug): the items are all open all weekend (see
-                gateWallet), and clearing the full set is worth an extra half
-                hour of PS5 the same day. The bonus is per-day, server-decided,
-                and FAIL-CLOSED — if the item roster can't be read from Notion,
-                the cap stays 75; an outage must never mint minutes.
+     • MON–FRI ONLY.  gateWallet() refuses a weekend outright. The weekend runs
+                      on the tier + Saturday Push rules in lib/weekend.ts, and
+                      Sunday is switched off. The wallet is not rendered there.
+     • A DAILY SWITCH. Every active stretch item earned today = the day's reward,
+                      "1h 15m PS5 today". Nothing is banked, nothing converts,
+                      nothing is capped, and no minutes are counted — nobody was
+                      tracking them, so the arithmetic was a fiction the board
+                      kept telling with a straight face.
+     • EARN ONLY.     `action: "spend"` is gone. `stretch_completions` stays as
+                      the completion record (one row per item per day) and its
+                      signed `minutes` column is written as 0 and read by nothing.
 
-   The ledger table is unchanged (`stretch_completions`, signed `minutes`), so
-   nothing already recorded needs migrating. What changed is the balance window:
-   it is now summed Monday→Sunday rather than for a single date.
-
-   1 point = 10 minutes. Qur'an's daily minimum is NOT in here: it earns nothing
-   and only unlocks — see gateWallet() in lib/gating.ts.
+   What is still enforced, and where: the cascade (Qur'an → Morning → Homeschool)
+   in gateWallet(); one earn per item per day, here, against the server's Sydney
+   clock; and the item roster, from Notion (`getStretchItems`), fail-closed — an
+   unreadable roster can never read as "all done".
    ══════════════════════════════════════════════════════════════════════════ */
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sydneyNow, isSydneyWeekend, weekStartOf, addDays } from "../../lib/time";
+import { sydneyNow } from "../../lib/time";
 import { gateWallet, type GateContext, type GateCompletion } from "../../lib/gating";
 import { getHabits, getSettings, getStretchItems, habitsForDay, SETTINGS_FALLBACK } from "../../lib/notion";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
@@ -36,14 +32,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 // NOT exported. A Next.js route module may only export the handler names and a
-// fixed set of config fields; any other export fails the build with
-// "<NAME> is not a valid Route export field".
-const MIN_PER_POINT = 10;
-const DAILY_REDEEM_CAP_MIN = 75;
+// fixed set of config fields; any other export fails the build.
+/** What a complete wallet day is worth. A label, on purpose — nobody counts minutes. */
+const DAILY_REWARD_LABEL = "1h 15m PS5 today";
+/** Legacy conversion rows. Never written any more; filtered out when reading. */
 const SPEND_ITEM_ID = "__spend__";
-const SPEND_STEP_MIN = 10;
-/** Extra redeemable minutes on a weekend day once EVERY active item is earned. */
-const WEEKEND_ALL_ITEMS_BONUS_MIN = 30;
 
 const noStore = { "Cache-Control": "no-store" };
 
@@ -55,71 +48,33 @@ function readClient() {
   );
 }
 
-interface LedgerRow { item_id: string; minutes: number; completed_date: string }
-
-async function loadWallet(date: string) {
-  const weekStart = weekStartOf(date);
-  const weekEnd = addDays(weekStart, 6);
+/** Ids of every item earned on `date`. One query, one day. */
+async function earnedToday(date: string): Promise<Set<string>> {
   const { data } = await readClient()
     .from("stretch_completions")
-    .select("item_id, minutes, completed_date")
-    .gte("completed_date", weekStart)
-    .lte("completed_date", weekEnd);
-  const rows = (data ?? []) as LedgerRow[];
-
-  const earnedWeek = rows
-    .filter(r => r.item_id !== SPEND_ITEM_ID && r.minutes > 0)
-    .reduce((s, r) => s + r.minutes, 0);
-  const spentWeek = rows
-    .filter(r => r.item_id === SPEND_ITEM_ID)
-    .reduce((s, r) => s + Math.abs(r.minutes), 0);
-  const spentToday = rows
-    .filter(r => r.item_id === SPEND_ITEM_ID && r.completed_date === date)
-    .reduce((s, r) => s + Math.abs(r.minutes), 0);
-  const earnedTodayIds = new Set(
-    rows.filter(r => r.item_id !== SPEND_ITEM_ID && r.completed_date === date)
-      .map(r => r.item_id),
+    .select("item_id")
+    .eq("completed_date", date);
+  return new Set(
+    ((data ?? []) as { item_id: string }[])
+      .map(r => r.item_id)
+      .filter(id => id !== SPEND_ITEM_ID),
   );
-
-  return {
-    weekStart,
-    weekEnd,
-    rows,
-    earnedWeek,
-    spentWeek,
-    spentToday,
-    earnedTodayIds,
-    balance: Math.max(0, earnedWeek - spentWeek),
-  };
 }
 
 /**
- * The weekend all-items bonus. Active only when today is a Sydney weekend day
- * AND every active stretch item has an earn row for today. Fail-closed twice
- * over: a Notion failure reads as an empty roster, and an empty roster can
- * never activate the bonus — `itemsTotal > 0` is required, or four earned
- * items against an unreadable list would count as "all of them".
+ * The active roster, fail-closed: a Notion failure reads as an empty list, and
+ * an empty list can never be "complete" — `itemsTotal > 0` is required below,
+ * or four earned items against an unreadable list would count as all of them.
  */
-async function weekendBonusFor(earnedTodayIds: Set<string>, isWeekend: boolean) {
-  if (!isWeekend) return { active: false, itemsDone: 0, itemsTotal: 0 };
-  let items: { id: string }[] = [];
+async function roster(): Promise<{ id: string }[]> {
   try {
-    items = await getStretchItems();
+    return await getStretchItems();
   } catch {
-    items = [];
+    return [];
   }
-  const itemsDone = items.filter(i => earnedTodayIds.has(i.id)).length;
-  return {
-    active: items.length > 0 && itemsDone === items.length,
-    itemsDone,
-    itemsTotal: items.length,
-  };
 }
 
 async function loadGateContext(date: string, weekday: string, nowMinutes: number, nowMs: number): Promise<GateContext> {
-  // Tracked, not inferred from habitsAll.length: on a weekend the list is
-  // legitimately empty, and gateWallet must be able to tell that apart from
-  // Notion being unreachable. See blockSatisfied() in lib/gating.ts.
   let habitsLoaded = true;
   const [habitsAll, settings] = await Promise.all([
     getHabits().catch(() => {
@@ -147,53 +102,34 @@ async function loadGateContext(date: string, weekday: string, nowMinutes: number
 
 export async function GET() {
   const now = sydneyNow();
-  const [wallet, ctx, settings] = await Promise.all([
-    loadWallet(now.date),
+  const [earned, ctx, items] = await Promise.all([
+    earnedToday(now.date),
     loadGateContext(now.date, now.weekday, now.minutesOfDay, now.ms),
-    getSettings().catch(() => SETTINGS_FALLBACK),
+    roster(),
   ]);
   const unlock = gateWallet(ctx);
-  const weekendOnly = settings.weekendRedemptionOnly;
-  const isWeekend = isSydneyWeekend();
-  const bonus = await weekendBonusFor(wallet.earnedTodayIds, isWeekend);
-  const capToday = DAILY_REDEEM_CAP_MIN + (bonus.active ? WEEKEND_ALL_ITEMS_BONUS_MIN : 0);
-  const remainingToday = Math.max(0, capToday - wallet.spentToday);
+  const itemsDone = items.filter(i => earned.has(i.id)).length;
+  const itemsTotal = items.length;
+  const complete = itemsTotal > 0 && itemsDone === itemsTotal;
 
   return NextResponse.json({
     ok: true,
     serverDate: now.date,
     weekday: now.weekday,
     timeZone: "Australia/Sydney",
-    weekStart: wallet.weekStart,
-    balance: wallet.balance,
-    earnedWeek: wallet.earnedWeek,
-    spentWeek: wallet.spentWeek,
-    spentToday: wallet.spentToday,
-    remainingToday,
-    dailyRedeemCapMin: capToday,
-    minPerPoint: MIN_PER_POINT,
-    weekendBonusMin: WEEKEND_ALL_ITEMS_BONUS_MIN,
-    weekendBonusActive: bonus.active,
-    weekendBonusItemsDone: bonus.itemsDone,
-    weekendBonusItemsTotal: bonus.itemsTotal,
-    earnedItemIds: Array.from(wallet.earnedTodayIds),
+    /* false on Sat/Sun: the board hides the panel rather than showing it locked. */
+    available: unlock.allowed || unlock.reason !== "closed",
     unlocked: unlock.allowed,
     lockMessage: unlock.allowed ? null : unlock.message,
-    weekendRedemptionOnly: weekendOnly,
-    redemptionOpen: unlock.allowed && (!weekendOnly || isWeekend) && wallet.balance > 0 && remainingToday > 0,
-    redemptionMessage: !unlock.allowed
-      ? unlock.message
-      : weekendOnly && !isWeekend
-        ? "PS5 minutes unlock Saturday and Sunday — keep banking"
-        : wallet.balance <= 0
-          ? "Nothing banked yet"
-          : remainingToday <= 0
-            ? `Daily cap reached — ${capToday} min redeemed today`
-            : null,
+    earnedItemIds: Array.from(earned),
+    itemsDone,
+    itemsTotal,
+    complete,
+    rewardLabel: DAILY_REWARD_LABEL,
   }, { headers: noStore });
 }
 
-/* ── POST — earn / spend ─────────────────────────────────────────────────── */
+/* ── POST — earn ─────────────────────────────────────────────────────────── */
 
 export async function POST(request: Request) {
   const now = sydneyNow();
@@ -206,110 +142,65 @@ export async function POST(request: Request) {
       { status: 400, headers: noStore });
   }
 
-  const action = body.action === "spend" ? "spend" : body.action === "earn" ? "earn" : "";
+  if (body.action !== "earn") {
+    // "spend" included. A client still asking to convert minutes is running an
+    // old board; it gets told the model changed, not a silent no-op.
+    return NextResponse.json({ ok: false, reason: "bad_request", message: "action must be earn — minutes are no longer converted" },
+      { status: 400, headers: noStore });
+  }
   const itemId = typeof body.itemId === "string" ? body.itemId : "";
-  const points = typeof body.points === "number" ? body.points : 0;
-  if (!action) {
-    return NextResponse.json({ ok: false, reason: "bad_request", message: "action must be earn or spend" },
+  if (!itemId || itemId === SPEND_ITEM_ID) {
+    return NextResponse.json({ ok: false, reason: "bad_request", message: "itemId required" },
       { status: 400, headers: noStore });
   }
 
-  const [ctx, settings, wallet] = await Promise.all([
+  const [ctx, earned, items] = await Promise.all([
     loadGateContext(now.date, now.weekday, now.minutesOfDay, now.ms),
-    getSettings().catch(() => SETTINGS_FALLBACK),
-    loadWallet(now.date),
+    earnedToday(now.date),
+    roster(),
   ]);
 
-  // Cascade first, both ways: nothing is earned or redeemed until Morning
-  // Habits and Homeschool are both 100%.
+  // Cascade first — and on a weekend this is where the request stops.
   const unlock = gateWallet(ctx);
   if (!unlock.allowed) {
     return NextResponse.json({ ok: false, reason: unlock.reason, message: unlock.message },
       { status: 409, headers: noStore });
   }
-
-  /** Every rule has now been checked. Only a request that has earned its write
-      can be stopped by a missing key — same ordering rule as /api/tick, so a
-      refusal always reads as a refusal rather than as a broken server. */
-  function requireWriter() {
-    return hasServiceRole() ? null : NextResponse.json({
+  // Only a real item earns. An id that is not on the roster is refused rather
+  // than recorded — otherwise a stray POST could pad the completion table.
+  if (!items.some(i => i.id === itemId)) {
+    return NextResponse.json({ ok: false, reason: "bad_request", message: "Unknown stretch item" },
+      { status: 400, headers: noStore });
+  }
+  if (earned.has(itemId)) {
+    return NextResponse.json({ ok: false, reason: "closed", message: "Already done today" },
+      { status: 409, headers: noStore });
+  }
+  /* Every rule has now been checked. Only a request that has earned its write
+     can be stopped by a missing key — same ordering rule as /api/tick. */
+  if (!hasServiceRole()) {
+    return NextResponse.json({
       ok: false, reason: "not_configured",
       message: "Server cannot write: SUPABASE_SERVICE_ROLE_KEY is not set for this deploy.",
       gatesPassed: true,
     }, { status: 503, headers: noStore });
   }
 
-  if (action === "earn") {
-    if (!itemId || itemId === SPEND_ITEM_ID) {
-      return NextResponse.json({ ok: false, reason: "bad_request", message: "itemId required" },
-        { status: 400, headers: noStore });
-    }
-    // One earn per item per calendar day.
-    const already = wallet.rows.some(r => r.item_id === itemId && r.completed_date === now.date);
-    if (already) {
-      return NextResponse.json({ ok: false, reason: "closed", message: "Already earned today" },
-        { status: 409, headers: noStore });
-    }
-    const blocked = requireWriter();
-    if (blocked) return blocked;
-
-    const minutes = Math.max(0, Math.round(points)) * MIN_PER_POINT;
-    const { error } = await adminClient().from("stretch_completions").insert({
-      item_id: itemId,
-      completed_date: now.date,
-      minutes,
-      created_at: new Date(now.ms).toISOString(),
-    });
-    if (error) {
-      return NextResponse.json({ ok: false, reason: "write_failed", message: error.message },
-        { status: 500, headers: noStore });
-    }
-    return NextResponse.json({ ok: true, action: "earn", itemId, minutes, balance: wallet.balance + minutes },
-      { headers: noStore });
-  }
-
-  /* SPEND — the weekend till. */
-  const spendIsWeekend = isSydneyWeekend();
-  if (settings.weekendRedemptionOnly && !spendIsWeekend) {
-    return NextResponse.json({
-      ok: false,
-      reason: "closed",
-      message: `PS5 minutes convert on Saturday and Sunday only — today is ${now.weekday} in Sydney`,
-    }, { status: 409, headers: noStore });
-  }
-  if (wallet.balance <= 0) {
-    return NextResponse.json({ ok: false, reason: "closed", message: "Nothing banked to spend" },
-      { status: 409, headers: noStore });
-  }
-  // The cap is re-derived on every spend, so the +30 appears the moment the
-  // fourth item's earn row lands — no refresh or cache expiry involved.
-  const bonus = await weekendBonusFor(wallet.earnedTodayIds, spendIsWeekend);
-  const capToday = DAILY_REDEEM_CAP_MIN + (bonus.active ? WEEKEND_ALL_ITEMS_BONUS_MIN : 0);
-  const remainingToday = Math.max(0, capToday - wallet.spentToday);
-  if (remainingToday <= 0) {
-    return NextResponse.json({
-      ok: false, reason: "closed",
-      message: `Daily cap reached — ${capToday} min already redeemed today`,
-    }, { status: 409, headers: noStore });
-  }
-
-  const blockedSpend = requireWriter();
-  if (blockedSpend) return blockedSpend;
-
-  const burn = Math.min(SPEND_STEP_MIN, wallet.balance, remainingToday);
   const { error } = await adminClient().from("stretch_completions").insert({
-    item_id: SPEND_ITEM_ID,
+    item_id: itemId,
     completed_date: now.date,
-    minutes: -burn,
+    minutes: 0,   // nobody tracks minutes; the row is the record
     created_at: new Date(now.ms).toISOString(),
   });
   if (error) {
     return NextResponse.json({ ok: false, reason: "write_failed", message: error.message },
       { status: 500, headers: noStore });
   }
+  const itemsDone = items.filter(i => earned.has(i.id) || i.id === itemId).length;
   return NextResponse.json({
-    ok: true, action: "spend", minutes: burn,
-    balance: wallet.balance - burn,
-    remainingToday: remainingToday - burn,
+    ok: true, action: "earn", itemId,
+    itemsDone, itemsTotal: items.length,
+    complete: items.length > 0 && itemsDone === items.length,
+    rewardLabel: DAILY_REWARD_LABEL,
   }, { headers: noStore });
 }
