@@ -171,6 +171,12 @@ type GateSnapshot = {
     configured: boolean; found: boolean;
     submittedAt: string | null; error: string | null;
   };
+  /* Today's Qur'an evidence, read server-side from Quran OS. Same rules as the
+     journal: optional, and `error` non-null means `found` says nothing. */
+  quranEvidence?: {
+    configured: boolean; found: boolean;
+    minutes: number | null; endedAt: string | null; error: string | null;
+  };
 };
 
 /**
@@ -348,6 +354,7 @@ export default function AnsarPage() {
      idempotent so a double call is harmless, but "harmless" is not a reason to
      make three of them. */
   const journalSyncing = useRef(false);
+  const quranSyncing = useRef(false);
 
   /* ── Loads ──────────────────────────────────────────────────────────────── */
 
@@ -568,6 +575,31 @@ export default function AnsarPage() {
       });
     }
   }, []);
+
+  /* ── The Qur'an ticks itself ───────────────────────────────────────────────
+     Finishing a Quran OS session IS the completion (tk, 6 Sep 2026). Mirrors
+     the journal effect below in every respect: fires only when /api/tick has
+     already reported `quranEvidence.found` for a quran row that is not DONE,
+     is self-healing on the next poll, and never breaks the board. */
+  useEffect(() => {
+    if (!gate?.quranEvidence?.found) return;
+    if (gate.quranEvidence.error) return;
+    const quran = gate.habits.find(h => h.id === "quran");
+    if (!quran || quran.state === "DONE") return;
+    if (quranSyncing.current) return;
+    quranSyncing.current = true;
+    void (async () => {
+      try {
+        const res = await fetch("/api/quran-sync", { method: "POST", cache: "no-store" });
+        const body = await res.json() as { ticked?: boolean };
+        if (body?.ticked) await loadGate();
+      } catch {
+        /* Best-effort: the next 30s poll tries again. */
+      } finally {
+        quranSyncing.current = false;
+      }
+    })();
+  }, [gate, loadGate]);
 
   /* ── The journal ticks itself ──────────────────────────────────────────────
      Filing the Tally journal IS the completion (tk, 2 Sep 2026) — there is no
