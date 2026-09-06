@@ -52,6 +52,7 @@ import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
 import { lockoutState, recordFailure, clearFailures, lockoutBackend, LOCKOUT_MAX_FAILURES } from "../../lib/pin-lockout";
 import { getJournalEvidence, type JournalEvidence } from "../../lib/tally";
 import { evidenceRefusal, evidenceWarnings } from "../../lib/evidence-gate";
+import { getQuranEvidence, type QuranEvidence } from "../../lib/quran-os";
 
 // Never prerendered, never cached: the answer depends on the current second.
 export const dynamic = "force-dynamic";
@@ -193,10 +194,10 @@ function gatePrerequisite(
  */
 async function loadContext(
   fresh: boolean,
-): Promise<{ ctx: GateContext; habits: Habit[]; evidence: JournalEvidence }> {
+): Promise<{ ctx: GateContext; habits: Habit[]; evidence: JournalEvidence; quranEvidence: QuranEvidence }> {
   const now = sydneyNow();                       // ← the server's own clock
 
-  const [habitsAll, settings, evidence] = await Promise.all([
+  const [habitsAll, settings, evidence, quranEvidence] = await Promise.all([
     getHabits(fresh).then(h => { lastHabitsError = null; return h; }).catch((e: unknown) => {
       // The message is Notion's status line ("Notion <id>: 401 Unauthorized") or
       // "Missing NOTION_TOKEN". Neither contains the token itself.
@@ -209,6 +210,10 @@ async function loadContext(
     // which of the two happened. `fresh` rides along so the board's post-submit
     // refetch and the POST's pre-refusal re-check both bypass the 30s memo.
     getJournalEvidence(now.date, fresh),
+    // Same contract as the journal evidence: never throws, `error` says when
+    // `found` means nothing. Read here so the board learns it on the poll it
+    // already makes and can ask /api/quran-sync to write the tick.
+    getQuranEvidence(now.date, fresh),
   ]);
   const habits = habitsForDay(habitsAll, now.weekday);
 
@@ -235,6 +240,7 @@ async function loadContext(
     // four-gate contract; gate 5 kept `pointType` out of it for the same reason
     // and takes the rich rows separately.
     evidence,
+    quranEvidence,
   };
 }
 
@@ -244,7 +250,7 @@ export async function GET(request: Request) {
   const fresh = new URL(request.url).searchParams.get("fresh") === "1";
   try {
     const now = sydneyNow();
-    const { ctx, habits: richHabits, evidence } = await loadContext(fresh);
+    const { ctx, habits: richHabits, evidence, quranEvidence } = await loadContext(fresh);
 
     let lock = { remainingMs: 0, failures: 0 };
     let lockBackend: string | null = null;
@@ -333,6 +339,9 @@ export async function GET(request: Request) {
          say, and a second opinion computed on the client is how the caption and
          the button end up disagreeing about the same fact. */
       journalEvidence: evidence,
+      /* Today's Qur'an evidence from Quran OS, same contract. The board fires
+         /api/quran-sync when `found` is true and the quran row is not DONE. */
+      quranEvidence,
       // A silent gate 6 is worth saying out loud, exactly as an unparseable
       // window is. Both live in the same array because both mean the same
       // thing to whoever reads it: a habit is less gated than it looks.
