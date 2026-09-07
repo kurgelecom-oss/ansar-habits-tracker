@@ -414,6 +414,17 @@
      wordmark, so the wordmark stays one text node. */
   border-bottom: 2px solid var(--ansar-gold);
   border-radius: 0;
+  /* Anchor for .clubWeek, which is pinned to the band's right edge. */
+  position: relative;
+}
+
+/* The week badge's seat: right edge of the masthead, vertically centred, out
+   of the flow so the wordmark stays centred whatever the label's width. */
+.clubWeek {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .clubIdentity {
@@ -1433,6 +1444,15 @@
     padding: 7px 12px;
   }
   .clubWordmark { font-size: 15px; }
+  /* On a phone the band wraps; the badge joins the flow under the identity
+     rather than sitting on top of it. */
+  .clubWeek {
+    position: static;
+    transform: none;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
 
   .clubStatus {
     flex-wrap: wrap;
