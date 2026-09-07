@@ -2013,3 +2013,36 @@
 .restDayGlyph { font-size: 56px; margin: 0; }
 .restDayTitle { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: 0.02em; }
 .restDayCopy { font-size: 14px; color: var(--ansar-muted); margin: 0; max-width: 32ch; }
+
+/* WEEK BADGE — which week 📆 2 · Daily Programme is loaded with. Sits first in
+   the nav's status cluster. A pill, not a card: it is a label, not a metric. */
+.weekBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 5px 11px;
+  border: 1px solid color-mix(in srgb, var(--ansar-gold-bright) 45%, transparent);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ansar-gold-bright);
+  background: color-mix(in srgb, var(--ansar-gold-bright) 10%, transparent);
+  text-decoration: none;
+}
+a.weekBadge:hover,
+a.weekBadge:focus-visible {
+  background: color-mix(in srgb, var(--ansar-gold-bright) 20%, transparent);
+}
+.weekBadgeStale {
+  color: var(--ansar-warning);
+  border-color: color-mix(in srgb, var(--ansar-warning) 55%, transparent);
+  background: color-mix(in srgb, var(--ansar-warning) 12%, transparent);
+}
+.weekBadgeEmpty {
+  color: var(--ansar-muted);
+  border-color: var(--ansar-border);
+  background: transparent;
+}

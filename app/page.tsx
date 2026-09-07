@@ -20,6 +20,7 @@ import ClubHeader from "./components/dashboard/ClubHeader";
 import ClubStatus from "./components/dashboard/ClubStatus";
 import DayViewToggle, { type DayView } from "./components/dashboard/DayViewToggle";
 import DashboardShell from "./components/dashboard/DashboardShell";
+import WeekBadge from "./components/dashboard/WeekBadge";
 import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
 import MatchCentre from "./components/dashboard/MatchCentre";
 import HabitPanel from "./components/dashboard/HabitPanel";
@@ -1367,6 +1368,10 @@ export default function AnsarPage() {
         controlRoomUrl={links?.controlRoom}
         status={
           <>
+          {/* Which week 📆 2 · Daily Programme is loaded with. Read from
+              Notion on every load, so the Friday job is the only thing
+              that ever changes it. */}
+          <WeekBadge />
           <DayViewToggle
             value={dayView ?? liveView ?? "weekday"}
             live={liveView}
