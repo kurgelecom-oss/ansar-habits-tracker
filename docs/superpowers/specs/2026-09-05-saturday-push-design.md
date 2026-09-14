@@ -29,7 +29,7 @@ window 09:00–17:00, Point Type `perfect_day_only`, all parent-PIN:
 |---|---|---|
 | push_engine | Engine | 2 km continuous run, no walking |
 | push_strength | Strength & skill | 3 rounds: 10 push-ups, 30s plank, 50 juggles |
-| push_quran | Qur'an memorisation | 5 new ayat from memory + week's revision |
+| push_quran | Qur'an memorisation | 2 new ayat from memory + week's revision |
 
 Zero FC points. Saturday points never enter the /55 (SQUAD_DAYS filter). The reward
 is the PS5 start and the Saturday streak shown on the board.

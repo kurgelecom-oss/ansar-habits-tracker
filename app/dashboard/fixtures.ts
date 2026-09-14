@@ -85,7 +85,7 @@ const WEEKEND_ARVO: HabitSeed[] = AFTERNOON_EVENING.filter(h => h.id !== "journa
 const SATURDAY_PUSH: HabitSeed[] = [
   { id: "push_engine", name: "Engine", block: "saturday_push", order: 9, points: 0, pointType: "perfect_day_only", target: "2 km continuous run, no walking" },
   { id: "push_strength", name: "Strength & skill", block: "saturday_push", order: 10, points: 0, pointType: "perfect_day_only", target: "3 rounds: 10 push-ups, 30s plank, 50 juggles" },
-  { id: "push_quran", name: "Qur'an memorisation", block: "saturday_push", order: 11, points: 0, pointType: "perfect_day_only", target: "5 new ayat from memory + this week's revision" },
+  { id: "push_quran", name: "Qur'an memorisation", block: "saturday_push", order: 11, points: 0, pointType: "perfect_day_only", target: "2 new ayat from memory + this week's revision" },
 ];
 
 const CONDITIONAL: HabitSeed[] = [
