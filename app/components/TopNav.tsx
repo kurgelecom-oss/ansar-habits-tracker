@@ -7,7 +7,6 @@ const LINKS = [
   { label: "Family Dashboard",      href: "https://kurgel-dashboard.netlify.app/" },
   { label: "ECOM Launchpad",        href: "https://ecom-launchpad-mentor.netlify.app/" },
   { label: "Time Allocation Board", href: "https://kurgel-dashboard.netlify.app/board" },
-  { label: "Link Board",            href: "https://luxury-kringle-cf4171.netlify.app/" },
 ];
 
 // "/week/" and "/week" are the same page; "" is "/".
