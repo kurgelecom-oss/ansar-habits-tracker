@@ -7,7 +7,16 @@ const OUTBOX = 'ansar_assessment_outbox';
 const SITE = 'https://ansar-habits-tracker.netlify.app';
 type Payload = { subject: string; text: string; report?: string; graphMessageId?: string; graphSendStartedAt?: string; resendStartedAt?: string; gmailSendStartedAt?: string };
 type Job = { id: string; channel: 'notion' | 'email'; payload: Payload; attempts: number };
-class DeliveryError extends Error {}
+class DeliveryError extends Error {
+  constructor(message: string, readonly httpStatus?: number) { super(message); }
+}
+function definitivelyRejected(error: unknown): boolean {
+  return error instanceof DeliveryError && error.httpStatus !== undefined && error.httpStatus >= 400 && error.httpStatus < 500 && error.httpStatus !== 408;
+}
+function assignedByDueDate(paper: Paper): boolean {
+  const assignedAt = paper.kind === 'exam' ? paper.published_at || paper.created_at : paper.created_at;
+  return !assignedAt || sydneyDateKey(new Date(assignedAt)) <= paper.due_date;
+}
 
 export function deliveryConfiguration() {
   return {
@@ -59,7 +68,7 @@ export function reminderPapers(today: string, papers: Paper[], completedIds: Set
   return papers.filter(p => p.status === 'published' && p.opens_on <= today && !completedIds.has(p.id) && (
     (weekday === 5 && p.kind === 'review' && p.due_date === today) ||
     (p.kind === 'exam' && today <= p.due_date && examWindow) ||
-    (weekday === 1 && p.due_date < today && (!p.created_at || sydneyDateKey(new Date(p.created_at)) <= p.due_date))
+    (weekday === 1 && p.due_date < today && assignedByDueDate(p))
   ));
 }
 export async function queueDueReminders(today: string): Promise<void> {
@@ -115,7 +124,7 @@ async function request(url: string, init: RequestInit, provider: string): Promis
   let response: Response;
   try { response = await fetch(url, { ...init, signal: AbortSignal.timeout(12_000), cache: 'no-store' }); }
   catch { throw new DeliveryError(`${provider} network request failed`); }
-  if (!response.ok) throw new DeliveryError(`${provider} request failed (${response.status})`);
+  if (!response.ok) throw new DeliveryError(`${provider} request failed (${response.status})`, response.status);
   return response;
 }
 async function deliverNotion(job: Job) {
@@ -148,7 +157,12 @@ async function deliverGraph(job: Job) {
   }
   job.payload.graphSendStartedAt = new Date().toISOString();
   await persistPayload(job);
-  await request(`https://graph.microsoft.com/v1.0/me/messages/${encodeURIComponent(job.payload.graphMessageId!)}/send`, { method: 'POST', headers }, 'Microsoft mail');
+  try {
+    await request(`https://graph.microsoft.com/v1.0/me/messages/${encodeURIComponent(job.payload.graphMessageId!)}/send`, { method: 'POST', headers }, 'Microsoft mail');
+  } catch (error) {
+    if (definitivelyRejected(error)) { delete job.payload.graphSendStartedAt; await persistPayload(job); }
+    throw error;
+  }
 }
 async function composio(tool: string, args: Record<string, unknown>) {
   const response = await request(`https://backend.composio.dev/api/v3/tools/execute/${tool}`, {
@@ -170,7 +184,14 @@ async function deliverGmail(job: Job) {
   if (job.payload.gmailSendStartedAt) throw new DeliveryError('Gmail send is awaiting confirmation; retained for reconciliation');
   job.payload.gmailSendStartedAt = new Date().toISOString();
   await persistPayload(job);
-  await composio('GMAIL_SEND_EMAIL', { recipient_email: process.env.ASSESSMENT_EMAIL_TO, subject: `${job.payload.subject} [${marker}]`, body: job.payload.text, is_html: false, user_id: 'me' });
+  try {
+    await composio('GMAIL_SEND_EMAIL', { recipient_email: process.env.ASSESSMENT_EMAIL_TO, subject: `${job.payload.subject} [${marker}]`, body: job.payload.text, is_html: false, user_id: 'me' });
+  } catch (error) {
+    // HTTP 4xx (other than request timeout) rejects execution. Tool failures
+    // inside HTTP 200 may be ambiguous, so their checkpoints remain intact.
+    if (definitivelyRejected(error)) { delete job.payload.gmailSendStartedAt; await persistPayload(job); }
+    throw error;
+  }
 }
 async function deliverEmail(job: Job) {
   if (!deliveryConfiguration().email) throw new DeliveryError('Email is not configured: set ASSESSMENT_EMAIL_TO and Composio Gmail, Microsoft credentials, or RESEND_API_KEY / ASSESSMENT_EMAIL_FROM');
@@ -180,7 +201,12 @@ async function deliverEmail(job: Job) {
   // ambiguous delivery needs reconciliation instead of risking a duplicate.
   if (job.payload.resendStartedAt && Date.now() - Date.parse(job.payload.resendStartedAt) >= 23 * 60 * 60 * 1000) throw new DeliveryError('Resend delivery confirmation expired; retained for manual reconciliation');
   if (!job.payload.resendStartedAt) { job.payload.resendStartedAt = new Date().toISOString(); await persistPayload(job); }
-  await request('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': job.id }, body: JSON.stringify({ from: process.env.ASSESSMENT_EMAIL_FROM, to: [process.env.ASSESSMENT_EMAIL_TO], subject: job.payload.subject, text: job.payload.text }) }, 'Resend');
+  try {
+    await request('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': job.id }, body: JSON.stringify({ from: process.env.ASSESSMENT_EMAIL_FROM, to: [process.env.ASSESSMENT_EMAIL_TO], subject: job.payload.subject, text: job.payload.text }) }, 'Resend');
+  } catch (error) {
+    if (definitivelyRejected(error)) { delete job.payload.resendStartedAt; await persistPayload(job); }
+    throw error;
+  }
 }
 export async function deliverPending(): Promise<{ sent: number; failed: number }> {
   const db = adminClient();

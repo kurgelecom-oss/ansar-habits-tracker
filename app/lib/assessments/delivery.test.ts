@@ -100,6 +100,28 @@ describe('Gmail delivery reconciliation', () => {
     expect(args.body).toBe('Private link');
     expect(mocks.update.mock.calls[0][0].payload.gmailSendStartedAt).toBeTruthy();
   });
+  it('retries a definitively rejected Gmail send after HTTP 429', async () => {
+    const job = { id: 'rejected-email', channel: 'email', payload: { subject: 'Result', text: 'Private link', gmailSendStartedAt: undefined as string | undefined } };
+    const emptySearch = () => new Response(JSON.stringify({ successful: true, data: { messages: [] } }));
+    const fetcher = vi.fn().mockResolvedValueOnce(emptySearch()).mockResolvedValueOnce(new Response('rate limit', { status: 429 })).mockResolvedValueOnce(emptySearch()).mockResolvedValueOnce(new Response(JSON.stringify({ successful: true, data: { id: 'sent' } })));
+    vi.stubGlobal('fetch', fetcher);
+    mocks.rpc.mockResolvedValue({ data: [job], error: null });
+    expect(await deliverPending()).toEqual({ sent: 0, failed: 1 });
+    expect(job.payload.gmailSendStartedAt).toBeUndefined();
+    expect(await deliverPending()).toEqual({ sent: 1, failed: 0 });
+    expect(fetcher.mock.calls.filter(c => String(c[0]).endsWith('GMAIL_SEND_EMAIL'))).toHaveLength(2);
+  });
+  it.each([408, 502, 'tool-error'])('does not blindly resend after ambiguous Gmail failure %s', async failure => {
+    const job = { id: 'ambiguous-email', channel: 'email', payload: { subject: 'Result', text: 'Private link', gmailSendStartedAt: undefined as string | undefined } };
+    const emptySearch = () => new Response(JSON.stringify({ successful: true, data: { messages: [] } }));
+    const rejected = typeof failure === 'number' ? new Response('ambiguous', { status: failure }) : new Response(JSON.stringify({ successful: false, error: 'unknown timeout' }));
+    const fetcher = vi.fn().mockResolvedValueOnce(emptySearch()).mockResolvedValueOnce(rejected).mockResolvedValueOnce(emptySearch());
+    vi.stubGlobal('fetch', fetcher); mocks.rpc.mockResolvedValue({ data: [job], error: null });
+    expect(await deliverPending()).toEqual({ sent: 0, failed: 1 });
+    expect(job.payload.gmailSendStartedAt).toBeTruthy();
+    expect(await deliverPending()).toEqual({ sent: 0, failed: 1 });
+    expect(fetcher.mock.calls.filter(c => String(c[0]).endsWith('GMAIL_SEND_EMAIL'))).toHaveLength(1);
+  });
   it('does not resend when a previous send is visible in sent mail', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ successful: true, data: { messages: [{ messageId: 'already-sent' }] } })));
     vi.stubGlobal('fetch', fetcher);
@@ -120,6 +142,27 @@ describe('Gmail delivery reconciliation', () => {
     mocks.rpc.mockResolvedValue({ data: [{ id: 'email-job', channel: 'email', payload: { subject: 'Result', text: 'Private link' } }], error: null });
     expect(await deliverPending()).toEqual({ sent: 0, failed: 1 });
     expect(JSON.stringify(mocks.update.mock.calls)).not.toContain('private upstream');
+  });
+});
+describe('Microsoft rejection recovery', () => {
+  it('reuses the persisted draft and retries send after HTTP 429', async () => {
+    vi.stubEnv('ASSESSMENT_EMAIL_TO', 'parent@example.com');
+    vi.stubEnv('ASSESSMENT_MS_CLIENT_ID', 'client'); vi.stubEnv('ASSESSMENT_MS_CLIENT_SECRET', 'secret'); vi.stubEnv('ASSESSMENT_MS_REFRESH_TOKEN', 'refresh');
+    const job = { id: 'graph-email', channel: 'email', payload: { subject: 'Result', text: 'Private link', graphMessageId: undefined as string | undefined, graphSendStartedAt: undefined as string | undefined } };
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'token' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'immutable-draft' })))
+      .mockResolvedValueOnce(new Response('rate limited', { status: 429 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'token' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ isDraft: true })))
+      .mockResolvedValueOnce(new Response(null, { status: 202 }));
+    vi.stubGlobal('fetch', fetcher); mocks.rpc.mockResolvedValue({ data: [job], error: null });
+    expect(await deliverPending()).toEqual({ sent: 0, failed: 1 });
+    expect(job.payload.graphMessageId).toBe('immutable-draft');
+    expect(job.payload.graphSendStartedAt).toBeUndefined();
+    expect(await deliverPending()).toEqual({ sent: 1, failed: 0 });
+    expect(fetcher.mock.calls.filter(c => String(c[0]).endsWith('/send'))).toHaveLength(2);
+    expect(fetcher.mock.calls.filter(c => String(c[0]).endsWith('/me/messages'))).toHaveLength(1);
   });
 });
 describe('reminder eligibility', () => {
@@ -147,6 +190,11 @@ describe('fair parent and learner reminders', () => {
     const retroactive = { ...paper, created_at: '2026-09-25T14:30:00Z' };
     const assignedInTime = { ...paper, id: 'on-time', created_at: '2026-09-25T13:30:00Z' };
     expect(reminderPapers('2026-09-28', [retroactive, assignedInTime], new Set()).map(p => p.id)).toEqual(['on-time']);
+  });
+  it('does not call an exam overdue when its draft existed earlier but parent approval arrived late', () => {
+    const lateApproval: Paper = { ...paper, kind: 'exam', due_date: '2026-09-30', opens_on: '2026-09-24', created_at: '2026-09-20T00:00:00Z', published_at: '2026-10-01T00:00:00Z' };
+    const timelyApproval: Paper = { ...lateApproval, id: 'timely', published_at: '2026-09-29T00:00:00Z' };
+    expect(reminderPapers('2026-10-05', [lateApproval, timelyApproval], new Set()).map(p => p.id)).toEqual(['timely']);
   });
   it('accounts for Sydney daylight saving in historical assignment fairness', () => {
     const retroactive = { ...paper, due_date: '2026-10-23', opens_on: '2026-10-23', created_at: '2026-10-23T13:30:00Z' };
