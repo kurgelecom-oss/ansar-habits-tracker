@@ -49,5 +49,8 @@ describe('weekly papers', () => {
     expect(paper.questions[0].prompt).toContain(lesson.topic);
     expect(paper.questions[0].prompt).not.toContain(lesson.task);
     expect(paper.lessons[0].task).toBe(lesson.task);
+    expect(new Set(paper.questions.map(q => q.rubric)).size).toBe(4);
+    expect(paper.questions.every(q => /0 =/.test(q.rubric || '') && /1 =/.test(q.rubric || '') && /2 =/.test(q.rubric || ''))).toBe(true);
+    expect(paper.questions[3].rubric).toContain('Do not penalize admitting uncertainty');
   });
 });

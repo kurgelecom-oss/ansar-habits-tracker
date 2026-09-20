@@ -74,14 +74,19 @@ export function buildWeeklyReview(lessons: Lesson[], due: string): Paper {
   const dates = [...new Set(lessons.map(l => l.date))].sort().join(', ');
   const topics = [...new Set(lessons.map(l => l.topic.trim()).filter(Boolean))].map(topic => topic.slice(0, 80)).join('; ');
   const focus = `Dates: ${dates}.${topics ? ` Topic cues: ${topics}.` : ''}`;
-  const rubric = 'Nihal checks the response against the dated tasks and actual work. Score accuracy, explanation and application separately across this review: 0 = missing or incorrect, 1 = partial, 2 = accurate and clear. Completion alone is not mastery.';
+  const rubrics = [
+    'Recall accuracy: 0 = no relevant recalled learning or mainly incorrect; 1 = some accurate recall but incomplete or unclear; 2 = three relevant, accurate points in the learner’s own words, checked against the actual taught work. Completion alone is not mastery.',
+    'Explained example: 0 = no relevant explanation or example; 1 = a partly correct idea or example with limited explanation; 2 = an accurate main idea explained clearly with a specific, relevant example from the learner’s work.',
+    'New application or connection: 0 = no relevant attempt or an incorrect connection; 1 = a plausible application or connection with missing steps or reasoning; 2 = an accurate new example or connection with clear steps and an explanation of why it works.',
+    'Gap and next action: 0 = no reflection or next action; 1 = a relevant gap or question but a vague or missing next action, or an action without a clear question; 2 = an honest, specific uncertainty or check-for-understanding question and a concrete next action to resolve or verify it. Do not penalize admitting uncertainty; this mark rewards reflection and a useful plan, not claimed mastery.',
+  ];
   const prompts = [
     `Without opening notes, recall three things you learned in ${subject} from your work on these dates. Use your own words. If a task was not completed, say so.\n${focus}`,
     `Choose one of those ${subject} tasks. Explain the main idea and give a specific example from your own work. Name the task or date.`,
     `Apply one idea from those ${subject} tasks to a new example, or connect two of the tasks. Explain each step and why the connection works.`,
     `What is still unclear in those ${subject} tasks? Write one specific question and one action you will take next to resolve it.`,
   ];
-  return { id: `review:${due}:${subjectSlug(subject)}`, kind: 'review', month: due.slice(0, 7), due_date: due, opens_on: due, subject, title: `${subject} · Friday recall · ${due}`, status: 'published', duration_minutes: null, questions: prompts.map((prompt, i) => ({ id: `q${i + 1}`, type: 'written', prompt, sourceIds, rubric })), lessons, coverage_note: coverageNote(lessons) };
+  return { id: `review:${due}:${subjectSlug(subject)}`, kind: 'review', month: due.slice(0, 7), due_date: due, opens_on: due, subject, title: `${subject} · Friday recall · ${due}`, status: 'published', duration_minutes: null, questions: prompts.map((prompt, i) => ({ id: `q${i + 1}`, type: 'written', prompt, sourceIds, rubric: rubrics[i] })), lessons, coverage_note: coverageNote(lessons) };
 }
 
 async function queryAll(source: string): Promise<NotionPage[]> {
