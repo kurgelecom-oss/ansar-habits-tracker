@@ -67,6 +67,15 @@ describe('curriculum persistence', () => {
     expect(state.papers.has('review:2026-09-04:maths')).toBe(true);
     expect(vi.mocked(fetch).mock.calls.every(call => String(call[0]).includes('api.notion.com'))).toBe(true);
   });
+  it('preserves an approved exam and warns when newer lesson coverage arrives even without a model key', async () => {
+    const exam: Paper = { id: 'exam:2026-09:maths', kind: 'exam', subject: 'Maths', month: '2026-09', title: 'Approved', status: 'published', questions: [], lessons: [], coverage_note: '', due_date: '2026-09-30', opens_on: '2026-09-24', duration_minutes: 25 };
+    state.papers.set(exam.id, exam);
+    const result = await syncCurriculum();
+    expect(result.warnings).toContain('Maths: new lesson coverage arrived after this exam was approved; this paper still tests its recorded source dates.');
+    expect(state.papers.get(exam.id)).toEqual(exam);
+    expect(result.exams).toBe(0);
+    expect(vi.mocked(fetch).mock.calls.every(call => String(call[0]).includes('api.notion.com'))).toBe(true);
+  });
   it('follows Notion cursors without an Active filter', async () => {
     const fetch = vi.fn(async (url: string, options: { body: string }) => {
       const body = JSON.parse(options.body);

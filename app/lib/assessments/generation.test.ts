@@ -23,6 +23,15 @@ describe('exam shape validation', () => {
     if (fault === 'rubric') qs[11].rubric = '';
     expect(() => validateExamQuestions(qs, lessons)).toThrow();
   });
+  it('normalizes explicit null fields on written questions while rejecting real choice answers', () => {
+    const qs = valid();
+    Object.assign(qs[8], { answer: null, options: null });
+    const parsed = validateExamQuestions(qs, lessons);
+    expect(parsed[8]).not.toHaveProperty('answer');
+    expect(parsed[8]).not.toHaveProperty('options');
+    Object.assign(qs[8], { answer: 0 });
+    expect(() => validateExamQuestions(qs, lessons)).toThrow('no choice answer');
+  });
   it('is calendar-correct for leap years and the final seven days', () => {
     expect(monthWindow('2028-02')).toEqual({ due_date: '2028-02-29', opens_on: '2028-02-23' });
     expect(monthWindow('2026-09')).toEqual({ due_date: '2026-09-30', opens_on: '2026-09-24' });
@@ -56,15 +65,23 @@ describe('generation failures', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ stop_reason: 'max_tokens', content: [] }) }));
     await expect(generateExam(lessons, '2026-09')).rejects.toThrow('did not complete');
   });
+  it('reports a bounded coverage reason without exposing links or saving a fake exam', async () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ questions: [], insufficientCoverage: 'Missing recorded vocabulary.\nSee https://example.com/private?token=abc' }) }] }) }));
+    await expect(generateExam(lessons, '2026-09')).rejects.toThrow('Missing recorded vocabulary. See [link omitted]');
+  });
   it('returns source-grounded drafts and keeps task data outside the trusted system prompt', async () => {
     vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
     const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ questions: valid() }) }] }) });
     vi.stubGlobal('fetch', fetch);
-    const exam = await generateExam(lessons, '2026-09');
+    const exam = await generateExam([...lessons, { ...lessons[0], id: 'generic-app-routine', task: 'Khan Academy — next lesson.' }], '2026-09');
     expect(exam.status).toBe('draft'); expect(exam.duration_minutes).toBe(25);
     const body = JSON.parse(fetch.mock.calls[0][1].body);
     expect(body.system).toContain('UNTRUSTED');
+    expect(body.output_config.format.type).toBe('json_schema');
     expect(body.system).not.toContain(lessons[0].task);
     expect(body.messages[0].content).toContain(lessons[0].task);
+    expect(body.messages[0].content).not.toContain('generic-app-routine');
+    expect(exam.lessons).toHaveLength(2);
   });
 });

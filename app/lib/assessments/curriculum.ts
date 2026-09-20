@@ -168,10 +168,6 @@ export async function syncCurriculum(): Promise<{ lessons: number; reviews: numb
   }
   // Keep historical snapshots and papers, but never create surprise retroactive exams.
   const pending = [...monthly.entries()].filter(([key]) => key.startsWith(`${today.slice(0, 7)}:`)).sort(([a], [b]) => b.localeCompare(a));
-  if (!process.env.ANTHROPIC_API_KEY) {
-    if (pending.length) summary.warnings.push('ANTHROPIC_API_KEY is not configured; monthly exams remain unavailable until source-grounded drafts can be generated.');
-    return summary;
-  }
   let next = 0;
   // Background execution allows all subjects; cap concurrent model calls at two.
   const worker = async () => {
@@ -181,7 +177,15 @@ export async function syncCurriculum(): Promise<{ lessons: number; reviews: numb
       const id = `exam:${month}:${subjectSlug(lessons[0].subject)}`;
       try {
         const existing = await getPaper(id);
-        if (existing?.status === 'published' || (existing && curriculumFingerprint(existing.lessons) === curriculumFingerprint(lessons)) || await attempted(id)) continue;
+        if (existing?.status === 'published') {
+          if (curriculumFingerprint(existing.lessons) !== curriculumFingerprint(lessons)) summary.warnings.push(`${lessons[0].subject}: new lesson coverage arrived after this exam was approved; this paper still tests its recorded source dates.`);
+          continue;
+        }
+        if ((existing && curriculumFingerprint(existing.lessons) === curriculumFingerprint(lessons)) || await attempted(id)) continue;
+        if (!process.env.ANTHROPIC_API_KEY) {
+          summary.warnings.push('ANTHROPIC_API_KEY is not configured; monthly exams remain unavailable until source-grounded drafts can be generated.');
+          continue;
+        }
         const paper = await generateExam(lessons, month);
         // Re-read because generation can take seconds and parent approval can race.
         const current = await getPaper(id);
