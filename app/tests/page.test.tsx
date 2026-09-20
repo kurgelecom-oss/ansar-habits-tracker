@@ -21,6 +21,7 @@ describe("assessment workspace", () => {
     fireEvent.change(screen.getByLabelText("Parent PIN"), { target: { value: "4821" } });
     fireEvent.click(screen.getByRole("button", { name: "Unlock assessment room" }));
     await screen.findByRole("button", { name: "Begin Friday recall" });
+    expect(screen.getByRole("link", { name: "Parent practice room" })).toHaveAttribute("href", "/tests/practice");
     expect(screen.queryByLabelText("Parent PIN")).not.toBeInTheDocument();
     expect(JSON.stringify(localStorage)).not.toContain("4821");
     expect(screen.getByText("Overdue")).toBeInTheDocument();
