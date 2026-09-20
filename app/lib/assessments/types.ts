@@ -1,8 +1,9 @@
 export type Question = { id: string; prompt: string; type: 'choice' | 'written'; options?: string[]; answer?: number; rubric?: string; explanation?: string; sourceIds: string[] };
 export type Lesson = { id: string; date: string; subject: string; task: string; topic: string; week: string; guide: string[]; url: string };
-export type Paper = { id: string; kind: 'review' | 'exam'; month: string; due_date: string; opens_on: string; subject: string; title: string; status: 'draft' | 'published'; duration_minutes: number | null; questions: Question[]; lessons: Lesson[]; coverage_note: string; created_at?: string; published_at?: string | null };
+export type Paper = { id: string; kind: 'review' | 'exam'; month: string; due_date: string; opens_on: string; subject: string; title: string; status: 'draft' | 'published'; duration_minutes: number | null; questions: Question[]; lessons: Lesson[]; coverage_note: string; is_practice?: boolean; created_at?: string; published_at?: string | null };
 export type Answers = Record<string, string | number>;
 export type Result = { objectiveCorrect: number; objectiveTotal: number; writtenPending: number; writtenPoints: number; writtenTotal: number; percentage: number | null; summary: string; gaps: string[] };
 export type ParentReview = { marks: Record<string, number>; feedback: string; nextStep: string; reviewedAt: string; reviewer: 'Nihal'; practicalConfirmed?: boolean };
 export type Attempt = { id: string; paper_id: string; status: 'in_progress' | 'submitted' | 'reviewed'; answers: Answers; started_at: string; expires_at: string | null; submitted_at: string | null; result: Result | null; parent_review: ParentReview | null; correction: string | null; correction_at: string | null; revision: number; paper_snapshot: Paper };
 export type Workspace = { month: string; today: string; serverNow: string; papers: Paper[]; attempts: Attempt[]; sourceStatus: string; integrations: { notion: boolean; email: boolean; pending: number }; };
+export type AssessmentScope = 'learner' | 'practice';
