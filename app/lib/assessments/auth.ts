@@ -13,7 +13,15 @@ export function validSession(token:string|undefined,now=Date.now()){
   }catch{return false;}
 }
 export async function requireSession(){if(!validSession((await cookies()).get(COOKIE)?.value))throw new AssessmentError('Nihal can unlock this device with the parent PIN.',401);}
-export function requireSameOrigin(request:Request){const origin=request.headers.get('origin');if(!origin||origin!==new URL(request.url).origin)throw new AssessmentError('Open this form on the assessment site.',403);}
+export function requireSameOrigin(request:Request){
+  // Netlify's proxy can expose an internal request URL to Next.js. Compare the
+  // browser Origin with server-configured public URLs, never forwarded headers.
+  const configured=[process.env.ASSESSMENT_SITE_URL,process.env.DEPLOY_PRIME_URL,process.env.DEPLOY_URL].filter((value):value is string=>Boolean(value));
+  const allowed=new Set(configured.map(value=>new URL(value).origin));
+  if(process.env.NODE_ENV!=='production'||allowed.size===0)allowed.add(new URL(request.url).origin);
+  const origin=request.headers.get('origin');
+  if(!origin||!allowed.has(origin))throw new AssessmentError('Open this form on the assessment site.',403);
+}
 export async function verifyParent(pin:unknown){
   const expected=process.env.PARENT_OVERRIDE_PIN;
   if(!expected)throw new AssessmentError('Parent PIN is not configured.',503);
