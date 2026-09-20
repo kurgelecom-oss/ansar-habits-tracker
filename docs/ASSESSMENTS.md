@@ -50,3 +50,9 @@ The initial source import contains 65 dated lesson snapshots, 21 historical Frid
 Netlify confirms daily curriculum scheduling at `0 21 * * *` and delivery/expiry processing at `*/10 * * * *`. Anonymous assessment API requests return 401; authenticated requests return the populated workspace with unstarted exam questions withheld.
 
 Final verified deployment: `6aaf910c6013221d96830aab`. The deployed background worker completed curriculum sync at 2026-09-20 07:53:46 UTC. It created a labelled system setup record in Notion and sent the genuine setup email through Gmail; both outbox events are confirmed sent with no remaining errors. The first provider check exposed Composio’s required entity identifier; the configured account uses `default`, now included in every request. No learner assessment records were used for this delivery check.
+
+## Parent rehearsal and weekly handoff
+
+The parent practice room at `/tests/practice` rehearses the same forms, saved timers, marking, review and correction flow using sample papers. It requires a separate parent-authorized session. Practice is excluded from learner views, reminders and automatic reporting. Parents can inspect report output and deliberately send a labelled PARENT PRACTICE email/Notion system record. A practice-only expiry control exercises deadline handling. Create a new sample for another run; original learner attempts remain untouched.
+
+For weekly/monthly planning by Claude or Codex, follow [WEEKLY_LEARNING_WORKFLOW.md](WEEKLY_LEARNING_WORKFLOW.md). Repository `AGENTS.md` and `CLAUDE.md` load that process. `scripts/assessment-status.mts YYYY-MM` provides read-only coverage and sync evidence without exposing student answers. The reusable blank handoff is [templates/WEEKLY_LEARNING_HANDOFF.md](templates/WEEKLY_LEARNING_HANDOFF.md).
