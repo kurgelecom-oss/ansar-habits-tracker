@@ -101,7 +101,7 @@ export default function TestsPage() {
             </aside>
             <section className={styles.station} aria-label="Selected assessment">
               {paper ? <><div className={styles.stationHeader}><p className={styles.eyebrow}>{paper.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"}</p><h2>{paper.subject}</h2><p>{paper.title}</p><div className={styles.metadata}><span>Due {dateLabel(paper.due_date)}</span><span>{paper.questions.length} questions</span><span>{paper.kind === "exam" ? `${paper.duration_minutes || 25} minutes` : "Take your time"}</span></div></div>
-                {!attempt && <><p className={styles.coverage}>{paper.coverage_note}</p><details className={styles.lessons}><summary>What this covers · {paper.lessons.length} lessons</summary>{paper.lessons.map(lesson => <div key={lesson.id}><strong>{lesson.topic}</strong><p>{dateLabel(lesson.date)} · {lesson.task}</p></div>)}</details>{paper.status === "draft" ? <><p className={styles.notice}>This paper needs a parent to confirm the taught material before you begin.</p><PublishForm key={paper.id} paper={paper} onComplete={load} /></> : <StartForm key={paper.id} paper={paper} today={workspace.today} onStarted={updateAttempt} />}</>}
+                {!attempt && <><p className={styles.coverage}>{paper.coverage_note}</p><details className={styles.lessons}><summary>What this covers · {paper.lessons.length} lessons</summary>{paper.lessons.map(lesson => <div key={lesson.id}><strong>{lesson.topic}</strong><p>{dateLabel(lesson.date)}</p></div>)}</details>{paper.status === "draft" ? <><p className={styles.notice}>This paper needs a parent to confirm the taught material before you begin.</p><PublishForm key={paper.id} paper={paper} onComplete={load} /></> : <StartForm key={paper.id} paper={paper} today={workspace.today} onStarted={updateAttempt} />}</>}
                 {attempt?.status === "in_progress" && <AttemptForm key={`${attempt.id}:${loadVersion}`} attempt={attempt} offset={offset} onAttempt={updateAttempt} onReload={load} />}
                 {attempt && attempt.status !== "in_progress" && <SubmittedWork key={attempt.id} attempt={attempt} onAttempt={updateAttempt} />}
               </> : <div className={styles.empty}><h2>A fresh learning record.</h2><p>Your Friday recalls and monthly exams will appear after the programme is synced. Nihal can refresh the curriculum in Parent tools.</p></div>}
@@ -121,8 +121,49 @@ function ParentSync({ integrations, onComplete }: { integrations: Workspace["int
 }
 
 function PublishForm({ paper, onComplete }: { paper: Paper; onComplete: () => Promise<void> }) {
-  const [pin, setPin] = useState(""); const [duration, setDuration] = useState(paper.duration_minutes || 25); const [confirmed, setConfirmed] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
-  return <details className={styles.parentPanel}><summary>Parent · approve this paper</summary><form onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try { await mutate({ action: "publish", paperId: paper.id, pin, durationMinutes: duration, coverageConfirmed: confirmed }); setPin(""); await onComplete(); } catch (err) { setError(message(err)); } finally { setBusy(false); } }}><p>Read the questions and coverage before approving.</p>{paper.questions.map((q, i) => <div key={q.id}><p>{i + 1}. {q.prompt}</p>{q.options && <ol className={styles.previewOptions}>{q.options.map((option, index) => <li key={index}>{option}</li>)}</ol>}</div>)}{paper.kind === "exam" && <label>Time allowed (minutes)<input type="number" min={10} max={90} value={duration} onChange={e => setDuration(Number(e.target.value))} required /><small>Extra time must be agreed before the exam starts.</small></label>}<label className={styles.check}><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required />I confirm this material has been taught.</label><PinField value={pin} onChange={setPin} /><button disabled={busy || !confirmed} className={styles.primary}>{busy ? "Publishing…" : "Approve and publish"}</button>{error && <p role="alert" className={styles.error}>{error}</p>}</form></details>;
+  const [pin, setPin] = useState("");
+  const [preview, setPreview] = useState<Paper | null>(null);
+  const previewRequest = useRef(0);
+  const [duration, setDuration] = useState(paper.duration_minutes || 25);
+  const [confirmed, setConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function submit(event: FormEvent) {
+    event.preventDefault(); setBusy(true); setError("");
+    try {
+      if (!preview) {
+        const requestId = ++previewRequest.current;
+        const result = await mutate({ action: "preview", paperId: paper.id, pin });
+        if (requestId !== previewRequest.current) return;
+        if (!result.paper) throw new Error("The answer-key preview could not be loaded. Please retry.");
+        setPreview(result.paper);
+      } else {
+        await mutate({ action: "publish", paperId: paper.id, pin, durationMinutes: duration, coverageConfirmed: confirmed });
+        setPin(""); setPreview(null); setConfirmed(false); await onComplete();
+      }
+    } catch (err) { setError(message(err)); } finally { setBusy(false); }
+  }
+  return <details className={styles.parentPanel} onToggle={e => { if (!e.currentTarget.open) { previewRequest.current++; setPreview(null); setPin(""); setConfirmed(false); } }}>
+    <summary>Parent · approve this paper</summary>
+    <form onSubmit={submit}>
+      <p>{preview ? "Check every question, answer and marking guide against the taught material before approving." : "Enter your parent PIN to inspect the answer key and marking guides before publishing."}</p>
+      <PinField value={pin} onChange={value => { previewRequest.current++; setPin(value); setPreview(null); setConfirmed(false); }} />
+      {preview && <>
+        <div className={styles.preview}><h3>Parent answer-key preview</h3><p className={styles.muted}>{preview.coverage_note}</p>
+          {preview.questions.map((q, i) => <section key={q.id} className={styles.answerReview}>
+            <p className={styles.eyebrow}>QUESTION {i + 1}</p><h3>{q.prompt}</h3>
+            {q.options && <ol className={styles.previewOptions}>{q.options.map((option, index) => <li key={index}>{option}{q.answer === index ? " — correct answer" : ""}</li>)}</ol>}
+            {q.explanation && <p className={styles.muted}><strong>Explanation:</strong> {q.explanation}</p>}
+            {q.rubric && <p className={styles.muted}><strong>Marking guide:</strong> {q.rubric}</p>}
+          </section>)}
+        </div>
+        {paper.kind === "exam" && <label>Time allowed (minutes)<input type="number" min={10} max={90} value={duration} onChange={e => setDuration(Number(e.target.value))} required /><small>Extra time must be agreed before the exam starts.</small></label>}
+        <label className={styles.check}><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} required />I checked the questions and marking guides, and confirm this material has been taught.</label>
+      </>}
+      <button disabled={busy || (preview !== null && !confirmed)} className={styles.primary}>{busy ? preview ? "Publishing…" : "Loading preview…" : preview ? "Approve and publish" : "View parent answer-key preview"}</button>
+      {error && <p role="alert" className={styles.error}>{error}</p>}
+    </form>
+  </details>;
 }
 
 function StartForm({ paper, today, onStarted }: { paper: Paper; today: string; onStarted: (attempt: Attempt) => void }) {

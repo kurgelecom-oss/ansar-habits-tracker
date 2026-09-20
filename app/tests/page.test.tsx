@@ -40,7 +40,39 @@ describe("assessment workspace", () => {
     await screen.findByText("This paper needs a parent to confirm the taught material before you begin.");
     expect(screen.queryByRole("button", { name: "Start timed exam" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByText("Parent · approve this paper"));
+    expect(screen.queryByRole("button", { name: "Approve and publish" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View parent answer-key preview" })).toBeInTheDocument();
+  });
+
+  it("requires a fresh parent PIN before showing the answer key and publishing", async () => {
+    const draft: Paper = { ...paper, kind: "exam", status: "draft", duration_minutes: 25, questions: [{ id: "q1", type: "choice", prompt: "Which force pulls the ball down?", options: ["Gravity", "Friction"], sourceIds: ["lesson-1"] }] };
+    const fullPaper = { ...draft, questions: [{ ...draft.questions[0], answer: 0, explanation: "Earth attracts the ball.", rubric: "Identify gravity." }] };
+    const actions: Record<string, unknown>[] = [];
+    let published = false;
+    fetchMock.mockImplementation((_url: string, options?: RequestInit) => {
+      if (!options?.body) return response(workspace({ ...draft, status: published ? "published" : "draft" }));
+      const body = JSON.parse(String(options.body)); actions.push(body);
+      expect(body.pin).toBe("4821");
+      if (body.action === "preview") return response({ paper: fullPaper });
+      published = true; return response({ paper: { ...draft, status: "published" } });
+    });
+    render(<TestsPage />);
+    fireEvent.click(await screen.findByText("Parent · approve this paper"));
+    expect(screen.queryByText("Earth attracts the ball.", { exact: false })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Parent PIN"), { target: { value: "4821" } });
+    fireEvent.click(screen.getByRole("button", { name: "View parent answer-key preview" }));
+    await screen.findByText("Gravity — correct answer");
+    expect(screen.getByText("Earth attracts the ball.", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("Identify gravity.", { exact: false })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Approve and publish" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: /I checked the questions and marking guides/ }));
+    fireEvent.change(screen.getByLabelText(/Time allowed/), { target: { value: "35" } });
+    fireEvent.click(screen.getByRole("button", { name: "Approve and publish" }));
+    await screen.findByRole("button", { name: "Start timed exam" });
+    expect(actions).toEqual([{ action: "preview", paperId: draft.id, pin: "4821" }, { action: "publish", paperId: draft.id, pin: "4821", durationMinutes: 35, coverageConfirmed: true }]);
+    expect(screen.queryByText("Gravity — correct answer")).not.toBeInTheDocument();
+    expect(localStorage.getItem("ansar-assessment-draft:attempt-1")).toBeNull();
   });
 
   it("serializes autosave revisions then submits immutable answers and displays feedback", async () => {
