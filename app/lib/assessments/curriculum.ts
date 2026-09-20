@@ -71,10 +71,12 @@ export function buildWeeklyReview(lessons: Lesson[], due: string): Paper {
   if (!lessons.length || new Set(lessons.map(l => l.subject)).size !== 1) throw new Error('Weekly review requires one subject');
   const subject = lessons[0].subject;
   const sourceIds = lessons.map(l => l.id);
-  const focus = [...new Set(lessons.map(l => l.task))].join('\n');
+  const dates = [...new Set(lessons.map(l => l.date))].sort().join(', ');
+  const topics = [...new Set(lessons.map(l => l.topic.trim()).filter(Boolean))].map(topic => topic.slice(0, 80)).join('; ');
+  const focus = `Dates: ${dates}.${topics ? ` Topic cues: ${topics}.` : ''}`;
   const rubric = 'Nihal checks the response against the dated tasks and actual work. Score accuracy, explanation and application separately across this review: 0 = missing or incorrect, 1 = partial, 2 = accurate and clear. Completion alone is not mastery.';
   const prompts = [
-    `Without opening notes, recall three things you learned in ${subject} from the dated tasks below. Use your own words. If a task was not completed, say so.\n${focus}`,
+    `Without opening notes, recall three things you learned in ${subject} from your work on these dates. Use your own words. If a task was not completed, say so.\n${focus}`,
     `Choose one of those ${subject} tasks. Explain the main idea and give a specific example from your own work. Name the task or date.`,
     `Apply one idea from those ${subject} tasks to a new example, or connect two of the tasks. Explain each step and why the connection works.`,
     `What is still unclear in those ${subject} tasks? Write one specific question and one action you will take next to resolve it.`,
@@ -156,10 +158,11 @@ export async function syncCurriculum(): Promise<{ lessons: number; reviews: numb
   for (const [key, lessons] of weekly) {
     const paper = buildWeeklyReview(lessons, key.slice(0, 10));
     const existing = await getPaper(paper.id);
-    if (existing && curriculumFingerprint(existing.lessons) === curriculumFingerprint(lessons)) continue;
+    if (existing && curriculumFingerprint(existing.lessons) === curriculumFingerprint(lessons) && JSON.stringify(existing.questions) === JSON.stringify(paper.questions)) continue;
     if (await save(paper, existing)) summary.reviews++;
   }
-  const pending = [...monthly.entries()].sort(([a], [b]) => b.localeCompare(a));
+  // Keep historical snapshots and papers, but never create surprise retroactive exams.
+  const pending = [...monthly.entries()].filter(([key]) => key.startsWith(`${today.slice(0, 7)}:`)).sort(([a], [b]) => b.localeCompare(a));
   if (!process.env.ANTHROPIC_API_KEY) {
     if (pending.length) summary.warnings.push('ANTHROPIC_API_KEY is not configured; monthly exams remain unavailable until source-grounded drafts can be generated.');
     return summary;

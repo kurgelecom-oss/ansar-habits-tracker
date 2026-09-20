@@ -51,6 +51,22 @@ describe('curriculum persistence', () => {
     expect(state.papers.size).toBe(2);
     expect([...state.papers.values()].every(p => p.kind === 'review')).toBe(true);
   });
+  it('refreshes unattempted review prompts when the source lessons are unchanged', async () => {
+    await syncCurriculum();
+    const paper = state.papers.get('review:2026-09-18:maths')!;
+    paper.questions[0].prompt = 'Old prompt includes full source answers';
+    expect((await syncCurriculum()).reviews).toBe(1);
+    expect(state.papers.get(paper.id)?.questions[0].prompt).not.toContain('full source answers');
+  });
+  it('does not generate retroactive or future exams, while backfilling Friday recall', async () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
+    source = [row('2026-08-31'), row('2026-10-01')];
+    const result = await syncCurriculum();
+    expect(result.exams).toBe(0);
+    expect(result.reviews).toBe(1);
+    expect(state.papers.has('review:2026-09-04:maths')).toBe(true);
+    expect(vi.mocked(fetch).mock.calls.every(call => String(call[0]).includes('api.notion.com'))).toBe(true);
+  });
   it('follows Notion cursors without an Active filter', async () => {
     const fetch = vi.fn(async (url: string, options: { body: string }) => {
       const body = JSON.parse(options.body);

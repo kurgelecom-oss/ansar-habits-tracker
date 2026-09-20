@@ -45,6 +45,9 @@ describe('weekly papers', () => {
     expect(paper.status).toBe('published');
     expect(paper.questions).toHaveLength(4);
     expect(paper.questions.every(q => q.type === 'written' && q.sourceIds.includes(lesson.id))).toBe(true);
-    expect(paper.questions[0].prompt).toContain(lesson.task);
+    expect(paper.questions[0].prompt).toContain(lesson.date);
+    expect(paper.questions[0].prompt).toContain(lesson.topic);
+    expect(paper.questions[0].prompt).not.toContain(lesson.task);
+    expect(paper.lessons[0].task).toBe(lesson.task);
   });
 });
