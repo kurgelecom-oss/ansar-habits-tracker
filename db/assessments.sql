@@ -96,3 +96,6 @@ begin
 end $$;
 revoke all on function public.check_ansar_parent(boolean) from public,anon,authenticated;
 grant execute on function public.check_ansar_parent(boolean) to service_role;
+
+-- Assignment time distinguishes a late parent approval from a missed learner deadline.
+alter table public.ansar_assessment_papers add column if not exists published_at timestamptz;

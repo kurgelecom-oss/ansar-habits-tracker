@@ -45,7 +45,7 @@ export async function publishPaper(body:Record<string,unknown>){
  if(typeof body.paperId!=='string')throw new AssessmentError('Choose a paper.');
  const duration=body.durationMinutes;if(typeof duration!=='number'||!Number.isInteger(duration)||duration<10||duration>90)throw new AssessmentError('Choose 10–90 minutes before the exam starts.');
  const preview=await previewPaper(body.paperId);if(body.previewVersion!==preview.previewVersion)throw new AssessmentError('The curriculum changed after your preview. Review the new paper before approving.',409);
- const r=await adminClient().from(PAPERS).update({status:'published',duration_minutes:duration}).eq('id',body.paperId).eq('kind','exam').eq('status','draft').eq('questions',JSON.stringify(preview.paper.questions)).eq('lessons',JSON.stringify(preview.paper.lessons)).select('*').maybeSingle();
+ const r=await adminClient().from(PAPERS).update({status:'published',duration_minutes:duration,published_at:new Date().toISOString()}).eq('id',body.paperId).eq('kind','exam').eq('status','draft').eq('questions',JSON.stringify(preview.paper.questions)).eq('lessons',JSON.stringify(preview.paper.lessons)).select('*').maybeSingle();
  if(r.error||!r.data)throw new AssessmentError('This paper has already been approved or started. Refresh to check.',409);
  return publicPaper(r.data as Paper);
 }
