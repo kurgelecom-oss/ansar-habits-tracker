@@ -18,6 +18,14 @@
 - Practice tests cover separate endpoint/session isolation, persistent practice labelling/navigation, repeatable create actions, forced expiry, private preview, and deliberate send.
 - Existing live tests cover unlock, paper selection, publishing, autosave serialization/recovery, blank-answer warning, revision conflict, authoritative timer expiry, review, and correction.
 
+## Review follow-up
+
+- Fresh sample creation now selects the returned paper, switches to its returned month when needed, and preserves older copies.
+- Creation is disabled while any selected practice attempt is in progress, while forced timer expiry remains available for an exam.
+- Empty practice workspaces direct the parent to the sample controls, and the inert practice Parent tools toggle was removed.
+- Report preview labels and renders both the short email and the full Notion payload. A review or correction state change invalidates the cached preview and requires a fresh preview before sending.
+- Focused suite after follow-up: 3 files passed, 23 tests passed.
+
 `npx tsc --noEmit`
 
 - UI/Next route export issue resolved.
