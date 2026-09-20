@@ -6,7 +6,7 @@ import type { Attempt, Paper } from './types';
 const OUTBOX = 'ansar_assessment_outbox';
 const SITE = 'https://ansar-habits-tracker.netlify.app';
 type ReportMetadata = { title: string; subject: string; kind: 'review' | 'exam' | 'system'; status: 'submitted' | 'reviewed' | 'correction' | 'system'; month: string; dueDate: string | null; submittedAt: string | null; score: number | null };
-type Payload = { subject: string; text: string; report?: string; metadata?: ReportMetadata; graphMessageId?: string; graphSendStartedAt?: string; resendStartedAt?: string; gmailSendStartedAt?: string };
+type Payload = { subject: string; text: string; report?: string; metadata?: ReportMetadata; practiceExplicit?: boolean; graphMessageId?: string; graphSendStartedAt?: string; resendStartedAt?: string; gmailSendStartedAt?: string };
 type Job = { id: string; channel: 'notion' | 'email'; payload: Payload; attempts: number };
 class DeliveryError extends Error {
   constructor(message: string, readonly httpStatus?: number) { super(message); }
@@ -32,7 +32,7 @@ function statusText(attempt: Attempt) {
   const pending = result?.writtenPending || 0;
   return `${attempt.status === 'reviewed' ? 'Parent reviewed' : 'Submitted'}${result?.percentage != null ? ` · ${result.percentage}%${pending ? ' provisional' : ''}` : ''}${pending ? ` · ${pending} written responses awaiting review` : ''}`;
 }
-export function attemptReport(attempt: Attempt): Payload {
+export function attemptReport(attempt: Attempt, practice=false): Payload {
   const paper = attempt.paper_snapshot;
   const review = attempt.parent_review;
   const report = [
@@ -46,27 +46,34 @@ export function attemptReport(attempt: Attempt): Payload {
       return `Question ${index + 1}: ${q.prompt}\n${q.options?.map((o, i) => `${i + 1}. ${o}`).join('\n') || ''}\nResponse: ${response}\nParent mark: ${review?.marks[q.id] ?? 'Not recorded'}\nSource IDs: ${q.sourceIds.join(', ')}`;
     }),
     `Correction (${attempt.correction_at || 'not recorded'}):\n${attempt.correction || 'No correction submitted'}`,
-    `Private workspace: ${workspaceUrl()}`,
+    `Private workspace: ${practice?`${workspaceUrl()}/practice`:workspaceUrl()}`,
   ].join('\n\n');
+  if(practice)return {subject:`PARENT PRACTICE: ${paper.subject} — report`,text:`PARENT PRACTICE. ${statusText(attempt)}.\nView the rehearsal: ${workspaceUrl()}/practice`,report:`PARENT PRACTICE — fictional workflow rehearsal only.\n\n${report}`,metadata:{title:`PARENT PRACTICE — ${paper.title}`,subject:'Assessment system',kind:'system',status:'system',month:'',dueDate:null,submittedAt:null,score:null},practiceExplicit:true};
   return { subject: `Ansar assessment: ${paper.subject} — ${attempt.correction_at ? 'correction recorded' : attempt.status === 'reviewed' ? 'reviewed' : 'submitted'}`, text: `${statusText(attempt)}.\nView the private learning record: ${workspaceUrl()}`, report, metadata: { title: paper.title, subject: paper.subject, kind: paper.kind, status: attempt.correction_at ? 'correction' : attempt.status === 'reviewed' ? 'reviewed' : 'submitted', month: paper.month, dueDate: paper.due_date, submittedAt: attempt.submitted_at, score: attempt.result?.percentage ?? null } };
 }
+export function practiceAttemptReport(attempt:Attempt){return attemptReport(attempt,true);}
 async function enqueue(jobs: Omit<Job, 'attempts'>[]) {
   if (!jobs.length) return;
   const { error } = await adminClient().from(OUTBOX).upsert(jobs.map(j => ({ ...j, status: 'pending' })), { onConflict: 'id', ignoreDuplicates: true });
   if (error) throw new DeliveryError('Could not persist assessment notifications');
 }
 export async function queueAttemptReport(attempt: Attempt): Promise<void> {
-  if (attempt.status === 'in_progress') return;
+  if (attempt.status === 'in_progress'||attempt.paper_snapshot.is_practice===true) return;
   const event = `attempt-${digest([attempt.id, attempt.status, attempt.parent_review?.reviewedAt || '', attempt.correction_at || ''].join(':'))}`;
   const payload = attemptReport(attempt);
   // Detailed work is present only in the private Notion job, never the email job.
   await enqueue([{ id: `${event}-notion`, channel: 'notion', payload }, { id: `${event}-email`, channel: 'email', payload: { subject: payload.subject, text: payload.text } }]);
 }
+export async function queuePracticeReport(attempt:Attempt):Promise<void>{
+ if(attempt.status==='in_progress'||attempt.paper_snapshot.is_practice!==true)throw new DeliveryError('Only submitted practice attempts can be sent');
+ const event=`practice-${digest([attempt.id,attempt.status,attempt.parent_review?.reviewedAt||'',attempt.correction_at||''].join(':'))}`;const payload=practiceAttemptReport(attempt);
+ await enqueue([{id:`${event}-notion`,channel:'notion',payload},{id:`${event}-email`,channel:'email',payload:{subject:payload.subject,text:payload.text,practiceExplicit:true}}]);
+}
 export function reminderPapers(today: string, papers: Paper[], completedIds: Set<string>): Paper[] {
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
   const daysInMonth = new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)), 0)).getUTCDate();
   const examWindow = Number(today.slice(8, 10)) >= daysInMonth - 6;
-  return papers.filter(p => p.status === 'published' && p.opens_on <= today && !completedIds.has(p.id) && (
+  return papers.filter(p => p.is_practice!==true && p.status === 'published' && p.opens_on <= today && !completedIds.has(p.id) && (
     (weekday === 5 && p.kind === 'review' && p.due_date === today) ||
     (p.kind === 'exam' && today <= p.due_date && examWindow) ||
     (weekday === 1 && p.due_date < today && assignedByDueDate(p))
@@ -75,13 +82,13 @@ export function reminderPapers(today: string, papers: Paper[], completedIds: Set
 export async function queueDueReminders(today: string): Promise<void> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) throw new DeliveryError('Invalid reminder date');
   const db = adminClient();
-  const { data: papers, error } = await db.from('ansar_assessment_papers').select('*').in('status', ['published', 'draft']).lte('opens_on', today);
+  const { data: papers, error } = await db.from('ansar_assessment_papers').select('*').eq('is_practice',false).in('status', ['published', 'draft']).lte('opens_on', today);
   if (error) throw new DeliveryError('Could not read assignments for reminders');
   if (!papers?.length) return;
   // Read only identifiers/statuses: reminder emails never need student answers.
   const { data: attempts, error: attemptsError } = await db.from('ansar_assessment_attempts').select('paper_id,status').in('paper_id', papers.map(p => p.id)).in('status', ['submitted', 'reviewed']);
   if (attemptsError) throw new DeliveryError('Could not read submissions for reminders');
-  const ordered = (papers as Paper[]).sort((a, b) => a.id.localeCompare(b.id));
+  const ordered = (papers as Paper[]).filter(p=>p.is_practice!==true).sort((a, b) => a.id.localeCompare(b.id));
   const completed = new Set((attempts || []).map(a => a.paper_id));
   const due = reminderPapers(today, ordered, completed);
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
@@ -228,6 +235,8 @@ export async function deliverPending(): Promise<{ sent: number; failed: number }
   if (error) throw new DeliveryError('Could not claim pending assessment notifications');
   const results = await Promise.all(((data || []) as Job[]).map(async job => {
     try {
+      const practiceLabel=job.payload.subject?.includes('PARENT PRACTICE')||job.payload.metadata?.title.includes('PARENT PRACTICE');
+      if(practiceLabel&&job.payload.practiceExplicit!==true)throw new DeliveryError('Automatic practice delivery suppressed');
       if (job.channel === 'notion') await deliverNotion(job); else await deliverEmail(job);
       const { error: saveError } = await db.from(OUTBOX).update({ status: 'sent', last_error: null, delivered_at: new Date().toISOString(), locked_until: null }).eq('id', job.id);
       if (saveError) throw new DeliveryError('Provider accepted delivery but recording confirmation failed; retry required');

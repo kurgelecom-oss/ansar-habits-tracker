@@ -1,0 +1,13 @@
+import {NextResponse} from 'next/server';
+import {requirePracticeSession,requireSameOrigin,verifyParent} from '../../../lib/assessments/auth';
+import {AssessmentError} from '../../../lib/assessments/engine';
+import {correctAttempt,previewPaper,publishPaper,reviewAttempt,saveAttempt,startPaper,workspace} from '../../../lib/assessments/service';
+import {createPracticePaper,expirePracticeAttempt,previewPracticeReport,sendPracticeReport} from '../../../lib/assessments/practice';
+import {sydneyDateKey} from '../../../lib/time';
+export const dynamic='force-dynamic';export const maxDuration=60;const headers={'Cache-Control':'no-store'};
+function fail(e:unknown){return NextResponse.json({message:e instanceof AssessmentError?e.message:'Parent practice is temporarily unavailable.'},{status:e instanceof AssessmentError?e.status:503,headers});}
+export async function GET(request:Request){try{await requirePracticeSession();return NextResponse.json(await workspace(new URL(request.url).searchParams.get('month')??sydneyDateKey().slice(0,7),'practice'),{headers});}catch(e){return fail(e);}}
+export async function POST(request:Request){try{requireSameOrigin(request);await requirePracticeSession();const raw=await request.text();if(raw.length>110000)throw new AssessmentError('Request too large.',413);let b:Record<string,unknown>;try{b=JSON.parse(raw);if(!b||Array.isArray(b)||typeof b!=='object')throw new Error();}catch{throw new AssessmentError('Invalid request.');}
+ if(['publish','review','preview'].includes(String(b.action)))await verifyParent(b.pin);
+ switch(b.action){case 'create':return NextResponse.json({paper:await createPracticePaper(b.kind)},{headers});case 'start':return NextResponse.json({attempt:await startPaper(b.paperId,'practice')},{headers});case 'save':case 'submit':return NextResponse.json({attempt:await saveAttempt(b,'practice')},{headers});case 'preview':return NextResponse.json(await previewPaper(b.paperId,'practice'),{headers});case 'publish':return NextResponse.json({paper:await publishPaper(b,'practice')},{headers});case 'review':return NextResponse.json({attempt:await reviewAttempt(b,'practice')},{headers});case 'correction':return NextResponse.json({attempt:await correctAttempt(b,'practice')},{headers});case 'expire':return NextResponse.json({attempt:await expirePracticeAttempt(b.attemptId)},{headers});case 'report-preview':return NextResponse.json({report:await previewPracticeReport(b.attemptId)},{headers});case 'send-report':return NextResponse.json({message:await sendPracticeReport(b.attemptId)},{headers});default:throw new AssessmentError('Unknown action.');}
+ }catch(e){return fail(e);}}

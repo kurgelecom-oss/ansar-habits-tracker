@@ -3,7 +3,7 @@ import type { Attempt, Paper } from './types';
 import daily, { config } from '../../../netlify/functions/assessment-daily';
 const mocks = vi.hoisted(() => ({ upsert: vi.fn(), rpc: vi.fn(), update: vi.fn(), eq: vi.fn(), select: vi.fn() }));
 vi.mock('../supabase-admin', () => ({ adminClient: () => ({ from: () => ({ upsert: mocks.upsert, update: mocks.update, select: mocks.select }), rpc: mocks.rpc }) }));
-import { attemptReport, deliverPending, notionBlocks, queueAttemptReport, queueDueReminders, reminderPapers } from './delivery';
+import { attemptReport, deliverPending, notionBlocks, practiceAttemptReport, queueAttemptReport, queuePracticeReport, queueDueReminders, reminderPapers } from './delivery';
 const paper: Paper = { id: 'p1', kind: 'review', month: '2026-09', due_date: '2026-09-25', opens_on: '2026-09-21', subject: 'Maths', title: 'Friday Maths', status: 'published', duration_minutes: null, questions: [{ id: 'q1', type: 'written', prompt: 'Explain fractions', sourceIds: ['l1'] }], lessons: [{ id: 'l1', date: '2026-09-22', subject: 'Maths', task: 'Compare fractions', topic: 'Fractions', week: '4', guide: [], url: 'https://notion.so/lesson' }], coverage_note: 'Only dated source rows' };
 const attempt: Attempt = { id: 'a1', paper_id: 'p1', status: 'submitted', answers: { q1: 'PRIVATE CHILD RESPONSE' }, started_at: '2026-09-25T00:00:00Z', expires_at: null, submitted_at: '2026-09-25T01:00:00Z', result: { objectiveCorrect: 0, objectiveTotal: 0, writtenPending: 1, writtenPoints: 0, writtenTotal: 2, percentage: null, summary: 'Awaiting review', gaps: [] }, parent_review: null, correction: null, correction_at: null, revision: 1, paper_snapshot: paper };
 const envs = ['ASSESSMENT_GMAIL_ENTITY_ID', 'ASSESSMENT_COMPOSIO_API_KEY', 'ASSESSMENT_GMAIL_ACCOUNT_ID', 'NOTION_TOKEN', 'ASSESSMENT_NOTION_DB_ID', 'ASSESSMENT_EMAIL_TO', 'ASSESSMENT_MS_CLIENT_ID', 'ASSESSMENT_MS_CLIENT_SECRET', 'ASSESSMENT_MS_REFRESH_TOKEN', 'RESEND_API_KEY', 'ASSESSMENT_EMAIL_FROM'];
@@ -14,6 +14,26 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 describe('durable learning reports', () => {
+  it('suppresses practice at automatic report entry and labels explicit practice delivery as system data', async()=>{
+    const practice={...attempt,paper_snapshot:{...paper,is_practice:true}};
+    await queueAttemptReport(practice);
+    expect(mocks.upsert).not.toHaveBeenCalled();
+    const payload=practiceAttemptReport(practice);
+    expect(payload.subject).toContain('PARENT PRACTICE');
+    expect(payload.metadata).toMatchObject({kind:'system',status:'system',score:null});
+    await queuePracticeReport(practice);
+    const jobs=mocks.upsert.mock.calls[0][0];
+    expect(jobs.map((j:{id:string})=>j.id)).toEqual(expect.arrayContaining([expect.stringMatching(/^practice-/),expect.stringMatching(/^practice-/)]));
+    expect(jobs.every((j:{payload:{practiceExplicit?:boolean}})=>j.payload.practiceExplicit===true)).toBe(true);
+  });
+  it('blocks a labelled practice email at delivery when it lacks the explicit manual marker',async()=>{
+    vi.stubEnv('RESEND_API_KEY','private-key');vi.stubEnv('ASSESSMENT_EMAIL_FROM','from@example.com');vi.stubEnv('ASSESSMENT_EMAIL_TO','parent@example.com');
+    const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);
+    mocks.rpc.mockResolvedValue({data:[{id:'unsafe-practice',channel:'email',payload:{subject:'PARENT PRACTICE: report',text:'practice'}}],error:null});
+    expect(await deliverPending()).toEqual({sent:0,failed:1});
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(mocks.update.mock.calls[0][0].last_error).toContain('suppressed');
+  });
   it('deduplicates retries without resetting sent rows and queues separate review/correction events', async () => {
     await queueAttemptReport(attempt); await queueAttemptReport(attempt);
     expect(mocks.upsert.mock.calls[0]).toEqual(mocks.upsert.mock.calls[1]);
@@ -212,6 +232,9 @@ describe('Microsoft rejection recovery', () => {
   });
 });
 describe('reminder eligibility', () => {
+  it('excludes practice papers before reminder selection',()=>{
+    expect(reminderPapers('2026-09-25',[{...paper,is_practice:true}],new Set())).toEqual([]);
+  });
   it('reminds only published Friday work that is not submitted or reviewed', () => {
     expect(reminderPapers('2026-09-25', [paper, { ...paper, id: 'draft', status: 'draft' }], new Set()).map(p => p.id)).toEqual(['p1']);
     expect(reminderPapers('2026-09-25', [paper], new Set(['p1']))).toEqual([]);
@@ -228,7 +251,7 @@ describe('reminder eligibility', () => {
 describe('fair parent and learner reminders', () => {
   function reminders(papers: Paper[], attempts: { paper_id: string; status: string }[] = []) {
     mocks.select.mockImplementation((columns: string) => columns === '*'
-      ? { in: () => ({ lte: () => Promise.resolve({ data: papers, error: null }) }) }
+      ? { eq: () => ({ in: () => ({ lte: () => Promise.resolve({ data: papers, error: null }) }) }) }
       : { in: () => ({ in: () => Promise.resolve({ data: attempts, error: null }) }) });
   }
   it('does not mark historical baseline papers overdue when first created after their due date in Sydney', () => {
