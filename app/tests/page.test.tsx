@@ -26,6 +26,15 @@ describe("assessment workspace", () => {
     expect(screen.getByText("Overdue")).toBeInTheDocument();
   });
 
+  it.each(["review", "exam"] as const)("labels a backfilled %s as a baseline rather than overdue", async kind => {
+    const historical = { ...paper, kind, created_at: "2026-09-18T14:30:00Z" };
+    fetchMock.mockImplementation(() => response(workspace(historical)));
+    render(<TestsPage />);
+    await screen.findByText(kind === "review" ? "Baseline review" : "Baseline exam");
+    expect(screen.queryByText("Overdue")).not.toBeInTheDocument();
+    expect(screen.getByText("Coverage through 18 Sept")).toBeInTheDocument();
+  });
+
   it("requires explicit timing acknowledgement and never starts a draft paper", async () => {
     const exam = { ...paper, kind: "exam" as const, duration_minutes: 25 };
     fetchMock.mockImplementation(() => response(workspace(exam)));

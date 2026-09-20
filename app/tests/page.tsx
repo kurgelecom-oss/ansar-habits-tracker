@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import ClubNavigation from "../components/dashboard/ClubNavigation";
 import type { Answers, Attempt, Paper, Workspace } from "../lib/assessments/types";
 import styles from "./tests.module.css";
+import { isHistoricalBaseline } from "./assessment-status";
 
 class RequestError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -24,6 +25,7 @@ function statusLabel(paper: Paper, attempt: Attempt | undefined, today: string) 
   if (attempt?.status === "submitted") return "Awaiting Nihal";
   if (attempt?.status === "in_progress") return "In progress";
   if (paper.status === "draft") return "Parent approval";
+  if (isHistoricalBaseline(paper)) return paper.kind === "review" ? "Baseline review" : "Baseline exam";
   if (paper.due_date < today) return "Overdue";
   if (paper.opens_on > today) return `Opens ${dateLabel(paper.opens_on)}`;
   return "Ready";
@@ -100,8 +102,8 @@ export default function TestsPage() {
               {papers.map(p => { const current = workspace.attempts.find(a => a.paper_id === p.id); const status = statusLabel(p, current, workspace.today); return <button key={p.id} disabled={attempt?.status === "in_progress" && p.id !== selected} onClick={() => setSelected(p.id)} className={`${styles.paperCard} ${selected === p.id ? styles.active : ""}`} aria-pressed={selected === p.id}><span className={styles.paperKind}>{p.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"} · {dateLabel(p.due_date)}</span><strong>{p.subject}</strong><span className={styles.paperTitle}>{p.title}</span><span className={`${styles.badge} ${status === "Overdue" ? styles.overdue : ""}`}>{status}</span></button>; })}
             </aside>
             <section className={styles.station} aria-label="Selected assessment">
-              {paper ? <><div className={styles.stationHeader}><p className={styles.eyebrow}>{paper.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"}</p><h2>{paper.subject}</h2><p>{paper.title}</p><div className={styles.metadata}><span>Due {dateLabel(paper.due_date)}</span><span>{paper.kind === "exam" && !attempt ? 12 : paper.questions.length} questions</span><span>{paper.kind === "exam" ? `${paper.duration_minutes || 25} minutes` : "Take your time"}</span></div></div>
-                {!attempt && <><p className={styles.coverage}>{paper.coverage_note}</p><details className={styles.lessons}><summary>What this covers · {paper.lessons.length} lessons</summary>{paper.lessons.map(lesson => <div key={lesson.id}><strong>{lesson.topic}</strong><p>{dateLabel(lesson.date)}</p></div>)}</details>{paper.status === "draft" ? <><p className={styles.notice}>This paper needs a parent to confirm the taught material before you begin.</p><PublishForm key={paper.id} paper={paper} onComplete={load} /></> : <StartForm key={paper.id} paper={paper} today={workspace.today} onStarted={updateAttempt} />}</>}
+              {paper ? <><div className={styles.stationHeader}><p className={styles.eyebrow}>{paper.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"}</p><h2>{paper.subject}</h2><p>{paper.title}</p><div className={styles.metadata}><span>{isHistoricalBaseline(paper) ? "Coverage through" : "Due"} {dateLabel(paper.due_date)}</span><span>{paper.kind === "exam" && !attempt ? 12 : paper.questions.length} questions</span><span>{paper.kind === "exam" ? `${paper.duration_minutes || 25} minutes` : "Take your time"}</span></div></div>
+                {!attempt && <>{isHistoricalBaseline(paper) && <p className={styles.notice}>This is a baseline for earlier learning. It was created after the coverage date, so it is not overdue.</p>}<p className={styles.coverage}>{paper.coverage_note}</p><details className={styles.lessons}><summary>What this covers · {paper.lessons.length} lessons</summary>{paper.lessons.map(lesson => <div key={lesson.id}><strong>{lesson.topic}</strong><p>{dateLabel(lesson.date)}</p></div>)}</details>{paper.status === "draft" ? <><p className={styles.notice}>This paper needs a parent to confirm the taught material before you begin.</p><PublishForm key={paper.id} paper={paper} onComplete={load} /></> : <StartForm key={paper.id} paper={paper} today={workspace.today} onStarted={updateAttempt} />}</>}
                 {attempt?.status === "in_progress" && <AttemptForm key={`${attempt.id}:${loadVersion}`} attempt={attempt} offset={offset} onAttempt={updateAttempt} onReload={load} />}
                 {attempt && attempt.status !== "in_progress" && <SubmittedWork key={attempt.id} attempt={attempt} onAttempt={updateAttempt} />}
               </> : <div className={styles.empty}><h2>A fresh learning record.</h2><p>Your Friday recalls and monthly exams will appear after the programme is synced. Nihal can refresh the curriculum in Parent tools.</p></div>}
