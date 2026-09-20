@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import ClubNavigation from "../components/dashboard/ClubNavigation";
 import type { Answers, Attempt, Paper, Workspace } from "../lib/assessments/types";
 import styles from "./tests.module.css";
-import { isHistoricalBaseline } from "./assessment-status";
+import { isHistoricalBaseline, preferredPaperId } from "./assessment-status";
 
 class RequestError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -56,7 +56,7 @@ export default function TestsPage() {
       const data = await request<Workspace>(`/api/assessments?month=${month}`);
       if (id !== loadId.current) return;
       setWorkspace(data); setLocked(false); setOffset(Date.parse(data.serverNow) - Date.now()); setLoadVersion(v => v + 1);
-      setSelected(current => data.attempts.find(a => a.status === "in_progress")?.paper_id || (data.papers.some(p => p.id === current) ? current : data.papers[0]?.id || ""));
+      setSelected(current => data.attempts.find(a => a.status === "in_progress")?.paper_id || (data.papers.some(p => p.id === current) ? current : preferredPaperId(data)));
     } catch (err) {
       if (id !== loadId.current) return;
       if (err instanceof RequestError && err.status === 401) { setLocked(true); setWorkspace(null); }
@@ -93,13 +93,14 @@ export default function TestsPage() {
         {loading && <p role="status" className={styles.loading}>Opening your learning record…</p>}
         {workspace && <>
           <section className={styles.stats} aria-label="Monthly overview"><div><strong>{workspace.papers.filter(p => p.kind === "review").length}</strong><span>Friday recalls</span></div><div><strong>{workspace.papers.filter(p => p.kind === "exam").length}</strong><span>Monthly exams</span></div><div><strong>{submitted.length}</strong><span>Submitted</span></div><div><strong>{submitted.filter(a => a.status === "submitted").length}</strong><span>Awaiting Nihal</span></div></section>
-          <div className={styles.source}><span className={styles.dot} /><p>{workspace.sourceStatus}</p><small>Sydney time</small></div>
+          <div className={styles.source}><span className={styles.dot} /><details className={styles.coverageDetails}><summary>Curriculum &amp; coverage<span>{workspace.sourceStatus.split(/\.\s/)[0].slice(0, 140)}</span></summary><p>{workspace.sourceStatus}</p></details><small>Sydney time</small></div>
           {parentOpen && !inProgress && <ParentSync integrations={workspace.integrations} onComplete={async text => { setNotice(text); await load(); }} />}
           {inProgress && <p className={styles.muted}>Finish the open assessment before switching papers or months. Your draft is saved if you leave this page.</p>}
           <div className={styles.room}>
             <aside className={styles.assignments} aria-label="Assessments"><div className={styles.sectionHeading}><h2>Your work</h2><span>{workspace.papers.length} papers</span></div><div className={styles.filters} aria-label="Assessment type">{[["all", "All"], ["review", "Friday recall"], ["exam", "Monthly exam"]].map(([value, label]) => <button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
               {papers.length === 0 && <p className={styles.empty}>No {filter === "all" ? "assessments" : filter === "exam" ? "monthly exams" : "Friday recalls"} yet. Papers appear here when programme coverage is available.</p>}
-              {papers.map(p => { const current = workspace.attempts.find(a => a.paper_id === p.id); const status = statusLabel(p, current, workspace.today); return <button key={p.id} disabled={attempt?.status === "in_progress" && p.id !== selected} onClick={() => setSelected(p.id)} className={`${styles.paperCard} ${selected === p.id ? styles.active : ""}`} aria-pressed={selected === p.id}><span className={styles.paperKind}>{p.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"} · {dateLabel(p.due_date)}</span><strong>{p.subject}</strong><span className={styles.paperTitle}>{p.title}</span><span className={`${styles.badge} ${status === "Overdue" ? styles.overdue : ""}`}>{status}</span></button>; })}
+              <label className={styles.mobilePicker}>Choose assessment<select value={selected} disabled={inProgress} onChange={e => setSelected(e.target.value)}>{workspace.papers.map(p => <option key={p.id} value={p.id}>{dateLabel(p.due_date)} · {p.subject} · {statusLabel(p, workspace.attempts.find(a => a.paper_id === p.id), workspace.today)}</option>)}</select></label>
+              <div className={styles.paperList}>{papers.map(p => { const current = workspace.attempts.find(a => a.paper_id === p.id); const status = statusLabel(p, current, workspace.today); return <button key={p.id} disabled={attempt?.status === "in_progress" && p.id !== selected} onClick={() => setSelected(p.id)} className={`${styles.paperCard} ${selected === p.id ? styles.active : ""}`} aria-pressed={selected === p.id}><span className={styles.paperKind}>{p.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"} · {dateLabel(p.due_date)}</span><strong>{p.subject}</strong><span className={styles.paperTitle}>{p.title}</span><span className={`${styles.badge} ${status === "Overdue" ? styles.overdue : ""}`}>{status}</span></button>; })}</div>
             </aside>
             <section className={styles.station} aria-label="Selected assessment">
               {paper ? <><div className={styles.stationHeader}><p className={styles.eyebrow}>{paper.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"}</p><h2>{paper.subject}</h2><p>{paper.title}</p><div className={styles.metadata}><span>{isHistoricalBaseline(paper) ? "Coverage through" : "Due"} {dateLabel(paper.due_date)}</span><span>{paper.kind === "exam" && !attempt ? 12 : paper.questions.length} questions</span><span>{paper.kind === "exam" ? `${paper.duration_minutes || 25} minutes` : "Take your time"}</span></div></div>

@@ -35,6 +35,23 @@ describe("assessment workspace", () => {
     expect(screen.getByText("Coverage through 18 Sept")).toBeInTheDocument();
   });
 
+  it("opens the most recent actionable recall and lets mobile users choose older work", async () => {
+    const older = { ...paper, id: "older", title: "Earlier recall", due_date: "2026-09-04" };
+    const latest = { ...paper, id: "latest", title: "Latest recall", due_date: "2026-09-18" };
+    const data = { ...workspace(), papers: [older, latest], sourceStatus: "21 lesson snapshots synced. Missing coverage for Turkish; no paper generated." };
+    fetchMock.mockImplementation(() => response(data));
+    render(<TestsPage />);
+    const picker = await screen.findByLabelText("Choose assessment");
+    expect(picker).toHaveValue("latest");
+    fireEvent.change(picker, { target: { value: "older" } });
+    expect(picker).toHaveValue("older");
+    const coverage = screen.getByText("Curriculum & coverage").closest("details");
+    expect(coverage).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByText("Curriculum & coverage"));
+    expect(coverage).toHaveAttribute("open");
+    expect(screen.getByText(data.sourceStatus)).toBeVisible();
+  });
+
   it("requires explicit timing acknowledgement and never starts a draft paper", async () => {
     const exam = { ...paper, kind: "exam" as const, duration_minutes: 25 };
     fetchMock.mockImplementation(() => response(workspace(exam)));
@@ -175,7 +192,7 @@ describe("assessment workspace", () => {
     fetchMock.mockImplementation((_url: string, options?: RequestInit) => { if (!options?.body) return response(workspace(paper, [attempt])); sent = JSON.parse(String(options.body)); return response({ attempt: { ...attempt, status: "reviewed", parent_review: { marks: sent.marks, feedback: sent.feedback, nextStep: sent.nextStep, reviewer: "Nihal", reviewedAt: new Date().toISOString() } } }); });
     render(<TestsPage />);
     fireEvent.click(await screen.findByText("Nihal · review this work"));
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "1" } });
+    fireEvent.change(screen.getByRole("combobox", { name: /Mark:/ }), { target: { value: "1" } });
     fireEvent.change(screen.getByLabelText("Feedback"), { target: { value: "Good example. Explain the force." } });
     fireEvent.change(screen.getByLabelText("Next learning step"), { target: { value: "Draw the force on the ball." } });
     fireEvent.change(screen.getByLabelText("Parent PIN"), { target: { value: "4821" } });
