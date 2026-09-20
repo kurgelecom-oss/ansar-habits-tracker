@@ -82,6 +82,14 @@ export default function TestsPage() {
   const inProgress = workspace?.attempts.some(a => a.status === "in_progress");
   const papers = workspace?.papers.filter(p => filter === "all" || p.kind === filter) || [];
   const submitted = workspace?.attempts.filter(a => a.status !== "in_progress") || [];
+  function changeFilter(value: string) {
+    if (inProgress || !workspace) return;
+    setFilter(value);
+    const matching = workspace.papers.filter(candidate => value === "all" || candidate.kind === value);
+    if (!matching.some(candidate => candidate.id === selected)) {
+      setSelected(preferredPaperId({ ...workspace, papers: matching }));
+    }
+  }
   return <main className={styles.page} aria-label="ANSAR OS Tests">
     <ClubNavigation activeLabel="Tests" />
     <div className={styles.content}>
@@ -97,14 +105,14 @@ export default function TestsPage() {
           {parentOpen && !inProgress && <ParentSync integrations={workspace.integrations} onComplete={async text => { setNotice(text); await load(); }} />}
           {inProgress && <p className={styles.muted}>Finish the open assessment before switching papers or months. Your draft is saved if you leave this page.</p>}
           <div className={styles.room}>
-            <aside className={styles.assignments} aria-label="Assessments"><div className={styles.sectionHeading}><h2>Your work</h2><span>{workspace.papers.length} papers</span></div><div className={styles.filters} aria-label="Assessment type">{[["all", "All"], ["review", "Friday recall"], ["exam", "Monthly exam"]].map(([value, label]) => <button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
+            <aside className={styles.assignments} aria-label="Assessments"><div className={styles.sectionHeading}><h2>Your work</h2><span>{workspace.papers.length} papers</span></div><div className={styles.filters} aria-label="Assessment type">{[["all", "All"], ["review", "Friday recall"], ["exam", "Monthly exam"]].map(([value, label]) => <button key={value} aria-pressed={filter === value} disabled={inProgress} onClick={() => changeFilter(value)}>{label}</button>)}</div>
               {papers.length === 0 && <p className={styles.empty}>No {filter === "all" ? "assessments" : filter === "exam" ? "monthly exams" : "Friday recalls"} yet. Papers appear here when programme coverage is available.</p>}
               <label className={styles.mobilePicker}>Choose assessment<select value={selected} disabled={inProgress} onChange={e => setSelected(e.target.value)}>{workspace.papers.map(p => <option key={p.id} value={p.id}>{dateLabel(p.due_date)} · {p.subject} · {statusLabel(p, workspace.attempts.find(a => a.paper_id === p.id), workspace.today)}</option>)}</select></label>
               <div className={styles.paperList}>{papers.map(p => { const current = workspace.attempts.find(a => a.paper_id === p.id); const status = statusLabel(p, current, workspace.today); return <button key={p.id} disabled={attempt?.status === "in_progress" && p.id !== selected} onClick={() => setSelected(p.id)} className={`${styles.paperCard} ${selected === p.id ? styles.active : ""}`} aria-pressed={selected === p.id}><span className={styles.paperKind}>{p.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"} · {dateLabel(p.due_date)}</span><strong>{p.subject}</strong><span className={styles.paperTitle}>{p.title}</span><span className={`${styles.badge} ${status === "Overdue" ? styles.overdue : ""}`}>{status}</span></button>; })}</div>
             </aside>
             <section className={styles.station} aria-label="Selected assessment">
               {paper ? <><div className={styles.stationHeader}><p className={styles.eyebrow}>{paper.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"}</p><h2>{paper.subject}</h2><p>{paper.title}</p><div className={styles.metadata}><span>{isHistoricalBaseline(paper) ? "Coverage through" : "Due"} {dateLabel(paper.due_date)}</span><span>{paper.kind === "exam" && !attempt ? 12 : paper.questions.length} questions</span><span>{paper.kind === "exam" ? `${paper.duration_minutes || 25} minutes` : "Take your time"}</span></div></div>
-                {!attempt && <>{isHistoricalBaseline(paper) && <p className={styles.notice}>This is a baseline for earlier learning. It was created after the coverage date, so it is not overdue.</p>}<p className={styles.coverage}>{paper.coverage_note}</p><details className={styles.lessons}><summary>What this covers · {paper.lessons.length} lessons</summary>{paper.lessons.map(lesson => <div key={lesson.id}><strong>{lesson.topic}</strong><p>{dateLabel(lesson.date)}</p></div>)}</details>{paper.status === "draft" ? <><p className={styles.notice}>This paper needs a parent to confirm the taught material before you begin.</p><PublishForm key={paper.id} paper={paper} onComplete={load} /></> : <StartForm key={paper.id} paper={paper} today={workspace.today} onStarted={updateAttempt} />}</>}
+                {!attempt && <>{isHistoricalBaseline(paper) && <p className={styles.notice}>This is a baseline for earlier learning. It became available after the coverage date, so it is not overdue.</p>}<p className={styles.coverage}>{paper.coverage_note}</p><details className={styles.lessons}><summary>What this covers · {paper.lessons.length} lessons</summary>{paper.lessons.map(lesson => <div key={lesson.id}><strong>{lesson.topic}</strong><p>{dateLabel(lesson.date)}</p></div>)}</details>{paper.status === "draft" ? <><p className={styles.notice}>This paper needs a parent to confirm the taught material before you begin.</p><PublishForm key={paper.id} paper={paper} onComplete={load} /></> : <StartForm key={paper.id} paper={paper} today={workspace.today} onStarted={updateAttempt} />}</>}
                 {attempt?.status === "in_progress" && <AttemptForm key={`${attempt.id}:${loadVersion}`} attempt={attempt} offset={offset} onAttempt={updateAttempt} onReload={load} />}
                 {attempt && attempt.status !== "in_progress" && <SubmittedWork key={attempt.id} attempt={attempt} onAttempt={updateAttempt} />}
               </> : <div className={styles.empty}><h2>A fresh learning record.</h2><p>Your Friday recalls and monthly exams will appear after the programme is synced. Nihal can refresh the curriculum in Parent tools.</p></div>}

@@ -1,9 +1,10 @@
 import type { Paper, Workspace } from "../lib/assessments/types";
 
 /** A newly backfilled paper cannot have been missed before it existed. */
-export function isHistoricalBaseline(paper: Pick<Paper, "created_at" | "due_date">): boolean {
-  if (!paper.created_at) return false;
-  const created = new Date(paper.created_at);
+export function isHistoricalBaseline(paper: Pick<Paper, "created_at" | "due_date"> & Partial<Pick<Paper, "kind" | "published_at">>): boolean {
+  const assignedAt = paper.kind === "exam" ? paper.published_at || paper.created_at : paper.created_at;
+  if (!assignedAt) return false;
+  const created = new Date(assignedAt);
   if (!Number.isFinite(created.getTime())) return false;
   const parts = new Intl.DateTimeFormat("en-AU", {
     timeZone: "Australia/Sydney", year: "numeric", month: "2-digit", day: "2-digit",

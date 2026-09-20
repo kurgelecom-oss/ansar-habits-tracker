@@ -52,6 +52,20 @@ describe("assessment workspace", () => {
     expect(screen.getByText(data.sourceStatus)).toBeVisible();
   });
 
+  it("selects a matching paper when switching assessment type", async () => {
+    const exam = { ...paper, id: "exam-1", kind: "exam" as const, title: "Monthly forces check", due_date: "2026-09-30" };
+    fetchMock.mockImplementation(() => response({ ...workspace(), papers: [paper, exam] }));
+    render(<TestsPage />);
+    const picker = await screen.findByLabelText("Choose assessment");
+    expect(picker).toHaveValue(paper.id);
+    fireEvent.click(screen.getByRole("button", { name: "Monthly exam" }));
+    expect(picker).toHaveValue(exam.id);
+    expect(screen.getByRole("button", { name: "Start timed exam" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Friday recall" }));
+    expect(picker).toHaveValue(paper.id);
+    expect(screen.getByRole("button", { name: "Begin Friday recall" })).toBeInTheDocument();
+  });
+
   it("requires explicit timing acknowledgement and never starts a draft paper", async () => {
     const exam = { ...paper, kind: "exam" as const, duration_minutes: 25 };
     fetchMock.mockImplementation(() => response(workspace(exam)));
