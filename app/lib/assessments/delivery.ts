@@ -67,7 +67,7 @@ export async function queueAttemptReport(attempt: Attempt): Promise<void> {
 export async function queuePracticeReport(attempt:Attempt):Promise<void>{
  if(attempt.status==='in_progress'||attempt.paper_snapshot.is_practice!==true)throw new DeliveryError('Only submitted practice attempts can be sent');
  const event=`practice-${digest([attempt.id,attempt.status,attempt.parent_review?.reviewedAt||'',attempt.correction_at||''].join(':'))}`;const payload=practiceAttemptReport(attempt);
- await enqueue([{id:`${event}-notion`,channel:'notion',payload},{id:`${event}-email`,channel:'email',payload:{subject:payload.subject,text:payload.text}}]);
+ await enqueue([{id:`${event}-notion`,channel:'notion',payload},{id:`${event}-email`,channel:'email',payload:{subject:payload.subject,text:payload.text,practiceExplicit:true}}]);
 }
 export function reminderPapers(today: string, papers: Paper[], completedIds: Set<string>): Paper[] {
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
@@ -235,7 +235,8 @@ export async function deliverPending(): Promise<{ sent: number; failed: number }
   if (error) throw new DeliveryError('Could not claim pending assessment notifications');
   const results = await Promise.all(((data || []) as Job[]).map(async job => {
     try {
-      if(job.payload.metadata?.title.includes('PARENT PRACTICE')&&job.payload.practiceExplicit!==true)throw new DeliveryError('Automatic practice delivery suppressed');
+      const practiceLabel=job.payload.subject?.includes('PARENT PRACTICE')||job.payload.metadata?.title.includes('PARENT PRACTICE');
+      if(practiceLabel&&job.payload.practiceExplicit!==true)throw new DeliveryError('Automatic practice delivery suppressed');
       if (job.channel === 'notion') await deliverNotion(job); else await deliverEmail(job);
       const { error: saveError } = await db.from(OUTBOX).update({ status: 'sent', last_error: null, delivered_at: new Date().toISOString(), locked_until: null }).eq('id', job.id);
       if (saveError) throw new DeliveryError('Provider accepted delivery but recording confirmation failed; retry required');

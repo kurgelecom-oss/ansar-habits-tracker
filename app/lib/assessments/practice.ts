@@ -5,6 +5,8 @@ import {AssessmentError} from './engine';
 import {attemptReport,queuePracticeReport} from './delivery';
 import {publicAttempt,withResult} from './service';
 import type {Attempt,Paper,Question} from './types';
+import {PRACTICE_SOURCE_STATUS} from './types';
+export function practiceSourceStatus(){return PRACTICE_SOURCE_STATUS;}
 const choiceSamples=[
  ['Which sample value is even?',['3','8','11','15'],1,'8 divides into whole pairs.'],
  ['Which sample fraction equals one half?',['1/3','2/4','3/4','4/5'],1,'Two of four equal parts is one half.'],

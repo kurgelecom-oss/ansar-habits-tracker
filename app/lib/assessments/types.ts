@@ -7,3 +7,4 @@ export type ParentReview = { marks: Record<string, number>; feedback: string; ne
 export type Attempt = { id: string; paper_id: string; status: 'in_progress' | 'submitted' | 'reviewed'; answers: Answers; started_at: string; expires_at: string | null; submitted_at: string | null; result: Result | null; parent_review: ParentReview | null; correction: string | null; correction_at: string | null; revision: number; paper_snapshot: Paper };
 export type Workspace = { month: string; today: string; serverNow: string; papers: Paper[]; attempts: Attempt[]; sourceStatus: string; integrations: { notion: boolean; email: boolean; pending: number }; };
 export type AssessmentScope = 'learner' | 'practice';
+export const PRACTICE_SOURCE_STATUS='Fictional sample papers for parent workflow rehearsal. No learner curriculum or progress is inferred. Reports are sent only when you choose Send labelled practice report.';

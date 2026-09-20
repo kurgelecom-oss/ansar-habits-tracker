@@ -22,7 +22,17 @@ describe('durable learning reports', () => {
     expect(payload.subject).toContain('PARENT PRACTICE');
     expect(payload.metadata).toMatchObject({kind:'system',status:'system',score:null});
     await queuePracticeReport(practice);
-    expect(mocks.upsert.mock.calls[0][0].map((j:{id:string})=>j.id)).toEqual(expect.arrayContaining([expect.stringMatching(/^practice-/),expect.stringMatching(/^practice-/)]));
+    const jobs=mocks.upsert.mock.calls[0][0];
+    expect(jobs.map((j:{id:string})=>j.id)).toEqual(expect.arrayContaining([expect.stringMatching(/^practice-/),expect.stringMatching(/^practice-/)]));
+    expect(jobs.every((j:{payload:{practiceExplicit?:boolean}})=>j.payload.practiceExplicit===true)).toBe(true);
+  });
+  it('blocks a labelled practice email at delivery when it lacks the explicit manual marker',async()=>{
+    vi.stubEnv('RESEND_API_KEY','private-key');vi.stubEnv('ASSESSMENT_EMAIL_FROM','from@example.com');vi.stubEnv('ASSESSMENT_EMAIL_TO','parent@example.com');
+    const fetcher=vi.fn();vi.stubGlobal('fetch',fetcher);
+    mocks.rpc.mockResolvedValue({data:[{id:'unsafe-practice',channel:'email',payload:{subject:'PARENT PRACTICE: report',text:'practice'}}],error:null});
+    expect(await deliverPending()).toEqual({sent:0,failed:1});
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(mocks.update.mock.calls[0][0].last_error).toContain('suppressed');
   });
   it('deduplicates retries without resetting sent rows and queues separate review/correction events', async () => {
     await queueAttemptReport(attempt); await queueAttemptReport(attempt);

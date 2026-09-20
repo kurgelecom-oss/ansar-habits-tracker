@@ -3,12 +3,14 @@ import { adminClient } from '../supabase-admin';
 import { sydneyDateKey } from '../time';
 import { AssessmentError, grade, publicPaper, validateAnswers, validateMarks, validateMonth } from './engine';
 import type { Attempt, Paper, Workspace, ParentReview, AssessmentScope } from './types';
+import {PRACTICE_SOURCE_STATUS} from './types';
 import { syncCurriculum } from './curriculum';
 import { queueAttemptReport, queueDueReminders, deliverPending } from './delivery';
 const PAPERS='ansar_assessment_papers',ATTEMPTS='ansar_assessment_attempts';
 function checked<T>(r:{data:T;error:unknown}):T {if(r.error)throw new AssessmentError('Assessment storage is unavailable. Your saved work is safe; try again.',503);return r.data;}
 export function withResult(a:Attempt):Attempt{return {...a,result:a.status==='in_progress'?null:grade(a.paper_snapshot,a.answers,a.parent_review?.marks)};}
 export function publicAttempt(a:Attempt):Attempt {return {...withResult(a),paper_snapshot:publicPaper(a.paper_snapshot,a.status!=='in_progress')};}
+export function assessmentScopeFilter(scope?:AssessmentScope){return scope==='practice'?{method:'eq' as const,args:['paper_snapshot->>is_practice','true'] as const}:scope==='learner'?{method:'or' as const,args:['paper_snapshot->>is_practice.eq.false,paper_snapshot->>is_practice.is.null'] as const}:null;}
 async function report(a:Attempt){
  if(a.status==='in_progress')return;
  const full=withResult(a);
@@ -18,18 +20,18 @@ async function report(a:Attempt){
  }
  if(a.paper_snapshot.is_practice!==true)await queueAttemptReport(full);
 }
-export async function expireAttempts(){
- const db=adminClient();const expired=checked(await db.from(ATTEMPTS).select('*').eq('status','in_progress').lt('expires_at',new Date().toISOString()));
+export async function expireAttempts(scope?:AssessmentScope){
+ const db=adminClient();let query=db.from(ATTEMPTS).select('*').eq('status','in_progress').lt('expires_at',new Date().toISOString());const filter=assessmentScopeFilter(scope);if(filter?.method==='eq')query=query.eq(...filter.args);else if(filter?.method==='or')query=query.or(...filter.args);const expired=checked(await query);
  for(const a of expired??[]){const r=await db.rpc('save_ansar_assessment',{p_attempt_id:a.id,p_answers:{},p_revision:a.revision,p_submit:true});if(r.error)throw new AssessmentError('Unable to finalise expired exams.',503);await report(r.data as Attempt);}
 }
 export async function workspace(month:string,scope:AssessmentScope='learner'):Promise<Workspace>{
- validateMonth(month);await expireAttempts();const db=adminClient();
+ validateMonth(month);await expireAttempts(scope);const db=adminClient();
  const paperQuery=db.from(PAPERS).select('*').eq('month',month);const attemptQuery=db.from(ATTEMPTS).select('*').eq('paper_snapshot->>month',month);
  const scopedP=scope==='practice'?paperQuery.eq('is_practice',true):paperQuery.or('is_practice.eq.false,is_practice.is.null');
  const scopedA=scope==='practice'?attemptQuery.eq('paper_snapshot->>is_practice','true'):attemptQuery.or('paper_snapshot->>is_practice.eq.false,paper_snapshot->>is_practice.is.null');
  const [p,a,o,s]=await Promise.all([scopedP.order('due_date').order('subject'),scopedA,db.from('ansar_assessment_outbox').select('id',{head:true,count:'exact'}).eq('status','pending'),db.from('ansar_assessment_state').select('payload,updated_at').eq('id','curriculum').maybeSingle()]);
  const papers=checked(p) as Paper[],attempts=checked(a) as Attempt[];if(o.error||s.error)throw new AssessmentError('Assessment status is temporarily unavailable.',503);
- const state=s.data?.payload;const sourceStatus=state?`${state.summary??'Curriculum synced.'}${state.warnings?.length?' '+state.warnings.join(' '):''}`:'Curriculum has not been synced yet. Nihal can refresh it below.';
+ const state=s.data?.payload;const sourceStatus=scope==='practice'?PRACTICE_SOURCE_STATUS:state?`${state.summary??'Curriculum synced.'}${state.warnings?.length?' '+state.warnings.join(' '):''}`:'Curriculum has not been synced yet. Nihal can refresh it below.';
  return {month,today:sydneyDateKey(),serverNow:new Date().toISOString(),papers:papers.map(p=>{const a=attempts.find(a=>a.paper_id===p.id);return p.kind==='exam'&&!a?{...p,questions:[]}:publicPaper(p,!!a&&a.status!=='in_progress')}),attempts:attempts.map(publicAttempt),sourceStatus,integrations:{notion:Boolean(process.env.NOTION_TOKEN&&process.env.ASSESSMENT_NOTION_DB_ID),email:Boolean(process.env.ASSESSMENT_EMAIL_TO&&((process.env.ASSESSMENT_COMPOSIO_API_KEY&&process.env.ASSESSMENT_GMAIL_ACCOUNT_ID)||(process.env.RESEND_API_KEY&&process.env.ASSESSMENT_EMAIL_FROM)||(process.env.ASSESSMENT_MS_REFRESH_TOKEN&&process.env.ASSESSMENT_MS_CLIENT_ID&&process.env.ASSESSMENT_MS_CLIENT_SECRET))),pending:o.count??0}};
 }
 async function getAttempt(id:unknown,scope:AssessmentScope='learner'){if(typeof id!=='string'||!/^[0-9a-f-]{36}$/i.test(id))throw new AssessmentError('Invalid attempt.');let q=adminClient().from(ATTEMPTS).select('*').eq('id',id);q=scope==='practice'?q.eq('paper_snapshot->>is_practice','true'):q.or('paper_snapshot->>is_practice.eq.false,paper_snapshot->>is_practice.is.null');const a=checked(await q.maybeSingle());if(!a)throw new AssessmentError('Attempt not found.',404);return a as Attempt;}
