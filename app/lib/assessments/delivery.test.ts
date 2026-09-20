@@ -6,7 +6,7 @@ vi.mock('../supabase-admin', () => ({ adminClient: () => ({ from: () => ({ upser
 import { attemptReport, deliverPending, notionBlocks, queueAttemptReport, queueDueReminders, reminderPapers } from './delivery';
 const paper: Paper = { id: 'p1', kind: 'review', month: '2026-09', due_date: '2026-09-25', opens_on: '2026-09-21', subject: 'Maths', title: 'Friday Maths', status: 'published', duration_minutes: null, questions: [{ id: 'q1', type: 'written', prompt: 'Explain fractions', sourceIds: ['l1'] }], lessons: [{ id: 'l1', date: '2026-09-22', subject: 'Maths', task: 'Compare fractions', topic: 'Fractions', week: '4', guide: [], url: 'https://notion.so/lesson' }], coverage_note: 'Only dated source rows' };
 const attempt: Attempt = { id: 'a1', paper_id: 'p1', status: 'submitted', answers: { q1: 'PRIVATE CHILD RESPONSE' }, started_at: '2026-09-25T00:00:00Z', expires_at: null, submitted_at: '2026-09-25T01:00:00Z', result: { objectiveCorrect: 0, objectiveTotal: 0, writtenPending: 1, writtenPoints: 0, writtenTotal: 2, percentage: null, summary: 'Awaiting review', gaps: [] }, parent_review: null, correction: null, correction_at: null, revision: 1, paper_snapshot: paper };
-const envs = ['ASSESSMENT_COMPOSIO_API_KEY', 'ASSESSMENT_GMAIL_ACCOUNT_ID', 'NOTION_TOKEN', 'ASSESSMENT_NOTION_DB_ID', 'ASSESSMENT_EMAIL_TO', 'ASSESSMENT_MS_CLIENT_ID', 'ASSESSMENT_MS_CLIENT_SECRET', 'ASSESSMENT_MS_REFRESH_TOKEN', 'RESEND_API_KEY', 'ASSESSMENT_EMAIL_FROM'];
+const envs = ['ASSESSMENT_GMAIL_ENTITY_ID', 'ASSESSMENT_COMPOSIO_API_KEY', 'ASSESSMENT_GMAIL_ACCOUNT_ID', 'NOTION_TOKEN', 'ASSESSMENT_NOTION_DB_ID', 'ASSESSMENT_EMAIL_TO', 'ASSESSMENT_MS_CLIENT_ID', 'ASSESSMENT_MS_CLIENT_SECRET', 'ASSESSMENT_MS_REFRESH_TOKEN', 'RESEND_API_KEY', 'ASSESSMENT_EMAIL_FROM'];
 beforeEach(() => {
   vi.clearAllMocks();
   for (const name of envs) vi.stubEnv(name, '');
@@ -130,10 +130,21 @@ describe('Gmail delivery reconciliation', () => {
     expect(await deliverPending()).toEqual({ sent: 1, failed: 0 });
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(fetcher.mock.calls[0][0]).toContain('GMAIL_FETCH_EMAILS');
-    const args = JSON.parse(fetcher.mock.calls[1][1].body).arguments;
+    const execution = JSON.parse(fetcher.mock.calls[1][1].body);
+    expect(execution).toEqual({ connected_account_id: 'connected-account', entity_id: 'default', version: 'latest', arguments: { recipient_email: 'parent@example.com', subject: expect.stringMatching(/^Result \[ansar-[a-f0-9]+\]$/), body: 'Private link', is_html: false, user_id: 'me' } });
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ connected_account_id: 'connected-account', entity_id: 'default', version: 'latest', arguments: { query: expect.stringMatching(/^in:sent subject:"ansar-[a-f0-9]+"$/), max_results: 1, ids_only: true, user_id: 'me' } });
+    const args = execution.arguments;
     expect(args.subject).toMatch(/Result \[ansar-[a-f0-9]+\]/);
     expect(args.body).toBe('Private link');
     expect(mocks.update.mock.calls[0][0].payload.gmailSendStartedAt).toBeTruthy();
+  });
+  it('passes an explicitly configured Composio account entity without changing the Gmail mailbox user', async () => {
+    vi.stubEnv('ASSESSMENT_GMAIL_ENTITY_ID', 'configured-entity');
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ successful: true, data: { messages: [{ messageId: 'already-sent' }] } })));
+    vi.stubGlobal('fetch', fetcher);
+    mocks.rpc.mockResolvedValue({ data: [{ id: 'email-job', channel: 'email', payload: { subject: 'Result', text: 'Private link' } }], error: null });
+    expect(await deliverPending()).toEqual({ sent: 1, failed: 0 });
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({ entity_id: 'configured-entity', connected_account_id: 'connected-account', arguments: { user_id: 'me' } });
   });
   it('retries a definitively rejected Gmail send after HTTP 429', async () => {
     const job = { id: 'rejected-email', channel: 'email', payload: { subject: 'Result', text: 'Private link', gmailSendStartedAt: undefined as string | undefined } };

@@ -181,7 +181,7 @@ async function deliverGraph(job: Job) {
 async function composio(tool: string, args: Record<string, unknown>) {
   const response = await request(`https://backend.composio.dev/api/v3/tools/execute/${tool}`, {
     method: 'POST', headers: { 'x-api-key': process.env.ASSESSMENT_COMPOSIO_API_KEY!, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ connected_account_id: process.env.ASSESSMENT_GMAIL_ACCOUNT_ID, version: 'latest', arguments: args }),
+    body: JSON.stringify({ connected_account_id: process.env.ASSESSMENT_GMAIL_ACCOUNT_ID, entity_id: process.env.ASSESSMENT_GMAIL_ENTITY_ID || 'default', version: 'latest', arguments: args }),
   }, 'Gmail');
   const result = await response.json();
   if (result.successful !== true) throw new DeliveryError('Gmail operation failed; check the connected account');
