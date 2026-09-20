@@ -5,7 +5,8 @@ import type { Attempt, Paper } from './types';
 
 const OUTBOX = 'ansar_assessment_outbox';
 const SITE = 'https://ansar-habits-tracker.netlify.app';
-type Payload = { subject: string; text: string; report?: string; graphMessageId?: string; graphSendStartedAt?: string; resendStartedAt?: string; gmailSendStartedAt?: string };
+type ReportMetadata = { title: string; subject: string; kind: 'review' | 'exam' | 'system'; status: 'submitted' | 'reviewed' | 'correction' | 'system'; month: string; dueDate: string | null; submittedAt: string | null; score: number | null };
+type Payload = { subject: string; text: string; report?: string; metadata?: ReportMetadata; graphMessageId?: string; graphSendStartedAt?: string; resendStartedAt?: string; gmailSendStartedAt?: string };
 type Job = { id: string; channel: 'notion' | 'email'; payload: Payload; attempts: number };
 class DeliveryError extends Error {
   constructor(message: string, readonly httpStatus?: number) { super(message); }
@@ -47,7 +48,7 @@ export function attemptReport(attempt: Attempt): Payload {
     `Correction (${attempt.correction_at || 'not recorded'}):\n${attempt.correction || 'No correction submitted'}`,
     `Private workspace: ${workspaceUrl()}`,
   ].join('\n\n');
-  return { subject: `Ansar assessment: ${paper.subject} — ${attempt.correction_at ? 'correction recorded' : attempt.status === 'reviewed' ? 'reviewed' : 'submitted'}`, text: `${statusText(attempt)}.\nView the private learning record: ${workspaceUrl()}`, report };
+  return { subject: `Ansar assessment: ${paper.subject} — ${attempt.correction_at ? 'correction recorded' : attempt.status === 'reviewed' ? 'reviewed' : 'submitted'}`, text: `${statusText(attempt)}.\nView the private learning record: ${workspaceUrl()}`, report, metadata: { title: paper.title, subject: paper.subject, kind: paper.kind, status: attempt.correction_at ? 'correction' : attempt.status === 'reviewed' ? 'reviewed' : 'submitted', month: paper.month, dueDate: paper.due_date, submittedAt: attempt.submitted_at, score: attempt.result?.percentage ?? null } };
 }
 async function enqueue(jobs: Omit<Job, 'attempts'>[]) {
   if (!jobs.length) return;
@@ -130,9 +131,22 @@ async function request(url: string, init: RequestInit, provider: string): Promis
 async function deliverNotion(job: Job) {
   if (!deliveryConfiguration().notion) throw new DeliveryError('Notion is not configured: set NOTION_TOKEN and ASSESSMENT_NOTION_DB_ID');
   const headers = { Authorization: `Bearer ${process.env.NOTION_TOKEN}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' };
-  const query = await request(`https://api.notion.com/v1/databases/${process.env.ASSESSMENT_NOTION_DB_ID}/query`, { method: 'POST', headers, body: JSON.stringify({ filter: { property: 'Name', title: { equals: job.id } }, page_size: 1 }) }, 'Notion');
+  const query = await request(`https://api.notion.com/v1/databases/${process.env.ASSESSMENT_NOTION_DB_ID}/query`, { method: 'POST', headers, body: JSON.stringify({ filter: { property: 'Event ID', rich_text: { equals: job.id } }, page_size: 1 }) }, 'Notion');
   if ((await query.json()).results?.length) return;
-  await request('https://api.notion.com/v1/pages', { method: 'POST', headers, body: JSON.stringify({ parent: { database_id: process.env.ASSESSMENT_NOTION_DB_ID }, properties: { Name: { title: [{ text: { content: job.id } }] } }, children: notionBlocks(job.payload.report || job.payload.text) }) }, 'Notion');
+  const metadata = job.payload.metadata || { title: job.payload.subject, subject: 'Assessment system', kind: 'system', status: 'system', month: '', dueDate: null, submittedAt: null, score: null };
+  const richText = (value: string) => [{ type: 'text', text: { content: value.slice(0, 1900) } }];
+  const properties = {
+    Name: { title: richText(`${metadata.title} — ${metadata.status}`) },
+    'Event ID': { rich_text: richText(job.id) },
+    Subject: { rich_text: richText(metadata.subject) },
+    Kind: { select: { name: metadata.kind } },
+    Status: { select: { name: metadata.status } },
+    Month: { rich_text: metadata.month ? richText(metadata.month) : [] },
+    Due: { date: metadata.dueDate ? { start: metadata.dueDate } : null },
+    Submitted: { date: metadata.submittedAt ? { start: metadata.submittedAt } : null },
+    Score: { number: metadata.score },
+  };
+  await request('https://api.notion.com/v1/pages', { method: 'POST', headers, body: JSON.stringify({ parent: { database_id: process.env.ASSESSMENT_NOTION_DB_ID }, properties, children: notionBlocks(job.payload.report || job.payload.text) }) }, 'Notion');
 }
 async function persistPayload(job: Job) {
   const { error } = await adminClient().from(OUTBOX).update({ payload: job.payload }).eq('id', job.id);

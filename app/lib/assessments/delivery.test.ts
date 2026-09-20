@@ -32,6 +32,7 @@ describe('durable learning reports', () => {
     expect(jobs[0].payload.report).toContain('PRIVATE FEEDBACK');
     expect(jobs[0].payload.report).toContain('PRIVATE NEXT STEP');
     expect(JSON.stringify(jobs[1])).not.toContain('PRIVATE');
+    expect(jobs[1].payload).not.toHaveProperty('metadata');
     expect(jobs[1].payload.text).toContain('awaiting review');
     expect(attemptReport(attempt).text).not.toContain('100%');
   });
@@ -62,9 +63,43 @@ describe('durable learning reports', () => {
     mocks.rpc.mockResolvedValue({ data: [{ id: 'event-notion', channel: 'notion', payload: { text: 'record' } }], error: null });
     expect(await deliverPending()).toEqual({ sent: 1, failed: 0 });
     expect(fetcher).toHaveBeenCalledOnce();
-    expect(JSON.parse(fetcher.mock.calls[0][1].body).filter.property).toBe('Name');
-    expect(JSON.parse(fetcher.mock.calls[0][1].body).filter.title.equals).toBe('event-notion');
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).filter.property).toBe('Event ID');
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).filter.rich_text.equals).toBe('event-notion');
     expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'sent' }));
+  });
+  it('creates a family-readable Notion record with filterable report properties and a private event ID', async () => {
+    vi.stubEnv('NOTION_TOKEN', 'private-token'); vi.stubEnv('ASSESSMENT_NOTION_DB_ID', 'database');
+    const payload = attemptReport(attempt);
+    const fetcher = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ results: [] }))).mockResolvedValueOnce(new Response(JSON.stringify({ id: 'created' })));
+    vi.stubGlobal('fetch', fetcher);
+    mocks.rpc.mockResolvedValue({ data: [{ id: 'event-notion', channel: 'notion', payload }], error: null });
+    expect(await deliverPending()).toEqual({ sent: 1, failed: 0 });
+    const body = JSON.parse(fetcher.mock.calls[1][1].body);
+    expect(body.properties.Name.title[0].text.content).toBe('Friday Maths — submitted');
+    expect(body.properties['Event ID'].rich_text[0].text.content).toBe('event-notion');
+    expect(body.properties.Subject.rich_text[0].text.content).toBe('Maths');
+    expect(body.properties.Kind.select.name).toBe('review');
+    expect(body.properties.Status.select.name).toBe('submitted');
+    expect(body.properties.Month.rich_text[0].text.content).toBe('2026-09');
+    expect(body.properties.Due.date.start).toBe('2026-09-25');
+    expect(body.properties.Submitted.date.start).toBe(attempt.submitted_at);
+    expect(body.properties.Score.number).toBeNull();
+    expect(JSON.stringify(body.children)).toContain('PRIVATE CHILD RESPONSE');
+    expect(attemptReport({ ...attempt, status: 'reviewed', result: { ...attempt.result!, writtenPending: 0, percentage: 75 }, correction_at: '2026-09-26T00:00:00Z' }).metadata).toMatchObject({ status: 'correction', score: 75 });
+  });
+  it('creates a readable system record when a setup job has no assessment metadata', async () => {
+    vi.stubEnv('NOTION_TOKEN', 'private-token'); vi.stubEnv('ASSESSMENT_NOTION_DB_ID', 'database');
+    const fetcher = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ results: [] }))).mockResolvedValueOnce(new Response(JSON.stringify({ id: 'created' })));
+    vi.stubGlobal('fetch', fetcher);
+    mocks.rpc.mockResolvedValue({ data: [{ id: 'setup', channel: 'notion', payload: { subject: 'Learning record ready', text: 'Setup complete' } }], error: null });
+    expect(await deliverPending()).toEqual({ sent: 1, failed: 0 });
+    const props = JSON.parse(fetcher.mock.calls[1][1].body).properties;
+    expect(props.Name.title[0].text.content).toBe('Learning record ready — system');
+    expect(props.Kind.select.name).toBe('system');
+    expect(props.Status.select.name).toBe('system');
+    expect(props.Due.date).toBeNull();
+    expect(props.Submitted.date).toBeNull();
+    expect(props.Score.number).toBeNull();
   });
   it('contains upstream failures without persisting provider response bodies', async () => {
     vi.stubEnv('NOTION_TOKEN', 'private-token'); vi.stubEnv('ASSESSMENT_NOTION_DB_ID', 'database');
