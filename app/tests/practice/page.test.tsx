@@ -71,6 +71,8 @@ describe("parent practice room", () => {
     await screen.findByText(/Create a fresh sample exam or review above/);
     expect(screen.queryByRole("button", { name: "Parent tools" })).not.toBeInTheDocument();
     expect(screen.queryByText(/refresh the curriculum/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/programme coverage/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Create a fresh sample above to add a practice paper/)).toBeInTheDocument();
   });
 
   it("keeps report output private until the parent deliberately sends the labelled practice report", async () => {
@@ -79,7 +81,7 @@ describe("parent practice room", () => {
     fetchMock.mockImplementation((_url: string, options?: RequestInit) => {
       if (!options?.body) return response(workspace([submitted]));
       const body = JSON.parse(String(options.body)); actions.push(body);
-      if (body.action === "report-preview") return response({ report: { subject: "PARENT PRACTICE · Sample report", text: "Private preview text", report: { label: "PARENT PRACTICE", sections: ["Full Notion report"] } } });
+      if (body.action === "report-preview") return response({ report: { subject: "PARENT PRACTICE · Sample report", text: "Private preview text", report: "PARENT PRACTICE\nFull Notion report\nNext step: fictional rehearsal" } });
       return response({ message: "Labelled practice report sent." });
     });
     render(<PracticePage />);
@@ -87,7 +89,7 @@ describe("parent practice room", () => {
     await screen.findByText("Private preview text");
     expect(screen.getByText("Short email preview")).toBeInTheDocument();
     expect(screen.getByText("Full Notion report preview")).toBeInTheDocument();
-    expect(screen.getAllByText(/Full Notion report/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText((_, element) => element?.tagName === "PRE" && element.textContent === "PARENT PRACTICE\nFull Notion report\nNext step: fictional rehearsal")).toBeInTheDocument();
     expect(actions).toEqual([{ action: "report-preview", attemptId: attempt.id }]);
     fireEvent.click(screen.getByRole("button", { name: "Send labelled practice report" }));
     await screen.findByText("Labelled practice report sent.");
