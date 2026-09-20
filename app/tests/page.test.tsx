@@ -50,10 +50,10 @@ describe("assessment workspace", () => {
     const actions: Record<string, unknown>[] = [];
     let published = false;
     fetchMock.mockImplementation((_url: string, options?: RequestInit) => {
-      if (!options?.body) return response(workspace({ ...draft, status: published ? "published" : "draft" }));
+      if (!options?.body) return response(workspace({ ...draft, questions: [], status: published ? "published" : "draft" }));
       const body = JSON.parse(String(options.body)); actions.push(body);
       expect(body.pin).toBe("4821");
-      if (body.action === "preview") return response({ paper: fullPaper });
+      if (body.action === "preview") return response({ paper: fullPaper, previewVersion: "paper-fingerprint-1" });
       published = true; return response({ paper: { ...draft, status: "published" } });
     });
     render(<TestsPage />);
@@ -70,8 +70,10 @@ describe("assessment workspace", () => {
     fireEvent.change(screen.getByLabelText(/Time allowed/), { target: { value: "35" } });
     fireEvent.click(screen.getByRole("button", { name: "Approve and publish" }));
     await screen.findByRole("button", { name: "Start timed exam" });
-    expect(actions).toEqual([{ action: "preview", paperId: draft.id, pin: "4821" }, { action: "publish", paperId: draft.id, pin: "4821", durationMinutes: 35, coverageConfirmed: true }]);
+    expect(actions).toEqual([{ action: "preview", paperId: draft.id, pin: "4821" }, { action: "publish", paperId: draft.id, pin: "4821", durationMinutes: 35, coverageConfirmed: true, previewVersion: "paper-fingerprint-1" }]);
     expect(screen.queryByText("Gravity — correct answer")).not.toBeInTheDocument();
+    expect(screen.getByText("12 questions")).toBeInTheDocument();
+    expect(screen.queryByText("Which force pulls the ball down?")).not.toBeInTheDocument();
     expect(localStorage.getItem("ansar-assessment-draft:attempt-1")).toBeNull();
   });
 

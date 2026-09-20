@@ -14,7 +14,7 @@ async function request<T>(url: string, body?: unknown, method?: string): Promise
   if (!response.ok) throw new RequestError(data.message || "We couldn’t connect. Please try again.", response.status);
   return data;
 }
-const mutate = (body: unknown) => request<{ attempt?: Attempt; paper?: Paper; message?: string }>("/api/assessments", body);
+const mutate = (body: unknown) => request<{ attempt?: Attempt; paper?: Paper; previewVersion?: string; message?: string }>("/api/assessments", body);
 const message = (error: unknown) => error instanceof Error ? error.message : "Something went wrong. Please try again.";
 const monthNow = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney", year: "numeric", month: "2-digit" }).format(new Date()).replace(/^(\d{2})\/(\d{4})$/, "$2-$1");
 function shiftMonth(month: string, step: number) { const [year, number] = month.split("-").map(Number); const date = new Date(Date.UTC(year, number - 1 + step)); return date.toISOString().slice(0, 7); }
@@ -100,7 +100,7 @@ export default function TestsPage() {
               {papers.map(p => { const current = workspace.attempts.find(a => a.paper_id === p.id); const status = statusLabel(p, current, workspace.today); return <button key={p.id} disabled={attempt?.status === "in_progress" && p.id !== selected} onClick={() => setSelected(p.id)} className={`${styles.paperCard} ${selected === p.id ? styles.active : ""}`} aria-pressed={selected === p.id}><span className={styles.paperKind}>{p.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"} · {dateLabel(p.due_date)}</span><strong>{p.subject}</strong><span className={styles.paperTitle}>{p.title}</span><span className={`${styles.badge} ${status === "Overdue" ? styles.overdue : ""}`}>{status}</span></button>; })}
             </aside>
             <section className={styles.station} aria-label="Selected assessment">
-              {paper ? <><div className={styles.stationHeader}><p className={styles.eyebrow}>{paper.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"}</p><h2>{paper.subject}</h2><p>{paper.title}</p><div className={styles.metadata}><span>Due {dateLabel(paper.due_date)}</span><span>{paper.questions.length} questions</span><span>{paper.kind === "exam" ? `${paper.duration_minutes || 25} minutes` : "Take your time"}</span></div></div>
+              {paper ? <><div className={styles.stationHeader}><p className={styles.eyebrow}>{paper.kind === "exam" ? "MONTHLY EXAM" : "FRIDAY RECALL"}</p><h2>{paper.subject}</h2><p>{paper.title}</p><div className={styles.metadata}><span>Due {dateLabel(paper.due_date)}</span><span>{paper.kind === "exam" && !attempt ? 12 : paper.questions.length} questions</span><span>{paper.kind === "exam" ? `${paper.duration_minutes || 25} minutes` : "Take your time"}</span></div></div>
                 {!attempt && <><p className={styles.coverage}>{paper.coverage_note}</p><details className={styles.lessons}><summary>What this covers · {paper.lessons.length} lessons</summary>{paper.lessons.map(lesson => <div key={lesson.id}><strong>{lesson.topic}</strong><p>{dateLabel(lesson.date)}</p></div>)}</details>{paper.status === "draft" ? <><p className={styles.notice}>This paper needs a parent to confirm the taught material before you begin.</p><PublishForm key={paper.id} paper={paper} onComplete={load} /></> : <StartForm key={paper.id} paper={paper} today={workspace.today} onStarted={updateAttempt} />}</>}
                 {attempt?.status === "in_progress" && <AttemptForm key={`${attempt.id}:${loadVersion}`} attempt={attempt} offset={offset} onAttempt={updateAttempt} onReload={load} />}
                 {attempt && attempt.status !== "in_progress" && <SubmittedWork key={attempt.id} attempt={attempt} onAttempt={updateAttempt} />}
@@ -123,6 +123,7 @@ function ParentSync({ integrations, onComplete }: { integrations: Workspace["int
 function PublishForm({ paper, onComplete }: { paper: Paper; onComplete: () => Promise<void> }) {
   const [pin, setPin] = useState("");
   const [preview, setPreview] = useState<Paper | null>(null);
+  const [previewVersion, setPreviewVersion] = useState<string | null>(null);
   const previewRequest = useRef(0);
   const [duration, setDuration] = useState(paper.duration_minutes || 25);
   const [confirmed, setConfirmed] = useState(false);
@@ -135,19 +136,19 @@ function PublishForm({ paper, onComplete }: { paper: Paper; onComplete: () => Pr
         const requestId = ++previewRequest.current;
         const result = await mutate({ action: "preview", paperId: paper.id, pin });
         if (requestId !== previewRequest.current) return;
-        if (!result.paper) throw new Error("The answer-key preview could not be loaded. Please retry.");
-        setPreview(result.paper);
+        if (!result.paper || !result.previewVersion) throw new Error("The answer-key preview could not be loaded. Please retry.");
+        setPreview(result.paper); setPreviewVersion(result.previewVersion);
       } else {
-        await mutate({ action: "publish", paperId: paper.id, pin, durationMinutes: duration, coverageConfirmed: confirmed });
-        setPin(""); setPreview(null); setConfirmed(false); await onComplete();
+        await mutate({ action: "publish", paperId: paper.id, pin, durationMinutes: duration, coverageConfirmed: confirmed, previewVersion });
+        setPin(""); setPreview(null); setPreviewVersion(null); setConfirmed(false); await onComplete();
       }
-    } catch (err) { setError(message(err)); } finally { setBusy(false); }
+    } catch (err) { setError(message(err)); if (err instanceof RequestError && err.status === 409) { setPreview(null); setPreviewVersion(null); setConfirmed(false); } } finally { setBusy(false); }
   }
-  return <details className={styles.parentPanel} onToggle={e => { if (!e.currentTarget.open) { previewRequest.current++; setPreview(null); setPin(""); setConfirmed(false); } }}>
+  return <details className={styles.parentPanel} onToggle={e => { if (!e.currentTarget.open) { previewRequest.current++; setPreview(null); setPreviewVersion(null); setPin(""); setConfirmed(false); } }}>
     <summary>Parent · approve this paper</summary>
     <form onSubmit={submit}>
       <p>{preview ? "Check every question, answer and marking guide against the taught material before approving." : "Enter your parent PIN to inspect the answer key and marking guides before publishing."}</p>
-      <PinField value={pin} onChange={value => { previewRequest.current++; setPin(value); setPreview(null); setConfirmed(false); }} />
+      <PinField value={pin} onChange={value => { previewRequest.current++; setPin(value); setPreview(null); setPreviewVersion(null); setConfirmed(false); }} />
       {preview && <>
         <div className={styles.preview}><h3>Parent answer-key preview</h3><p className={styles.muted}>{preview.coverage_note}</p>
           {preview.questions.map((q, i) => <section key={q.id} className={styles.answerReview}>
