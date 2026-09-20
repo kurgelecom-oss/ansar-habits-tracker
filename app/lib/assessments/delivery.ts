@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { adminClient } from '../supabase-admin';
+import { sydneyDateKey } from '../time';
 import type { Attempt, Paper } from './types';
 
 const OUTBOX = 'ansar_assessment_outbox';
@@ -58,21 +59,43 @@ export function reminderPapers(today: string, papers: Paper[], completedIds: Set
   return papers.filter(p => p.status === 'published' && p.opens_on <= today && !completedIds.has(p.id) && (
     (weekday === 5 && p.kind === 'review' && p.due_date === today) ||
     (p.kind === 'exam' && today <= p.due_date && examWindow) ||
-    (weekday === 1 && p.due_date < today)
+    (weekday === 1 && p.due_date < today && (!p.created_at || sydneyDateKey(new Date(p.created_at)) <= p.due_date))
   ));
 }
 export async function queueDueReminders(today: string): Promise<void> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) throw new DeliveryError('Invalid reminder date');
   const db = adminClient();
-  const { data: papers, error } = await db.from('ansar_assessment_papers').select('*').eq('status', 'published').lte('opens_on', today);
+  const { data: papers, error } = await db.from('ansar_assessment_papers').select('*').in('status', ['published', 'draft']).lte('opens_on', today);
   if (error) throw new DeliveryError('Could not read assignments for reminders');
   if (!papers?.length) return;
-  const { data: attempts, error: attemptsError } = await db.from('ansar_assessment_attempts').select('paper_id').in('paper_id', papers.map(p => p.id)).in('status', ['submitted', 'reviewed']);
+  // Read only identifiers/statuses: reminder emails never need student answers.
+  const { data: attempts, error: attemptsError } = await db.from('ansar_assessment_attempts').select('paper_id,status').in('paper_id', papers.map(p => p.id)).in('status', ['submitted', 'reviewed']);
   if (attemptsError) throw new DeliveryError('Could not read submissions for reminders');
-  const due = reminderPapers(today, papers as Paper[], new Set((attempts || []).map(a => a.paper_id))).sort((a, b) => a.id.localeCompare(b.id));
-  if (!due.length) return;
-  const id = `reminder-${today}-${digest(due.map(p => `${p.id}:${p.due_date < today ? 'overdue' : p.kind}`).join('|'))}`;
-  await enqueue([{ id, channel: 'email', payload: { subject: 'Ansar: learning work due', text: `Work awaiting submission:\n${due.map(p => `${p.subject}: ${p.title} — due ${p.due_date}${p.due_date < today ? ' (overdue)' : ''}`).join('\n')}\n\nOpen the private workspace: ${workspaceUrl()}\nSubmission records completion; parent review assesses understanding.` } }]);
+  const ordered = (papers as Paper[]).sort((a, b) => a.id.localeCompare(b.id));
+  const completed = new Set((attempts || []).map(a => a.paper_id));
+  const due = reminderPapers(today, ordered, completed);
+  const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)), 0)).getUTCDate();
+  const examWindow = Number(today.slice(8, 10)) >= daysInMonth - 6;
+  const drafts = ordered.filter(p => p.kind === 'exam' && p.status === 'draft' && p.opens_on <= today && today <= p.due_date && examWindow && !completed.has(p.id));
+  const submitted = new Set((attempts || []).filter(a => a.status === 'submitted').map(a => a.paper_id));
+  const awaitingReview = weekday === 1 || weekday === 5 ? ordered.filter(p => submitted.has(p.id)) : [];
+  const jobs: Omit<Job, 'attempts'>[] = [];
+  // The category/date key allows at most one digest per day even if a parent
+  // refreshes after a paper is published or an attempt changes status.
+  if (due.length) jobs.push({ id: `reminder-${today}-learner`, channel: 'email', payload: {
+    subject: 'Ansar: learning work due',
+    text: `Work awaiting submission:\n${due.map(p => `${p.subject}: ${p.title} — due ${p.due_date}${p.due_date < today ? ' (overdue)' : ''}`).join('\n')}\n\nOpen the private workspace: ${workspaceUrl()}\nSubmission records completion; parent review assesses understanding.`,
+  } });
+  if (drafts.length) jobs.push({ id: `reminder-${today}-parent-approval`, channel: 'email', payload: {
+    subject: 'Nihal: approve monthly exam papers',
+    text: `These monthly papers are awaiting your coverage check and approval before Ansar can begin:\n${drafts.map(p => `${p.subject}: ${p.title} — due ${p.due_date}`).join('\n')}\n\nPreview the questions and marking guides privately, confirm what was taught, and agree any extra time: ${workspaceUrl()}\nUnapproved papers are not assigned to Ansar.`,
+  } });
+  if (awaitingReview.length) jobs.push({ id: `reminder-${today}-parent-feedback`, channel: 'email', payload: {
+    subject: 'Nihal: review submitted learning work',
+    text: `Ansar has submitted this work and is awaiting your marks, feedback and next learning step:\n${awaitingReview.map(p => `${p.subject}: ${p.title}`).join('\n')}\n\nOpen the private responses and record your review: ${workspaceUrl()}\nSubmission records completion; understanding awaits your review.`,
+  } });
+  await enqueue(jobs);
 }
 // Pack the complete report into a single create-page request: retries can locate
 // its stable title, and cannot leave a half-appended report after a timeout.

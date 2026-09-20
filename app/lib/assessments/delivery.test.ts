@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Attempt, Paper } from './types';
 import daily, { config } from '../../../netlify/functions/assessment-daily';
-const mocks = vi.hoisted(() => ({ upsert: vi.fn(), rpc: vi.fn(), update: vi.fn(), eq: vi.fn() }));
-vi.mock('../supabase-admin', () => ({ adminClient: () => ({ from: () => ({ upsert: mocks.upsert, update: mocks.update }), rpc: mocks.rpc }) }));
-import { attemptReport, deliverPending, notionBlocks, queueAttemptReport, reminderPapers } from './delivery';
+const mocks = vi.hoisted(() => ({ upsert: vi.fn(), rpc: vi.fn(), update: vi.fn(), eq: vi.fn(), select: vi.fn() }));
+vi.mock('../supabase-admin', () => ({ adminClient: () => ({ from: () => ({ upsert: mocks.upsert, update: mocks.update, select: mocks.select }), rpc: mocks.rpc }) }));
+import { attemptReport, deliverPending, notionBlocks, queueAttemptReport, queueDueReminders, reminderPapers } from './delivery';
 const paper: Paper = { id: 'p1', kind: 'review', month: '2026-09', due_date: '2026-09-25', opens_on: '2026-09-21', subject: 'Maths', title: 'Friday Maths', status: 'published', duration_minutes: null, questions: [{ id: 'q1', type: 'written', prompt: 'Explain fractions', sourceIds: ['l1'] }], lessons: [{ id: 'l1', date: '2026-09-22', subject: 'Maths', task: 'Compare fractions', topic: 'Fractions', week: '4', guide: [], url: 'https://notion.so/lesson' }], coverage_note: 'Only dated source rows' };
 const attempt: Attempt = { id: 'a1', paper_id: 'p1', status: 'submitted', answers: { q1: 'PRIVATE CHILD RESPONSE' }, started_at: '2026-09-25T00:00:00Z', expires_at: null, submitted_at: '2026-09-25T01:00:00Z', result: { objectiveCorrect: 0, objectiveTotal: 0, writtenPending: 1, writtenPoints: 0, writtenTotal: 2, percentage: null, summary: 'Awaiting review', gaps: [] }, parent_review: null, correction: null, correction_at: null, revision: 1, paper_snapshot: paper };
 const envs = ['ASSESSMENT_COMPOSIO_API_KEY', 'ASSESSMENT_GMAIL_ACCOUNT_ID', 'NOTION_TOKEN', 'ASSESSMENT_NOTION_DB_ID', 'ASSESSMENT_EMAIL_TO', 'ASSESSMENT_MS_CLIENT_ID', 'ASSESSMENT_MS_CLIENT_SECRET', 'ASSESSMENT_MS_REFRESH_TOKEN', 'RESEND_API_KEY', 'ASSESSMENT_EMAIL_FROM'];
@@ -133,6 +133,57 @@ describe('reminder eligibility', () => {
     expect(reminderPapers('2026-09-24', [exam], new Set())).toHaveLength(1);
     expect(reminderPapers('2026-09-28', [paper], new Set())).toHaveLength(1);
     expect(reminderPapers('2026-09-29', [paper], new Set())).toHaveLength(0);
+  });
+});
+
+describe('fair parent and learner reminders', () => {
+  function reminders(papers: Paper[], attempts: { paper_id: string; status: string }[] = []) {
+    mocks.select.mockImplementation((columns: string) => columns === '*'
+      ? { in: () => ({ lte: () => Promise.resolve({ data: papers, error: null }) }) }
+      : { in: () => ({ in: () => Promise.resolve({ data: attempts, error: null }) }) });
+  }
+  it('does not mark historical baseline papers overdue when first created after their due date in Sydney', () => {
+    // 14:30 UTC on Friday is already Saturday in Sydney.
+    const retroactive = { ...paper, created_at: '2026-09-25T14:30:00Z' };
+    const assignedInTime = { ...paper, id: 'on-time', created_at: '2026-09-25T13:30:00Z' };
+    expect(reminderPapers('2026-09-28', [retroactive, assignedInTime], new Set()).map(p => p.id)).toEqual(['on-time']);
+  });
+  it('accounts for Sydney daylight saving in historical assignment fairness', () => {
+    const retroactive = { ...paper, due_date: '2026-10-23', opens_on: '2026-10-23', created_at: '2026-10-23T13:30:00Z' };
+    expect(reminderPapers('2026-10-26', [retroactive], new Set())).toEqual([]);
+  });
+  it('queues separate approval and feedback digests without answers or already reviewed work', async () => {
+    const draft = { ...paper, id: 'exam-draft', kind: 'exam' as const, status: 'draft' as const, due_date: '2026-09-30', opens_on: '2026-09-24' };
+    const reviewed = { ...paper, id: 'already-reviewed', title: 'Already reviewed private title' };
+    reminders([paper, draft, reviewed], [{ paper_id: paper.id, status: 'submitted' }, { paper_id: reviewed.id, status: 'reviewed' }]);
+    await queueDueReminders('2026-09-25');
+    const jobs = mocks.upsert.mock.calls[0][0];
+    expect(jobs.map((j: { payload: { subject: string } }) => j.payload.subject)).toEqual(['Nihal: approve monthly exam papers', 'Nihal: review submitted learning work']);
+    expect(JSON.stringify(jobs)).not.toContain('Explain fractions');
+    expect(JSON.stringify(jobs)).not.toContain('PRIVATE CHILD RESPONSE');
+    expect(JSON.stringify(jobs)).not.toContain('Already reviewed private title');
+    expect(mocks.select).toHaveBeenCalledWith('paper_id,status');
+  });
+  it('sends no draft approval before the exam window, or after its due date', async () => {
+    const draft = { ...paper, id: 'exam-draft', kind: 'exam' as const, status: 'draft' as const, due_date: '2026-09-30', opens_on: '2026-09-01' };
+    reminders([draft]);
+    await queueDueReminders('2026-09-23');
+    await queueDueReminders('2026-10-01');
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+  it('reminds Nihal about submitted work on Monday and Friday only', async () => {
+    reminders([paper], [{ paper_id: paper.id, status: 'submitted' }]);
+    await queueDueReminders('2026-09-28');
+    expect(mocks.upsert.mock.calls[0][0][0].id).toBe('reminder-2026-09-28-parent-feedback');
+    mocks.upsert.mockClear();
+    await queueDueReminders('2026-09-29');
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+  it('keeps the same daily digest ID when another assignment is added', async () => {
+    reminders([paper]); await queueDueReminders('2026-09-25');
+    reminders([paper, { ...paper, id: 'second' }]); await queueDueReminders('2026-09-25');
+    expect(mocks.upsert.mock.calls[0][0][0].id).toBe(mocks.upsert.mock.calls[1][0][0].id);
+    expect(mocks.upsert.mock.calls[1][1].ignoreDuplicates).toBe(true);
   });
 });
 
