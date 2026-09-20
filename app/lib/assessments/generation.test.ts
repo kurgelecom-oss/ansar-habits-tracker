@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { coverageNote, curriculumFingerprint, generateExam, hasRecordedTopicDetail, monthWindow, validateExamQuestions } from './generation';
+import { balanceChoiceOptions, coverageNote, curriculumFingerprint, generateExam, hasRecordedTopicDetail, monthWindow, validateExamQuestions } from './generation';
 import type { Lesson, Question } from './types';
 const lessons: Lesson[] = [{ id: 'l1', date: '2026-09-14', subject: 'Maths', task: 'Khan Academy next lesson. A ship has 25 oars each side with 3 rowers each.', topic: 'Ships', week: 'Week 10', guide: [], url: '' }];
 const valid = (): Question[] => Array.from({ length: 12 }, (_, i) => ({ id: `q${i + 1}`, prompt: `Question ${i + 1}`, type: i < 8 ? 'choice' : 'written', sourceIds: ['l1'], explanation: 'Source-grounded explanation', ...(i < 8 ? { options: ['A', 'B', 'C', 'D'], answer: i % 4 } : { rubric: '0 missing, 1 partial, 2 clear and accurate' }) }));
@@ -50,6 +50,34 @@ describe('exam shape validation', () => {
   it('records coverage limitations and practical confirmation', () => {
     expect(coverageNote(lessons)).toContain('Khan mastery progress');
     expect(coverageNote([{ ...lessons[0], subject: 'Science' }])).toContain('recorded demonstration');
+  });
+});
+
+describe('answer-position balancing', () => {
+  it('puts each correct index in two slots while preserving keyed text and explanations', () => {
+    const input = valid().map(q => q.type === 'choice' ? { ...q, answer: 2, explanation: `Reasoning for ${q.id} is preserved.` } : q);
+    const original = JSON.stringify(input);
+    const result = balanceChoiceOptions(input, 'exam:2026-09:maths');
+    expect([0, 1, 2, 3].map(index => result.filter(q => q.type === 'choice' && q.answer === index).length)).toEqual([2, 2, 2, 2]);
+    for (let i = 0; i < 8; i++) {
+      expect(result[i].options![result[i].answer!]).toBe(input[i].options![input[i].answer!]);
+      expect(result[i].explanation).toBe(input[i].explanation);
+      expect([...result[i].options!].sort()).toEqual([...input[i].options!].sort());
+      expect(result[i].sourceIds).toEqual(input[i].sourceIds);
+    }
+    expect(result.slice(8)).toEqual(input.slice(8));
+    expect(JSON.stringify(input)).toBe(original);
+  });
+  it('is deterministic and idempotent per paper seed', () => {
+    const once = balanceChoiceOptions(valid(), 'exam:2026-09:science');
+    expect(balanceChoiceOptions(valid(), 'exam:2026-09:science')).toEqual(once);
+    expect(balanceChoiceOptions(once, 'exam:2026-09:science')).toEqual(once);
+    expect(balanceChoiceOptions(valid(), 'exam:2026-09:english').map(q => q.answer)).not.toEqual(once.map(q => q.answer));
+  });
+  it('rejects an incomplete or malformed choice bank', () => {
+    expect(() => balanceChoiceOptions(valid().slice(1), 'seed')).toThrow('eight');
+    const broken = valid(); broken[0].answer = 4;
+    expect(() => balanceChoiceOptions(broken, 'seed')).toThrow('invalid');
   });
 });
 
