@@ -1,0 +1,1016 @@
+{
+ "updated": "2026-09-24",
+ "source": "Wikipedia (CC BY-SA 4.0)",
+ "players": [
+  {
+   "id": "haaland",
+   "name": "Erling Haaland",
+   "flag": "🇳🇴",
+   "pos": "ST",
+   "lead": [
+    "Erling Braut Haaland is a Norwegian professional footballer who plays as a striker for Premier League club Manchester City and the Norway national team. Widely regarded as one of the best players in the world and the greatest Norwegian player of all time, he is known for his speed, strength, positioning, and finishing ability, especially from inside the penalty area."
+   ],
+   "early": [
+    "Erling Braut Haaland was born on 21 July 2000 in Leeds, West Yorkshire, England, while his father Alf-Inge Haaland was playing football for Leeds United. As a result, Haaland grew up as a supporter of Leeds. In 2004, at age three, he moved to Bryne, his parents' hometown in Norway.",
+    "His mother, Gry Marita Braut, was a national heptathlon champion in Norway in the 1990s. In addition to football, Haaland participated in various other sports as a child, including handball, golf, and track and field. He also reportedly achieved a world record in his age category for the standing long jump when he was five, with a recorded distance of 1.63 metres (5 ft 4 in)."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Erling_Haaland_Morocco_v_Norway_7_June_2026-51.jpg/500px-Erling_Haaland_Morocco_v_Norway_7_June_2026-51.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Erling_Haaland",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "mbappe",
+   "name": "Kylian Mbappé",
+   "flag": "🇫🇷",
+   "pos": "ST",
+   "lead": [
+    "Kylian Mbappé Lottin is a French professional footballer who plays as a forward for La Liga club Real Madrid and captains the France national team. Widely regarded as one of the best players in the world and one of the greatest French players of all time, he is known for his pace, dribbling, and finishing. Mbappé has scored over 400 goals in his senior career, ranking as the all-time top goalscorer for Paris Saint-Germain (256), the France national team (66), and the FIFA World Cup (22)."
+   ],
+   "early": [
+    "Kylian Mbappé Lottin was born on 20 December 1998 in the 19th arrondissement of Paris, and was raised in Bondy in the city's northeastern suburbs. His father, Wilfrid Mbappé, is a football coach who is originally from the Cameroonian island of Djébalè. His mother and agent, Fayza Lamari, is of Algerian Kabyle origin and is a former handball player. Mbappé has a younger brother, Ethan, who plays football for Lille. Their older adopted brother, Jirès Kembo Ekoko, is a former professional footballer.",
+    "As a child, Mbappé went to a private Catholic school in Bondy, where he was considered academically gifted but unruly. At 15, he began taking Spanish lessons, and eventually became fluent in the language. As a youth, Mbappé's favourite team was Real Madrid, and he also supported AC Milan. His football idols included Zinedine Zidane, Cristiano Ronaldo, Neymar, Ronaldinho, Lionel Messi, Ronaldo Nazario, Eden Hazard and Thierry Henry. In May 2024, days before his transfer to Real Madrid was announced, Mbappé said that he still follows AC Milan, and would like to play for them in the future."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/95/Kylian_Mbappe_France_v_Senegal_16_June_2026-391_%28cropped%29.jpg/500px-Kylian_Mbappe_France_v_Senegal_16_June_2026-391_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Kylian_Mbapp%C3%A9",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "yamal",
+   "name": "Lamine Yamal",
+   "flag": "🇪🇸",
+   "pos": "W",
+   "lead": [
+    "Lamine Yamal Nasraoui Ebana, commonly known as Lamine Yamal or simply Yamal, is a Spanish professional footballer who plays as a right winger for the La Liga club Barcelona and the Spain national team. He is widely regarded as one of the best players in the world."
+   ],
+   "early": [
+    "Lamine Yamal Nasraoui Ebana was born on 13 July 2007, in Esplugues de Llobregat in the Barcelona metropolitan area in Catalonia. Yamal's father, Mounir Nasraoui, is from a village between Larache and Ksar el-Kebir in Morocco. His mother, Sheila Ebana, is from Bata, Equatorial Guinea. Yamal has a younger half-brother and a younger half-sister. He has a compound given name to honour two family friends, Lamine and Yamal, who helped his parents financially shortly before Yamal was born. As a baby he was featured in a 2007 UNICEF charity photo shoot with his future club Barcelona, during which he was bathed by a 20-year-old Lionel Messi. The photos went viral online in 2024 after Yamal's father posted one of them online. Two years later, the photos received additional attention in the media as Yamal and Messi prepared to face each other in the 2026 FIFA World Cup final."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Lamine_Yamal_France_v_Spain_7.24.26-142.jpg/500px-Lamine_Yamal_France_v_Spain_7.24.26-142.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Lamine_Yamal",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "bellingham",
+   "name": "Jude Bellingham",
+   "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+   "pos": "AM",
+   "lead": [
+    "Jude Victor William Bellingham is an English professional footballer who plays as an attacking midfielder for La Liga club Real Madrid and the England national team. Regarded as one of the best players in the world, he is known for his dribbling, finishing and ball-winning ability."
+   ],
+   "early": [
+    "Jude Victor William Bellingham was born on 29 June 2003 in Stourbridge, in the county of West Midlands in England. He is the eldest son of Denise and Mark Bellingham. He is of Afro-Jamaican descent through his mother and Irish descent through his father. His paternal grandfather, William Bellingham, served in the British Army in Berlin before becoming a teacher and the head of modern foreign languages at Southend High School for Boys, and was a strong influence on Jude's patriotism and values. Jude's father was a sergeant in the West Midlands Police until 2022, and was a prolific goalscorer in non-League football. Jude's younger brother, Jobe, is also a footballer. Jude was privately educated at Priory School in Edgbaston, Birmingham. He graduated from Loughborough College with a BTEC level 3 certificate in sport in 2021. He grew up idolising Zinedine Zidane."
+   ],
+   "earlyHeading": "Early life and education",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/23/Jude_Bellingham_England_v_Ghana_23_June_2026-061_%28cropped%29.jpg/500px-Jude_Bellingham_England_v_Ghana_23_June_2026-061_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Jude_Bellingham",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "vinicius",
+   "name": "Vinícius Júnior",
+   "flag": "🇧🇷",
+   "pos": "W",
+   "lead": [
+    "Vinícius José Paixão de Oliveira Júnior, known mononymously as Vinícius, is a Brazilian professional footballer who plays as a forward for La Liga club Real Madrid and the Brazil national team. Considered one of the best players in the world, he is known for his pace, technique, and dribbling ability."
+   ],
+   "early": [
+    "His footballing career began in 2006, when his father took him to the branch offices of Flamengo, in the neighborhood of Mutuá, in São Gonçalo, where he lived. His club document described him as a left-back.",
+    "Hailing from a poor Catholic family, Vinícius went to live in Abolição with his uncle, Ulisses, to shorten the distance to Ninho do Urubu (the \"Vultures' Nest\"). He started to receive financial aid from Flamengo as well as aid from entrepreneurs.",
+    "Between 2007 and 2010, Vinícius attended futsal classes at Flamengo's school in São Gonçalo at the Canto do Rio, a famous club located in the centre of Niterói. Flamengo noted his potential, and he decided he wanted to play football, not futsal. In August 2010, Vinícius had a trial to play for the Flamengo youth team, and he accepted an invitation to play for their football team. Before, in 2009, when Vinícius was nine, he took a futsal trial for Flamengo, he was asked to come back the following year."
+   ],
+   "earlyHeading": "Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Vin%C3%ADcius_J%C3%BAnior_Brazil_V_Morocco_13_June_2026-207_%28cropped%29.jpg/500px-Vin%C3%ADcius_J%C3%BAnior_Brazil_V_Morocco_13_June_2026-207_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Vin%C3%ADcius_J%C3%BAnior",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "raphinha",
+   "name": "Raphinha",
+   "flag": "🇧🇷",
+   "pos": "W",
+   "lead": [
+    "Raphael Dias Belloli, known mononymously as Raphinha, is a Brazilian professional footballer who plays as a forward for La Liga club Barcelona, which he captains, and the Brazil national team. Considered one of the best players in the world, he is known for his pace, playmaking, work rate and finishing.",
+    "Raphinha began his career with Brazilian club Avaí, before signing for the Portuguese Vitória de Guimarães in 2016, where he made his professional debut. In 2018, he joined fellow Primeira Liga club Sporting CP, winning the double of the Taça de Portugal and Taça da Liga in 2019."
+   ],
+   "early": [
+    "Raphinha was born in Porto Alegre, Brazil, and grew up in Restinga, a favela far from the city centre. His father is of Italian descent and his mother is mixed-race Brazilian. His father was a jobbing musician who played in a samba band. Raphinha has described a difficult upbringing: he shared a bedroom with his parents, his younger brother and the family's pets, sometimes could not afford the travel to matches, and occasionally had to ask strangers for food.",
+    "When he was seven, Raphinha went to Ronaldinho's birthday party, where his father's band was playing; his father and uncles knew Ronaldinho, whom Raphinha now counts as a friend."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b4/Raphinha_Brazil_V_Morocco_13_June_2026-133_%28cropped%29.jpg/500px-Raphinha_Brazil_V_Morocco_13_June_2026-133_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Raphinha",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "salah",
+   "name": "Mohamed Salah",
+   "flag": "🇪🇬",
+   "pos": "W",
+   "lead": [
+    "Mohamed Salah Hamed Mahrous Ghaly is an Egyptian professional footballer who plays as a right winger for Süper Lig club Trabzonspor and captains the Egypt national team. He is widely regarded as one of the best players of his generation and one of the greatest wingers of all time. Dubbed the \"Egyptian King\", he is the all-time top foreign goalscorer in the Premier League and the all-time top African goalscorer in the UEFA Champions League."
+   ],
+   "early": [
+    "Salah played for both the Egypt national under-20 and under-23 team, representing Egypt in both the 2011 FIFA U-20 World Cup and the 2012 Summer Olympics, scoring a penalty against Argentina in the round of sixteen of the former tournament, with Egypt losing the match 2–1.",
+    "Salah was selected for the Egypt squad to play at the 2012 Summer Olympics scoring in all three of the team's group games. In their opening match on 26 July, he scored Egypt's second goal in a 3–2 defeat to Brazil. He scored the equaliser in their 1–1 draw against New Zealand on 29 July, before scoring Egypt's opening goal in a 3–1 win over Belarus in their final group stage game played on 1 August, securing advancement into the knockout stage of the tournament, where Egypt were eliminated following a 3–0 quarter-final defeat to Japan on 4 August."
+   ],
+   "earlyHeading": "Youth",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Mohamed_Salah_Argentina_v_Egypt_7_July_2026-163_%28cropped%29.jpg/500px-Mohamed_Salah_Argentina_v_Egypt_7_July_2026-163_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Mohamed_Salah",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "kane",
+   "name": "Harry Kane",
+   "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+   "pos": "ST",
+   "lead": [
+    "Harry Edward Kane is an English professional footballer who plays as a striker for Bundesliga club Bayern Munich and captains the England national team. He is regarded as one of the best players in the world, one of the best strikers of his generation, and one of England's greatest ever players. Kane has scored over 500 career goals for club and country, being Tottenham Hotspur's all-time top goalscorer (280), England's all-time top goalscorer (85), and the highest-scoring English player in the UEFA Champions League (54). He is also the Premier League's second-highest all-time goalscorer (213) and the seventh-highest goalscorer for Bayern Munich (152)."
+   ],
+   "early": [
+    "Harry Edward Kane was born on 28 July 1993 at Whipps Cross University Hospital in Leytonstone, London, the second son of Kim (née Hogg) and Patrick Kane, and has one older brother, Charlie. He has Irish ancestry through his father, who was born in Galway. The family lived in Walthamstow before moving to Chingford. Kane attended Larkswood Primary Academy until 2004, followed by Chingford Foundation School, which was also attended by David Beckham. He played football from a young age, joining the local Walthamstow club Ridgeway Rovers in 1999, when he was six. Kane spoke about football in his family:",
+    "I think the sporting genes come from my Mum's side of the family although the topic is a hot debate in the Kane household. Dad probably won't like me saying that, but I think my granddad Eric on my Mum's side was quite a good footballer, and played at a decent level."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a3/Harry_Kane_England_v_Ghana_23_June_2026-219_%28cropped%29.jpg/500px-Harry_Kane_England_v_Ghana_23_June_2026-219_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Harry_Kane",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "saka",
+   "name": "Bukayo Saka",
+   "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+   "pos": "W",
+   "lead": [
+    "Bukayo Ayoyinka Temidayo Moses Saka is an English professional footballer who plays as a right winger for Premier League club Arsenal and the England national team.",
+    "Saka has spent the entirety of his first-team club career with Arsenal, where he has won the Premier League, an FA Cup and three FA Community Shields, progressively becoming one of Arsenal's most influential players. Following both the 2020–21 and 2021–22 seasons, he was named as Arsenal's Player of the Season."
+   ],
+   "early": [
+    "Bukayo Ayoyinka Temidayo Moses Saka was born on 5 September 2001 in Ealing, London, to Yoruba Nigerian parents, Adenike and Yomi Saka, the younger of two children. His parents emigrated to London from Nigeria as economic migrants. He attended Edward Betham Church of England Primary School before Greenford High School, where he gained high grades in his GCSEs, achieving four A*s and three As. In an interview, Saka stated the importance of his father, Yomi, in his footballing career: \"He's a massive inspiration for me. From when I was young, he always kept me grounded, kept me humble.\"",
+    "Prior to joining Arsenal's academy, Saka played youth football for local club Greenford Celtic where he played against Michael Olise's grassroots football team."
+   ],
+   "earlyHeading": "Early life and education",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Bukayo_Saka_England_v_Ghana_23_June_2026-057_%28cropped%29.jpg/500px-Bukayo_Saka_England_v_Ghana_23_June_2026-057_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Bukayo_Saka",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "foden",
+   "name": "Phil Foden",
+   "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+   "pos": "AM",
+   "lead": [
+    "Philip Walter Foden is an English professional footballer who plays as a midfielder for Premier League club Manchester City and the England national team.",
+    "A product of Manchester City's youth academy, Foden's breakthrough into professional football came in 2017 when he won the FIFA U-17 World Cup Golden Ball award following England's successful Under-17 World Cup campaign. He made his debut for Manchester City during the same year and in December was named BBC Young Sports Personality of the Year."
+   ],
+   "early": [
+    "Philip Walter Foden, the son of Claire Foden, was born on 28 May 2000 in Stockport, Greater Manchester, and was a boyhood supporter of Manchester City. He joined the club at the age of eight and signed his Academy scholarship in July 2016. He was privately educated at St Bede's College, with his tuition fees being paid for by Manchester City. On 6 December 2016, City manager Pep Guardiola included Foden in the matchday squad for the UEFA Champions League group stage match with Celtic; he was an unused substitute in the 1–1 home draw."
+   ],
+   "earlyHeading": "Early life and career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/2023-10-04_Fu%C3%9Fball%2C_M%C3%A4nner%2C_UEFA_Champions_League%2C_RB_Leipzig_-_Manchester_City_FC_1DX_2613%2C_Phil_Foden.jpg/500px-2023-10-04_Fu%C3%9Fball%2C_M%C3%A4nner%2C_UEFA_Champions_League%2C_RB_Leipzig_-_Manchester_City_FC_1DX_2613%2C_Phil_Foden.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Phil_Foden",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "rodri",
+   "name": "Rodri",
+   "flag": "🇪🇸",
+   "pos": "DM",
+   "lead": [
+    "Rodrigo Hernández Cascante, known simply as Rodri or Rodrigo, is a Spanish professional footballer who plays as a defensive midfielder for La Liga club Barcelona and captains the Spain national team. Widely regarded as one of the best midfielders in the world, he is known for his passing, composure, playmaking and physical attributes. He is one of eleven players to have won the FIFA World Cup, UEFA Champions League, and Ballon d'Or in their career, and the only one to win the FIFA World Cup, FIFA Club World Cup, UEFA European Championship, UEFA Nations League, UEFA Champions League and the Best Player Award of each tournament."
+   ],
+   "early": [
+    "Rodrigo Hernández Cascante was born on 22 June 1996 in Madrid. He joined Atlético Madrid's youth setup in 2007 aged 11, from CF Rayo Majadahonda. Released in 2013 due to a \"lack of physical strength\", he subsequently signed with Villarreal.",
+    "On 7 February 2015, while still a junior, Rodri made his senior debut for the reserves, coming on as a late substitute in a 3–1 away win against RCD Espanyol B in the Segunda División B. He was handed his first start 15 days later, in a 2–0 victory at Real Zaragoza B.",
+    "Rodri made his first-team debut on 17 December 2015, starting in a 2–0 home win against SD Huesca for that season's Copa del Rey. His first La Liga appearance was on 17 April 2016, when he came on as a second-half substitute for Denis Suárez in a 2–1 away loss to Rayo Vallecano.",
+    "On 4 December 2017, having already established himself as a regular, Rodri renewed his contract until 2022. He scored his first goal in the Spanish top level on 18 February 2018, the opener in a 1–1 away draw against Espanyol."
+   ],
+   "earlyHeading": "Early life and career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/Rodri_Argentina_v_Spain_19_July_2026-187_%28cropped%29.jpg/500px-Rodri_Argentina_v_Spain_19_July_2026-187_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Rodri",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "pedri",
+   "name": "Pedri",
+   "flag": "🇪🇸",
+   "pos": "CM",
+   "lead": [
+    "Pedro González López, more commonly known as Pedri, is a Spanish professional footballer who plays as a midfielder for La Liga club Barcelona and the Spain national team. Known for his passing, distribution, ball-control and vision, he is regarded as one of the best midfielders in the world."
+   ],
+   "early": [
+    "Born in Bajamar, Tenerife, Canary Islands, Pedri's family moved to Tegueste, a nearby town, when he was three years old. His father, Fernando, played as a goalkeeper in his youth before taking over the family's restaurant. Pedri joined UD Tegueste, starting as a centre-back. At 13, Pedri signed for Laguna, where he played until 2018. Pedri was rejected by Real Madrid after a trial in 2018, where he was told he was not at their level. He was only able to train for a few days because of heavy snow, and based on those limited sessions, Real Madrid sent him home."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1c/Pedri_France_v_Spain_7.24.26-245.jpg/500px-Pedri_France_v_Spain_7.24.26-245.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Pedri",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "gavi",
+   "name": "Gavi",
+   "flag": "🇪🇸",
+   "pos": "CM",
+   "lead": [
+    "Pablo Martín Páez Gavira, known as Gavi, is a Spanish professional footballer who plays as a central midfielder for La Liga club Barcelona and the Spain national team."
+   ],
+   "early": [
+    "Gavi was born in Los Palacios y Villafranca, Sevilla, Andalusia."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Gavi_Argentina_v_Spain_19_July_2026-013.jpg/500px-Gavi_Argentina_v_Spain_19_July_2026-013.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Gavi_(footballer)",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "wirtz",
+   "name": "Florian Wirtz",
+   "flag": "🇩🇪",
+   "pos": "AM",
+   "lead": [
+    "Florian Richard Wirtz is a German professional footballer who plays as an attacking midfielder or left midfielder for Premier League club Liverpool and the Germany national team."
+   ],
+   "early": [
+    "Wirtz was born on 3 May 2003 in the Brauweiler district of Pulheim, North Rhine-Westphalia."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/70/Florian_Wirtz_Ecuador_v_Germany_25_June_2026-181_%28cropped%29.jpg/500px-Florian_Wirtz_Ecuador_v_Germany_25_June_2026-181_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Florian_Wirtz",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "musiala",
+   "name": "Jamal Musiala",
+   "flag": "🇩🇪",
+   "pos": "AM",
+   "lead": [
+    "Jamal Musiala is a German professional footballer who plays as an attacking midfielder for Bundesliga club Bayern Munich and the Germany national team. He is regarded as one of the best attacking midfielders in the world.",
+    "A senior international since 2021, Musiala has represented Germany at two UEFA European Championships (2020 and 2024) and two FIFA World Cups (2022 and 2026). He was the joint winner of Euro 2024's Golden Boot, with three goals in the tournament."
+   ],
+   "early": [
+    "Musiala was born in Stuttgart, Germany, to his Nigerian-British father Daniel Richard and German mother with Polish roots, Carolin Musiala. He lived in Fulda until age seven, before moving to England with his family, where he remained for the rest of his childhood. He went to primary school at the Corpus Christi School in New Malden, and represented the school on behalf of a succession of local football clubs, including Fulham, Brentford, and Wimbledon in the EFL Utilita Kids Cup, winning the competition twice. For secondary school, he went to the Whitgift School in Croydon. Musiala spent the last years of his childhood at Chelsea Academy where he met Michael Olise.",
+    "Musiala has played for both Germany and England national teams at youth level, and eventually pledged his allegiance to the German Football Association in February 2021. At age 16, Musiala and his mother returned to Germany for personal reasons and the impending Brexit."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Jamal_Musiala_Ecuador_v_Germany_25_June_2026-174_%28cropped%29.jpg/500px-Jamal_Musiala_Ecuador_v_Germany_25_June_2026-174_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Jamal_Musiala",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "debruyne",
+   "name": "Kevin De Bruyne",
+   "flag": "🇧🇪",
+   "pos": "CM",
+   "lead": [
+    "Kevin De Bruyne is a Belgian professional footballer who plays as a midfielder for Serie A club Napoli and the Belgium national team. Widely regarded as one of the greatest players of his generation and one of the best players in Premier League history, De Bruyne has been described as a \"complete\" footballer."
+   ],
+   "early": [],
+   "earlyHeading": "Starting out",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Kevin_De_Bruyne_USMNT_v_Belgium_Mar_28_2026-64_%28cropped%29.jpg/500px-Kevin_De_Bruyne_USMNT_v_Belgium_Mar_28_2026-64_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Kevin_De_Bruyne",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "brunofernandes",
+   "name": "Bruno Fernandes",
+   "flag": "🇵🇹",
+   "pos": "AM",
+   "lead": [
+    "Bruno Miguel Borges Fernandes is a Portuguese professional footballer who plays as an attacking midfielder for Premier League club Manchester United, which he captains, and the Portugal national team. He is widely regarded as one of the best attacking midfielders in the world."
+   ],
+   "early": [
+    "Fernandes was born in Maia, Metropolitan Area of Porto. Growing up, he supported Boavista and Manchester United. During his childhood, Fernandes used to play football on the streets with his older brother Ricardo, who was also a professional football player. His father, who had emigrated to Switzerland, wanted Fernandes to move with him, but he refused, due to the standard of Swiss football at the time."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/Bruno_Fernandes_USMNT_v_Portugal_Mar_31_2026-27_%28cropped%29.jpg/500px-Bruno_Fernandes_USMNT_v_Portugal_Mar_31_2026-27_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Bruno_Fernandes",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "odegaard",
+   "name": "Martin Ødegaard",
+   "flag": "🇳🇴",
+   "pos": "AM",
+   "lead": [
+    "Martin Ødegaard is a Norwegian professional footballer who plays as a midfielder for and captains both Premier League club Arsenal and the Norway national team."
+   ],
+   "early": [
+    "Martin Ødegaard was born on 17 December 1998, in Drammen, Buskerud. He spent his first years in the local sports club Drammen Strong. His father, Hans Erik Ødegaard, a former footballer, co-founded a football section in the club, and became the coach of his son's team. In 2005, when Ødegaard was six, his parents and others each invested 50,000 kroner so that the local club could refit their gravel field, Kjappen, with artificial turf. This has been cited as crucial for his development, as Ødegaard spent countless hours on the field.",
+    "Drammen Strong was twice selected by Ødegaard to receive a prize of 50,000 kroner (€5,800), when the young player was given the Statoil talent award for April 2014 and for the 2014 season. Later, in 2015, Drammen Strong received 250,000 kroner, equivalent to approximately €29,000, as a gift from Strømsgodset Toppfotball when Ødegaard was sold to Real Madrid."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Martin_Odegaard_France_v_Norway_26_June_26-014.jpg/500px-Martin_Odegaard_France_v_Norway_26_June_26-014.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Martin_%C3%98degaard",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "rice",
+   "name": "Declan Rice",
+   "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+   "pos": "DM",
+   "lead": [
+    "Declan Rice is an English professional footballer who plays as a defensive midfielder for Premier League club Arsenal and the England national team. Known for his versatility, stamina, ball-carrying and tackling, he is considered one of the best midfielders in the world."
+   ],
+   "early": [
+    "Declan Rice was born on 14 January 1999 in Kingston upon Thames, London, to father Sean and mother Stephanie. He has two older brothers, Connor and Jordan. His paternal grandparents were from Douglas, County Cork, in Ireland. He began playing football at Dickerage Lane Adventure Playground in Kingston.",
+    "In 2006, he joined the Chelsea Academy as a seven-year-old, where he befriended future England teammate Mason Mount. In 2013, after his release at age 14, he joined the West Ham United Academy after a trial period in the spring. Academy coach Trevor Bumstead stated it was Rice's determination and persistence that helped him break through the ranks at West Ham. Rice won the Premier League Cup in 2016 with the under-21s and the Premier League 2 Division 2 in 2020 with the under-23s."
+   ],
+   "earlyHeading": "Early life and career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Declan_Rice_England_v_Ghana_23_June_2026-150.jpg/500px-Declan_Rice_England_v_Ghana_23_June_2026-150.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Declan_Rice",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "palmer",
+   "name": "Cole Palmer",
+   "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+   "pos": "AM",
+   "lead": [
+    "Cole Jermaine Palmer is an English professional footballer who plays as an attacking midfielder or winger for Premier League club Chelsea and the England national team. He is known for his dribbling, shooting and passing ability."
+   ],
+   "early": [
+    "Cole Jermaine Palmer was born on 6 May 2002 in Wythenshawe, Manchester. He and his sister were raised by a dental engineer father and a dyslexia assessor mother. Palmer's father played Sunday league football for nearly two decades, and Palmer regularly watched him. Growing up in Wythenshawe, he started playing football in his local grassroots club NJ Wythenshawe.",
+    "Palmer attended Gatley Primary School in Stockport, and was later privately educated at St Bede's College in partnership with the Manchester City Academy."
+   ],
+   "earlyHeading": "Early life and education",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Cole_Palmer_2025_FIFA_Club_World_Cup_Final.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+   "source": "https://en.wikipedia.org/wiki/Cole_Palmer",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "valverde",
+   "name": "Federico Valverde",
+   "flag": "🇺🇾",
+   "pos": "CM",
+   "lead": [
+    "Federico Santiago Valverde Dipetta is a Uruguayan professional footballer who plays as a central midfielder for La Liga club Real Madrid, which he captains and the Uruguay national team. Considered one of the best midfielders in the world, he is known for his versatility, work rate, pace and shooting. Valverde mainly plays as a central midfielder but is also able to play as a right-back."
+   ],
+   "early": [
+    "Valverde was born on 22 July 1998 in Unión, a neighbourhood in the capital city of Montevideo, to Julio Valverde and Doris Dipetta. He has one older brother, Diego, and two step-brothers, Pablo and Matías Castro. Valverde is of Spanish and Italian descent and became a naturalised Spanish citizen in 2020 after receiving his Spanish passport. Valverde started his youth career with his local neighbourhood club, Estudiantes de la Unión. He then tried out for Peñarol a few years later and was scouted by Néstor Gonçalves."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Federico_Valverde_2021_%28cropped%29.jpg/500px-Federico_Valverde_2021_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Federico_Valverde",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "tchouameni",
+   "name": "Aurélien Tchouaméni",
+   "flag": "🇫🇷",
+   "pos": "DM",
+   "lead": [
+    "Aurélien Djani Tchouaméni is a French professional footballer who plays as a defensive midfielder or a centre-back for La Liga club Real Madrid and the France national team.",
+    "Tchouaméni began his senior career with Bordeaux before joining Monaco in 2020. He developed into one of the leading midfielders in Ligue 1 before signing for Real Madrid in 2022. With Madrid, he has won several domestic and international honours, including La Liga, the UEFA Champions League, the Copa del Rey and the FIFA Club World Cup."
+   ],
+   "early": [
+    "Aurélien Djani Tchouaméni was born on 27 January 2000 in Rouen, Seine-Maritime, and grew up in Bordeaux, Gironde. He is of Cameroonian descent. He acquired French nationality on 19 December 2000 through the collective effect of his parents' naturalization."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Aurelien_Tchouameni_France_v_Senegal_16_June_2026-447_%28cropped%29.jpg/500px-Aurelien_Tchouameni_France_v_Senegal_16_June_2026-447_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Aur%C3%A9lien_Tchouam%C3%A9ni",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "camavinga",
+   "name": "Eduardo Camavinga",
+   "flag": "🇫🇷",
+   "pos": "CM",
+   "lead": [
+    "Eduardo Celmi Camavinga is a professional footballer who plays as a central midfielder and occasionally as a left-back for La Liga club Real Madrid. Born in Angola, he plays for the France national team.",
+    "Camavinga began his career in Ligue 1 with Rennes, making his senior debut at the age of 16, and quickly established himself as a regular first-team player. In 2021, he signed for Real Madrid for a fee of €31 million, and over the following seasons, he helped the club win two La Liga–Champions League doubles in 2022 and 2024."
+   ],
+   "early": [
+    "Camavinga was born in a refugee camp in Cabinda, Angola in 2002. His parents, Celestino Camavinga and Sofia Simão, had fled the civil war in Congo before his birth to a refugee camp in Miconge. He has five siblings. His family moved to France when he was two. They eventually settled in Fougères, where he grew up. He did judo for a time before giving it up to focus solely on football. In 2013, the Camavingas' house was burnt down, destroying most of the family's property. Camavinga stated that this was a source of motivation that pushed him to pursue a career in football and help his family.",
+    "On 7 July 2020, he obtained the Baccalauréat ES (Economic and Social) without mention."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Ofrenda_de_la_Liga_y_la_Champions-13-L.Mill%C3%A1n_%2852109790215%29_%28cropped%29.jpg/500px-Ofrenda_de_la_Liga_y_la_Champions-13-L.Mill%C3%A1n_%2852109790215%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Eduardo_Camavinga",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "guler",
+   "name": "Arda Güler",
+   "flag": "🇹🇷",
+   "pos": "AM",
+   "lead": [
+    "Arda Güler is a Turkish professional footballer who primarily plays as an attacking midfielder for La Liga club Real Madrid and the Turkey national team. He is regarded as one of the best young players in the world.",
+    "Güler began his senior career with the Turkish club Fenerbahçe in 2021, where he won the Turkish Cup in 2023. In 2023, Güler signed with Real Madrid. In his inaugural season with the Spanish giants, he won La Liga and the UEFA Champions League."
+   ],
+   "early": [
+    "Güler started his youth career at Ankara-based club Gençlerbirliği in 2014. Arda Güler was discovered by Fenerbahçe on 20 February 2019, when he was only 13 years old, and was included in the youth squad. Güler, who has played in all of the Fenerbahçe youth teams including U-15, U-16 and U-19, first started playing for the Fenerbahçe U-15 team in the 2018-19 season, and was taken to the U-16 team in 2020 and the U19 team in 2021. He contributed 7 goals and 4 assists in 18 matches for the Fenerbahçe U-19 team. He made 3 goals and 1 assist in the U-19 Play-Off quarterfinal match, and thus attracted attention as the top scorer in that season's Play-Off."
+   ],
+   "earlyHeading": "Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9f/Arda_G%C3%BCler_2025.jpg/500px-Arda_G%C3%BCler_2025.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Arda_G%C3%BCler",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "leao",
+   "name": "Rafael Leão",
+   "flag": "🇵🇹",
+   "pos": "W",
+   "lead": [
+    "Rafael \"Rafa\" Alexandre da Conceição Leão is a Portuguese professional footballer who plays as a left winger for Süper Lig club Galatasaray and the Portugal national team. He is known for his dribbling and speed."
+   ],
+   "early": [
+    "Leão was born on (1999-06-10)10 June 1999 in Seixal, Portugal, a city located in the Lisbon Metropolitan Area. The son of an Angolan father and a São Toméan mother who met in mainland Portugal, he was raised in Amora and has three siblings. His paternal surname means \"lion\" in the Portuguese language."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/0/02/RafaelLe%C3%A3oPortugal23.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+   "source": "https://en.wikipedia.org/wiki/Rafael_Le%C3%A3o",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "kvaratskhelia",
+   "name": "Khvicha Kvaratskhelia",
+   "flag": "🇬🇪",
+   "pos": "W",
+   "lead": [
+    "Khvicha Kvaratskhelia () is a Georgian professional footballer who plays as a left winger for Ligue 1 club Paris Saint-Germain and captains the Georgia national team. Regarded as one of the best players in the world and as the greatest Georgian player of all time, he is known for his dribbling, agility, and playmaking.",
+    "Kvaratskhelia started his senior career playing for Dinamo Tbilisi at age 16, before departing to Rustavi where he spent half a season. During his combined three-year tenure at Lokomotiv Moscow and Rubin Kazan, Kvaratskhelia won two consecutive Russian Premier League Best Young Player awards."
+   ],
+   "early": [
+    "Coming through the youth system, Kvaratskhelia began his senior career at Dinamo Tbilisi in 2017, making his senior debut against Kolkheti-1913, coming on as a 62nd-minute substitute in a 1–1 draw on 29 September 2017. In total, Kvaratskhelia made five appearances in all competitions for Dinamo Tbilisi, scoring his first goal in a 1–0 win away to Shukura Kobuleti on 19 November 2017.",
+    "In March 2018, Kvaratskhelia left Dinamo Tbilisi as a result of a contract dispute and subsequently signed for Rustavi on a free transfer. In April 2018, Kvaratskhelia was the subject of interest from German champions Bayern Munich and was in attendance for Bayern's 0–0 draw against Sevilla in the UEFA Champions League quarter-final. During the 2018 Erovnuli Liga season, Kvaratskhelia scored three goals across 18 appearances for Rustavi.",
+    "In 2018, The Guardian named Kvaratskhelia among 60 best young players worldwide."
+   ],
+   "earlyHeading": "Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Kvaratskhelia_asse_psg_2425.png/500px-Kvaratskhelia_asse_psg_2425.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Khvicha_Kvaratskhelia",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "lautaro",
+   "name": "Lautaro Martínez",
+   "flag": "🇦🇷",
+   "pos": "ST",
+   "lead": [
+    "Lautaro Javier Martínez is an Argentine professional footballer who plays as a striker for Serie A club Inter Milan, which he captains, and the Argentina national team. Known for his work rate, clinical finishing, and tactical ability, he is widely regarded as one of the best strikers in the world."
+   ],
+   "early": [
+    "Martínez was born in Bahía Blanca. He followed in his father's footsteps to become a professional footballer, joining local side Liniers, with whom he excelled at U–17 level. In 2013, he scored 13 goals in the U–17 league and netted in the final of the National Cup, though Liniers ultimately lost on penalties to Rosario."
+   ],
+   "earlyHeading": "Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e9/Lautaro_Martinez_Argentina_v_Spain_19_July_2026-049_%28cropped%29.jpg/500px-Lautaro_Martinez_Argentina_v_Spain_19_July_2026-049_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Lautaro_Mart%C3%ADnez",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "alvarez",
+   "name": "Julián Álvarez",
+   "flag": "🇦🇷",
+   "pos": "ST",
+   "lead": [
+    "Julián Alvarez is an Argentine professional footballer who plays as a forward for La Liga club Atlético Madrid and the Argentina national team. He is considered one of the best strikers in the world."
+   ],
+   "early": [
+    "In 2018, Alvarez was selected by the Argentina U-20s to train against the senior team at the 2018 FIFA World Cup. In December, Alvarez was picked for the 2019 South American U-20 Championship. In preparation for the 2019 FIFA U-20 World Cup, he scored the second goal against Saudi Arabia in what was a 5–0 victory, during a friendly tournament played in Spain. After that, he received a call-up from Fernando Batista for the 2019 FIFA U-20 World Cup in May 2019. Four matches and one goal, versus South Africa, arrived for him in Poland. Batista subsequently called Alvarez up for the Olympic Team in the succeeding September, which preceded his selection for the 2020 CONMEBOL Pre-Olympic Tournament; which Argentina won, with Alvarez scoring once (versus Venezuela) in seven matches."
+   ],
+   "earlyHeading": "2018–2020: Youth career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/Julian_Alvarez_Argentina_v_Spain_19_July_2026-052_%28cropped%29.jpg/500px-Julian_Alvarez_Argentina_v_Spain_19_July_2026-052_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Juli%C3%A1n_Alvarez",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "macallister",
+   "name": "Alexis Mac Allister",
+   "flag": "🇦🇷",
+   "pos": "CM",
+   "lead": [
+    "Alexis Mac Allister is an Argentine professional footballer who plays as a midfielder for Premier League club Liverpool and the Argentina national team. He has been praised for his passing range, tactical awareness, and ability to control the tempo of play."
+   ],
+   "early": [
+    "Soon after debuting for Argentinos, Mac Allister received a call-up from Claudio Úbeda for the Argentina under-20s. He was selected for the senior team for the first time in August 2019, ahead of friendlies in the United States in September versus Chile and Mexico. His international bow arrived in the match with Chile at the Los Angeles Coliseum on 5 September.",
+    "On 1 July 2021, Mac Allister was named in the Argentine Olympic squad for the 2020 Summer Olympics in Tokyo, taking place in 2021 due to the previous year's postponement as a result of the COVID-19 pandemic. He played in Argentina's opening game against Australia starting the match, playing 78 minutes of a 2–0 defeat at the Sapporo Dome on 22 July. He started the next two group games, a 1–0 victory over Egypt on 25 July again being played in the Sapporo Dome and a 1–1 draw with Spain on 28 July at the Saitama Stadium in Midori-ku, Saitama. Argentina were eliminated finishing third in their group on goal difference."
+   ],
+   "earlyHeading": "Youth career, senior debut, and 2020 Summer Olympics",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/db/Alexis_Mac_Allister_Argentina_v_Spain_19_July_2026-162_%28cropped%29.jpg/500px-Alexis_Mac_Allister_Argentina_v_Spain_19_July_2026-162_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Alexis_Mac_Allister",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "enzo",
+   "name": "Enzo Fernández",
+   "flag": "🇦🇷",
+   "pos": "CM",
+   "lead": [
+    "Enzo Jeremías Fernández is an Argentine professional footballer who plays as a midfielder for Premier League club Manchester City and the Argentina national team."
+   ],
+   "early": [
+    "Born in San Martín, Buenos Aires, to Raúl and Marta; Fernández has four brothers, Seba, Rodri, Maxi and Gonza. He was introduced to football at a young age, playing for a local side called Club La Recova, before joining River Plate. It is unclear exactly when Fernández joined River Plate; in November 2019, in an interview for the River Plate website, he claimed to have joined the academy in 2005, in September 2020, Argentine newspaper Clarín reported that he joined River in 2006, while in February 2023, he claimed he was six when he joined in an interview for the Chelsea website, which would have most likely been in 2007."
+   ],
+   "earlyHeading": "Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Enzo_Fernandez_Argentina_v_Spain_19_July_2026-050_%28cropped%29.jpg/500px-Enzo_Fernandez_Argentina_v_Spain_19_July_2026-050_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Enzo_Fern%C3%A1ndez",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "vandijk",
+   "name": "Virgil van Dijk",
+   "flag": "🇳🇱",
+   "pos": "CB",
+   "lead": [
+    "Virgil van Dijk is a Dutch professional footballer who plays as a centre-back for and captains both Premier League club Liverpool and the Netherlands national team. Widely regarded as one of the best defenders of his generation, and one of the greatest defenders in Premier League history, he is known for his strength, leadership, speed and aerial ability."
+   ],
+   "early": [
+    "Virgil van Dijk was born on 8 July 1991 in Breda, North Brabant, to a Dutch father, Ron van Dijk, and a Surinamese mother, Hellen Chin Fo Sieeuw, who is Afro-Surinamese and of part Chinese descent. The Chinese surname Chin Fo Sieeuw derives from the given name of his maternal great-grandfather, Chin Fo Sieeuw (Chinese: 陳火秀, romanised: Chén Huǒxiù), who emigrated from Guangdong to Suriname around 1920. He has a younger brother and sister, who are two and ten years younger than him respectively.",
+    "Van Dijk grew up in Kesteren, in the Haagse Beemden district of Breda. His father left the family when he was 11 years old. Van Dijk first lived with his father for a while before making the choice to go back to live with his mother, after which his father broke off contact."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/20160604_AUT_NED_8876_%28cropped%29.jpg/500px-20160604_AUT_NED_8876_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Virgil_van_Dijk",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "saliba",
+   "name": "William Saliba",
+   "flag": "🇫🇷",
+   "pos": "CB",
+   "lead": [
+    "William Alain André Gabriel Saliba is a French professional footballer who plays as a centre-back for Premier League club Arsenal and the France national team. Considered one of the best defenders in the world, he is known for his strength, pace, tackling, and composure.",
+    "Saliba began his career in 2018 with Saint-Étienne, helping them qualify for the UEFA Europa League. Saliba joined Arsenal in 2019 in a transfer for a reported fee of £27 million. After consecutive loan spells with Saint-Étienne, Nice and Marseille between 2019 and 2022, Saliba has become a first-team regular at Arsenal."
+   ],
+   "early": [
+    "William Alain André Gabriel Saliba was born on 24 March 2001 in Bondy, a commune in the northeastern suburbs of Paris in the department of Seine-Saint-Denis, to a Lebanese father and a Cameroonian mother. He began playing football at the age of six for local team AS Bondy, where he was coached by the father of Kylian Mbappé."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c2/William_Saliba_France_v_Senegal_16_June_2026-336_%28cropped%29.jpg/500px-William_Saliba_France_v_Senegal_16_June_2026-336_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/William_Saliba",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "hakimi",
+   "name": "Achraf Hakimi",
+   "flag": "🇲🇦",
+   "pos": "FB",
+   "lead": [
+    "Achraf Hakimi Mouh is a professional footballer who plays as a right-back for Ligue 1 club Paris Saint-Germain and captains the Morocco national team. Known for his attacking prowess and strong defensive contribution, he is widely regarded as one of the best right-backs in the world, and is the African player with the most European titles."
+   ],
+   "early": [
+    "Hakimi was born on 4 November 1998, in Madrid, Spain, to Moroccan parents of Arab descent. His father Mohamed, from Oued Zem, was a street vendor, and his mother Saida, from Ksar el-Kebir, worked as a housewife. Hakimi grew up in Getafe belonging to the Community of Madrid, where his family faced economic challenges. At the age of 8, Hakimi joined CD Colonia Ofigevi, a local football club, where he began his football journey. His talent was quickly noticed, and in 2006, he joined Real Madrid's youth academy. He spent several years developing his skills in the academy, initially playing as a winger before transitioning to his more familiar role as a right-back. Hakimi has stated that although he was raised in Spain, he grew up in a household shaped by Arab and Muslim culture, which later influenced his decision to represent Morocco at international level."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/Achraf_Hakimi_Morocco_v_Norway_7_June_2026-16.jpg/500px-Achraf_Hakimi_Morocco_v_Norway_7_June_2026-16.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Achraf_Hakimi",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "kimmich",
+   "name": "Joshua Kimmich",
+   "flag": "🇩🇪",
+   "pos": "DM",
+   "lead": [
+    "Joshua Walter Kimmich is a German professional footballer who plays as a defensive midfielder or right-back for Bundesliga club Bayern Munich and captains the Germany national team. Known for his versatility, aggression and playmaking ability, he has been compared with former Bayern Munich and Germany captain Philipp Lahm."
+   ],
+   "early": [
+    "Kimmich played youth football for VfB Stuttgart. He joined RB Leipzig on loan in July 2013 in search of playing time, as Stuttgart were reluctant to promote him from the youth to the reserve team. Stuttgart secured an option to rebuy. He made his 3. Liga debut for the club on 28 September of that year, as a substitute for Thiago Rockenbach in a 2–2 draw with SpVgg Unterhaching. He scored his first professional goal in a 3–2 victory over 1. FC Saarbrücken on 30 November 2013. He finished the 2013–14 season with one goal in 26 appearances.",
+    "Kimmich scored his first goal of the 2014–15 season in a 3–2 victory against Union Berlin on 1 March 2015. He finished the 2014–15 season with two goals in 29 appearances.",
+    "Kimmich left the club with a tally of three goals in 53 league appearances for the club."
+   ],
+   "earlyHeading": "Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Joshua_Kimmich_Ecuador_v_Germany_25_June_2026-149.jpg/500px-Joshua_Kimmich_Ecuador_v_Germany_25_June_2026-149.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Joshua_Kimmich",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "alisson",
+   "name": "Alisson Becker",
+   "flag": "🇧🇷",
+   "pos": "GK",
+   "lead": [
+    "Álisson Ramsés Becker, also known simply as Alisson, is a Brazilian professional footballer who plays as a goalkeeper and serves as vice-captain for Premier League club Liverpool and the Brazil national team. He is regarded as one of the best goalkeepers in the world."
+   ],
+   "early": [],
+   "earlyHeading": "Starting out",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Alisson_Becker_Brazil_V_Morocco_13_June_2026-117_%28cropped%29.jpg/500px-Alisson_Becker_Brazil_V_Morocco_13_June_2026-117_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Alisson_Becker",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "courtois",
+   "name": "Thibaut Courtois",
+   "flag": "🇧🇪",
+   "pos": "GK",
+   "lead": [
+    "Thibaut Nicolas Marc Courtois is a Belgian professional footballer who plays as a goalkeeper for La Liga club Real Madrid and the Belgium national team. He is regarded as one of the greatest goalkeepers of all time."
+   ],
+   "early": [
+    "Courtois was born in the city of Bree in Flanders, to a Walloon father and a Flemish mother. He began his career with local side Bilzen V.V., as a left back. Soon after, in 1999, he joined Racing Genk at the age of seven, and it was there that he was converted into a goalkeeper.",
+    "Courtois progressed through the Genk youth system, where Koen Casteels was initially regarded as the primary goalkeeper, but during an injury crisis Courtois, aged 16 years and 341 days, made his first team debut on 17 April 2009 against Gent. After turning down a transfer to TSG Hoffenheim of the Bundesliga, Courtois was made first-choice goalkeeper for the 2010–11 season ahead of Casteels, when Laszlo Koteles' registration ran into issues.",
+    "He was a key figure in Genk's title victory in the 2010–11 season in the Belgian Pro League. He received the Goalkeeper of the Year and Genk's Player of the Year award, only conceding 32 goals over the course of 40 league matches and keeping 14 clean sheets for Genk."
+   ],
+   "earlyHeading": "Early career at Genk",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Thibaut_Courtois_Belgium_v_USA_6_July_2026-076_%28cropped%29.jpg/500px-Thibaut_Courtois_Belgium_v_USA_6_July_2026-076_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Thibaut_Courtois",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "son",
+   "name": "Son Heung-min",
+   "flag": "🇰🇷",
+   "pos": "W",
+   "lead": [
+    "Son Heung-min is a South Korean professional footballer who plays as a left winger for Major League Soccer club Los Angeles FC and captains the South Korea national team. Known for his speed, finishing, two-footedness, and ability to link play, he is the top Asian goalscorer in both Premier League and UEFA Champions League history, and is widely regarded as the greatest Asian player of all time."
+   ],
+   "early": [
+    "Son Heung-min was born in Chuncheon, South Korea. He is of the Miryang Son clan. His father, Son Woong-jung, is a retired footballer turned manager who once played for the South Korea national B team.",
+    "Son came through the academy at FC Seoul, the same club that former Spurs defender Lee Young-pyo played for. Son was a ball boy in an FC Seoul home match in 2008 when he was a FC Seoul youth player. At that time, his role model was midfielder Lee Chung-yong, who played for Crystal Palace and Bolton Wanderers. Apart from his native language Korean, Son is also fluent in German and English. His agent Thies Bliemeister said Son was so determined to succeed in Europe that he learned German by watching episodes of SpongeBob SquarePants."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/BFA_2023_-2_Heung-Min_Son_%28cropped%29.jpg/500px-BFA_2023_-2_Heung-Min_Son_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Son_Heung-min",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "griezmann",
+   "name": "Antoine Griezmann",
+   "flag": "🇫🇷",
+   "pos": "AM",
+   "lead": [
+    "Antoine Griezmann is a French professional footballer who plays as a forward or attacking midfielder for Major League Soccer club Orlando City. Considered to be one of the best players of his generation, he is primarily known for his versatility, game intelligence, attacking output, and off-ball attributes."
+   ],
+   "early": [
+    "Antoine Griezmann was born on 21 March 1991 in the commune of Mâcon in the department of Saône-et-Loire. His father, Alain Griezmann, a town councillor, has distant German and Luxembourgish ancestry. The German ancestor, the father's great-great-grandfather, named Emmerich Grieszmann, migrated to France from Münster in the early 19th century. He was a basket maker and married to Maria Haas from Kehlen, Luxembourg. The family surname was originally spelled \"Grieszmann\", before being changed to \"Griezmann\". Griezmann's mother, Isabelle Lopes, a former hospital staff member supervising the cleaning team, is of Portuguese descent, and her father Amaro Lopes was a Portuguese footballer for Paços de Ferreira. Amaro Lopes moved from Portugal to France with his wife Carolina to work in construction in 1957, where Isabelle was born, and he died in 1992 when his grandson was an infant. As a child, Griezmann often spent his holidays in Paços de Ferreira, Portugal."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6e/FRA-ARG_%2810%29_%28cropped%29.jpg/500px-FRA-ARG_%2810%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Antoine_Griezmann",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "dembele",
+   "name": "Ousmane Dembélé",
+   "flag": "🇫🇷",
+   "pos": "W",
+   "lead": [
+    "Masour Ousmane Dembélé is a French professional footballer who plays as a forward and right winger for Ligue 1 club Paris Saint-Germain and the France national team. Regarded as one of the best players in the world, he is one of eleven players to have won the FIFA World Cup, UEFA Champions League, and Ballon d'Or during their career."
+   ],
+   "early": [
+    "Masour Ousmane Dembélé was born on 15 May 1997 in Vernon, Eure. His mother is Mauritanian-Senegalese from Waly Diantang, while his father is Malian. He took his first footballing steps in nearby Évreux, first at ALM Évreux and then at Évreux FC 27 between the ages of 12 and 13."
+   ],
+   "earlyHeading": "Early life and career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Ousmane_Dembele_France_v_Senegal_16_June_2026-341_%28cropped%29_2.jpg/500px-Ousmane_Dembele_France_v_Senegal_16_June_2026-341_%28cropped%29_2.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Ousmane_Demb%C3%A9l%C3%A9",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "doue",
+   "name": "Désiré Doué",
+   "flag": "🇫🇷",
+   "pos": "W",
+   "lead": [
+    "Désiré Nonka-Maho Doué is a French professional footballer who plays as an attacking midfielder or winger for Ligue 1 club Paris Saint-Germain and the France national team. He is considered one of the best young players in the world."
+   ],
+   "early": [],
+   "earlyHeading": "Starting out",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/Desire_Doue_France_v_Senegal_16_June_2026-264.jpg/500px-Desire_Doue_France_v_Senegal_16_June_2026-264.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/D%C3%A9sir%C3%A9_Dou%C3%A9",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "joaoneves",
+   "name": "João Neves",
+   "flag": "🇵🇹",
+   "pos": "CM",
+   "lead": [
+    "João Pedro Gonçalves Neves is a Portuguese professional footballer who plays as a midfielder for Ligue 1 club Paris Saint-Germain and the Portugal national team. Primarily a central midfielder, Neves is also able to play as a defensive midfielder and occasionally a right-back. He is regarded as one of the best young players in the world."
+   ],
+   "early": [
+    "Born in Tavira, Neves began his youth career with hometown club Casa Benfica Tavira, one of Benfica's feeder clubs, he then spent four seasons in Benfica's development centre in Algarve, before moving to Benfica's main academy in 2016. Neves signed his first professional contract with S.L Benfica in December 2020."
+   ],
+   "earlyHeading": "Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/be/Joao_Neves_Croatia_v_Portugal_2_July_2026-102.jpg/500px-Joao_Neves_Croatia_v_Portugal_2_July_2026-102.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Jo%C3%A3o_Neves",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "vitinha",
+   "name": "Vitinha",
+   "flag": "🇵🇹",
+   "pos": "CM",
+   "lead": [
+    "Vítor Machado Ferreira, known as Vitinha (Portuguese pronunciation: [viˈtiɲɐ]), is a Portuguese professional footballer who plays as a defensive midfielder for Ligue 1 club Paris Saint-Germain and the Portugal national team. Considered one of the best midfielders in the world, he is known for his ball control, work rate, and playmaking abilities."
+   ],
+   "early": [
+    "Vitinha was born in Santo Tirso, Porto District. He started playing football at Aves, where his father formerly played for the club, before moving to Pinheirinhos de Ringe, where he played alongside goalkeeper and future international teammate Diogo Costa. After going through some training sessions with Benfica, he was integrated into one of Benfica's feeder club Póvoa de Lanhoso, where he stayed for three years. Despite Sporting CP being interested in him, Vitinha ended up joining the youth ranks of Porto two years later, aged eleven, being subsequently loaned to Padroense for a season.",
+    "He made his LigaPro debut for the reserve team on 11 August 2019 in a game against Covilhã. He was also part of Porto's squad that won the 2018–19 UEFA Youth League. On 28 January 2020, Vitinha made his first appearance for the first team, coming on as a substitute for Wilson Manafá in the 61st minute in a match against Gil Vicente. He made a total of eight appearances as the club won the league title."
+   ],
+   "earlyHeading": "2019–20: Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Vitinha_USMNT_v_Portugal_Mar_31_2026-50_%28cropped%29.jpg/500px-Vitinha_USMNT_v_Portugal_Mar_31_2026-50_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Vitinha",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "nicowilliams",
+   "name": "Nico Williams",
+   "flag": "🇪🇸",
+   "pos": "W",
+   "lead": [
+    "Nicholas Williams Arthuer is a Spanish professional footballer who plays as a winger for La Liga club Athletic Bilbao and the Spain national team. He is recognised for his speed and dribbling skills.",
+    "Joining Athletic Bilbao's youth academy in 2013, he was promoted to the reserve team in 2020 and to the first team a year later, becoming a teammate of elder brother Iñaki Williams, with both winning the 2023–24 Copa del Rey."
+   ],
+   "early": [
+    "Williams first represented Spain with the under-18 squad in 2020, scoring two goals in four games. He was called up to the Spain under-19s in February 2021, and made his debut for the under-21s in September of the same year."
+   ],
+   "earlyHeading": "Youth",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Nico_Williams_Argentina_v_Spain_19_July_2026-196_%28cropped%29.jpg/500px-Nico_Williams_Argentina_v_Spain_19_July_2026-196_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Nico_Williams",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "olmo",
+   "name": "Dani Olmo",
+   "flag": "🇪🇸",
+   "pos": "AM",
+   "lead": [
+    "Daniel Olmo Carvajal is a Spanish professional footballer who plays as an attacking midfielder or left winger for La Liga club Barcelona and the Spain national team.",
+    "After a period at La Masia, Olmo made his professional debut for Dinamo Zagreb in Croatia in 2015. He made 124 total appearances for the club, scoring 34 goals and winning the league five times and the cup three times. In 2020, he joined RB Leipzig, where he won two DFB-Pokals in 2022 and 2023 as well as the 2023 DFL-Supercup, where he scored a hat-trick, before rejoining boyhood club Barcelona in 2024."
+   ],
+   "early": [
+    "Born in Terrassa, Barcelona, Catalonia, Olmo arrived in Barcelona's youth academy aged nine, from neighbours Espanyol."
+   ],
+   "earlyHeading": "Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Dani_Olmo_France_v_Spain_7.24.26-176_%28cropped%29.jpg/500px-Dani_Olmo_France_v_Spain_7.24.26-176_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Dani_Olmo",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "olise",
+   "name": "Michael Olise",
+   "flag": "🇫🇷",
+   "pos": "W",
+   "lead": [
+    "Michael Akpovie Olise is a professional footballer who plays as a winger or attacking midfielder for Bundesliga club Bayern Munich and the France national team. Widely regarded as one of the best players in the world, he is known for his creative playmaking, tactical intelligence, elegance, and flair."
+   ],
+   "early": [
+    "Michael Akpovie Olise was born on 12 December 2001 in White City, London, England, and raised in the suburb of Hayes. His mother, Mina, is Franco-Algerian while his father, Vincent Olise, is a British-Nigerian deacon who was an international cricket player for Nigeria. He has a younger brother, Richard. Raised in a tight-knit and multicultural family, Olise characterises himself as coming \"from four countries: France, Algeria, Nigeria, and England\" all of which he regularly spent time in during childhood. He spoke both English and French at home. On his upbringing, he has stated:",
+    "\"I have many different connections with Nigeria, Algeria, France, and England. It's not something I think about every day; it's perfectly normal for me. I carry little things from each country within me. It has broadened my horizons because these cultures are quite different from one another. At home, I had three cultures thanks to my parents. And outside, it was England, where I grew up. I didn't have to force this mix; it was just there.\""
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/04/Michael_Olise_France_v_Senegal_16_June_2026-307_%28cropped%29.jpg/500px-Michael_Olise_France_v_Senegal_16_June_2026-307_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Michael_Olise",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "isak",
+   "name": "Alexander Isak",
+   "flag": "🇸🇪",
+   "pos": "ST",
+   "lead": [
+    "Alexander Isak is a Swedish professional footballer who plays as a striker for Premier League club Liverpool and the Sweden national team.",
+    "Born and raised in Stockholm, Isak began his professional career with boyhood club AIK in 2016. He then went on to represent Borussia Dortmund and Willem II before signing with Real Sociedad in 2019. In 2022, Isak joined Newcastle United for a club-record fee. In 2025, he signed for Liverpool for £125 million, breaking both the club and British transfer fee records."
+   ],
+   "early": [
+    "Alexander Isak was born on 21 September 1999 in Stockholm, the capital and most populous city of Sweden. He is of Eritrean descent from the Tigrinya ethnic group. He was raised in Solna, in central Stockholm County, by his parents. The youngest of six siblings, he started playing for the youth team of one of the largest clubs in the Allsvenskan, AIK. Isak has supported AIK since he was six years old."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/Alexander_Isak_-_Sweden_-_Greece21_%28cropped%29.jpg/500px-Alexander_Isak_-_Sweden_-_Greece21_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Alexander_Isak",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "gyokeres",
+   "name": "Viktor Gyökeres",
+   "flag": "🇸🇪",
+   "pos": "ST",
+   "lead": [
+    "Viktor Einar Gyökeres is a Swedish professional footballer who plays as a striker for Premier League club Arsenal and the Sweden national team.",
+    "Gyökeres began his professional career with Brommapojkarna in 2015, making over fifty appearances before joining Brighton & Hove Albion in 2018. He spent successive seasons on loan at St. Pauli, Swansea City, and Coventry City, joining the latter permanently in 2021."
+   ],
+   "early": [
+    "Gyökeres played youth football for Sweden at under-19 and under-21 level. Gyökeres featured regularly for Sweden in the nation's qualification campaign for the 2017 UEFA European Under-19 Championship during which he scored twice, including the winning goal against Italy to help Sweden qualify for the tournament for the first time. He was then selected for the squad which took part in the tournament in Georgia and scored in all three of Sweden's group matches but was unable to help the nation progress to the knockout stages of the tournament. His return of three goals later saw him share the Golden Boot award with England's Ben Brereton and Ryan Sessegnon, and the Netherlands' Joël Piroe."
+   ],
+   "earlyHeading": "Youth",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Viktor_Gy%C3%B6keres_2026-06-04_1_%28cropped%29.jpg/500px-Viktor_Gy%C3%B6keres_2026-06-04_1_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Viktor_Gy%C3%B6keres",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "yildiz",
+   "name": "Kenan Yıldız",
+   "flag": "🇹🇷",
+   "pos": "W",
+   "lead": [
+    "Kenan Yıldız is a professional footballer who plays as an attacking midfielder or winger for Serie A club Juventus. Born in Germany, he plays for the Turkey national team.",
+    "Yıldız began his youth career with Bayern Munich and joined Juventus Next Gen in 2022. He was promoted to Juventus' first-team in November 2023 and won the Coppa Italia in 2024.",
+    "In May 2026, Yıldız was named Serie A's Best Under-23 Player for the 2025–26 season, receiving the league's \"Rising Star\" award after scoring ten goals and providing six assists for Juventus in 33 league appearances. He had also won the league's Rising Star of the Month award twice during the campaign."
+   ],
+   "early": [
+    "Kenan Yıldız was born in Regensburg, Germany, to his Turkish father Engin Yıldız and his German mother Beate Hackl."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Kenan_Y%C4%B1ld%C4%B1z_in_the_international_match_%28March_2025%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+   "source": "https://en.wikipedia.org/wiki/Kenan_Y%C4%B1ld%C4%B1z",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "cubarsi",
+   "name": "Pau Cubarsí",
+   "flag": "🇪🇸",
+   "pos": "CB",
+   "lead": [
+    "Pau Cubarsí Paredes is a Spanish professional footballer who plays as a centre-back for La Liga club Barcelona and the Spain national team. He is considered one of the best young defenders in the world.",
+    "Formerly a Girona youth player, Cubarsí transitioned into being a La Masia talent, and he later made his senior debut for Barcelona on 18 January 2024, just days before his 17th birthday. He later won La Liga in 2025 and 2026 with the club."
+   ],
+   "early": [
+    "Pau Cubarsí Paredes was born on 22 January 2007 in Bescanó, Girona, Catalonia, to Robert Cubarsí Vilaró and Gloria Paredes Parra. He has an older sister, Irene, who is a physiotherapist. He grew up in the small village of Estanyol in Bescanó, where four generations of his father's family had operated the family carpentry business, Fusteria Cubarsí, since 1905. Cubarsí is a great-great-grand-nephew of the painter Ginés Parra.",
+    "Cubarsí's first language is Catalan. While playing for Spain at the Olympic Games in 2024, he said that he rarely gave interviews because he was not fluent in Spanish, having only ever lived in Catalonia and used his native language."
+   ],
+   "earlyHeading": "Early life and education",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/Pau_Cubarsi_France_v_Spain_7.24.26-115.jpg/500px-Pau_Cubarsi_France_v_Spain_7.24.26-115.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Pau_Cubars%C3%AD",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "messi",
+   "name": "Lionel Messi",
+   "flag": "🇦🇷",
+   "pos": "W",
+   "lead": [
+    "Lionel Andrés \"Leo\" Messi is an Argentine professional footballer who plays as a forward for the Major League Soccer club Inter Miami, which he captains, and the Argentina national team. Widely regarded as one of the greatest players in history, he has set numerous records for individual accolades won throughout his professional footballing career, including eight Ballons d'Or, six European Golden Shoes, and being named the world's best player by FIFA eight times. He was named the All Time Men's World Best Player by the IFFHS in 2025. In 2020 and 2023 he was named the Laureus World Sportsman of the Year, becoming the first team-sport athlete to win the award. He was among Time's 100 most…"
+   ],
+   "early": [
+    "Lionel Andrés Messi was born on 24 June 1987 in Rosario, Santa Fe Province, Argentina. His father, Jorge Messi (1958–2026), was the head of department at an Acindar pressed steel manufacturing plant in Villa Constitución. His mother, Celia Cuccittini, worked in a magnet manufacturing workshop. Messi's parents met as youngsters in the Las Heras district of Rosario, where Messi would later grow up. Jorge and Celia married in 1978, after Jorge completed military service in the Argentine Armed Forces. On his father's side, Messi is of Italian and Spanish descent, the great-grandson of immigrants from the Marche region of Italy (with his surname coming from Porto Recanati), and on his mother's side he has primarily Italian ancestry. Growing up in a tight-knit, football-loving family, \"Leo\" developed a passion for the sport from an early age, playing constantly with his older brothers, Rodrigo and Matías, and his cousins, Maximiliano and Emanuel Biancucchi, both of whom later became professional footballers. Messi also has a younger sister, María Sol."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c8/Leo_Messi_Argentina_v_Egypt_7_July_2026-1.jpg/500px-Leo_Messi_Argentina_v_Egypt_7_July_2026-1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Lionel_Messi",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "ronaldo",
+   "name": "Cristiano Ronaldo",
+   "flag": "🇵🇹",
+   "pos": "ST",
+   "lead": [
+    "Cristiano Ronaldo dos Santos Aveiro is a Portuguese professional footballer who plays as a forward for and captains the Saudi Pro League club Al-Nassr and the Portugal national team. Nicknamed CR7, he is widely regarded as one of the greatest players in history, having won numerous individual accolades throughout his career including five Ballon d'Or awards, a record three UEFA Men's Player of the Year Awards, and four European Golden Shoes. He was named the world's best player five times by FIFA."
+   ],
+   "early": [
+    "Cristiano Ronaldo dos Santos Aveiro was born on 5 February 1985 in the São Pedro parish of Funchal, the capital of the Portuguese island of Madeira. He grew up in the nearby parish of Santo António. His mother, Maria Dolores dos Santos Viveiros Aveiro, worked as a cook in the hospitality industry and as a cleaning woman. His father, José Dinis Aveiro, was a municipal gardener at the Junta de Freguesia of Santo António and a part-time kit man for the football club Andorinha. Ronaldo's father had served in the Portuguese Army during the Portuguese Colonial War and saw combat in Angola; he was traumatized by his experiences, which led to a lifelong struggle with alcoholism. Ronaldo has Cape Verdean ancestry through his great-grandmother, Isabel da Piedade, who was born on the island of São Vicente, in what was then Portuguese Cape Verde."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/26/Cristiano_Ronaldo_Croatia_v_Portugal_2_July_2026-075_%28cropped%29.jpg/500px-Cristiano_Ronaldo_Croatia_v_Portugal_2_July_2026-075_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Cristiano_Ronaldo",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "modric",
+   "name": "Luka Modrić",
+   "flag": "🇭🇷",
+   "pos": "CM",
+   "lead": [
+    "Luka Modrić is a Croatian professional footballer who plays as a central midfielder for Serie A club AC Milan and captains the Croatia national team. He is widely regarded as one of the greatest midfielders of all time and as the greatest Croatian footballer in history. With 34 major trophies, he is the most decorated Croatian player and ranks joint-third on all-time match appearances in international football. In addition, he is also one of a select number of players who have amassed over 1,100 career appearances (the first Croatian to achieve the feat, since the time matches are recorded)."
+   ],
+   "early": [
+    "Luka Modrić was born on 9 September 1985 in Zadar and was raised in the hamlet of Modrići, which is a part of Zaton Obrovački, a village situated on the southern slopes of the mountain Velebit, north of the city of Zadar in SR Croatia, then a republic within SFR Yugoslavia. He is the oldest child of Stipe Modrić from Modrići and Radojka Dopuđ from Kruševo near Obrovac, both of whom initially worked in a knitwear factory. Modrić mostly spent his early years in the stone house where his paternal grandfather usually lived after whom he was named, located on the road above the hamlet of Modrići, and was shepherding goats as a five-year-old."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/80/Luka_Modric_Croatia_v_Portugal_2_July_2026-055.jpg/500px-Luka_Modric_Croatia_v_Portugal_2_July_2026-055.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Luka_Modri%C4%87",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "davies",
+   "name": "Alphonso Davies",
+   "flag": "🇨🇦",
+   "pos": "FB",
+   "lead": [
+    "Alphonso Boyle Davies is a professional soccer player who plays as a left-back, winger, or wing-back for Bundesliga club Bayern Munich and captains the Canada national team. Regarded as one of the best left-backs in the world, Davies has earned the nickname \"the Roadrunner\" for his pace, dribbling ability, and creativity."
+   ],
+   "early": [
+    "Davies was born to Liberian parents in Buduburam, a refugee camp in Ghana, the fourth youngest of six siblings. His father, Debeah Davies, and his mother, Victoria Davies, originally lived in Monrovia, the capital of Liberia. They fled during the Second Liberian Civil War, which displaced more than 450,000 Liberians. In 2005, the family emigrated to Canada, eventually settling in Edmonton. After moving to Edmonton, Davies attended Mother Teresa Elementary School. At the age of 14, Davies relocated alone to Vancouver to join the Whitecaps FC Residency program. As part of the program, he attended Burnaby Central Secondary School. On June 6, 2017, he received Canadian citizenship; until then he had been a Liberian national.",
+    "Davies attended St Nicholas Catholic Junior High in the Edmonton Catholic School District. His school soccer teammate Onesphore Hamis recalled, \"Soccer was the thing he wanted to get into, but language was a problem.\" His classmate and fellow Liberian immigrant Chernoh Fahnbulleh recalled of Davies, \"He spoke English but it was, like, broken English\"."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/Alphonso_Davies_Canada_v_Qatar_18_June_2026-007_%28cropped%29.jpg/500px-Alphonso_Davies_Canada_v_Qatar_18_June_2026-007_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Alphonso_Davies",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "frimpong",
+   "name": "Jeremie Frimpong",
+   "flag": "🇳🇱",
+   "pos": "FB",
+   "lead": [
+    "Jeremie Agyekum Frimpong is a Dutch professional footballer who plays as a right-back or right winger for Premier League club Liverpool and the Netherlands national team."
+   ],
+   "early": [
+    "Frimpong started out playing football at his local clubs, AFC Clayton and Clayton Villa. He caught the eye of Manchester City and Liverpool scouts at a youth tournament, where he was named the best player. Ultimately, he chose to join Manchester City, as they were closer to his hometown.",
+    "Frimpong joined Manchester City at the age of nine and progressed through the club's youth ranks, with regular appearances in Premier League 2 and the UEFA Youth League."
+   ],
+   "earlyHeading": "Early career",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Jeremie_Frimpong_04012026_%283%29_%28cropped%29.jpg/500px-Jeremie_Frimpong_04012026_%283%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Jeremie_Frimpong",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "donnarumma",
+   "name": "Gianluigi Donnarumma",
+   "flag": "🇮🇹",
+   "pos": "GK",
+   "lead": [
+    "Gianluigi Donnarumma is an Italian professional footballer, who plays as a goalkeeper for Premier League club Manchester City and captains the Italy national team. He is widely regarded as one of the best goalkeepers in the world."
+   ],
+   "early": [
+    "Donnarumma was born in Castellammare di Stabia in the Province of Naples, the son of Alfonso and Marinella. His older brother, Antonio, also came through AC Milan's youth system as a goalkeeper. Since childhood, he has supported Milan, although he grew up idolising Gianluigi Buffon."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2d/Norway_Italy_-_June_2025_A_17_%28Gianluigi_Donnarumma%29.jpg/500px-Norway_Italy_-_June_2025_A_17_%28Gianluigi_Donnarumma%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Gianluigi_Donnarumma",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "irankunda",
+   "name": "Nestory Irankunda",
+   "flag": "🇦🇺",
+   "pos": "W",
+   "lead": [
+    "Nestory Irankunda is a professional soccer player who plays as a winger for Primeira Liga club Sporting CP and the Australia national team.",
+    "He played for various Australian youth clubs before beginning his professional career at to A-League club Adelaide United in 2022, being named the joint-2023–24 A-League Young Footballer of the Year with Alex Paulsen. In July 2024, Irankunda joined Bundesliga club Bayern Munich breaking the A-League transfer record of €4m, though featured only in the club's reserve team for one season and went on loan to Swiss Super League club Grasshopper. The following season, he moved to EFL Championship side Watford in July 2025."
+   ],
+   "early": [
+    "Nestory Irankunda was born on 9 February 2006 in Kigoma, Tanzania, the third-eldest child with two older brothers and five younger sisters to Gideon, a rideshare driver, and his wife, Dafroza. His parents were originally from Burundi, but fled their home due to the civil war escalating at the time. His father led his family to a refugee camp in Tanzania where Nestory was born.",
+    "They moved to Perth in Western Australia, when Irankunda was three months old, before relocating interstate to the northern suburbs of Adelaide, South Australia at the age of seven in 2013. Irankunda grew up in a Christian home, and found his love of football while playing with his older brothers in the yard of his home. At the age of eight, Irankunda played for his first football club at Parafield Gardens after being spotted by the under-10s coach of the local club."
+   ],
+   "earlyHeading": "Early life and education",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/Nestory_Irankunda_Australia_v_USA_19_June_2026-241_%28cropped%29.jpg/500px-Nestory_Irankunda_Australia_v_USA_19_June_2026-241_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Nestory_Irankunda",
+   "fetchedAt": "2026-09-24"
+  },
+  {
+   "id": "kerr",
+   "name": "Sam Kerr",
+   "flag": "🇦🇺",
+   "pos": "ST",
+   "lead": [
+    "Samantha May Kerr is an Australian professional soccer player who plays as a striker for Gotham FC of the National Women's Soccer League (NWSL) and the Australia national team, which she has captained since 2019. Known for her speed, skill, and tenacity, Kerr is widely considered one of the best strikers in the world, and one of Australia's greatest athletes."
+   ],
+   "early": [
+    "Kerr was born in East Fremantle, a suburb of Perth, Western Australia. She is the daughter of Roxanne (née Regan) and Roger Kerr. Her father, a professional Australian rules football player, was born in Calcutta to an English father (a featherweight boxer) and an Indian mother who played basketball. Her mother also comes from a sporting family: her father Harry and uncle Con Regan were professional footballers in the West Australian Football League and another uncle J. J. Miller was a champion jockey who won the Melbourne Cup in 1966 with Galilee.",
+    "Kerr played Australian rules football when she was young. Both her father and older brother, Daniel Kerr, were professional Australian rules footballers. She played the sport until switching to association football at the age of 12, mostly due to gender restrictions."
+   ],
+   "earlyHeading": "Early life",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e3/Sam_Kerr_%28Women_World_Cup_France_2019%29.jpg/500px-Sam_Kerr_%28Women_World_Cup_France_2019%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Sam_Kerr",
+   "fetchedAt": "2026-09-24",
+   "she": true
+  },
+  {
+   "id": "fowler",
+   "name": "Mary Fowler",
+   "flag": "🇦🇺",
+   "pos": "AM",
+   "lead": [
+    "Mary Boio Fowler is an Australian professional soccer player who plays for English Women's Super League club Manchester City and the Australia national team. Mainly a forward, she is also able to play as a midfielder."
+   ],
+   "early": [
+    "Mary Boio Fowler was born on 14 February 2003 in Cairns, Queensland, the third of five children. Fowler's father, Kevin, is from Dublin, Ireland. Her mother, Nido, is from Kira Kira, a village within greater Port Moresby, Papua New Guinea, where the couple met.",
+    "As a young child, Fowler attended Holy Cross Primary School in Cairns. Her favourite school subject was maths. Her parents chose not to have a television set at home, and so she and her siblings engaged in other forms of entertainment, such as kicking a football around at Trinity Beach near Cairns after school. As a child, Fowler was interested in drawing, writing poetry, dressing up and acting in little shows with her siblings, and enjoyed being creative."
+   ],
+   "earlyHeading": "Early life and education",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f4/Adelaide_United_v_Canberra_United_W-League_Rd_6_2019-12-22_Fowler_%2849258071411%29_%28cropped%29.jpg/500px-Adelaide_United_v_Canberra_United_W-League_Rd_6_2019-12-22_Fowler_%2849258071411%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Mary_Fowler",
+   "fetchedAt": "2026-09-24",
+   "she": true
+  },
+  {
+   "id": "bonmati",
+   "name": "Aitana Bonmatí",
+   "flag": "🇪🇸",
+   "pos": "CM",
+   "lead": [
+    "Aitana Bonmatí i Conca is a Spanish professional footballer from Catalonia who plays as a midfielder for Liga F club Barcelona and the Spain national team. She has also represented Catalonia. Having won all major club and individual awards available to a European player by 2023, including the most-decorated season of any footballer ever for 2022–23, she is considered one of the best players in women's football, and one of the greatest of all time."
+   ],
+   "early": [
+    "Bonmatí has played at every junior level of the Spain women's national football team, including the U-17, U-19 and U-20 national teams.",
+    "At 15 years old, Bonmatí was called up as part of Spain's squad for the 2014 UEFA Women's U-17 Euro. She scored her first U-17 national team goals with a brace against Germany in a 4–0 group stage win, helping Spain finish first in Group B. From there, Spain advanced past the semi-finals after a 2–1 win against England. Bonmatí reached the final where she started the match, but ultimately finished runner-up in the tournament as Spain lost to Germany on penalties. She registered 398 total minutes in the tournament.",
+    "Months later, she participated in the 2014 FIFA U-17 Women's World Cup where she mostly had a substitute role. In the semi-final, Bonmatí was a halftime substitute against Italy, where Spain advanced after defeating them 2–0. Bonmatí was substituted on in the 53rd minute of the final, where Spain lost 0–2 to Japan."
+   ],
+   "earlyHeading": "Youth",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/25th_Laureus_World_Sports_Awards_-_240422_214032.jpg/500px-25th_Laureus_World_Sports_Awards_-_240422_214032.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Aitana_Bonmat%C3%AD",
+   "fetchedAt": "2026-09-24",
+   "she": true
+  },
+  {
+   "id": "putellas",
+   "name": "Alexia Putellas",
+   "flag": "🇪🇸",
+   "pos": "CM",
+   "lead": [
+    "Alèxia Putellas i Segura, often known mononymously as Alexia, is a Spanish professional footballer from Catalonia who plays as a midfielder or forward for Women's Super League club London City Lionesses and the Spain women's national team. She previously played for Espanyol, Levante, and Barcelona, and has represented Catalonia. Having won all major club and most of the individual awards available to a European player by 2022, she is widely regarded as one of the greatest female footballers of all time."
+   ],
+   "early": [
+    "Alèxia Putellas i Segura was born on 4 February 1994, to Jaume Putellas Rota and Elisabet \"Eli\" Segura Sabaté in Mollet del Vallès, a municipality in the province of Barcelona. She has a younger sister, Alba. Putellas has been a supporter of FC Barcelona since her early childhood and would travel with the penya of Mollet del Vallès to watch matches at the Camp Nou with her father. She would also watch Barcelona matches at a local bar, La Bolera, with her family; she has said that her family have always been fanatic supporters of the club, with the exception of a cousin who supports Real Madrid. As of 2021, Putellas was still a member of the Mollet penya. In her youth, Putellas idolised male footballers Andrés Iniesta, Rivaldo, and Ronaldinho, who all played for Barcelona, as well as female footballer Louisa Nécib, who played for Olympique Lyonnais. Iniesta has returned the idolatry, calling Putellas a role model and saying she encapsulates the values of FC Barcelona."
+   ],
+   "earlyHeading": "Early life and education",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Premios_Goya_2026_-_Alexia_Putellas_%28cropped%29.jpg/500px-Premios_Goya_2026_-_Alexia_Putellas_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "source": "https://en.wikipedia.org/wiki/Alexia_Putellas",
+   "fetchedAt": "2026-09-24",
+   "she": true
+  }
+ ]
+}

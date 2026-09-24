@@ -22,7 +22,7 @@ export default function ScoutsPage() {
         </div>
       </section>
       <section className={styles.section}>
-        <div className={styles.sectionHead}><h2>The ladder in Sydney</h2></div>
+        <div className={styles.sectionHead}><h2>The ladder in Melbourne</h2></div>
         <div className={styles.ladder}>
           {PATHWAY_LADDER.map(r => <div key={r.name} className={styles.rung}><i aria-hidden="true">{r.icon}</i><div><b>{r.name}</b><div className={styles.muted}>{r.what}</div><span className={`${styles.pill} ${styles.pillGold}`} style={{ marginTop: 6 }}>{r.when}</span></div></div>)}
         </div>

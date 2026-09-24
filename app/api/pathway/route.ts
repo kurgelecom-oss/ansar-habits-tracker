@@ -13,8 +13,9 @@
 import { NextResponse } from "next/server";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
 import { addDays, dayNameOf, sydneyDateKey, weekStartOf } from "../../lib/time";
-import { bestScores, isMissingTable, parseWrite, type PbRow } from "../../lib/pathway";
+import { bestScores, isMissingTable, matchLogs, parseWrite, type PbRow } from "../../lib/pathway";
 import { checklistFor, planFor } from "../../pathway/data/week";
+import { SEASON, opponentOf, summarise } from "../../pathway/data/matches";
 
 export const dynamic = "force-dynamic";
 
@@ -49,21 +50,23 @@ export async function GET(req: Request) {
     plan: { day: plan.day, theme: plan.theme, headline: plan.headline, fuel: plan.fuel, treatWindow: plan.treatWindow, lightsOut: plan.lightsOut, sessions: plan.sessions.map(s => ({ id: s.id, icon: s.icon, title: s.title, start: s.start, minutes: s.minutes, kind: s.kind })) },
     checklist: checklist.map(c => ({ id: c.id, label: c.label, icon: c.icon })),
     link: "https://ansar-habits-tracker.netlify.app/pathway",
+    nextMatch: (() => { const n = summarise(SEASON.fixtures).next; return n ? { date: n.date, opponent: opponentOf(n), isHome: n.isHome, ground: n.ground, round: n.round } : null; })(),
   };
 
-  if (!hasServiceRole()) return NextResponse.json({ ...base, storage: "unavailable", done: [], pbs: {}, focus: null }, { headers: cors(req) });
+  if (!hasServiceRole()) return NextResponse.json({ ...base, storage: "unavailable", done: [], pbs: {}, focus: null, matches: [] }, { headers: cors(req) });
 
   const db = adminClient();
   const weekStart = weekStartOf(date);
-  const [ticks, pbs, focus] = await Promise.all([
+  const [ticks, pbs, focus, matches] = await Promise.all([
     db.from("pathway_log").select("item_id").eq("kind", "tick").eq("log_date", date),
     db.from("pathway_log").select("item_id,value,log_date").eq("kind", "pb").order("log_date", { ascending: false }).limit(500),
     db.from("pathway_log").select("note,log_date").eq("kind", "focus").gte("log_date", weekStart).lte("log_date", addDays(weekStart, 6)).order("log_date", { ascending: false }).limit(1),
+    db.from("pathway_log").select("note").eq("kind", "match").order("item_id", { ascending: false }).limit(100),
   ]);
-  const err = ticks.error ?? pbs.error ?? focus.error;
+  const err = ticks.error ?? pbs.error ?? focus.error ?? matches.error;
   if (err) {
     const storage = isMissingTable(err) ? "unavailable" : "error";
-    return NextResponse.json({ ...base, storage, done: [], pbs: {}, focus: null }, { headers: cors(req) });
+    return NextResponse.json({ ...base, storage, done: [], pbs: {}, focus: null, matches: [] }, { headers: cors(req) });
   }
   const valid = new Set(checklist.map(c => c.id));
   const done = (ticks.data ?? []).map(r => r.item_id as string).filter(id => valid.has(id));
@@ -72,6 +75,7 @@ export async function GET(req: Request) {
     done, doneCount: done.length, total: checklist.length,
     pbs: bestScores((pbs.data ?? []) as PbRow[]),
     focus: focus.data?.[0]?.note ?? null,
+    matches: matchLogs(matches.data ?? []),
   }, { headers: cors(req) });
 }
 
@@ -95,6 +99,8 @@ export async function POST(req: Request) {
       : await db.from("pathway_log").delete().eq("log_date", write.date).eq("kind", "tick").eq("item_id", write.itemId));
   } else if (write.kind === "pb") {
     ({ error } = await db.from("pathway_log").upsert({ log_date: write.date, kind: "pb", item_id: write.itemId, value: write.value, updated_at: now }, { onConflict: "log_date,kind,item_id" }));
+  } else if (write.kind === "match") {
+    ({ error } = await db.from("pathway_log").upsert({ log_date: write.itemId.slice(2), kind: "match", item_id: write.itemId, value: write.rating, note: write.note, updated_at: now }, { onConflict: "log_date,kind,item_id" }));
   } else {
     ({ error } = await db.from("pathway_log").upsert({ log_date: sydneyDateKey(), kind: "focus", item_id: "week", note: write.note, updated_at: now }, { onConflict: "log_date,kind,item_id" }));
   }

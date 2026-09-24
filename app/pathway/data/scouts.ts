@@ -57,13 +57,14 @@ export function tierFor(b: Benchmark, value: number | null | undefined): "gold" 
 export interface Rung { icon: string; name: string; what: string; when: string }
 
 export const PATHWAY_LADDER: Rung[] = [
-  { icon: "🏘️", name: "Community club", what: "Where most players start. Play every week, have fun, get touches.", when: "Now" },
-  { icon: "🏅", name: "NPL junior club (Football NSW)", what: "The top level of junior football in NSW. Better coaching, better opponents.", when: "Trials usually Oct–Nov for next season" },
-  { icon: "🏟️", name: "A-League academy", what: "Sydney FC, Western Sydney Wanderers, Macarthur FC, Central Coast Mariners. Usually scout from NPL and talent-ID days.", when: "Typically from U13–U14 upward" },
-  { icon: "🇦🇺", name: "Youth national teams", what: "Joeys (U17) and younger talent camps. Picked from academies and NPL.", when: "Mid-teens" },
+  { icon: "🏘️", name: "Community club (Football Victoria)", what: "Where most players start. Junior Football Victoria competitions — fixtures and results live on Dribl, and in the Matches tab here.", when: "Now" },
+  { icon: "🏅", name: "NPL Victoria junior club", what: "The top level of junior football in Victoria. Better coaching, better opponents, more eyes on you.", when: "Trials usually run late in the year (roughly Aug–Nov) for next season" },
+  { icon: "🏟️", name: "A-League academy", what: "Melbourne Victory and Melbourne City run Melbourne's A-League academies and mostly scout from NPL Victoria. (Western United lost its A-League licence in 2026, so its pathway is uncertain.)", when: "Typically from U13–U14 upward" },
+  { icon: "🔷", name: "Football Victoria state talent programs", what: "State squads for national youth championships, picked from NPL and academy players.", when: "Early-to-mid teens" },
+  { icon: "🇦🇺", name: "Youth national teams", what: "Joeys (U17) and younger national talent camps.", when: "Mid-teens" },
 ];
 
-export const LADDER_NOTE = "Trial dates and age groups change every year — confirm with the club and Football NSW before planning around them.";
+export const LADDER_NOTE = "Trial dates and age groups change every year — confirm with the club and Football Victoria before planning around them.";
 
 /* ── The year ───────────────────────────────────────────────────────────── */
 
@@ -95,7 +96,7 @@ export const MONTH_FOCUS: { month: string; focus: string; drill: string }[] = [
 export const YEAR_GOALS = [
   { icon: "🦶", goal: "Weak foot as trusted as the strong foot on the wall test", measure: "weak_clean ≥ 40/50" },
   { icon: "🔁", goal: "300 alternate-foot juggles", measure: "juggle_alt = Gold" },
-  { icon: "🏅", goal: "Earn a place at a higher level for the 2027 season", measure: "Trial Oct–Nov 2026" },
+  { icon: "🏅", goal: "Earn a place at a higher level (NPL Victoria) for the 2027 season", measure: "Trials late 2026" },
   { icon: "🫀", goal: "2 km under 8:30", measure: "run_2k ≤ 8.5" },
   { icon: "📚", goal: "Zero homeschool missed for football", measure: "Non-negotiable" },
 ];

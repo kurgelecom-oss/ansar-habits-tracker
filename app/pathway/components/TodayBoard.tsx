@@ -4,15 +4,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { WEEK, WEEKLY_CAP_HOURS, checklistFor, formatTime, planFor, weeklyLoadMinutes, type DayPlan } from "../data/week";
 import { MONTH_FOCUS } from "../data/scouts";
+import { SEASON, fixtureOn, kickoff, opponentOf } from "../data/matches";
 import { drillById } from "../data/drills";
 import { ALWAYS, ASK_MUM, MUM_ROLE, NEVER } from "../data/lifestyle";
 import { GreenBall, SECTIONS } from "./ui";
-import { todaySydney, usePathwayStore } from "./usePathwayStore";
+import { todayMelbourne, usePathwayStore } from "./usePathwayStore";
 import styles from "../pathway.module.css";
 
-const WEEKDAY_FMT = new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Sydney", weekday: "long" });
-const MONTH_FMT = new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Sydney", month: "long" });
-const CLOCK_FMT = new Intl.DateTimeFormat("en-GB", { timeZone: "Australia/Sydney", hour: "2-digit", minute: "2-digit", hour12: false });
+const WEEKDAY_FMT = new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Melbourne", weekday: "long" });
+const MONTH_FMT = new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Melbourne", month: "long" });
+const CLOCK_FMT = new Intl.DateTimeFormat("en-GB", { timeZone: "Australia/Melbourne", hour: "2-digit", minute: "2-digit", hour12: false });
 const toMin = (hhmm: string) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
 
 /* ── Calendar reminders: one weekly-repeating event per session, 10-min alarm ── */
@@ -32,7 +33,7 @@ export function buildIcs(week: DayPlan[] = WEEK): string {
     const end = `${String(Math.floor(endMin / 60)).padStart(2, "0")}${String(endMin % 60).padStart(2, "0")}00`;
     const date = nextDateFor(day.day);
     lines.push("BEGIN:VEVENT", `UID:pathway-${s.id}-${day.day}@ansar-fc`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
-      `DTSTART;TZID=Australia/Sydney:${date}T${start}`, `DTEND;TZID=Australia/Sydney:${date}T${end}`,
+      `DTSTART;TZID=Australia/Melbourne:${date}T${start}`, `DTEND;TZID=Australia/Melbourne:${date}T${end}`,
       `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[day.day]}`, `SUMMARY:⚽ ${s.title}`, `DESCRIPTION:${s.what.join(" · ").replace(/[,;]/g, " ")}`,
       "BEGIN:VALARM", "TRIGGER:-PT10M", "ACTION:DISPLAY", `DESCRIPTION:${s.title} in 10 minutes`, "END:VALARM", "END:VEVENT");
   }
@@ -49,7 +50,7 @@ function downloadIcs() {
 }
 
 export default function TodayBoard() {
-  const [today] = useState(todaySydney);
+  const [today] = useState(todayMelbourne);
   const [weekday, setWeekday] = useState<string | null>(null);
   const [nowMin, setNowMin] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -75,6 +76,7 @@ export default function TodayBoard() {
   const monthDrill = month ? drillById(month.drill) : undefined;
   const loadH = (weeklyLoadMinutes() / 60).toFixed(1);
   const isWeekday = !["Saturday", "Sunday"].includes(weekday);
+  const matchToday = fixtureOn(SEASON.fixtures, today);
 
   return (
     <>
@@ -88,6 +90,7 @@ export default function TodayBoard() {
               {next ? <span className={`${styles.pill} ${styles.pillLime}`}>⏭ Next: {next.icon} {next.title} · {formatTime(next.start)}</span> : <span className={`${styles.pill} ${styles.pillLime}`}>{plan.sessions.every(s => s.kind === "rest" || state.done.includes(s.id)) ? "✅ Every session done today" : "🌙 Session times are over — tick what you really did"}</span>}
               {plan.treatWindow ? <span className={`${styles.pill} ${styles.pillGold}`}>🍕 Treat window today</span> : null}
               <span className={styles.pill}>🌙 Lights out {plan.lightsOut}</span>
+              {matchToday ? <Link href="/pathway/matches" className={`${styles.pill} ${styles.pillGold}`} style={{ textDecoration: "none" }}>🏟️ MATCH DAY · {matchToday.isHome ? "vs" : "@"} {opponentOf(matchToday)} · {kickoff(matchToday.date)}</Link> : null}
             </div>
           </div>
           <div className={styles.scoreboard} aria-label={`${done.length} of ${checklist.length} done`}>
