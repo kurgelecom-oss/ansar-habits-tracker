@@ -1,0 +1,57 @@
+# Football Pathway data refresh.
+#   Nightly ~03:00 Melbourne: Ansar's fixtures/results from Football Victoria (Dribl).
+#   Mondays ~03:30 Melbourne: Players of the Week stories from Wikipedia.
+# Commits only when the data changed; that commit to main is what redeploys the
+# site (Netlify builds from main).
+name: Pathway sync
+
+on:
+  schedule:
+    - cron: "0 17 * * *"
+    - cron: "30 16 * * 0"
+  workflow_dispatch:
+    inputs:
+      what:
+        description: "fixtures, players or both"
+        default: both
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pathway-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fixtures from Football Victoria
+        if: (github.event_name == 'workflow_dispatch' && github.event.inputs.what != 'players') || github.event.schedule == '0 17 * * *'
+        run: |
+          if node -e "process.exit(require('./app/pathway/data/team.json').club?.trim() ? 0 : 1)"; then
+            mkdir -p /tmp/pw && (cd /tmp/pw && npm init -y > /dev/null && npm install playwright@1.55 && npx playwright install --with-deps chromium)
+            mkdir -p node_modules && ln -sfn /tmp/pw/node_modules/playwright node_modules/playwright && ln -sfn /tmp/pw/node_modules/playwright-core node_modules/playwright-core
+            node scripts/dribl-sync.mjs
+          else
+            echo "No club set in team.json yet, skipping fixtures."
+          fi
+
+      - name: Players of the Week from Wikipedia
+        if: (github.event_name == 'workflow_dispatch' && github.event.inputs.what != 'fixtures') || github.event.schedule == '30 16 * * 0'
+        run: node scripts/players-sync.mjs
+
+      - name: Commit if changed
+        run: |
+          git config user.name "pathway-sync"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/pathway/data/fixtures.json app/pathway/data/players.json
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git commit -m "Pathway sync: $(date -u +%Y-%m-%d)"
+          git push

@@ -8,6 +8,7 @@ import styles from "../pathway.module.css";
 
 export const SECTIONS = [
   { href: "/pathway", icon: "⚽", label: "Today", blurb: "Your plan, your ticks, Mum's focus" },
+  { href: "/pathway/matches", icon: "🏟️", label: "Matches", blurb: "Fixtures, results and his own match stats" },
   { href: "/pathway/drills", icon: "🎯", label: "Drills", blurb: "16 drills with moving pitch diagrams" },
   { href: "/pathway/fitness", icon: "⚡", label: "Fitness", blurb: "Speed, agility, movement" },
   { href: "/pathway/conditioning", icon: "🫀", label: "Conditioning", blurb: "The engine for the last 10 minutes" },
@@ -16,7 +17,7 @@ export const SECTIONS = [
   { href: "/pathway/screens", icon: "📺", label: "Screens", blurb: "What's worth watching, what's not" },
   { href: "/pathway/scouts", icon: "🔭", label: "Scout's Eye", blurb: "What coaches look for + your tests" },
   { href: "/pathway/season", icon: "📅", label: "Season", blurb: "Day, week, month, year" },
-  { href: "/pathway/legends", icon: "🌟", label: "Legends", blurb: "How the greats started" },
+  { href: "/pathway/players", icon: "🌍", label: "Players", blurb: "Six top players, new every Monday" },
 ];
 
 export function PathwayNav() {

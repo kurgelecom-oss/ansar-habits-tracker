@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BENCHMARKS } from "../data/scouts";
+import type { MatchLog } from "../../lib/pathway";
 
 export type Storage = "loading" | "supabase" | "local";
 export interface PathwayState {
@@ -14,10 +15,11 @@ export interface PathwayState {
   done: string[];
   pbs: Record<string, { value: number; date: string }>;
   focus: string | null;
+  matches: MatchLog[];
 }
 
-const TZ_FMT = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney", year: "numeric", month: "2-digit", day: "2-digit" });
-export const todaySydney = () => TZ_FMT.format(new Date());
+const TZ_FMT = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Melbourne", year: "numeric", month: "2-digit", day: "2-digit" });
+export const todayMelbourne = () => TZ_FMT.format(new Date());
 export function weekStart(date: string): string {
   const [y, m, d] = date.split("-").map(Number);
   const t = new Date(Date.UTC(y, m - 1, d));
@@ -28,14 +30,14 @@ export function weekStart(date: string): string {
 
 const read = <T,>(key: string, fallback: T): T => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) as T : fallback; } catch { return fallback; } };
 const write = (key: string, value: unknown) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ } };
-const K = { ticks: (d: string) => `pathway-v1-ticks-${d}`, pbs: "pathway-v1-pbs", focus: (d: string) => `pathway-v1-focus-${weekStart(d)}` };
+const K = { ticks: (d: string) => `pathway-v1-ticks-${d}`, pbs: "pathway-v1-pbs", focus: (d: string) => `pathway-v1-focus-${weekStart(d)}`, matches: "pathway-v1-matches" };
 
 function localState(date: string): PathwayState {
-  return { storage: "local", done: read<string[]>(K.ticks(date), []), pbs: read(K.pbs, {}), focus: read<string | null>(K.focus(date), null) };
+  return { storage: "local", done: read<string[]>(K.ticks(date), []), pbs: read(K.pbs, {}), focus: read<string | null>(K.focus(date), null), matches: read<MatchLog[]>(K.matches, []) };
 }
 
-export function usePathwayStore(date: string = todaySydney()) {
-  const [state, setStateRaw] = useState<PathwayState>({ storage: "loading", done: [], pbs: {}, focus: null });
+export function usePathwayStore(date: string = todayMelbourne()) {
+  const [state, setStateRaw] = useState<PathwayState>({ storage: "loading", done: [], pbs: {}, focus: null, matches: [] });
   // A ref mirror so handlers read the CURRENT state synchronously; React 18
   // may defer updater functions, so they can't be used to read state out.
   const ref = useRef(state);
@@ -45,7 +47,7 @@ export function usePathwayStore(date: string = todaySydney()) {
     let alive = true;
     fetch(`/api/pathway?date=${date}`, { cache: "no-store" })
       .then(r => r.json())
-      .then(data => { if (!alive) return; setState(data.storage === "supabase" ? { storage: "supabase", done: data.done ?? [], pbs: data.pbs ?? {}, focus: data.focus ?? null } : localState(date)); })
+      .then(data => { if (!alive) return; setState(data.storage === "supabase" ? { storage: "supabase", done: data.done ?? [], pbs: data.pbs ?? {}, focus: data.focus ?? null, matches: data.matches ?? [] } : localState(date)); })
       .catch(() => { if (alive) setState(localState(date)); });
     return () => { alive = false; };
   }, [date, setState]);
@@ -87,5 +89,11 @@ export function usePathwayStore(date: string = todaySydney()) {
     return commit({ ...ref.current, focus: clean }, { kind: "focus", note: clean }, () => write(K.focus(date), clean));
   }, [commit, date]);
 
-  return { state, toggle, savePb, saveFocus };
+  const saveMatch = useCallback((log: MatchLog) => {
+    const s = ref.current;
+    const matches = [log, ...s.matches.filter(m => m.day !== log.day)].sort((a, b) => b.day.localeCompare(a.day));
+    return commit({ ...s, matches }, { kind: "match", ...log }, () => write(K.matches, matches));
+  }, [commit]);
+
+  return { state, toggle, savePb, saveFocus, saveMatch };
 }

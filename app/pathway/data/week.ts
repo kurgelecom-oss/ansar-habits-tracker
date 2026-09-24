@@ -23,7 +23,7 @@ export interface Session {
   kind: SessionKind;
   icon: string;
   title: string;
-  start: string; // HH:MM Sydney
+  start: string; // HH:MM Melbourne
   minutes: number;
   /** Counts toward the 12-hour weekly football cap. Film study and the agent meeting do not. */
   countsToLoad: boolean;

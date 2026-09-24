@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 const PHASE_FOR_MONTH = ["Off-season", "Pre-season", "Pre-season", "Season", "Season", "Season", "Season", "Season", "Finals & review", "Trials & transition", "Trials & transition", "Off-season"];
 
 export default function SeasonPage() {
-  const monthIdx = Number(new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Sydney", month: "numeric" }).format(new Date())) - 1;
+  const monthIdx = Number(new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Melbourne", month: "numeric" }).format(new Date())) - 1;
   const nowPhase = PHASE_FOR_MONTH[monthIdx];
   const nowMonth = MONTH_FOCUS[monthIdx].month;
   return (

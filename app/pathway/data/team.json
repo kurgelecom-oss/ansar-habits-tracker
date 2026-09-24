@@ -1,0 +1,6 @@
+{
+  "tenant": "fv",
+  "club": "",
+  "team": "",
+  "help": "club = his club's name as Football Victoria's Dribl Match Centre shows it (e.g. 'Doncaster Rovers SC'). team = words that pick out HIS team, e.g. 'U13 Juniors - B'. Leave team empty to see every team the club has, then narrow it."
+}
