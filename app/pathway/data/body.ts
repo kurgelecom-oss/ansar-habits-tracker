@@ -95,7 +95,7 @@ export const PROGRAMMES: Programme[] = [
         { name: "Plank", dose: "30 s", cue: "Don't let the hips sag" },
         { name: "Jump & stick", dose: "5", cue: "Land and freeze, soft knees" },
       ] },
-      { name: "Circuit B", when: "Friday · 3 rounds", items: [
+      { name: "Circuit B", when: "Saturday with the Push on bye / off-season weeks · 3 rounds", items: [
         { name: "Split squat", dose: "8 each leg", cue: "Back knee kisses the floor" },
         { name: "Side plank", dose: "20 s each side", cue: "Straight line head to feet" },
         { name: "Single-leg calf raise", dose: "12 each", cue: "Slow down, 2 s" },

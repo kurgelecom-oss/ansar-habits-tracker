@@ -7,8 +7,10 @@
    then asks the same JSON API the page itself uses — the data anyone can see at
    fv.dribl.com/fixtures. Runs nightly in GitHub Actions; needs `playwright`.
 
-   Config: app/pathway/data/team.json → { tenant, club, teams: [{ name, label }] }
-   (exact team names; the older single `team` substring filter still works).
+   Config: app/pathway/data/team.json → { tenant, club, seasons: { "2026": { teams: [{ name, label }] }, "2027": { ageGroup: "U13" } } }
+   Per season: exact team names, or an age group (every boys team of that age
+   at the club — Ansar picks his on the page). The current season is read from
+   Dribl, so the year rolls over by itself.
    Also pulls the league table (ladder) for each followed team.
    The current season is picked automatically, so a new season is picked up the
    night its fixtures are published. */
@@ -30,7 +32,7 @@ try {
   const page = await browser.newPage({ userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36" });
   await page.goto(`https://${cfg.tenant}.dribl.com/fixtures/`, { waitUntil: "networkidle", timeout: 90_000 });
 
-  const result = await page.evaluate(async ({ tenantSlug, clubName, teamFilter, exactTeams }) => {
+  const result = await page.evaluate(async ({ tenantSlug, clubName, teamFilter, exactTeams, seasonCfg }) => {
     const base = "https://mc-api.dribl.com/api";
     const j = async url => { const r = await fetch(url); if (!r.ok) throw new Error(`${r.status} ${url}`); return r.json(); };
     const tenant = (await j(`${base}/tenants?mc_link=${tenantSlug}.dribl.com&slug=${tenantSlug}`)).data.id;
@@ -53,7 +55,15 @@ try {
     const ours = name => (name ?? "").toLowerCase().includes(clubLower);
     const teams = [...new Set(rows.flatMap(r => [r.attributes.home_team_name, r.attributes.away_team_name]).filter(n => ours(n)).map(n => n.trim()))].sort();
     const filter = (teamFilter ?? "").trim().toLowerCase();
-    const exact = new Set((exactTeams ?? []).map(n => n.trim()));
+    // Which teams to follow this season: exact names, or every boys team in an age group.
+    const thisSeason = seasonCfg?.[season.name] ?? null;
+    let followed = [];
+    if (thisSeason?.teams?.length) followed = thisSeason.teams;
+    else if (thisSeason?.ageGroup) {
+      const age = new RegExp(`\\b${thisSeason.ageGroup}\\b`, "i");
+      followed = teams.filter(n => age.test(n) && !/female|girls/i.test(n)).map(n => ({ name: n, label: n.split(club.attributes.name).join("").replace(/\s+/g, " ").trim() }));
+    }
+    const exact = new Set([...(exactTeams ?? []), ...followed.map(t => t.name)].map(n => n.trim()));
     const sideOf = a => (ours(a.home_team_name) ? a.home_team_name : a.away_team_name ?? "").trim();
     const mine = rows.filter(r => {
       const side = sideOf(r.attributes);
@@ -80,7 +90,7 @@ try {
         }; }).sort((x, y) => x.position - y.position) });
       } catch (e) { /* a missing ladder never blocks the fixtures */ }
     }
-    return { season: season.name, club: club.attributes.name, clubLogo: club.attributes.image ?? null, teams, ladders, fixtures: mine.map(r => {
+    return { season: season.name, followed, club: club.attributes.name, clubLogo: club.attributes.image ?? null, teams, ladders, fixtures: mine.map(r => {
       const a = r.attributes;
       return {
         id: r.hash_id, team: sideOf(a), date: a.date, round: a.full_round ?? a.round, competition: a.competition_name, league: a.league_name,
@@ -90,11 +100,11 @@ try {
         status: a.status, homeScore: a.home_score, awayScore: a.away_score,
       };
     }) };
-  }, { tenantSlug: cfg.tenant, clubName: cfg.club, teamFilter: cfg.team, exactTeams: (cfg.teams ?? []).map(t => t.name) });
+  }, { tenantSlug: cfg.tenant, clubName: cfg.club, teamFilter: cfg.team, exactTeams: (cfg.teams ?? []).map(t => t.name), seasonCfg: cfg.seasons ?? null });
 
   if (result.error) throw new Error(result.error);
   result.fixtures.sort((x, y) => x.date.localeCompare(y.date));
-  const out = { configured: true, club: result.club, clubLogo: result.clubLogo, team: cfg.team || null, followed: cfg.teams ?? [], season: result.season, syncedAt: new Date().toISOString(), teams: result.teams, ladders: result.ladders, fixtures: result.fixtures, source: `https://${cfg.tenant}.dribl.com/fixtures/` };
+  const out = { configured: true, club: result.club, clubLogo: result.clubLogo, team: cfg.team || null, followed: result.followed.length ? result.followed : (cfg.teams ?? []), season: result.season, syncedAt: new Date().toISOString(), teams: result.teams, ladders: result.ladders, fixtures: result.fixtures, source: `https://${cfg.tenant}.dribl.com/fixtures/` };
   // Only write when the season data itself changed — a new syncedAt alone must
   // not produce a commit (every commit to main is a production deploy).
   let previous = null;

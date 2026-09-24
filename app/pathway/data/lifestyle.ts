@@ -42,7 +42,7 @@ export interface TreatWindow { when: string; icon: string; rule: string }
 
 export const TREAT_YES: TreatWindow[] = [
   { when: "Friday family night", icon: "🍕", rule: "One treat meal or dessert with the family — earned by a full week." },
-  { when: "After the match or Saturday Push", icon: "🍦", rule: "One treat. You played; enjoy it." },
+  { when: "After the Sunday match", icon: "🍦", rule: "One treat. You played; enjoy it." },
   { when: "Celebrations", icon: "🎉", rule: "Birthdays, Eid, family events — Mum decides." },
 ];
 
