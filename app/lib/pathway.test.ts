@@ -59,8 +59,11 @@ describe("the week", () => {
       expect(end <= 8 * 60 + 30 || start >= 13 * 60 + 30, `${day.day} ${s.id}`).toBe(true);
     }
   });
-  it("keeps Sunday a rest day and has unique session ids per day", () => {
-    expect(planFor("Sunday").sessions.every(s => !s.countsToLoad)).toBe(true);
+  it("keeps a light day (touches only) and no treat the night before the Sunday match", () => {
+    const light = WEEK.filter(d => d.sessions.filter(s => s.countsToLoad).reduce((m, s) => m + s.minutes, 0) <= 20);
+    expect(light.map(d => d.day)).toContain("Friday");
+    expect(planFor("Saturday").treatWindow).toBeNull();
+    expect(planFor("Sunday").sessions.some(s => s.kind === "match")).toBe(true);
     for (const day of WEEK) expect(new Set(checklistFor(day).map(c => c.id)).size).toBe(checklistFor(day).length);
   });
 });

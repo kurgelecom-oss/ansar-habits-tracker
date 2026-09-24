@@ -59,7 +59,8 @@ function MatchLogForm({ days, onSave }: { days: string[]; onSave: (v: { day: str
   );
 }
 
-const TEAM_KEY = "pathway-v1-team";
+// Per season, so next year he is asked again when the new age group has more than one team.
+const TEAM_KEY = `pathway-v1-team-${SEASON.season ?? "none"}`;
 
 function LadderTable({ l }: { l: Ladder }) {
   return (

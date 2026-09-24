@@ -1,9 +1,13 @@
 {
   "tenant": "fv",
   "club": "Pascoe Vale FC",
-  "teams": [
-    { "name": "Pascoe Vale FC U14", "label": "U14 YPL2 · Victorian Youth Premier League 2" },
-    { "name": "Pascoe Vale FC U14 Juniors - A Mixed Pascoe Vale FC U14 Boys - Alex", "label": "U14 Boys (Alex) · Mixed North-West 14A" }
-  ],
-  "help": "club = the club's name on fv.dribl.com. teams = the exact team names to follow (the Match Centre lets Ansar pick which is his). Run scripts/dribl-sync.mjs locally or the 'Pathway sync' GitHub Action to refresh."
+  "seasons": {
+    "2026": {
+      "teams": [
+        { "name": "Pascoe Vale FC U12 Juniors - C Mixed Pascoe Vale FC U12 Boys - Jimmy", "label": "U12 Boys (Jimmy) · Mixed Sunday North 12C" }
+      ]
+    },
+    "2027": { "ageGroup": "U13" }
+  },
+  "help": "Per season: 'teams' = exact Dribl team names to follow; or 'ageGroup' = follow every Pascoe Vale boys team in that age group and let Ansar tap which is his on the Matches page. When the 2027 U13 team is known, replace ageGroup with its exact name. Add \"2028\": { \"ageGroup\": \"U14\" } next year."
 }

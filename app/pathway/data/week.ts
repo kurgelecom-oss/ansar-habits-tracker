@@ -6,8 +6,9 @@
      08:30–13:30  homeschool — football never takes a minute of this
      afternoon  the day's one main session
      Mon + Wed evening  club training (the existing soccer_training habit)
-     Saturday  Saturday Push + match
-     Sunday  OFF — the board's Sunday-off rule stands
+     Saturday  Saturday Push (easy — match tomorrow) + match prep
+     Sunday  MATCH DAY — Pascoe Vale's junior league plays on Sundays
+     Friday  the light day (touches, film, mobility)
 
    The weekly load is capped at 12 hours (one hour per year of age — the
    American Academy of Pediatrics rule of thumb for young athletes). The page
@@ -89,33 +90,33 @@ export const WEEK: DayPlan[] = [
     treatWindow: null, lightsOut: "9:00pm",
   },
   {
-    day: "Friday", theme: "Film & Finish", headline: "Learn with your eyes, then finish with your feet.",
+    day: "Friday", theme: "Recovery & Film", headline: "Light legs, sharp eyes. Match is on Sunday.",
     sessions: [
       dawn,
-      { id: "fri_film", kind: "film", icon: "🎬", title: "Film study", start: "15:30", minutes: 25, countsToLoad: false, what: ["Watch ONE player for 20 minutes of a real match", "Count how often he checks his shoulder", "Write one thing to copy"], href: "/pathway/screens" },
-      { id: "fri_strength", kind: "strength", icon: "💪", title: "Strength circuit B", start: "16:00", minutes: 20, countsToLoad: true, what: ["Bodyweight circuit B — 3 rounds"], href: "/pathway/strength" },
-      { id: "fri_finish", kind: "technical", icon: "🥅", title: "Finishing + weak foot", start: "16:25", minutes: 20, countsToLoad: true, what: ["Try the move you saw in film study", "20 finishes each foot into the corners"], href: "/pathway/drills#finishing-gates" },
+      { id: "fri_film", kind: "film", icon: "🎬", title: "Film study", start: "15:30", minutes: 25, countsToLoad: false, what: ["Watch ONE player for 20 minutes of a real match", "Count how often he checks his shoulder", "Write one thing to copy on Sunday"], href: "/pathway/screens" },
+      { id: "fri_mobility", kind: "rest", icon: "🧘", title: "Mobility + stretch", start: "16:00", minutes: 10, countsToLoad: false, what: ["World's greatest stretch, deep squat, hamstring sweeps", "Legs up the wall 2 min"], href: "/pathway/fitness" },
     ],
-    fuel: "Normal day. Treat window tonight if the week was done properly — Mum's call.",
+    fuel: "Normal day. Treat window tonight if the week was done properly — Mum's call. Two days before the match, so tonight is the treat night, not Saturday.",
     treatWindow: "Friday family night — one treat meal or dessert.", lightsOut: "9:00pm",
   },
   {
-    day: "Saturday", theme: "Push + Match Day", headline: "Saturday Push, then play with freedom.",
+    day: "Saturday", theme: "Push + Match Prep", headline: "Saturday Push at easy pace. Tomorrow is match day.",
     sessions: [
-      { id: "sat_push", kind: "engine", icon: "🔥", title: "Saturday Push", start: "08:00", minutes: 40, countsToLoad: true, what: ["Engine: 2 km run, no walking", "Strength & skill: 3 rounds 10 push-ups, 30 s plank, 50 juggles", "(Match today? Mum may swap the run for a walk)"] },
-      { id: "sat_match", kind: "match", icon: "⚽", title: "Match / free play", start: "13:00", minutes: 60, countsToLoad: true, what: ["Match: 3 goals for yourself before kick-off (e.g. scan 10×, win 5 duels, 1 weak-foot pass)", "No match: 60 min street football with mates"] },
+      { id: "sat_push", kind: "engine", icon: "🔥", title: "Saturday Push", start: "08:00", minutes: 40, countsToLoad: true, what: ["Engine: 2 km run, no walking — conversation pace, the match is tomorrow", "Strength & skill: 3 rounds 10 push-ups, 30 s plank, 50 juggles", "Off-season / bye week: add Strength circuit B"] },
+      { id: "sat_prep", kind: "touches", icon: "🎒", title: "Match prep", start: "17:00", minutes: 10, countsToLoad: true, what: ["Boots clean, shin pads, water bottle packed", "Check kick-off time + ground on the Matches tab", "Write 3 goals for tomorrow (e.g. scan 10×, win 5 duels, 1 weak-foot pass)"], href: "/pathway/matches" },
     ],
-    fuel: "Match day: oats at breakfast, rice/pasta 3 hours before, water all day, orange slices at half-time.",
-    treatWindow: "After the match or Push — one treat.", lightsOut: "9:30pm",
+    fuel: "Match tomorrow: normal meals, extra carbs at dinner (rice, pasta), plenty of water. No junk tonight.",
+    treatWindow: null, lightsOut: "8:45pm",
   },
   {
-    day: "Sunday", theme: "Rest & Agent Meeting", headline: "Rest is training. Growing bodies build on rest days.",
+    day: "Sunday", theme: "Match Day", headline: "Pascoe Vale plays on Sundays. Play brave, play smart, have fun.",
     sessions: [
-      { id: "sun_rest", kind: "rest", icon: "😴", title: "Full rest", start: "09:00", minutes: 0, countsToLoad: false, what: ["No training. Kick a ball only for fun", "Sleep in", "Family time"] },
-      { id: "sun_agent", kind: "agent", icon: "🤝", title: "Agent meeting with Mum", start: "18:00", minutes: 10, countsToLoad: false, what: ["What went well this week?", "What hurt or felt tired?", "Pick ONE focus for next week"] },
+      { id: "sun_match", kind: "match", icon: "⚽", title: "Match (or free play)", start: "10:00", minutes: 60, countsToLoad: true, what: ["Kick-off and ground are on the Matches tab (times change week to week)", "Hit your 3 goals from last night", "No match (bye / off-season): play for fun, no training"], href: "/pathway/matches" },
+      { id: "sun_log", kind: "film", icon: "🧾", title: "Log my match", start: "15:00", minutes: 5, countsToLoad: false, what: ["Minutes, goals, assists, rating", "One thing I learned"], href: "/pathway/matches" },
+      { id: "sun_agent", kind: "agent", icon: "🤝", title: "Agent meeting with Mum", start: "18:00", minutes: 10, countsToLoad: false, what: ["What went well in the match and the week?", "What hurt or felt tired?", "Pick ONE focus for next week"] },
     ],
-    fuel: "Normal family day. Hydrate — tomorrow is a club day.",
-    treatWindow: null, lightsOut: "9:00pm",
+    fuel: "Match day: oats at breakfast, main meal 3 hours before kick-off, banana 1 hour before, orange slices at half-time, recovery snack after.",
+    treatWindow: "After the match — one treat.", lightsOut: "9:00pm",
   },
 ];
 
