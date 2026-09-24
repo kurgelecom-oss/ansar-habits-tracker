@@ -945,6 +945,7 @@
    "name": "Sam Kerr",
    "flag": "🇦🇺",
    "pos": "ST",
+   "she": true,
    "lead": [
     "Samantha May Kerr is an Australian professional soccer player who plays as a striker for Gotham FC of the National Women's Soccer League (NWSL) and the Australia national team, which she has captained since 2019. Known for her speed, skill, and tenacity, Kerr is widely considered one of the best strikers in the world, and one of Australia's greatest athletes."
    ],
@@ -955,14 +956,14 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e3/Sam_Kerr_%28Women_World_Cup_France_2019%29.jpg/500px-Sam_Kerr_%28Women_World_Cup_France_2019%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Sam_Kerr",
-   "fetchedAt": "2026-09-24",
-   "she": true
+   "fetchedAt": "2026-09-24"
   },
   {
    "id": "fowler",
    "name": "Mary Fowler",
    "flag": "🇦🇺",
    "pos": "AM",
+   "she": true,
    "lead": [
     "Mary Boio Fowler is an Australian professional soccer player who plays for English Women's Super League club Manchester City and the Australia national team. Mainly a forward, she is also able to play as a midfielder."
    ],
@@ -973,14 +974,14 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f4/Adelaide_United_v_Canberra_United_W-League_Rd_6_2019-12-22_Fowler_%2849258071411%29_%28cropped%29.jpg/500px-Adelaide_United_v_Canberra_United_W-League_Rd_6_2019-12-22_Fowler_%2849258071411%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Mary_Fowler",
-   "fetchedAt": "2026-09-24",
-   "she": true
+   "fetchedAt": "2026-09-24"
   },
   {
    "id": "bonmati",
    "name": "Aitana Bonmatí",
    "flag": "🇪🇸",
    "pos": "CM",
+   "she": true,
    "lead": [
     "Aitana Bonmatí i Conca is a Spanish professional footballer from Catalonia who plays as a midfielder for Liga F club Barcelona and the Spain national team. She has also represented Catalonia. Having won all major club and individual awards available to a European player by 2023, including the most-decorated season of any footballer ever for 2022–23, she is considered one of the best players in women's football, and one of the greatest of all time."
    ],
@@ -992,14 +993,14 @@
    "earlyHeading": "Youth",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/25th_Laureus_World_Sports_Awards_-_240422_214032.jpg/500px-25th_Laureus_World_Sports_Awards_-_240422_214032.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Aitana_Bonmat%C3%AD",
-   "fetchedAt": "2026-09-24",
-   "she": true
+   "fetchedAt": "2026-09-24"
   },
   {
    "id": "putellas",
    "name": "Alexia Putellas",
    "flag": "🇪🇸",
    "pos": "CM",
+   "she": true,
    "lead": [
     "Alèxia Putellas i Segura, often known mononymously as Alexia, is a Spanish professional footballer from Catalonia who plays as a midfielder or forward for Women's Super League club London City Lionesses and the Spain women's national team. She previously played for Espanyol, Levante, and Barcelona, and has represented Catalonia. Having won all major club and most of the individual awards available to a European player by 2022, she is widely regarded as one of the greatest female footballers of all time."
    ],
@@ -1009,8 +1010,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Premios_Goya_2026_-_Alexia_Putellas_%28cropped%29.jpg/500px-Premios_Goya_2026_-_Alexia_Putellas_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alexia_Putellas",
-   "fetchedAt": "2026-09-24",
-   "she": true
+   "fetchedAt": "2026-09-24"
   }
  ]
 }
