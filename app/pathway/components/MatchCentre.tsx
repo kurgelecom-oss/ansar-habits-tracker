@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SEASON, kickoff, mapsUrl, opponentOf, summarise, type Fixture } from "../data/matches";
+import { SEASON, forTeam, kickoff, mapsUrl, opponentOf, summarise, type Fixture, type Ladder } from "../data/matches";
 import { todayMelbourne, usePathwayStore } from "./usePathwayStore";
 import styles from "../pathway.module.css";
 
@@ -59,20 +59,60 @@ function MatchLogForm({ days, onSave }: { days: string[]; onSave: (v: { day: str
   );
 }
 
+const TEAM_KEY = "pathway-v1-team";
+
+function LadderTable({ l }: { l: Ladder }) {
+  return (
+    <section className={`${styles.card} ${styles.section}`}>
+      <p className={styles.kicker}>🏆 League table · {l.league}</p>
+      <div style={{ overflowX: "auto" }}>
+        <table className={styles.weekTable}>
+          <thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead>
+          <tbody>{l.rows.map(r => (
+            <tr key={r.team} style={r.us ? { background: "rgba(143,227,90,.14)", fontWeight: 800 } : undefined}>
+              <td>{r.position}</td><td>{r.us ? "⚽ " : ""}{shortTeam(r.team)}</td><td>{r.played}</td><td>{r.won}</td><td>{r.drawn}</td><td>{r.lost}</td><td>{r.gd > 0 ? `+${r.gd}` : r.gd}</td><td><b>{r.points}</b></td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 type RealMadrid = { available: boolean; phase?: string; competition?: string; startTime?: string; home?: { name: string; score: number | null }; away?: { name: string; score: number | null } };
 
 export default function MatchCentre() {
   const { state, saveMatch } = usePathwayStore();
   const [rm, setRm] = useState<RealMadrid | null>(null);
   const [allResults, setAllResults] = useState(false);
+  const followed = SEASON.followed ?? [];
+  const [team, setTeam] = useState<string | null>(null);
+  const [teamLoaded, setTeamLoaded] = useState(false);
+  useEffect(() => {
+    try { const saved = localStorage.getItem(TEAM_KEY); if (saved && followed.some(t => t.name === saved)) setTeam(saved); else if (followed.length === 1) setTeam(followed[0].name); } catch { /* private mode */ }
+    setTeamLoaded(true);
+  }, [followed]);
+  const pickTeam = (name: string) => { setTeam(name); try { localStorage.setItem(TEAM_KEY, name); } catch { /* private mode */ } };
+  const teamLabel = followed.find(t => t.name === team)?.label;
+  const ladder = (SEASON.ladders ?? []).find(l => l.team === team) ?? null;
   useEffect(() => { fetch("/api/football/real-madrid").then(r => r.json()).then(setRm).catch(() => setRm({ available: false })); }, []);
-  const s = summarise(SEASON.fixtures);
+  const s = summarise(forTeam(SEASON.fixtures, team));
   const logs = state.matches;
   const totals = logs.reduce((t, m) => ({ n: t.n + 1, min: t.min + m.min, g: t.g + m.goals, a: t.a + m.assists, r: t.r + m.rating }), { n: 0, min: 0, g: 0, a: 0, r: 0 });
   const recentDays = s.results.slice(0, 3).map(p => new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Melbourne" }).format(new Date(p.f.date)));
 
   return (
     <>
+      {SEASON.configured && followed.length > 1 && teamLoaded ? (
+        <section className={styles.card} style={{ marginBottom: 14, borderColor: team ? "var(--pw-line)" : "var(--pw-gold)" }}>
+          <p className={styles.kicker}>{team ? "Your team" : "👋 Which one is your team?"}</p>
+          <div className={styles.chips} style={{ margin: "6px 0 0" }}>
+            {followed.map(t => <button key={t.name} type="button" className={`${styles.chip} ${team === t.name ? styles.chipOn : ""}`} aria-pressed={team === t.name} onClick={() => pickTeam(t.name)}>{t.label}</button>)}
+          </div>
+          {!team ? <p className={styles.small} style={{ color: "var(--pw-sub)", marginBottom: 0 }}>Tap one — this device remembers it. Until then you see both teams together.</p> : null}
+        </section>
+      ) : null}
+
       {!SEASON.configured ? (
         <section className={styles.card} style={{ borderColor: "var(--pw-gold)" }}>
           <p className={styles.kicker}>🔌 Connect his team</p>
@@ -88,7 +128,8 @@ export default function MatchCentre() {
         <div className={`${styles.grid3} ${styles.section}`}>
           <section className={styles.card}>
             <p className={styles.kicker}>📊 Team season · {SEASON.season}</p>
-            <h3>{SEASON.team ? `${SEASON.club} · ${SEASON.team}` : SEASON.club}</h3>
+            <h3>{teamLabel ?? (SEASON.team ? `${SEASON.club} · ${SEASON.team}` : SEASON.club)}</h3>
+            {ladder ? <p className={styles.small} style={{ margin: "0 0 6px", color: "var(--pw-gold)" }}>{(() => { const us = ladder.rows.find(r => r.us); return us ? `${us.position}${["th","st","nd","rd"][us.position % 10 > 3 || [11,12,13].includes(us.position % 100) ? 0 : us.position % 10]} of ${ladder.rows.length} · ${us.points} pts` : ""; })()}</p> : null}
             <div className={styles.score} style={{ fontSize: 30 }}>{s.record.w}W {s.record.d}D {s.record.l}L</div>
             <p className={styles.muted} style={{ margin: "6px 0" }}>Goals {s.record.gf}–{s.record.ga} · {s.record.p} played</p>
             <div style={{ display: "flex", gap: 6 }}>{s.form.map((o, i) => <span key={i} className={`${styles.pill} ${o === "W" ? styles.pillLime : o === "L" ? styles.pillRed : styles.pillGold}`}>{o}</span>)}</div>
@@ -100,6 +141,8 @@ export default function MatchCentre() {
           </section>
         </div>
       ) : null}
+
+      {ladder ? <LadderTable l={ladder} /> : null}
 
       {SEASON.configured && s.results.length ? (
         <section className={`${styles.card} ${styles.section}`}>
