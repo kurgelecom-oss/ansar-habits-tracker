@@ -1,6 +1,9 @@
 {
   "tenant": "fv",
-  "club": "",
-  "team": "",
-  "help": "club = his club's name as Football Victoria's Dribl Match Centre shows it (e.g. 'Doncaster Rovers SC'). team = words that pick out HIS team, e.g. 'U13 Juniors - B'. Leave team empty to see every team the club has, then narrow it."
+  "club": "Pascoe Vale FC",
+  "teams": [
+    { "name": "Pascoe Vale FC U14", "label": "U14 YPL2 · Victorian Youth Premier League 2" },
+    { "name": "Pascoe Vale FC U14 Juniors - A Mixed Pascoe Vale FC U14 Boys - Alex", "label": "U14 Boys (Alex) · Mixed North-West 14A" }
+  ],
+  "help": "club = the club's name on fv.dribl.com. teams = the exact team names to follow (the Match Centre lets Ansar pick which is his). Run scripts/dribl-sync.mjs locally or the 'Pathway sync' GitHub Action to refresh."
 }

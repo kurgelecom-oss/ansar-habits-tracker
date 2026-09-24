@@ -4,7 +4,7 @@
 import raw from "./fixtures.json";
 
 export interface Fixture {
-  id: string; date: string; round: string | null; competition: string | null; league: string | null;
+  id: string; team?: string; date: string; round: string | null; competition: string | null; league: string | null;
   home: string; away: string; homeLogo: string | null; awayLogo: string | null; isHome: boolean; bye: boolean;
   ground: string | null; field: string | null; address: string | null; lat: number | null; lng: number | null;
   status: string | null; homeScore: number | null; awayScore: number | null;
@@ -12,7 +12,14 @@ export interface Fixture {
 export interface SeasonFile {
   configured: boolean; club: string | null; clubLogo?: string | null; team: string | null; season: string | null;
   syncedAt: string | null; teams: string[]; fixtures: Fixture[]; source?: string;
+  followed?: { name: string; label: string }[];
+  ladders?: Ladder[];
 }
+export interface LadderRow { position: number; team: string; logo: string | null; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; gd: number; points: number; us: boolean }
+export interface Ladder { team: string; competition: string; league: string; rows: LadderRow[] }
+
+/** Fixtures for one followed team (all of them when no team is picked). */
+export const forTeam = (fixtures: Fixture[], team: string | null) => (team ? fixtures.filter(f => f.team === team) : fixtures);
 
 export const SEASON = raw as unknown as SeasonFile;
 
@@ -30,7 +37,7 @@ export function played(f: Fixture): Played | null {
 
 export function summarise(fixtures: Fixture[], now: Date = new Date()) {
   const results = fixtures.map(played).filter((p): p is Played => p !== null).sort((a, b) => b.f.date.localeCompare(a.f.date));
-  const upcoming = fixtures.filter(f => !f.bye && !played(f) && new Date(f.date).getTime() > now.getTime() - 2 * 3600_000).sort((a, b) => a.date.localeCompare(b.date));
+  const upcoming = fixtures.filter(f => !f.bye && !/cancel/i.test(f.status ?? "") && !played(f) && new Date(f.date).getTime() > now.getTime() - 2 * 3600_000).sort((a, b) => a.date.localeCompare(b.date));
   const record = results.reduce((r, p) => ({ ...r, p: r.p + 1, w: r.w + (p.outcome === "W" ? 1 : 0), d: r.d + (p.outcome === "D" ? 1 : 0), l: r.l + (p.outcome === "L" ? 1 : 0), gf: r.gf + p.us, ga: r.ga + p.them }), { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 });
   return { next: upcoming[0] ?? null, upcoming, results, record, form: results.slice(0, 5).map(p => p.outcome) };
 }
@@ -40,7 +47,7 @@ export const melbourneDay = (iso: string | Date) => DAY_FMT.format(typeof iso ==
 
 /** A fixture on the given Melbourne calendar day (match-day banner on Today). */
 export function fixtureOn(fixtures: Fixture[], day: string): Fixture | null {
-  return fixtures.find(f => !f.bye && melbourneDay(f.date) === day) ?? null;
+  return fixtures.find(f => !f.bye && !/cancel/i.test(f.status ?? "") && melbourneDay(f.date) === day) ?? null;
 }
 
 const KICKOFF_FMT = new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Melbourne", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });

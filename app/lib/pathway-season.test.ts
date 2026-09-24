@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fixtureOn, summarise, type Fixture } from "../pathway/data/matches";
+import { fixtureOn, forTeam, summarise, type Fixture } from "../pathway/data/matches";
 import { playersForWeek, weekIndex, type PlayerStory } from "../pathway/data/players";
 import { matchLogs, parseWrite } from "./pathway";
 
@@ -29,6 +29,17 @@ describe("summarise", () => {
   });
   it("finds a fixture by Melbourne day (a 10:30am local kick-off is the previous UTC day)", () => {
     expect(fixtureOn([fx("m", "2026-05-16T23:30:00Z", true, null, null)], "2026-05-17")?.id).toBe("m");
+  });
+});
+
+describe("teams and cancellations", () => {
+  it("filters to one followed team and never lists a cancelled game as upcoming", () => {
+    const now = new Date("2026-05-10T00:00:00Z");
+    const a = { ...fx("x", "2026-05-17T00:00:00Z", true, null, null), team: "U14 YPL" };
+    const b = { ...fx("y", "2026-05-18T00:00:00Z", true, null, null), team: "U14 Community", status: "cancelled" };
+    expect(forTeam([a, b], "U14 YPL").map(f => f.id)).toEqual(["x"]);
+    expect(forTeam([a, b], null)).toHaveLength(2);
+    expect(summarise([a, b], now).upcoming.map(f => f.id)).toEqual(["x"]);
   });
 });
 
