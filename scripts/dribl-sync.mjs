@@ -95,7 +95,13 @@ try {
   if (result.error) throw new Error(result.error);
   result.fixtures.sort((x, y) => x.date.localeCompare(y.date));
   const out = { configured: true, club: result.club, clubLogo: result.clubLogo, team: cfg.team || null, followed: cfg.teams ?? [], season: result.season, syncedAt: new Date().toISOString(), teams: result.teams, ladders: result.ladders, fixtures: result.fixtures, source: `https://${cfg.tenant}.dribl.com/fixtures/` };
-  await writeFile(OUT, JSON.stringify(out, null, 1) + "\n");
+  // Only write when the season data itself changed — a new syncedAt alone must
+  // not produce a commit (every commit to main is a production deploy).
+  let previous = null;
+  try { previous = JSON.parse(await readFile(OUT, "utf8")); } catch { /* first run */ }
+  const strip = o => JSON.stringify({ ...o, syncedAt: null });
+  if (previous && strip(previous) === strip(out)) { console.log("Season data unchanged — not rewriting fixtures.json."); }
+  else await writeFile(OUT, JSON.stringify(out, null, 1) + "\n");
   console.log(`${result.club} · season ${result.season} · ${result.fixtures.length} fixtures · ${result.ladders.length} ladders · ${result.teams.length} club teams`);
 } finally {
   await browser.close();
