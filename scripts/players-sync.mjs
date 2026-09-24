@@ -87,5 +87,9 @@ for (const p of pool) {
   await sleep(GAP_MS);
 }
 if (players.length < pool.length * 0.8) { console.error(`Only ${players.length}/${pool.length} players — not writing.`); process.exit(1); }
+// fetchedAt/updated change every run; only write when a story, photo or link changed.
+const strip = list => JSON.stringify(list.map(({ fetchedAt, ...rest }) => rest));
+const before = Object.values(previous);
+if (before.length && strip(before) === strip(players)) { console.log("Player stories unchanged — not rewriting players.json."); process.exit(0); }
 await writeFile(OUT, JSON.stringify({ updated: new Date().toISOString().slice(0, 10), source: "Wikipedia (CC BY-SA 4.0)", players }, null, 1) + "\n");
 console.log(`players.json: ${fresh} fresh, ${kept} kept, ${failed} missing`);
