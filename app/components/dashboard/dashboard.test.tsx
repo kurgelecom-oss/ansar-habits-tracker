@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEvent, fireEvent, render, screen, within } from "@testing-library/react";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import ClubHeader from "./ClubHeader";
 import ClubStatus from "./ClubStatus";
@@ -34,10 +34,9 @@ import { requiresParentVerification } from "../../lib/parent-verified";
  * dropping the href in ClubNavigation) is all that reverting takes.
  */
 const FUTURE_ITEMS = ["History"];
-// School joined the bar in Phase 3, straight after Dashboard: it is the other
-// academy, not a sub-section of Progress. Football already had fourteen routes
-// of its own while school had none.
-const NAV_ORDER = ["Dashboard", "School", "Progress", "Targets", "Tests", "Leaderboards", ...FUTURE_ITEMS, "Settings"];
+// School joined the bar in Phase 3 and Football in Phase 4, side by side
+// straight after Today: the two academies are peers, not sub-sections.
+const NAV_ORDER = ["Today", "School", "Football", "Progress", "Targets", "Tests", "Leaderboards", ...FUTURE_ITEMS, "Settings"];
 
 /**
  * The habit row's declared min-height.
@@ -74,9 +73,9 @@ function navItem(label: string): HTMLElement {
 }
 
 describe("ClubNavigation", () => {
-  it("marks Dashboard as the only active destination", () => {
+  it("marks Today as the only active destination", () => {
     render(<ClubNavigation />);
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Today" })).toHaveAttribute("aria-current", "page");
     for (const label of FUTURE_ITEMS) {
       expect(navItem(label)).toHaveAttribute("aria-disabled", "true");
       expect(navItem(label)).toHaveAttribute("title", "Coming in a later ANSAR OS stage");
@@ -89,7 +88,8 @@ describe("ClubNavigation", () => {
    */
   it("gives built OS sections links and keeps unfinished OS sections disabled", () => {
     render(<ClubNavigation />);
-    expect(screen.getAllByRole("link")).toHaveLength(7);
+    expect(screen.getAllByRole("link")).toHaveLength(8);
+    expect(screen.getByRole("link", { name: "Football" })).toHaveAttribute("href", "/pathway");
     expect(screen.getByRole("link", { name: "School" })).toHaveAttribute("href", "/school");
     expect(screen.getByRole("link", { name: "Progress" })).toHaveAttribute("href", "/progress");
     expect(screen.getByRole("link", { name: "Targets" })).toHaveAttribute("href", "/targets");
@@ -106,7 +106,7 @@ describe("ClubNavigation", () => {
     expect(screen.getByText("Leaderboards")).toBeInTheDocument();
   });
 
-  it("keeps the eight items in spec order", () => {
+  it("keeps the nine items in spec order", () => {
     render(<ClubNavigation />);
     // Read the label nodes, not the items' textContent: each item now carries a
     // decorative icon span. It is aria-hidden, so the accessible name is
@@ -150,7 +150,7 @@ describe("DashboardShell", () => {
   it("names the landmark and renders navigation above its children", () => {
     render(<DashboardShell><p>board</p></DashboardShell>);
     const main = screen.getByRole("main", { name: "ANSAR FC Dashboard" });
-    expect(within(main).getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
+    expect(within(main).getByRole("link", { name: "Today" })).toBeInTheDocument();
     expect(within(main).getByText("board")).toBeInTheDocument();
   });
 });
@@ -446,6 +446,14 @@ describe("responsive rules for the header and Match Centre", () => {
     expect(rule("clubStatus")).toMatch(/flex-wrap:\s*wrap/);
   });
 
+  /** Phase 4: at 390px nothing may push the document sideways or clip. */
+  it("wraps the nav items and the motto instead of clipping or overflowing", () => {
+    expect(rule("clubNavList")).toMatch(/flex-wrap:\s*wrap/);
+    expect(rule("clubNavList")).not.toMatch(/overflow-x/);
+    expect(rule("clubMotto")).toMatch(/white-space:\s*normal/);
+    expect(rule("clubNavStatus")).toMatch(/flex-wrap:\s*wrap/);
+  });
+
   it("keeps the status cards visible instead of leaving them beyond the nav scroller", () => {
     expect(rule("clubNav")).toMatch(/flex-wrap:\s*wrap/);
     expect(rule("clubNavStatus")).toMatch(/width:\s*100%/);
@@ -644,9 +652,8 @@ describe("vertical budget before the panels", () => {
   // constraint — 1440 x 820 is, and it is measured separately below.
   const FUNDED_CEILING = 362;
 
-  it("still funds the raised ceiling by hiding the shared bar", () => {
-    expect(globalCss).toContain('body:has(main[aria-label^="ANSAR"]) .topnav');
-    expect(globalCss).toMatch(/--nav-h:\s*40px/);
+  it("still funds the raised ceiling by having no shared bar at all", () => {
+    expect(globalCss).not.toContain(".topnav");
     expect(pageSource).toMatch(/\.ab-root\{[^}]*padding-top:0/);
   });
 
@@ -1448,7 +1455,8 @@ describe("visual parity contracts", () => {
   const pageSource = readFileSync(resolve(process.cwd(), "app/page.tsx"), "utf8");
 
   it("removes the redundant shared navigation on every ANSAR OS surface", () => {
-    expect(globalCss).toContain('body:has(main[aria-label^="ANSAR"]) .topnav');
+    expect(globalCss).not.toContain(".topnav");
+    expect(existsSync(resolve(process.cwd(), "app/components/TopNav.tsx"))).toBe(false);
     expect(pageSource).toMatch(/\.ab-root\{[^}]*padding-top:0/);
   });
 

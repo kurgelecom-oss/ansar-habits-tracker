@@ -5,10 +5,10 @@ import { CONTROL_ROOM_FALLBACK_URL } from "../../lib/notion-sources";
 /**
  * The dashboard's own club navigation.
  *
- * NOT the shared TopNav. That one (app/components/TopNav.tsx) is the
- * cross-surface bar linking the six Kurgel properties and is byte-identical in
- * every repo. This bar is internal to ANSAR FC and names the club's own spaces.
- * Both are on screen at once, which is why this one is not fixed.
+ * The ONLY navigation bar. The shared cross-surface TopNav that linked out to
+ * the other Kurgel properties was removed in Phase 4: it was hidden on most
+ * routes and stacked above this bar on the rest. This bar names the club's own
+ * spaces and nothing outside them.
  *
  * Progress is the only new surface that is live in this stage. The remaining
  * labels deliberately stay disabled until their underlying data model exists:
@@ -30,10 +30,13 @@ import { CONTROL_ROOM_FALLBACK_URL } from "../../lib/notion-sources";
  * `Table`, never `Leaderboards` (spec §7.1).
  */
 const ITEMS: { label: string; icon: string; href?: string; external?: boolean }[] = [
-  { label: "Dashboard", icon: "\u{1F3E0}", href: "/" },
+  { label: "Today", icon: "\u{1F3E0}", href: "/" },
   // Phase 3: school gets its own address. Football has fourteen routes; school
   // had none and lived as a divider inside a card on the dashboard.
   { label: "School", icon: "\u{1F393}", href: "/school" },
+  // Phase 4: the two academies sit side by side in the bar. Football had
+  // fourteen routes and no way to reach them from here.
+  { label: "Football", icon: "\u26BD", href: "/pathway" },
   { label: "Progress", icon: "\u{1F4C8}", href: "/progress" },
   { label: "Targets", icon: "\u{1F3AF}", href: "/targets" },
   { label: "Tests", icon: "\u{1F4DA}", href: "/tests" },
@@ -43,7 +46,7 @@ const ITEMS: { label: string; icon: string; href?: string; external?: boolean }[
 ];
 
 export default function ClubNavigation(
-  { status = null, controlRoomUrl = CONTROL_ROOM_FALLBACK_URL, activeLabel = "Dashboard" }:
+  { status = null, controlRoomUrl = CONTROL_ROOM_FALLBACK_URL, activeLabel = "Today" }:
     { status?: React.ReactNode; controlRoomUrl?: string; activeLabel?: string },
 ) {
   return (

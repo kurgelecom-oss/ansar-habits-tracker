@@ -19,9 +19,7 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 .shell {
-  /* The shared .topnav is hidden on this route (globals.css) and .ab-root no
-     longer reserves --nav-h for it, so the shell owns the whole viewport. The
-     old calc() subtracted a 40px strip that is no longer drawn here. */
+  /* This bar is the only navigation, so the shell owns the whole viewport. */
   min-height: 100vh;
   padding: 0;
   display: flex;
@@ -1443,7 +1441,10 @@
     row-gap: 4px;
     padding: 7px 12px;
   }
-  .clubWordmark { font-size: 15px; }
+  .clubWordmark { font-size: 15px; white-space: normal; }
+  /* The motto was 23px and nowrap: 437px of text on a 390px screen, which is
+     what pushed the whole document sideways. */
+  .clubMotto { font-size: 13px; white-space: normal; }
   /* On a phone the band wraps; the badge joins the flow under the identity
      rather than sitting on top of it. */
   .clubWeek {
@@ -1512,13 +1513,17 @@
     margin-left: 0;
     padding-left: 0;
     justify-content: center;
+    flex-wrap: wrap;
   }
+  /* Wraps instead of scrolling sideways. A scroller clipped the fourth item
+     mid-word ("Targ…") and hid the rest with no cue that they existed. */
   .clubNavList {
     order: 3;
     width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
+    flex-wrap: wrap;
+    justify-content: center;
   }
+  .clubNavItem { min-height: 44px; padding: 0 10px; font-size: 14px; }
 
   .deviceClock { display: none; }
 

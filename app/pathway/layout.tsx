@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Football Pathway · ANSAR FC" };
 export default function PathwayLayout({ children }: { children: ReactNode }) {
   return (
     <main className={styles.shell} aria-label="ANSAR FC Football Pathway">
-      <ClubNavigation activeLabel="Targets" />
+      <ClubNavigation activeLabel="Football" />
       <PathwayNav />
       <div className={styles.content}>{children}</div>
     </main>
