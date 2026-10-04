@@ -53,6 +53,12 @@ const STALE_AFTER_DAYS = 7;
 export interface Subject {
   /** Stable within a day: slug of the label plus its position. */
   id: string;
+  /** Notion page id of the Daily Programme row, dashes stripped. The `id`
+   *  above is a display slug built from label + position, so it moves when a
+   *  day is reordered. This one survives reordering, renaming and re-dating,
+   *  which is what a durable per-block completion has to be keyed on.
+   *  Empty string when the row id is unavailable. Added Phase 1, 4 Oct 2026. */
+  rowId: string;
   /** The programme row's Label, e.g. "Block 1 — Maths". */
   name: string;
   /** The row's Duration, e.g. "45 min". Null when the cell is empty. */
@@ -219,6 +225,7 @@ export function mapProgramme(
     const guide = relationIds(p, "Guide").flatMap(id => guides.get(id) ?? []);
     return {
       id: subjectId(label, index),
+      rowId: String(row?.id ?? "").replace(/-/g, ""),
       name: label,
       duration: textProp(p, "Duration") || null,
       detail: textProp(p, "Task"),
