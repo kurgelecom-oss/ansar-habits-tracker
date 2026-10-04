@@ -33,7 +33,9 @@ import { requiresParentVerification } from "../../lib/parent-verified";
  * tables. It is asserted separately below, so putting it back here (and
  * dropping the href in ClubNavigation) is all that reverting takes.
  */
-const FUTURE_ITEMS = ["History"];
+// Empty since Phase 4: "History" was a disabled label to a screen that was
+// never built, and it cost the bar the width Football needed.
+const FUTURE_ITEMS: string[] = [];
 // School joined the bar in Phase 3 and Football in Phase 4, side by side
 // straight after Today: the two academies are peers, not sub-sections.
 const NAV_ORDER = ["Today", "School", "Football", "Progress", "Targets", "Tests", "Leaderboards", ...FUTURE_ITEMS, "Settings"];
@@ -106,7 +108,7 @@ describe("ClubNavigation", () => {
     expect(screen.getByText("Leaderboards")).toBeInTheDocument();
   });
 
-  it("keeps the nine items in spec order", () => {
+  it("keeps the eight items in spec order", () => {
     render(<ClubNavigation />);
     // Read the label nodes, not the items' textContent: each item now carries a
     // decorative icon span. It is aria-hidden, so the accessible name is

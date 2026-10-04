@@ -26,6 +26,7 @@ import HabitPanel from "./components/dashboard/HabitPanel";
 import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
 import SaturdayPanel from "./components/dashboard/SaturdayPanel";
 import RestDayCard from "./components/dashboard/RestDayCard";
+import TodayPillars from "./components/dashboard/TodayPillars";
 import { saturdayPs5, saturdayStreak as saturdayStreakOf } from "./lib/weekend";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import dashboardStyles from "./components/dashboard/dashboard.module.css";
@@ -1029,15 +1030,15 @@ export default function AnsarPage() {
 
   const BOARD_CSS = `
 /* No top padding: the ANSAR FC bar is the only navigation and sits in flow. */
-.ab-root{display:flex;flex-direction:column;height:100dvh;padding-top:0;overflow:hidden}
+/* A scrolling document at every width. The board used to be a 100dvh kiosk
+   with overflow hidden at 1440px+; two pillars above the habits do not fit one
+   screen, and a clipped habit is worse than a scroll. */
+.ab-root{display:flex;flex-direction:column;min-height:100dvh;padding-top:0}
 /* The board grid, the row/spend button chrome and the long-hold ring used to
    be declared here. They now live in dashboard.module.css beside the
    components that draw them — .grid carries the same four-column track list
    and the same 1439/820 breakpoints, and .holdRing the same two-second sweep.
    Only the rules for elements this file still renders remain below. */
-@media (max-width:1439px){
-  .ab-root{height:auto;min-height:100dvh;overflow:visible}
-}
 
 /* ── NOTION SOURCE STRIP ──────────────────────────────────────────────────
    Links to the three Notion databases this board reads from, for a parent who
@@ -1379,18 +1380,10 @@ export default function AnsarPage() {
 
       <ClubHeader />
 
-      {/* The scoreboard strip is replaced by the Match Centre frame. Its
-          cells did not disappear: Week total, the tier badge and Golden Boot
-          are in Work + Week, Banked is the Stretch Wallet's own summary, and
-          Today and Streak moved into the header status line. The Golden Boot
-          is now rendered in exactly one place. */}
-      <MatchCentre data={football ?? {
-        available: false,
-        reason: "upstream_unavailable",
-        message: "Loading Real Madrid's fixture…",
-        updatedAt: null,
-        stale: false,
-      }} />
+      {/* TODAY — School and Football as two equal pillars. The habits below
+          are the scaffolding around them. Drawn on every day including Sunday:
+          the rest day switches the habits off, not the academies' summaries. */}
+      <TodayPillars />
 
       {/* Server-unreachable banner. The board fails closed, and says so. */}
       {mounted && !gate && (
@@ -1501,6 +1494,17 @@ export default function AnsarPage() {
         )}
       </div>
       )}
+
+      {/* REAL MADRID — context, not the headline. It sat directly under the
+          masthead as the biggest thing on the page; it now closes the board,
+          after the two pillars and the habits. Same component, same data. */}
+      <MatchCentre data={football ?? {
+        available: false,
+        reason: "upstream_unavailable",
+        message: "Loading Real Madrid's fixture…",
+        updatedAt: null,
+        stale: false,
+      }} />
 
       {/* ── NOTION SOURCE STRIP ─────────────────────────────────────────────
           Where the board's own settings live, one click away for a parent
