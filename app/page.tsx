@@ -1498,6 +1498,9 @@ export default function AnsarPage() {
       {/* REAL MADRID — context, not the headline. It sat directly under the
           masthead as the biggest thing on the page; it now closes the board,
           after the two pillars and the habits. Same component, same data. */}
+      {/* The gap lives on a wrapper: the frame's own margin shorthand is set
+          per breakpoint, and its sides are part of the fixture's geometry. */}
+      <div style={{ paddingTop: 16, flexShrink: 0 }}>
       <MatchCentre data={football ?? {
         available: false,
         reason: "upstream_unavailable",
@@ -1505,6 +1508,7 @@ export default function AnsarPage() {
         updatedAt: null,
         stale: false,
       }} />
+      </div>
 
       {/* ── NOTION SOURCE STRIP ─────────────────────────────────────────────
           Where the board's own settings live, one click away for a parent
