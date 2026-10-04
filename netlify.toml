@@ -4,6 +4,11 @@
 
 [build.environment]
   NEXT_SKIP_VALIDATION = "1"
+  # Pinned 4 Oct 2026 to the version Netlify was ALREADY using, read off the
+  # build log ("Now using node v22.23.3"). Nothing changes today; the point is
+  # that nothing changes silently later either, when Netlify moves its default.
+  # Kept in step with .nvmrc.
+  NODE_VERSION = "22.23.3"
 
 [[redirects]]
   from = "/*"
