@@ -6,7 +6,7 @@ README: none
 Legacy: /Users/taylankursunlu/Projects/ansar-habits-tracker/HANDOFF.md — superseded by this file
 
 ### Working tree
-Branch: `main`
+Branch: `phase4/make-them-peers`
 Commit: `55442df`
 Dirty files: none
 Unpushed commits: none
@@ -46,4 +46,5 @@ One Chrome tab left open on the Supabase SQL editor (close call timed out twice)
 - 2026-10-04 — scoring.ts, gating.ts, evidence-gate.ts, streak.ts and api/tick are untouched through Phases 1–3 and must stay so during design phases.
 
 ### Pick up here
-Phase 4 ("Make them peers") in /Users/taylankursunlu/Projects/ansar-habits-tracker/app/page.tsx — rebuild the dashboard as two equal pillars (School, Football) with habits as scaffolding beneath, shrink the homeschool card to a summary linking to `/school`, and fix the phone overflow visible in docs/overhaul/screenshots/baseline/phone-390--home.png (nav clips at "Targ…", hero line bleeds past both edges). Read docs/overhaul/SCHOOL-INVENTORY.md first — all 7 layers are signed off and it is the contract. Done when `npm test` is green (currently 405), `next build` with every secret unset still generates 22/22 pages, `/api/habits` still returns 19 habits, and phone/tablet/desktop screenshots re-captured at 390/834/1440 show no horizontal scroll.
+Phase 4 is BUILT but NOT GATED, on local branch `phase4/make-them-peers` (2 commits, not pushed; `main` also has the unpushed SNAPSHOT commit). Done: one nav bar (TopNav deleted, Today/School/Football, History removed), phone overflow fixed, two equal pillars in /Users/taylankursunlu/Projects/ansar-habits-tracker/app/components/dashboard/TodayPillars.tsx, lessons list removed from Today's Programme, Match Centre moved to the foot, board scrolls at every width. Verified locally: 412 tests, secretless `next build` 22/22, no horizontal scroll at 390/834/1180/1440.
+Remaining before merge: (1) push the branch and open a PR for a deploy preview; (2) on a WEEKDAY, check the pillars above the four habit panels and re-capture /, /progress, /tests at 390/834/1440 into docs/overhaul/screenshots/phase4/ — the current shots are a Sunday rest day with no local NOTION_TOKEN; (3) confirm `/api/habits` returns 19 on the preview (local returns 0: NOTION_TOKEN is empty in .env.local); (4) tk decision: the Weekday/Saturday toggle was KEPT — it works as a locked preview on live; remove it if that is not wanted.
