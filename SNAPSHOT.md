@@ -6,7 +6,7 @@ README: none
 Legacy: /Users/taylankursunlu/Projects/ansar-habits-tracker/HANDOFF.md — superseded by this file
 
 ### Working tree
-Branch: `phase4/make-them-peers`
+Branch: `ui/new-palette`
 Commit: `55442df`
 Dirty files: none
 Unpushed commits: none
@@ -45,6 +45,7 @@ One Chrome tab left open on the Supabase SQL editor (close call timed out twice)
 - 2026-10-04 — Phase 3 did NOT shrink the dashboard homeschool card, despite the proposal putting it there. Doing it with the /school build would make the "nothing disappears" gate unverifiable; deferred to Phase 4.
 - 2026-10-04 — scoring.ts, gating.ts, evidence-gate.ts, streak.ts and api/tick are untouched through Phases 1–3 and must stay so during design phases.
 
-### Pick up here
-Phase 4 is in PR #23 (https://github.com/kurgelecom-oss/ansar-habits-tracker/pull/23), branch `phase4/make-them-peers`, NOT merged. Preview: https://deploy-preview-23--ansar-habits-tracker.netlify.app. Verified: 412 tests, secretless `next build` 22/22, `/api/habits` = 19 on the preview, nine screenshots in docs/overhaul/screenshots/phase4/ with no horizontal scroll at 390/834/1440.
-One gate item left: every capture so far is a Sunday rest day, so the weekday layout (two pillars above the four habit panels) has never been seen with real data. On a weekday, open the preview, check it, re-capture `/` at the three widths, then merge. Open tk decision: the Weekday/Saturday toggle was KEPT (it is a locked preview); remove it if not wanted. `main` locally carries one unpushed commit (SNAPSHOT.md) that the PR also contains.
+### Pick### Pick up here
+Two open PRs, neither merged. PR #24 (https://github.com/kurgelecom-oss/ansar-habits-tracker/pull/24, branch `ui/new-palette`, targets `main`) contains Phase 4 PLUS the seven-colour recolour tk approved on 4 Oct 2026; preview https://deploy-preview-24--ansar-habits-tracker.netlify.app. PR #23 is Phase 4 alone. Merging #24 lands both and #23 can be closed. Palette roles and the dark-text-on-blue rule are written at the top of /Users/taylankursunlu/Projects/ansar-habits-tracker/app/globals.css; `--cyan` no longer exists, the accent token is `--accent`.
+Verified on #24: 412 tests, secretless `next build` 22/22, `/api/habits` = 19 and all routes 200 on the preview, seven screens viewed at 1440, home at 390 with no horizontal scroll.
+One gate item left for both: every capture so far is a Sunday rest day, so habit rows in Done / Open / Locked / Missed states have never been seen in the new colours or under the two pillars with real data. On a weekday, open the #24 preview, check `/`, re-capture at 390/834/1440, then merge. The Weekday/Saturday toggle was kept. `main` locally carries one unpushed commit (SNAPSHOT.md) that both PRs contain.
