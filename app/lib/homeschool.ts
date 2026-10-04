@@ -100,7 +100,7 @@ export interface SchoolDay {
   message: string | null;
 }
 
-async function notionPost(path: string, body: unknown): Promise<any> {
+export async function notionPost(path: string, body: unknown): Promise<any> {
   if (!NOTION_TOKEN) throw new Error("Missing NOTION_TOKEN");
   const res = await fetch(`https://api.notion.com/v1${path}`, {
     method: "POST",
