@@ -10,7 +10,10 @@ dist
 # Build-generated / tooling artifacts (never committed)
 next-env.d.ts
 tsconfig.tsbuildinfo
-package-lock.json
+# package-lock.json is NOT a build artifact: it is the record that makes two
+# builds identical. Ignoring it meant Netlify had no lockfile and re-resolved
+# every "^" range on each deploy, so the same commit could build different
+# code. Tracked from 4 Oct 2026.
 
 # Local Netlify folder
 .netlify

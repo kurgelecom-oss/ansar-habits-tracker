@@ -1,0 +1,384 @@
+Ansar OS Restructure
+ Ansar OS · restructure proposal · 4 October 2026
+ One system,
+ two academies
+ The football side already knows what it is building a twelve-year-old toward. The school
+ side — five hours a day against football's one — has today's list and nothing else. This is
+ the plan to make them equals, and the order to do it in so nothing already working breaks.
+ Scope · evaluation & plan only
+ No code changed
+ 7 screens proposed
+ 7 phases
+ The thesis
+ Two academies, rendered identically
+ Equal weight is not a feeling, it is a structure. Both sides get a route, a year, a term,
+ a week, a session, a record and a ritual. Same shape, same depth, different content.
+ School
+ The yearYear 6 · AC v9
+ The arcTerm 4 of 4
+ The weekPhase 1 · Week 8
+ The session6 blocks · 5 hrs
+ The recordper subject
+ The ritualFriday recall
+ The proofmonthly exam
+ Everything above already exists as data. Almost none of it reaches a screen.
+ Football
+ The yearU12 → U13
+ The arcSeason phase
+ The week12 hr load cap
+ The sessiondrills · timed
+ The recordmatch log
+ The ritualSunday match
+ The proofscout benchmarks
+ All built, all on screen, all reachable. This is the template — not the rival.
+ The shape
+ Where school lives now, and where it should
+ Today school is a divider inside a card inside a column of a football dashboard. Three
+ levels of nesting to reach the most important thing in the house.
+ Now
+ /  dashboard
+ Real Madrid match centre 104px tall
+ Morning habits
+ Today's Programme one card
+ Today's lessons 12px · read-only
+ Homeschool 1 checkbox = 5 hrs
+ Afternoon / Evening teeth, reading
+ Conditional
+ Work + Week
+ Stretch Wallet
+ /pathway  14 routes · own design system
+ /tests  locked · empty
+ /progress  habit ticks only
+ /targets  8 zones · 7 go nowhere
+ /leaderboards  La Liga
+ Next
+ /  today — one board, two pillars
+ School · next block, 2 of 6
+ Football · next session
+ Habits · the scaffolding
+ Wallet
+ /school  the academy
+ Today 6 blocks, each tickable
+ This week Mon–Fri grid
+ The year term arc · you are here
+ Mastery 8 areas · evidence-backed
+ Recall Friday · the ritual
+ /football  /pathway, renamed to match
+ /record  one record, both academies
+ /parent  Nihal's desk · one door
+ The mapping
+ Football already solved every one of these
+ This is the useful discovery. There is no need to invent a learning product — the pattern
+ is in the repo already, applied to the wrong subject.
+ Football hasBuilt asSchool needs
+ | Year goal · U12 → U13 | pathway/data/week.ts | Year level & achievement standard
+ | Season phases, "you are here" | pathway/season/page.tsx | Term arc with the same marker
+ | Monthly focus ×12 | pathway/data/week.ts | Monthly focus per learning area
+ | Weekly load cap, shown on screen | 12 hrs · 1 hr per year of age | The week view — Mon to Fri, visible
+ | Today's session, timed checklist | components/TodayBoard.tsx | Today's 6 blocks, each one tickable
+ | Five-corner scout model, bronze→gold | pathway/data/scouts.ts | Mastery map across 8 areas
+ | Match log, after the game | MatchLogForm | Friday recall — already generated, never seen
+ | Drill library | pathway/data/drills.ts | Subject Guides — already written in Notion
+ | Calendar export, 10-min alarms | TodayBoard.tsx:27 | Same, for the school week
+ The screens
+ Seven surfaces, drawn
+ Sketches, not final art. They exist to settle structure and hierarchy — what is biggest,
+ what is tappable, what the child sees first. Numbers shown are illustrative.
+ Todayroute /
+ Two pillars at identical size. Neither academy is the other's sidebar. The habits that used to fill the board drop to scaffolding underneath.
+ Ansar OS
+ Today
+ School
+ Football
+ Record
+ Wallet
+ Mon 5 Oct · 8:12 am
+ School2 / 6 blocks
+ Morning33%
+ Block 3 — MathsCompare fractions using equivalent denominators
+ now
+45 min
+ Block 4 — ScienceSeparating mixtures: filtration
+ 10:15
+45 min
+ Friday recall in 4 days
+ Football1 / 2 sessions
+ This week4.5 / 12 hrs
+ ✓
+ Ball mastery — 20 minSole rolls, inside-outside, 3 sets
+ done
+7:05 am
+ Club training — Pascoe ValeScanning before receiving
+ 5:30pm
+75 min
+ Match Sunday · home
+ Habits5 / 7 · +18 pts
+ Morning ✓Journal ✓
+ Qur'an openReading 7:30pm
+ School · Todayroute /school
+ The keystone change. Six blocks, each with the real task text on the row instead of hidden in a pop-up, and each one tickable. The old single checkbox becomes the total at the bottom.
+ School
+ Today
+ This week
+ The year
+ Mastery
+ Recall
+ Phase 1 · Week 8
+ Monday 5 October “Hagia Sophia: the greatest building”
+ Today's blocks2 of 6 · 1 hr 30 of 5 hrs
+ ✓
+ Block 1 — EnglishThe Giver, ch. 7–9. Explain why Jonas hides the apple.
+ done
+8:30
+ ✓
+ Block 2 — TurkishEv, okul, bahçe + “-de / -da” locative. Say five sentences aloud.
+ done
+9:15
+ Block 3 — MathsCompare fractions with equivalent denominators. Explain why 2/3 = 4/6, then three new comparisons.
+ in progress
+45 min
+ Block 4 — ScienceSeparating mixtures: filtration. Predict first, then record what you actually saw.
+ 10:15
+45 min
+ Block 5 — HASSOttoman trade routes. One map, labelled.
+ 11:15
+45 min
+ Block 6 — TechnologiesScratch: loops inside loops. Ship the sprite that paints a square.
+ 12:15
+45 min
+ Session total
+ 6 of 6 earns +5
+ How Maths worksstanding guide
+ Khan Academy is the engine; the Task column is the stop for the day. Say the reasoning
+ out loud before writing it. A wrong answer you can explain beats a right one you can't.
+ School · This Weekroute /school/week
+ A homeschooled child currently cannot see his own week. This is five columns of data the app already holds and throws away.
+ School
+ Today
+ This week
+ The year
+ Mastery
+ Phase 1 · Week 8 · 5–9 Oct
+ Week 8 14 of 30 blocks done · Friday recall opens Fri 8:00am
+ Mon 52/6
+ English
+ Turkish
+ Maths
+ Science
+ HASS
+ Tech
+ Tue 60/6
+ Maths
+ English
+ Science
+ Arts
+ Health & PE
+ Turkish
+ Wed 70/5
+ Maths
+ HASS
+ Science · 3rd wk gap
+ Tech
+ English
+ Thu 80/6
+ English
+ Maths
+ Turkish
+ Science
+ Arts
+ HASS
+ Fri 9flex
+ Go deeper
+ Catch up
+ Recall ×6
+ Science needs proof before Friday
+ Languages: vocabulary not recorded
+ School · The Yearroute /school/year
+ Football has this exact screen. The Notion Week column already says "Phase 1 — Week 8" and is read into the app, then never shown to him.
+ School
+ Today
+ This week
+ The year
+ Mastery
+ Year 6 · 2026
+ Year 6 Australian Curriculum v9 · 4 terms · 40 weeks
+ Term 4 · Phase 1week 8 of 10
+ T1
+ T2
+ T3
+ T4 · W8
+ You are here — 8 weeks of Term 4 recorded, 2 to go
+ This term is for3 focuses
+ Fractions → rates and ratioMaths · the spine of the termon track
+ Ottoman world: trade, cities, faithHASS · 6 weekson track
+ Mixtures and separationScience · needs 3 logged sessionsbehind
+ By Christmasyear goal
+ Explain a fraction operation out loud, unpromptedevidence: 2 recalls + 1 exam2 of 3
+ Hold a 10-sentence Turkish exchangeevidence: recorded, marked by Nihal1 of 3
+ Ship one thing he built on the Macevidence: a link, not a screenshotdone
+ School · Masteryroute /school/mastery
+ The exam engine already computes a gap list per paper, then throws it away inside one record. Accumulate those and this screen builds itself.
+ School
+ Today
+ This week
+ The year
+ Mastery
+ Term 4 to date
+ Eight learning areas Nothing here is self-reported. Every bar is a marked recall or an exam.
+ English
+82%
+solid · 9 proofs
+ Maths
+78%
+solid · 7 proofs
+ Science
+—
+no proof · 3 wks
+ HASS
+64%
+history only
+ Technologies
+80%
+solid · 5 proofs
+ Languages
+58%
+words not logged
+ The Arts
+75%
+solid · 3 proofs
+ Health & PE
+88%
+solid · 6 proofs
+ Still open from last month3 gaps carried
+ Converting between fractions and decimalsMaths · missed 2 of 3 in September examrevisit
+ Why filtration works and sieving doesn'tScience · never assesseduntaught
+ ✓Locative case in TurkishClosed 28 Sept — explained it unpromptedclosed
+ School · Friday Recallroute /school/recall
+ Today this is behind a tab called "Tests", next to a La Liga table, and it is empty. It should be the peak of his week — the thing he gets to do because he did the work.
+ School
+ Today
+ This week
+ Recall
+ Fri 9 Oct · open
+ Week 8 recall · Maths
+ Four questions. There is no timer and no pass mark. Saying “I'm not sure about this part”
+ is a right answer, not a wrong one.
+ 01 · recall
+What did you work on in Maths this week? Name the actual topic.
+ 02 · explain
+Explain to someone who wasn't there why 2/3 and 4/6 are the same amount.
+ 03 · apply
+Make up your own pair of equivalent fractions and show why they match.
+ 04 · uncertainty
+What part of this still feels shaky? Be specific.
+ Submit to Nihal
+ Saves as you type · 6 subjects this week · 1 of 6
+ English doneScience · no work logged, skipped
+ Parent Deskroute /parent
+ Nihal currently has no surface of her own — every parent control is a PIN panel buried inside Ansar's pages. One door, one list of what needs her today.
+ Parent desk
+ Needs you
+ The week
+ Exams
+ Evidence
+ Settings
+ device unlocked · 23 days
+ 4 things need you Nothing else is waiting. You can close this.
+ Mark 3 Friday recallsMaths, English, Turkish · submitted Fri 9 Oct
+ Mark
+ Approve October exam · Maths12 questions previewed · approving freezes the paper
+ Review
+ Science has no work logged for 3 weeksWednesday Block 3 keeps being missed
+ See week
+ Confirm Turkish vocabulary taughtRows say “Duolingo 10 min” — the exam can't be built from that
+ Open Notion
+ This week, honestlyWeek 8
+ Blocks done14 / 30
+ With proof11 / 30
+ Done means he ticked it. Proof means there is something to look at.
+ Curriculum synclast night 07:53
+ 65 lessons · 19 recalls · 6 exam draftsAll October rows imported, 0 warningshealthy
+ Refresh nowTakes a few minutes — this box will say so
+ The Notion question
+ Keep it. Shrink its job.
+ Notion stays where you write.
+ It stops being what the board reads.
+ Right now the child's board phones Notion live, every load. That is why a renamed column can
+ blank the screen, why a normal Saturday reads as “No week loaded”, and why there is a wait
+ before anything is usable. Notion is a great place to write a week and a bad place to serve
+ one. The fix is one-directional: you keep authoring exactly as you do now, a job copies it
+ into the app's own database every night, and the board only ever reads the copy.
+ Notion keeps
+ Writing the week — dated subject rows, the way you already do it
+ The standing Subject Guides
+ The human week report, the one shown to VRQA
+ Habits, windows, points and the stretch wallet
+ Every link and switch in Settings
+ The app takes over
+ Serving today's lessons to the board
+ Being the durable record of what was taught and when
+ Holding per-subject completions and their proof
+ Surviving a Notion outage, rename or rebuild without a blank screen
+ The evidence export, dated and printable
+ Authorin Notion
+ You and the agent write dated rows into 2 · Daily Programme, exactly as the weekly protocol already says. Nothing about your Sunday night changes.
+ ↓ one direction only, nightly at 7am Melbourne
+ Storein the app
+ The sync that already writes ansar_assessment_lessons becomes the single source for the board too. Date-keyed, immutable, never overwritten by a later edit.
+ ↓ the board never calls Notion
+ Readon screen
+ Today, the week, the term, mastery and the recall all read the stored copy. Fast, offline-tolerant, and honest about its own age when a week hasn't been loaded yet.
+ The order
+ Seven phases, data before pixels
+ The rule behind the order: a screen can only show what the system records, so the record
+ gets built first. Phases 0 to 2 change almost nothing you can see, and they are what make
+ phases 3 to 6 safe.
+ Make it safe to change
+ nothing visible changes1 session
+ Before anything is restructured, stop the bleeding and get a safety net under the build.
+ Ships: find out why 65 imported lessons produced zero October exam drafts. Stop the August evidence report showing on the default Progress tab. Stop the weekend showing “No week loaded”. Lock the dependency versions so two deploys can't build differently. Make the app buildable without live secrets. Write down what the product is and what the design rules are, in two files, so the next six phases argue against something.
+ Gate: screenshots of every screen captured as a before. 401 tests still pass. Opened live, not just built.
+ Build the record
+ invisible to Ansar1–2 sessions
+ The keystone. Five hours of school stop being one checkbox — but the points stay exactly the same, so nothing he's earned moves.
+ Ships: a per-subject completion record, one row per block per day, keyed to the Notion row it came from. The existing single tick keeps working and keeps paying 5 points; it just becomes the total of the six rather than a separate claim. The new path writes alongside the old one for a week so you can compare them before trusting it.
+ Gate: point totals for a given week are byte-identical before and after. The scoring and gating files are not touched.
+ Switch what the board reads
+ faster, same look1 session
+ Notion becomes write-only. The board reads the stored copy.
+ Ships: today's lessons, the week title and the subject guides all served from the app's own database. The four-second wait before the board is usable goes away. A Notion outage stops being able to blank the screen. A weekend stops reading as a failure.
+ Gate: the stored copy matches a live Notion read, row for row, for a full week before the old path is removed.
+ Give school a home
+ the big visible one2–3 sessions
+ School gets its own address, the way football already has one.
+ Ships: /school with Today, This Week and The Year. Today's blocks carry the real task text and each one ticks. The week grid and the term arc come from data that already exists. On the dashboard, the homeschool section shrinks to a summary that links in.
+ Gate: every habit configured in Notion still appears somewhere. Nothing disappears to make the layout tidy.
+ Make them peers
+ the restructure2 sessions
+ The dashboard becomes Today: two pillars at equal size, habits underneath as scaffolding.
+ Ships: one navigation bar instead of two stacked ones — and the hidden one that links to your ecommerce dashboard goes. The Weekday/Saturday toggle either works or is removed. The phone overflow and the clipped clock are fixed. Real Madrid stays, as context rather than as the biggest thing on the page.
+ Gate: before-and-after screenshots at phone, tablet and desktop. No horizontal scroll at any width.
+ The rituals
+ the payoff2 sessions
+ Friday recall and the monthly exam become occasions instead of an audit behind a locked tab.
+ Ships: the recall gets its own screen, its own framing, and a sentence that tells him admitting a gap is the right answer. The exam gets a start screen that explains what happens if time runs out or the iPad dies — the system already handles both, he's just never told. Gaps start accumulating across papers into the Mastery map. The Parent Desk pulls Nihal's four scattered PIN panels into one door.
+ Gate: approved papers and submitted attempts are never rebuilt. Practice stays isolated from the real record.
+ One record
+ both academies1–2 sessions
+ Progress stops being a habit-tick percentage and becomes the record of both academies.
+ Ships: school and football side by side across weeks and terms — blocks done, proof filed, marks earned, load carried. The hardcoded Targets brochure either gets wired to this or goes. A dated, printable evidence export that a registration reviewer could actually read.
+ Gate: every number on the screen traces to a stored row. Nothing is inferred from a schedule.
+ The guardrails
+ How to do this without breaking it
+ Most of what is already built is good — the server-side rules, the assessment engine, the
+ honesty about evidence. These are the rules that keep a restructure from costing you any of it.
+ One layer per changeNever move data and redesign a screen in the same commit. If a week's points look wrong afterwards, you need to know which of the two did it.
+ Add alongside, prove, then switchThe new path runs in parallel with the old until they agree for a full week. Only then delete the old one.
+ The protected files stay protectedScoring, gating and the tick endpoint do not change during a design phase. Those rules are what make the board hard to cheat.
+ Approved exams are finishedAn approved paper or a submitted attempt is never rebuilt, not even to fix a rollover. Add a correction instead.
+ Never delete a dated row without a snapshotA date-keyed copy must exist and be verified before any Notion row is moved or re-dated. Losing coverage is the one unrecoverable mistake here.
+ Green build is not proofEvery phase ends by opening the deployed site and clicking through it. A successful deploy has never once meant the feature works.
+ Test the value, not the keySecret values arrive empty in deploy previews while the names still look present. Checking that a key exists reports success while every write fails.
+ Same screenshots, before and afterCapture every screen at phone, tablet and desktop before a phase and again after. That is how you catch what you didn't mean to change.
+ Half-done ships offIf a phase can't finish, it goes out behind a switch that is off — never half-on. A child's board is not the place to discover an unfinished idea.
+ Ansar OS · restructure proposal · evaluation and plan only · no code changed · 4 October 2026

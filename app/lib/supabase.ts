@@ -6,10 +6,23 @@ import { sydneyDateKey, sydneyWeekday, weekStartOf } from './time'
 // which hold the service role server-side. If you find yourself reaching for
 // `supabase.from(...).insert(...)` in a component, that is the bug this whole
 // branch exists to fix.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+/** Whether a real Supabase target was configured for this build. */
+export const supabaseConfigured = Boolean(supabaseUrl && supabaseKey)
+
+// createClient throws "supabaseUrl is required" at IMPORT time on an empty
+// value, which killed `next build` while prerendering "/" — so a checkout with
+// no secrets could not be built or tested at all. The placeholder keeps import
+// side-effect-free; .invalid is reserved by RFC 6761 and can never resolve, so
+// an unconfigured deploy fails at request time with a clear network error
+// instead of failing the build. Limitation: NEXT_PUBLIC_* are inlined at build
+// time, so a build without these vars stays unconfigured at runtime.
+export const supabase = createClient(
+  supabaseUrl || 'http://supabase.invalid',
+  supabaseKey || 'anon-key-not-configured',
+)
 
 // ── Dates ───────────────────────────────────────────────────────────────────
 // All three helpers now delegate to app/lib/time.ts, which is the single
