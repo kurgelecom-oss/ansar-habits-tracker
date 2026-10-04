@@ -31,6 +31,9 @@ import { CONTROL_ROOM_FALLBACK_URL } from "../../lib/notion-sources";
  */
 const ITEMS: { label: string; icon: string; href?: string; external?: boolean }[] = [
   { label: "Dashboard", icon: "\u{1F3E0}", href: "/" },
+  // Phase 3: school gets its own address. Football has fourteen routes; school
+  // had none and lived as a divider inside a card on the dashboard.
+  { label: "School", icon: "\u{1F393}", href: "/school" },
   { label: "Progress", icon: "\u{1F4C8}", href: "/progress" },
   { label: "Targets", icon: "\u{1F3AF}", href: "/targets" },
   { label: "Tests", icon: "\u{1F4DA}", href: "/tests" },

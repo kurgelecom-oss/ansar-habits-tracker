@@ -34,7 +34,10 @@ import { requiresParentVerification } from "../../lib/parent-verified";
  * dropping the href in ClubNavigation) is all that reverting takes.
  */
 const FUTURE_ITEMS = ["History"];
-const NAV_ORDER = ["Dashboard", "Progress", "Targets", "Tests", "Leaderboards", ...FUTURE_ITEMS, "Settings"];
+// School joined the bar in Phase 3, straight after Dashboard: it is the other
+// academy, not a sub-section of Progress. Football already had fourteen routes
+// of its own while school had none.
+const NAV_ORDER = ["Dashboard", "School", "Progress", "Targets", "Tests", "Leaderboards", ...FUTURE_ITEMS, "Settings"];
 
 /**
  * The habit row's declared min-height.
@@ -86,7 +89,8 @@ describe("ClubNavigation", () => {
    */
   it("gives built OS sections links and keeps unfinished OS sections disabled", () => {
     render(<ClubNavigation />);
-    expect(screen.getAllByRole("link")).toHaveLength(6);
+    expect(screen.getAllByRole("link")).toHaveLength(7);
+    expect(screen.getByRole("link", { name: "School" })).toHaveAttribute("href", "/school");
     expect(screen.getByRole("link", { name: "Progress" })).toHaveAttribute("href", "/progress");
     expect(screen.getByRole("link", { name: "Targets" })).toHaveAttribute("href", "/targets");
     expect(screen.getByRole("link", { name: "Tests" })).toHaveAttribute("href", "/tests");
@@ -102,7 +106,7 @@ describe("ClubNavigation", () => {
     expect(screen.getByText("Leaderboards")).toBeInTheDocument();
   });
 
-  it("keeps the seven items in spec order", () => {
+  it("keeps the eight items in spec order", () => {
     render(<ClubNavigation />);
     // Read the label nodes, not the items' textContent: each item now carries a
     // decorative icon span. It is aria-hidden, so the accessible name is
