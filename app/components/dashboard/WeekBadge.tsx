@@ -25,6 +25,11 @@ type WeekInfo = {
   weekUrl: string | null;
   stale: boolean;
   subjects: unknown[];
+  /** Why the card is empty, when it is. The API already distinguishes a
+   *  weekend from a real failure; this badge used to ignore it and render
+   *  "No week loaded" for both, so every Saturday and Sunday the board
+   *  accused itself of being misconfigured. Added 4 Oct 2026. */
+  message?: string | null;
 };
 
 export default function WeekBadge() {
@@ -45,14 +50,19 @@ export default function WeekBadge() {
   const label = info.weekTitle || "Week not named";
 
   if (!loaded) {
+    // A stated reason means the empty card is expected (the weekend, or Notion
+    // being unreachable). Only an unexplained empty card is a missing week.
+    const explained = Boolean(info.message);
     return (
       <span
         className={`${styles.weekBadge} ${styles.weekBadgeEmpty}`}
         data-testid="week-badge"
-        data-state="none"
-        title="📆 2 · Daily Programme has no active rows for today — load the week into the Control Room"
+        data-state={explained ? "explained" : "none"}
+        title={explained
+          ? (info.message as string)
+          : "📆 2 · Daily Programme has no active rows for today — load the week into the Control Room"}
       >
-        <span aria-hidden="true">📆</span> No week loaded
+        <span aria-hidden="true">📆</span> {info.message || "No week loaded"}
       </span>
     );
   }

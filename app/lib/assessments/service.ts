@@ -81,7 +81,7 @@ export async function runMaintenance(){
  try {
    await expireAttempts();
    let result;try{result=await syncCurriculum();}catch{result={lessons:0,reviews:0,exams:0,warnings:['Curriculum sync failed. Existing papers and saved work remain available; delivery retries continue.']};}
-   const status=await db.from('ansar_assessment_state').upsert({id:'curriculum',payload:{...result,summary:`${result.lessons} lesson snapshots · ${result.reviews} Friday reviews · ${result.exams} exam drafts processed.`},updated_at:new Date().toISOString()});if(status.error)throw new Error('Unable to save sync status');
+   const status=await db.from('ansar_assessment_state').upsert({id:'curriculum',payload:{...result,summary:`Last sync ${sydneyDateKey()} — this run only, not totals: ${result.lessons} dated lesson rows read · ${result.reviews} Friday reviews · ${result.exams} exam drafts created or updated. A run finds 0 exam drafts whenever the current month has no dated lessons yet.`},updated_at:new Date().toISOString()});if(status.error)throw new Error('Unable to save sync status');
    // Reconstruct unsent report jobs after a process crash between submission and enqueue.
    let offset=0;
    while(true){const rows=checked(await db.from(ATTEMPTS).select('*').neq('status','in_progress').or('paper_snapshot->>is_practice.eq.false,paper_snapshot->>is_practice.is.null').order('started_at').range(offset,offset+99)) as Attempt[];for(const a of rows)await report(a);if(rows.length<100)break;offset+=100;}

@@ -1,0 +1,1153 @@
+<title>Ansar OS Restructure</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+/* Layout: a single-column proposal document; the screen mockups break out as
+   full-width dark plates so they read as depictions of the product, not as
+   cards in the document. Two peer accents — school and football — always
+   rendered at identical weight, because the identical treatment IS the thesis. */
+
+:root {
+  /* dark-first: this is the document's own palette */
+  --ground: #0f141c;
+  --raised: #161d27;
+  --sunken: #0b1016;
+  --line: #243040;
+  --line-soft: #1b2430;
+  --ink: #e9eef4;
+  --ink-2: #a7b4c4;
+  --ink-3: #6c7b8d;
+  --school: #35cde4;
+  --school-dim: #1d6e7d;
+  --ball: #8ed158;
+  --ball-dim: #4a7030;
+  --flag: #e0a23c;
+  --stop: #e2685f;
+  color-scheme: dark;
+
+  /* The depicted product's palette. Fixed in both themes on purpose: a mockup
+     is a picture of a dark app, so it keeps its own ground either way. */
+  --scr-bg: #0b1016;
+  --scr-panel: #121a23;
+  --scr-row: #16202b;
+  --scr-line: #22303d;
+  --scr-ink: #eef3f8;
+  --scr-ink-2: #9aa9b9;
+  --scr-ink-3: #64768a;
+
+  --f-display: "Barlow Condensed", "Haettenschweiler", "Arial Narrow", sans-serif;
+  --f-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --ground: #f4f6f8;
+    --raised: #ffffff;
+    --sunken: #e8ecf0;
+    --line: #d2dae2;
+    --line-soft: #e2e8ee;
+    --ink: #121923;
+    --ink-2: #4a5765;
+    --ink-3: #74828f;
+    --school: #0e7f93;
+    --school-dim: #9fd8e2;
+    --ball: #4a7a24;
+    --ball-dim: #c3dfa8;
+    --flag: #8a5c10;
+    --stop: #ab2f27;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --ground: #f4f6f8;
+  --raised: #ffffff;
+  --sunken: #e8ecf0;
+  --line: #d2dae2;
+  --line-soft: #e2e8ee;
+  --ink: #121923;
+  --ink-2: #4a5765;
+  --ink-3: #74828f;
+  --school: #0e7f93;
+  --school-dim: #9fd8e2;
+  --ball: #4a7a24;
+  --ball-dim: #c3dfa8;
+  --flag: #8a5c10;
+  --stop: #ab2f27;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-inline: 20px;
+  padding-block: 0;
+}
+
+a { color: var(--school); }
+
+h1, h2, h3, h4 { font-family: var(--f-display); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: 0.005em; }
+h1 { font-size: clamp(2.6rem, 7vw, 4.6rem); line-height: 0.95; text-transform: uppercase; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.7rem, 4vw, 2.5rem); line-height: 1.05; text-transform: uppercase; }
+h3 { font-size: 1.3rem; line-height: 1.2; }
+p { margin: 0; }
+
+.eyebrow {
+  font-family: var(--f-data);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-3);
+}
+
+.lede { font-size: 1.15rem; color: var(--ink-2); max-width: 62ch; }
+.body-col { max-width: 68ch; display: grid; gap: 1rem; color: var(--ink-2); }
+.body-col strong { color: var(--ink); font-weight: 600; }
+
+/* ── masthead ─────────────────────────────────────────────────────────── */
+.masthead { padding-block: clamp(3rem, 9vw, 6rem) clamp(2rem, 5vw, 3.5rem); border-bottom: 1px solid var(--line); }
+.masthead h1 { margin-block: 0.7rem 1.2rem; }
+.split-word { display: block; }
+.split-word .s { color: var(--school); }
+.split-word .b { color: var(--ball); }
+.mast-meta {
+  margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 0.5rem 2rem;
+  font-family: var(--f-data); font-size: 0.75rem; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+/* ── generic section ──────────────────────────────────────────────────── */
+section { padding-block: clamp(2.8rem, 7vw, 4.5rem); }
+section + section { border-top: 1px solid var(--line-soft); }
+.sec-head { display: grid; gap: 0.6rem; margin-bottom: 2rem; }
+
+/* ── the two-pillar diagram ───────────────────────────────────────────── */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.pillar {
+  border: 1px solid var(--line); background: var(--raised);
+  padding: 1.4rem; display: grid; gap: 0.9rem; align-content: start;
+  min-width: 0;
+}
+.pillar-top { display: flex; align-items: baseline; gap: 0.6rem; }
+.pillar-dot { width: 10px; height: 10px; flex: none; border-radius: 50%; }
+.p-school .pillar-dot { background: var(--school); }
+.p-ball .pillar-dot { background: var(--ball); }
+.pillar h3 { font-size: 1.5rem; text-transform: uppercase; }
+.pillar-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.pillar-list li {
+  font-family: var(--f-data); font-size: 0.78rem; color: var(--ink-2);
+  padding-block: 0.5rem; border-top: 1px solid var(--line-soft);
+  display: flex; justify-content: space-between; gap: 1rem;
+}
+.pillar-list li span:last-child { color: var(--ink-3); flex: none; }
+.pillar-note { font-size: 0.85rem; color: var(--ink-3); }
+
+/* ── before / after ───────────────────────────────────────────────────── */
+.ba { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1rem; }
+.ba-card { border: 1px solid var(--line); background: var(--raised); padding: 1.3rem; min-width: 0; }
+.ba-card h4 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.9rem; }
+.ba-now h4 { color: var(--stop); }
+.ba-next h4 { color: var(--ball); }
+.tree { list-style: none; margin: 0; padding: 0; font-family: var(--f-data); font-size: 0.78rem; line-height: 1.9; }
+.tree li { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree .d1 { padding-left: 1.1rem; }
+.tree .d2 { padding-left: 2.2rem; }
+.tree .d3 { padding-left: 3.3rem; }
+.tree .muted { color: var(--ink-3); }
+.tree .hot { color: var(--stop); }
+.tree .ok { color: var(--ball); }
+.tree .sch { color: var(--school); }
+
+/* ── mapping table ────────────────────────────────────────────────────── */
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); background: var(--raised); }
+table { border-collapse: collapse; width: 100%; min-width: 540px; }
+th, td { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--line-soft); font-size: 0.88rem; vertical-align: top; }
+th {
+  font-family: var(--f-data); font-size: 0.68rem; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--ink-3); background: var(--sunken);
+  border-bottom: 1px solid var(--line); position: sticky; top: 0;
+}
+td:first-child { color: var(--ball); font-weight: 500; }
+td:last-child { color: var(--school); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+.has-it { color: var(--ink-3) !important; font-family: var(--f-data); font-size: 0.78rem; }
+
+/* ── screen mockups ───────────────────────────────────────────────────── */
+.mocks { display: grid; gap: 1.4rem; }
+.mock { min-width: 0; }
+.mock-cap {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.8rem;
+  margin-bottom: 0.7rem;
+}
+.mock-cap b { font-family: var(--f-display); font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.mock-cap em {
+  font-family: var(--f-data); font-size: 0.68rem; font-style: normal;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-3);
+}
+.mock-cap .why { font-size: 0.85rem; color: var(--ink-3); flex-basis: 100%; }
+
+.screen {
+  background: var(--scr-bg); color: var(--scr-ink);
+  border: 1px solid var(--scr-line); border-radius: 4px;
+  padding: 14px; display: grid; gap: 10px; overflow: hidden;
+  font-size: 13px; line-height: 1.45;
+}
+.screen * { min-width: 0; }
+
+/* shared screen furniture */
+.s-nav {
+  display: flex; flex-wrap: wrap; gap: 2px; align-items: center;
+  border-bottom: 1px solid var(--scr-line); padding-bottom: 10px;
+}
+.s-nav .crest {
+  font-family: var(--f-display); font-size: 13px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--scr-ink); padding-right: 12px; margin-right: 4px;
+  border-right: 1px solid var(--scr-line);
+}
+.s-tab {
+  font-family: var(--f-data); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--scr-ink-3); padding: 5px 9px; border-radius: 3px;
+}
+.s-tab.on-s { color: var(--scr-bg); background: var(--school); font-weight: 500; }
+.s-tab.on-b { color: var(--scr-bg); background: var(--ball); font-weight: 500; }
+.s-tab.lit-s { color: var(--school); }
+.s-tab.lit-b { color: var(--ball); }
+.s-nav .clock { margin-left: auto; font-family: var(--f-data); font-size: 10.5px; color: var(--scr-ink-3); }
+
+.s-h {
+  font-family: var(--f-display); text-transform: uppercase; letter-spacing: 0.04em;
+  font-size: 15px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+}
+.s-h .sub { font-family: var(--f-data); font-size: 10px; letter-spacing: 0.08em; color: var(--scr-ink-3); text-transform: uppercase; }
+
+.s-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 640px) { .s-grid-2 { grid-template-columns: 1fr; } }
+
+.s-panel {
+  background: var(--scr-panel); border: 1px solid var(--scr-line);
+  border-radius: 3px; padding: 11px; display: grid; gap: 8px; align-content: start;
+}
+.s-panel.lead-s { border-top: 2px solid var(--school); }
+.s-panel.lead-b { border-top: 2px solid var(--ball); }
+.s-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.s-panel-head b { font-family: var(--f-display); text-transform: uppercase; letter-spacing: 0.06em; font-size: 13px; }
+.s-panel-head .count { font-family: var(--f-data); font-size: 11px; color: var(--scr-ink-2); }
+
+/* a subject / task row */
+.s-row {
+  display: flex; align-items: center; gap: 9px;
+  background: var(--scr-row); border: 1px solid transparent;
+  border-radius: 3px; padding: 8px 9px; min-height: 40px;
+}
+.s-row .box {
+  width: 17px; height: 17px; flex: none; border-radius: 3px;
+  border: 1.5px solid var(--scr-ink-3); display: grid; place-items: center;
+  font-size: 10px; color: var(--scr-bg); font-weight: 700;
+}
+.s-row.done .box { background: var(--ball); border-color: var(--ball); }
+.s-row.done .nm { color: var(--scr-ink-2); }
+.s-row.live { border-color: var(--school); background: color-mix(in srgb, var(--school) 9%, var(--scr-row)); }
+.s-row.live .box { border-color: var(--school); }
+.s-row .nm { flex: 1; font-size: 12.5px; }
+.s-row .nm small { display: block; font-size: 10.5px; color: var(--scr-ink-3); }
+.s-row .meta { font-family: var(--f-data); font-size: 10px; color: var(--scr-ink-3); flex: none; text-align: right; }
+.s-row .meta .now { color: var(--school); }
+
+.s-strip {
+  display: flex; align-items: center; gap: 8px; font-family: var(--f-data);
+  font-size: 10.5px; color: var(--scr-ink-2); text-transform: uppercase; letter-spacing: 0.07em;
+}
+.s-bar { flex: 1; height: 5px; border-radius: 3px; background: var(--scr-line); overflow: hidden; }
+.s-bar i { display: block; height: 100%; }
+.s-bar i.s { background: var(--school); }
+.s-bar i.b { background: var(--ball); }
+
+.pill {
+  font-family: var(--f-data); font-size: 9.5px; text-transform: uppercase;
+  letter-spacing: 0.09em; padding: 2px 6px; border-radius: 2px; flex: none;
+  border: 1px solid currentColor;
+}
+.pill.s { color: var(--school); }
+.pill.b { color: var(--ball); }
+.pill.flag { color: var(--flag); }
+.pill.stop { color: var(--stop); }
+.pill.solid-s { background: var(--school); color: var(--scr-bg); border-color: var(--school); font-weight: 600; }
+
+/* week grid */
+.wk { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+@media (max-width: 560px) { .wk { grid-template-columns: repeat(2, 1fr); } }
+.wk-day { background: var(--scr-row); border: 1px solid var(--scr-line); border-radius: 3px; padding: 7px; display: grid; gap: 4px; align-content: start; }
+.wk-day.today { border-color: var(--school); }
+.wk-day h5 {
+  margin: 0; font-family: var(--f-data); font-size: 9.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--scr-ink-3); display: flex; justify-content: space-between;
+}
+.wk-day.today h5 { color: var(--school); }
+.wk-sub { font-size: 10.5px; color: var(--scr-ink-2); display: flex; align-items: center; gap: 4px; }
+.wk-sub i { width: 5px; height: 5px; flex: none; border-radius: 50%; background: var(--ball); }
+.wk-sub.open i { background: var(--scr-ink-3); }
+.wk-sub.gap i { background: var(--stop); }
+.wk-sub.open, .wk-sub.gap { color: var(--scr-ink-3); }
+
+/* term arc */
+.arc { display: grid; gap: 7px; }
+.arc-rail { display: flex; gap: 3px; }
+.arc-seg { flex: 1; height: 24px; border-radius: 2px; background: var(--scr-row); border: 1px solid var(--scr-line); display: grid; place-items: center; font-family: var(--f-data); font-size: 9px; color: var(--scr-ink-3); letter-spacing: 0.06em; }
+.arc-seg.past { background: var(--school-dim); color: var(--scr-ink); border-color: transparent; }
+.arc-seg.here { background: var(--school); color: var(--scr-bg); border-color: var(--school); font-weight: 700; }
+.arc-you { font-family: var(--f-data); font-size: 10px; color: var(--school); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* mastery map */
+.mast-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+@media (max-width: 560px) { .mast-grid { grid-template-columns: repeat(2, 1fr); } }
+.mast-cell { background: var(--scr-row); border: 1px solid var(--scr-line); border-radius: 3px; padding: 8px; display: grid; gap: 5px; }
+.mast-cell .nm { font-size: 11px; color: var(--scr-ink-2); }
+.mast-cell .val { font-family: var(--f-data); font-size: 17px; font-variant-numeric: tabular-nums; }
+.mast-cell .tag { font-family: var(--f-data); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+.mast-cell.solid .val, .mast-cell.solid .tag { color: var(--ball); }
+.mast-cell.watch .val, .mast-cell.watch .tag { color: var(--flag); }
+.mast-cell.gap .val, .mast-cell.gap .tag { color: var(--stop); }
+.mast-cell .dots { display: flex; gap: 2px; }
+.mast-cell .dots i { width: 100%; height: 4px; border-radius: 1px; background: var(--scr-line); }
+.mast-cell.solid .dots i:nth-child(-n+4) { background: var(--ball); }
+.mast-cell.watch .dots i:nth-child(-n+2) { background: var(--flag); }
+.mast-cell.gap .dots i:nth-child(-n+1) { background: var(--stop); }
+
+/* recall ritual */
+.recall { background: var(--scr-panel); border: 1px solid var(--scr-line); border-top: 2px solid var(--school); border-radius: 3px; padding: 14px; display: grid; gap: 10px; }
+.recall-h { font-family: var(--f-display); font-size: 19px; text-transform: uppercase; letter-spacing: 0.04em; }
+.recall-q { background: var(--scr-row); border-left: 2px solid var(--school); border-radius: 0 3px 3px 0; padding: 8px 10px; display: grid; gap: 3px; }
+.recall-q .k { font-family: var(--f-data); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--school); }
+.recall-q .t { font-size: 12px; color: var(--scr-ink); }
+.recall-foot { font-size: 11px; color: var(--scr-ink-3); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+
+/* parent desk */
+.desk-row { display: flex; align-items: center; gap: 9px; background: var(--scr-row); border: 1px solid var(--scr-line); border-radius: 3px; padding: 9px; }
+.desk-row .nm { flex: 1; font-size: 12px; }
+.desk-row .nm small { display: block; font-size: 10.5px; color: var(--scr-ink-3); }
+.desk-row .act { font-family: var(--f-data); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 8px; border-radius: 2px; background: var(--school); color: var(--scr-bg); font-weight: 600; flex: none; }
+.desk-row .act.ghost { background: transparent; border: 1px solid var(--scr-line); color: var(--scr-ink-2); font-weight: 400; }
+
+/* ── plumbing diagram ─────────────────────────────────────────────────── */
+.pipe { display: grid; gap: 0.75rem; }
+.pipe-row {
+  display: grid; grid-template-columns: 150px 1fr; gap: 1rem; align-items: start;
+  border: 1px solid var(--line); background: var(--raised); padding: 1rem;
+}
+@media (max-width: 620px) { .pipe-row { grid-template-columns: 1fr; gap: 0.5rem; } }
+.pipe-row .stage {
+  font-family: var(--f-display); text-transform: uppercase; font-size: 1.1rem;
+  letter-spacing: 0.05em; line-height: 1.15;
+}
+.pipe-row .stage small { display: block; font-family: var(--f-data); font-size: 0.65rem; letter-spacing: 0.12em; color: var(--ink-3); margin-top: 2px; }
+.pipe-row .what { color: var(--ink-2); font-size: 0.9rem; display: grid; gap: 0.35rem; }
+.pipe-row .what code { font-family: var(--f-data); font-size: 0.78rem; color: var(--ink); background: var(--sunken); padding: 1px 5px; border-radius: 2px; }
+.pipe-author { border-left: 3px solid var(--flag); }
+.pipe-store { border-left: 3px solid var(--school); }
+.pipe-read { border-left: 3px solid var(--ball); }
+.one-way { font-family: var(--f-data); font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.1em; text-transform: uppercase; text-align: center; }
+
+/* ── phases ───────────────────────────────────────────────────────────── */
+.phases { display: grid; gap: 0.75rem; counter-reset: ph -1; }
+.phase {
+  border: 1px solid var(--line); background: var(--raised);
+  display: grid; grid-template-columns: 70px 1fr; min-width: 0;
+}
+@media (max-width: 620px) { .phase { grid-template-columns: 52px 1fr; } }
+.phase-num {
+  background: var(--sunken); border-right: 1px solid var(--line);
+  display: grid; place-items: center; padding: 1rem 0.5rem;
+  font-family: var(--f-display); font-size: 2rem; color: var(--ink-3); line-height: 1;
+}
+.phase-num::before { counter-increment: ph; content: counter(ph); }
+.phase-body { padding: 1.1rem 1.2rem; display: grid; gap: 0.6rem; min-width: 0; }
+.phase-body h3 { text-transform: uppercase; letter-spacing: 0.04em; }
+.phase-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.tag {
+  font-family: var(--f-data); font-size: 0.65rem; text-transform: uppercase;
+  letter-spacing: 0.1em; padding: 3px 7px; border: 1px solid var(--line); color: var(--ink-3);
+}
+.tag.vis { border-color: var(--ball-dim); color: var(--ball); }
+.tag.inv { border-color: var(--line); color: var(--ink-3); }
+.phase-body p { font-size: 0.92rem; color: var(--ink-2); }
+.phase-body .ships { font-size: 0.88rem; color: var(--ink-2); }
+.phase-body .ships b { color: var(--ink); font-weight: 600; }
+.gate {
+  font-family: var(--f-data); font-size: 0.75rem; color: var(--ink-3);
+  border-top: 1px dashed var(--line); padding-top: 0.6rem;
+}
+.gate b { color: var(--flag); font-weight: 500; }
+
+/* ── rules ────────────────────────────────────────────────────────────── */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem; }
+.rule { border: 1px solid var(--line); border-left: 3px solid var(--stop); background: var(--raised); padding: 1rem 1.1rem; display: grid; gap: 0.35rem; min-width: 0; }
+.rule b { font-size: 0.95rem; }
+.rule span { font-size: 0.87rem; color: var(--ink-2); }
+
+/* ── verdict ──────────────────────────────────────────────────────────── */
+.verdict { border: 1px solid var(--line); background: var(--raised); padding: clamp(1.3rem, 4vw, 2rem); display: grid; gap: 1rem; }
+.verdict .call { font-family: var(--f-display); font-size: clamp(1.5rem, 4vw, 2.1rem); text-transform: uppercase; line-height: 1.05; }
+.verdict .call .keep { color: var(--ball); }
+.verdict .call .shrink { color: var(--flag); }
+.vd-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.vd-col { display: grid; gap: 0.4rem; align-content: start; min-width: 0; }
+.vd-col h4 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.vd-col ul { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; color: var(--ink-2); display: grid; gap: 0.3rem; }
+.vd-keep h4 { color: var(--ball); }
+.vd-move h4 { color: var(--flag); }
+
+footer { border-top: 1px solid var(--line); padding-block: 2rem 3rem; }
+footer p { font-family: var(--f-data); font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; }
+
+:where(a, [tabindex]):focus-visible { outline: 2px solid var(--school); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Ansar OS · restructure proposal · 4 October 2026</p>
+    <h1>
+      <span class="split-word">One system,</span>
+      <span class="split-word">two <span class="s">academies</span></span>
+    </h1>
+    <p class="lede">
+      The football side already knows what it is building a twelve-year-old toward. The school
+      side — five hours a day against football's one — has today's list and nothing else. This is
+      the plan to make them equals, and the order to do it in so nothing already working breaks.
+    </p>
+    <div class="mast-meta">
+      <span>Scope · evaluation &amp; plan only</span>
+      <span>No code changed</span>
+      <span>7 screens proposed</span>
+      <span>7 phases</span>
+    </div>
+  </header>
+
+  <!-- ══ 1 · THE THESIS ═══════════════════════════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">The thesis</p>
+      <h2>Two academies, rendered identically</h2>
+      <p class="lede">
+        Equal weight is not a feeling, it is a structure. Both sides get a route, a year, a term,
+        a week, a session, a record and a ritual. Same shape, same depth, different content.
+      </p>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar p-school">
+        <div class="pillar-top"><i class="pillar-dot"></i><h3>School</h3></div>
+        <ul class="pillar-list">
+          <li><span>The year</span><span>Year 6 · AC v9</span></li>
+          <li><span>The arc</span><span>Term 4 of 4</span></li>
+          <li><span>The week</span><span>Phase 1 · Week 8</span></li>
+          <li><span>The session</span><span>6 blocks · 5 hrs</span></li>
+          <li><span>The record</span><span>per subject</span></li>
+          <li><span>The ritual</span><span>Friday recall</span></li>
+          <li><span>The proof</span><span>monthly exam</span></li>
+        </ul>
+        <p class="pillar-note">Everything above already exists as data. Almost none of it reaches a screen.</p>
+      </div>
+      <div class="pillar p-ball">
+        <div class="pillar-top"><i class="pillar-dot"></i><h3>Football</h3></div>
+        <ul class="pillar-list">
+          <li><span>The year</span><span>U12 → U13</span></li>
+          <li><span>The arc</span><span>Season phase</span></li>
+          <li><span>The week</span><span>12 hr load cap</span></li>
+          <li><span>The session</span><span>drills · timed</span></li>
+          <li><span>The record</span><span>match log</span></li>
+          <li><span>The ritual</span><span>Sunday match</span></li>
+          <li><span>The proof</span><span>scout benchmarks</span></li>
+        </ul>
+        <p class="pillar-note">All built, all on screen, all reachable. This is the template — not the rival.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 2 · SHAPE NOW vs NEXT ════════════════════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">The shape</p>
+      <h2>Where school lives now, and where it should</h2>
+      <p class="lede">
+        Today school is a divider inside a card inside a column of a football dashboard. Three
+        levels of nesting to reach the most important thing in the house.
+      </p>
+    </div>
+
+    <div class="ba">
+      <div class="ba-card ba-now">
+        <h4>Now</h4>
+        <ul class="tree">
+          <li>/ &nbsp;<span class="muted">dashboard</span></li>
+          <li class="d1">Real Madrid match centre <span class="muted">104px tall</span></li>
+          <li class="d1">Morning habits</li>
+          <li class="d1">Today's Programme <span class="muted">one card</span></li>
+          <li class="d2 hot">Today's lessons <span class="muted">12px · read-only</span></li>
+          <li class="d2 hot">Homeschool <span class="muted">1 checkbox = 5 hrs</span></li>
+          <li class="d2 muted">Afternoon / Evening <span class="muted">teeth, reading</span></li>
+          <li class="d2 muted">Conditional</li>
+          <li class="d1">Work + Week</li>
+          <li class="d1">Stretch Wallet</li>
+          <li>/pathway &nbsp;<span class="ok">14 routes · own design system</span></li>
+          <li>/tests &nbsp;<span class="muted">locked · empty</span></li>
+          <li>/progress &nbsp;<span class="muted">habit ticks only</span></li>
+          <li>/targets &nbsp;<span class="muted">8 zones · 7 go nowhere</span></li>
+          <li>/leaderboards &nbsp;<span class="muted">La Liga</span></li>
+        </ul>
+      </div>
+      <div class="ba-card ba-next">
+        <h4>Next</h4>
+        <ul class="tree">
+          <li>/ &nbsp;<span class="ok">today — one board, two pillars</span></li>
+          <li class="d1 sch">School · next block, 2 of 6</li>
+          <li class="d1 ok">Football · next session</li>
+          <li class="d1 muted">Habits · the scaffolding</li>
+          <li class="d1 muted">Wallet</li>
+          <li>/school &nbsp;<span class="sch">the academy</span></li>
+          <li class="d1 sch">Today <span class="muted">6 blocks, each tickable</span></li>
+          <li class="d1 sch">This week <span class="muted">Mon–Fri grid</span></li>
+          <li class="d1 sch">The year <span class="muted">term arc · you are here</span></li>
+          <li class="d1 sch">Mastery <span class="muted">8 areas · evidence-backed</span></li>
+          <li class="d1 sch">Recall <span class="muted">Friday · the ritual</span></li>
+          <li>/football &nbsp;<span class="ok">/pathway, renamed to match</span></li>
+          <li>/record &nbsp;<span class="ok">one record, both academies</span></li>
+          <li>/parent &nbsp;<span class="ok">Nihal's desk · one door</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 3 · THE MAPPING ══════════════════════════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">The mapping</p>
+      <h2>Football already solved every one of these</h2>
+      <p class="lede">
+        This is the useful discovery. There is no need to invent a learning product — the pattern
+        is in the repo already, applied to the wrong subject.
+      </p>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Football has</th><th>Built as</th><th>School needs</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Year goal · U12 → U13</td><td class="has-it">pathway/data/week.ts</td><td>Year level &amp; achievement standard</td></tr>
+          <tr><td>Season phases, "you are here"</td><td class="has-it">pathway/season/page.tsx</td><td>Term arc with the same marker</td></tr>
+          <tr><td>Monthly focus ×12</td><td class="has-it">pathway/data/week.ts</td><td>Monthly focus per learning area</td></tr>
+          <tr><td>Weekly load cap, shown on screen</td><td class="has-it">12 hrs · 1 hr per year of age</td><td>The week view — Mon to Fri, visible</td></tr>
+          <tr><td>Today's session, timed checklist</td><td class="has-it">components/TodayBoard.tsx</td><td>Today's 6 blocks, each one tickable</td></tr>
+          <tr><td>Five-corner scout model, bronze→gold</td><td class="has-it">pathway/data/scouts.ts</td><td>Mastery map across 8 areas</td></tr>
+          <tr><td>Match log, after the game</td><td class="has-it">MatchLogForm</td><td>Friday recall — already generated, never seen</td></tr>
+          <tr><td>Drill library</td><td class="has-it">pathway/data/drills.ts</td><td>Subject Guides — already written in Notion</td></tr>
+          <tr><td>Calendar export, 10-min alarms</td><td class="has-it">TodayBoard.tsx:27</td><td>Same, for the school week</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ 4 · SCREENS ══════════════════════════════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">The screens</p>
+      <h2>Seven surfaces, drawn</h2>
+      <p class="lede">
+        Sketches, not final art. They exist to settle structure and hierarchy — what is biggest,
+        what is tappable, what the child sees first. Numbers shown are illustrative.
+      </p>
+    </div>
+
+    <div class="mocks">
+
+      <!-- TODAY -->
+      <div class="mock">
+        <div class="mock-cap">
+          <b>Today</b><em>route /</em>
+          <span class="why">Two pillars at identical size. Neither academy is the other's sidebar. The habits that used to fill the board drop to scaffolding underneath.</span>
+        </div>
+        <div class="screen">
+          <div class="s-nav">
+            <span class="crest">Ansar OS</span>
+            <span class="s-tab on-s">Today</span>
+            <span class="s-tab lit-s">School</span>
+            <span class="s-tab lit-b">Football</span>
+            <span class="s-tab">Record</span>
+            <span class="s-tab">Wallet</span>
+            <span class="clock">Mon 5 Oct · 8:12 am</span>
+          </div>
+
+          <div class="s-grid-2">
+            <div class="s-panel lead-s">
+              <div class="s-panel-head"><b>School</b><span class="count">2 / 6 blocks</span></div>
+              <div class="s-strip"><span>Morning</span><span class="s-bar"><i class="s" style="width:33%"></i></span><span>33%</span></div>
+              <div class="s-row live">
+                <span class="box"></span>
+                <span class="nm">Block 3 — Maths<small>Compare fractions using equivalent denominators</small></span>
+                <span class="meta"><span class="now">now</span><br>45 min</span>
+              </div>
+              <div class="s-row">
+                <span class="box"></span>
+                <span class="nm">Block 4 — Science<small>Separating mixtures: filtration</small></span>
+                <span class="meta">10:15<br>45 min</span>
+              </div>
+              <div class="s-strip"><span class="pill s">Friday recall in 4 days</span></div>
+            </div>
+
+            <div class="s-panel lead-b">
+              <div class="s-panel-head"><b>Football</b><span class="count">1 / 2 sessions</span></div>
+              <div class="s-strip"><span>This week</span><span class="s-bar"><i class="b" style="width:50%"></i></span><span>4.5 / 12 hrs</span></div>
+              <div class="s-row done">
+                <span class="box">✓</span>
+                <span class="nm">Ball mastery — 20 min<small>Sole rolls, inside-outside, 3 sets</small></span>
+                <span class="meta">done<br>7:05 am</span>
+              </div>
+              <div class="s-row">
+                <span class="box"></span>
+                <span class="nm">Club training — Pascoe Vale<small>Scanning before receiving</small></span>
+                <span class="meta">5:30pm<br>75 min</span>
+              </div>
+              <div class="s-strip"><span class="pill b">Match Sunday · home</span></div>
+            </div>
+          </div>
+
+          <div class="s-panel">
+            <div class="s-panel-head"><b>Habits</b><span class="count">5 / 7 · +18 pts</span></div>
+            <div class="s-strip">
+              <span class="pill b">Morning ✓</span><span class="pill b">Journal ✓</span>
+              <span class="pill s">Qur'an open</span><span class="pill">Reading 7:30pm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHOOL TODAY -->
+      <div class="mock">
+        <div class="mock-cap">
+          <b>School · Today</b><em>route /school</em>
+          <span class="why">The keystone change. Six blocks, each with the real task text on the row instead of hidden in a pop-up, and each one tickable. The old single checkbox becomes the total at the bottom.</span>
+        </div>
+        <div class="screen">
+          <div class="s-nav">
+            <span class="crest">School</span>
+            <span class="s-tab on-s">Today</span>
+            <span class="s-tab lit-s">This week</span>
+            <span class="s-tab lit-s">The year</span>
+            <span class="s-tab lit-s">Mastery</span>
+            <span class="s-tab lit-s">Recall</span>
+            <span class="clock">Phase 1 · Week 8</span>
+          </div>
+
+          <p class="s-h">Monday 5 October <span class="sub">“Hagia Sophia: the greatest building”</span></p>
+
+          <div class="s-panel lead-s">
+            <div class="s-panel-head"><b>Today's blocks</b><span class="count">2 of 6 · 1 hr 30 of 5 hrs</span></div>
+            <div class="s-row done">
+              <span class="box">✓</span>
+              <span class="nm">Block 1 — English<small>The Giver, ch. 7–9. Explain why Jonas hides the apple.</small></span>
+              <span class="meta">done<br>8:30</span>
+            </div>
+            <div class="s-row done">
+              <span class="box">✓</span>
+              <span class="nm">Block 2 — Turkish<small>Ev, okul, bahçe + “-de / -da” locative. Say five sentences aloud.</small></span>
+              <span class="meta">done<br>9:15</span>
+            </div>
+            <div class="s-row live">
+              <span class="box"></span>
+              <span class="nm">Block 3 — Maths<small>Compare fractions with equivalent denominators. Explain why 2/3 = 4/6, then three new comparisons.</small></span>
+              <span class="meta"><span class="now">in progress</span><br>45 min</span>
+            </div>
+            <div class="s-row">
+              <span class="box"></span>
+              <span class="nm">Block 4 — Science<small>Separating mixtures: filtration. Predict first, then record what you actually saw.</small></span>
+              <span class="meta">10:15<br>45 min</span>
+            </div>
+            <div class="s-row">
+              <span class="box"></span>
+              <span class="nm">Block 5 — HASS<small>Ottoman trade routes. One map, labelled.</small></span>
+              <span class="meta">11:15<br>45 min</span>
+            </div>
+            <div class="s-row">
+              <span class="box"></span>
+              <span class="nm">Block 6 — Technologies<small>Scratch: loops inside loops. Ship the sprite that paints a square.</small></span>
+              <span class="meta">12:15<br>45 min</span>
+            </div>
+            <div class="s-strip">
+              <span>Session total</span><span class="s-bar"><i class="s" style="width:33%"></i></span>
+              <span class="pill s">6 of 6 earns +5</span>
+            </div>
+          </div>
+
+          <div class="s-panel">
+            <div class="s-panel-head"><b>How Maths works</b><span class="count">standing guide</span></div>
+            <div class="s-row" style="background:transparent;border:0;padding:0;align-items:flex-start">
+              <span class="nm" style="font-size:11.5px;color:var(--scr-ink-2)">
+                Khan Academy is the engine; the Task column is the stop for the day. Say the reasoning
+                out loud before writing it. A wrong answer you can explain beats a right one you can't.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- THIS WEEK -->
+      <div class="mock">
+        <div class="mock-cap">
+          <b>School · This Week</b><em>route /school/week</em>
+          <span class="why">A homeschooled child currently cannot see his own week. This is five columns of data the app already holds and throws away.</span>
+        </div>
+        <div class="screen">
+          <div class="s-nav">
+            <span class="crest">School</span>
+            <span class="s-tab lit-s">Today</span>
+            <span class="s-tab on-s">This week</span>
+            <span class="s-tab lit-s">The year</span>
+            <span class="s-tab lit-s">Mastery</span>
+            <span class="clock">Phase 1 · Week 8 · 5–9 Oct</span>
+          </div>
+
+          <p class="s-h">Week 8 <span class="sub">14 of 30 blocks done · Friday recall opens Fri 8:00am</span></p>
+
+          <div class="wk">
+            <div class="wk-day today">
+              <h5><span>Mon 5</span><span>2/6</span></h5>
+              <p class="wk-sub"><i></i>English</p>
+              <p class="wk-sub"><i></i>Turkish</p>
+              <p class="wk-sub open"><i></i>Maths</p>
+              <p class="wk-sub open"><i></i>Science</p>
+              <p class="wk-sub open"><i></i>HASS</p>
+              <p class="wk-sub open"><i></i>Tech</p>
+            </div>
+            <div class="wk-day">
+              <h5><span>Tue 6</span><span>0/6</span></h5>
+              <p class="wk-sub open"><i></i>Maths</p>
+              <p class="wk-sub open"><i></i>English</p>
+              <p class="wk-sub open"><i></i>Science</p>
+              <p class="wk-sub open"><i></i>Arts</p>
+              <p class="wk-sub open"><i></i>Health &amp; PE</p>
+              <p class="wk-sub open"><i></i>Turkish</p>
+            </div>
+            <div class="wk-day">
+              <h5><span>Wed 7</span><span>0/5</span></h5>
+              <p class="wk-sub open"><i></i>Maths</p>
+              <p class="wk-sub open"><i></i>HASS</p>
+              <p class="wk-sub gap"><i></i>Science · 3rd wk gap</p>
+              <p class="wk-sub open"><i></i>Tech</p>
+              <p class="wk-sub open"><i></i>English</p>
+            </div>
+            <div class="wk-day">
+              <h5><span>Thu 8</span><span>0/6</span></h5>
+              <p class="wk-sub open"><i></i>English</p>
+              <p class="wk-sub open"><i></i>Maths</p>
+              <p class="wk-sub open"><i></i>Turkish</p>
+              <p class="wk-sub open"><i></i>Science</p>
+              <p class="wk-sub open"><i></i>Arts</p>
+              <p class="wk-sub open"><i></i>HASS</p>
+            </div>
+            <div class="wk-day">
+              <h5><span>Fri 9</span><span>flex</span></h5>
+              <p class="wk-sub open"><i></i>Go deeper</p>
+              <p class="wk-sub open"><i></i>Catch up</p>
+              <p class="wk-sub"><i></i>Recall ×6</p>
+            </div>
+          </div>
+
+          <div class="s-strip">
+            <span class="pill stop">Science needs proof before Friday</span>
+            <span class="pill flag">Languages: vocabulary not recorded</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- THE YEAR -->
+      <div class="mock">
+        <div class="mock-cap">
+          <b>School · The Year</b><em>route /school/year</em>
+          <span class="why">Football has this exact screen. The Notion <code>Week</code> column already says "Phase 1 — Week 8" and is read into the app, then never shown to him.</span>
+        </div>
+        <div class="screen">
+          <div class="s-nav">
+            <span class="crest">School</span>
+            <span class="s-tab lit-s">Today</span>
+            <span class="s-tab lit-s">This week</span>
+            <span class="s-tab on-s">The year</span>
+            <span class="s-tab lit-s">Mastery</span>
+            <span class="clock">Year 6 · 2026</span>
+          </div>
+
+          <p class="s-h">Year 6 <span class="sub">Australian Curriculum v9 · 4 terms · 40 weeks</span></p>
+
+          <div class="s-panel lead-s">
+            <div class="s-panel-head"><b>Term 4 · Phase 1</b><span class="count">week 8 of 10</span></div>
+            <div class="arc">
+              <div class="arc-rail">
+                <span class="arc-seg past">T1</span>
+                <span class="arc-seg past">T2</span>
+                <span class="arc-seg past">T3</span>
+                <span class="arc-seg here">T4 · W8</span>
+              </div>
+              <p class="arc-you">You are here — 8 weeks of Term 4 recorded, 2 to go</p>
+            </div>
+          </div>
+
+          <div class="s-grid-2">
+            <div class="s-panel">
+              <div class="s-panel-head"><b>This term is for</b><span class="count">3 focuses</span></div>
+              <div class="s-row"><span class="nm">Fractions → rates and ratio<small>Maths · the spine of the term</small></span><span class="pill s">on track</span></div>
+              <div class="s-row"><span class="nm">Ottoman world: trade, cities, faith<small>HASS · 6 weeks</small></span><span class="pill s">on track</span></div>
+              <div class="s-row"><span class="nm">Mixtures and separation<small>Science · needs 3 logged sessions</small></span><span class="pill stop">behind</span></div>
+            </div>
+            <div class="s-panel">
+              <div class="s-panel-head"><b>By Christmas</b><span class="count">year goal</span></div>
+              <div class="s-row"><span class="nm">Explain a fraction operation out loud, unprompted<small>evidence: 2 recalls + 1 exam</small></span><span class="pill b">2 of 3</span></div>
+              <div class="s-row"><span class="nm">Hold a 10-sentence Turkish exchange<small>evidence: recorded, marked by Nihal</small></span><span class="pill flag">1 of 3</span></div>
+              <div class="s-row"><span class="nm">Ship one thing he built on the Mac<small>evidence: a link, not a screenshot</small></span><span class="pill b">done</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MASTERY -->
+      <div class="mock">
+        <div class="mock-cap">
+          <b>School · Mastery</b><em>route /school/mastery</em>
+          <span class="why">The exam engine already computes a gap list per paper, then throws it away inside one record. Accumulate those and this screen builds itself.</span>
+        </div>
+        <div class="screen">
+          <div class="s-nav">
+            <span class="crest">School</span>
+            <span class="s-tab lit-s">Today</span>
+            <span class="s-tab lit-s">This week</span>
+            <span class="s-tab lit-s">The year</span>
+            <span class="s-tab on-s">Mastery</span>
+            <span class="clock">Term 4 to date</span>
+          </div>
+
+          <p class="s-h">Eight learning areas <span class="sub">Nothing here is self-reported. Every bar is a marked recall or an exam.</span></p>
+
+          <div class="mast-grid">
+            <div class="mast-cell solid"><p class="nm">English</p><p class="val">82%</p><div class="dots"><i></i><i></i><i></i><i></i><i></i></div><p class="tag">solid · 9 proofs</p></div>
+            <div class="mast-cell solid"><p class="nm">Maths</p><p class="val">78%</p><div class="dots"><i></i><i></i><i></i><i></i><i></i></div><p class="tag">solid · 7 proofs</p></div>
+            <div class="mast-cell gap"><p class="nm">Science</p><p class="val">—</p><div class="dots"><i></i><i></i><i></i><i></i><i></i></div><p class="tag">no proof · 3 wks</p></div>
+            <div class="mast-cell watch"><p class="nm">HASS</p><p class="val">64%</p><div class="dots"><i></i><i></i><i></i><i></i><i></i></div><p class="tag">history only</p></div>
+            <div class="mast-cell solid"><p class="nm">Technologies</p><p class="val">80%</p><div class="dots"><i></i><i></i><i></i><i></i><i></i></div><p class="tag">solid · 5 proofs</p></div>
+            <div class="mast-cell watch"><p class="nm">Languages</p><p class="val">58%</p><div class="dots"><i></i><i></i><i></i><i></i><i></i></div><p class="tag">words not logged</p></div>
+            <div class="mast-cell solid"><p class="nm">The Arts</p><p class="val">75%</p><div class="dots"><i></i><i></i><i></i><i></i><i></i></div><p class="tag">solid · 3 proofs</p></div>
+            <div class="mast-cell solid"><p class="nm">Health &amp; PE</p><p class="val">88%</p><div class="dots"><i></i><i></i><i></i><i></i><i></i></div><p class="tag">solid · 6 proofs</p></div>
+          </div>
+
+          <div class="s-panel">
+            <div class="s-panel-head"><b>Still open from last month</b><span class="count">3 gaps carried</span></div>
+            <div class="s-row"><span class="nm">Converting between fractions and decimals<small>Maths · missed 2 of 3 in September exam</small></span><span class="pill flag">revisit</span></div>
+            <div class="s-row"><span class="nm">Why filtration works and sieving doesn't<small>Science · never assessed</small></span><span class="pill stop">untaught</span></div>
+            <div class="s-row done"><span class="box">✓</span><span class="nm">Locative case in Turkish<small>Closed 28 Sept — explained it unprompted</small></span><span class="pill b">closed</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECALL -->
+      <div class="mock">
+        <div class="mock-cap">
+          <b>School · Friday Recall</b><em>route /school/recall</em>
+          <span class="why">Today this is behind a tab called "Tests", next to a La Liga table, and it is empty. It should be the peak of his week — the thing he gets to do because he did the work.</span>
+        </div>
+        <div class="screen">
+          <div class="s-nav">
+            <span class="crest">School</span>
+            <span class="s-tab lit-s">Today</span>
+            <span class="s-tab lit-s">This week</span>
+            <span class="s-tab on-s">Recall</span>
+            <span class="clock">Fri 9 Oct · open</span>
+          </div>
+
+          <div class="recall">
+            <p class="recall-h">Week 8 recall · Maths</p>
+            <p style="font-size:11.5px;color:var(--scr-ink-2);margin:0">
+              Four questions. There is no timer and no pass mark. Saying “I'm not sure about this part”
+              is a right answer, not a wrong one.
+            </p>
+            <div class="recall-q"><p class="k">01 · recall</p><p class="t">What did you work on in Maths this week? Name the actual topic.</p></div>
+            <div class="recall-q"><p class="k">02 · explain</p><p class="t">Explain to someone who wasn't there why 2/3 and 4/6 are the same amount.</p></div>
+            <div class="recall-q"><p class="k">03 · apply</p><p class="t">Make up your own pair of equivalent fractions and show why they match.</p></div>
+            <div class="recall-q"><p class="k">04 · uncertainty</p><p class="t">What part of this still feels shaky? Be specific.</p></div>
+            <p class="recall-foot">
+              <span class="pill solid-s">Submit to Nihal</span>
+              <span>Saves as you type · 6 subjects this week · 1 of 6</span>
+            </p>
+          </div>
+
+          <div class="s-strip">
+            <span class="pill s">English done</span><span class="pill">Science · no work logged, skipped</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARENT DESK -->
+      <div class="mock">
+        <div class="mock-cap">
+          <b>Parent Desk</b><em>route /parent</em>
+          <span class="why">Nihal currently has no surface of her own — every parent control is a PIN panel buried inside Ansar's pages. One door, one list of what needs her today.</span>
+        </div>
+        <div class="screen">
+          <div class="s-nav">
+            <span class="crest">Parent desk</span>
+            <span class="s-tab on-s">Needs you</span>
+            <span class="s-tab">The week</span>
+            <span class="s-tab">Exams</span>
+            <span class="s-tab">Evidence</span>
+            <span class="s-tab">Settings</span>
+            <span class="clock">device unlocked · 23 days</span>
+          </div>
+
+          <p class="s-h">4 things need you <span class="sub">Nothing else is waiting. You can close this.</span></p>
+
+          <div class="s-panel lead-s">
+            <div class="desk-row">
+              <span class="nm">Mark 3 Friday recalls<small>Maths, English, Turkish · submitted Fri 9 Oct</small></span>
+              <span class="act">Mark</span>
+            </div>
+            <div class="desk-row">
+              <span class="nm">Approve October exam · Maths<small>12 questions previewed · approving freezes the paper</small></span>
+              <span class="act">Review</span>
+            </div>
+            <div class="desk-row">
+              <span class="nm">Science has no work logged for 3 weeks<small>Wednesday Block 3 keeps being missed</small></span>
+              <span class="act ghost">See week</span>
+            </div>
+            <div class="desk-row">
+              <span class="nm">Confirm Turkish vocabulary taught<small>Rows say “Duolingo 10 min” — the exam can't be built from that</small></span>
+              <span class="act ghost">Open Notion</span>
+            </div>
+          </div>
+
+          <div class="s-grid-2">
+            <div class="s-panel">
+              <div class="s-panel-head"><b>This week, honestly</b><span class="count">Week 8</span></div>
+              <div class="s-strip"><span>Blocks done</span><span class="s-bar"><i class="s" style="width:47%"></i></span><span>14 / 30</span></div>
+              <div class="s-strip"><span>With proof</span><span class="s-bar"><i class="b" style="width:36%"></i></span><span>11 / 30</span></div>
+              <p style="font-size:11px;color:var(--scr-ink-3);margin:0">Done means he ticked it. Proof means there is something to look at.</p>
+            </div>
+            <div class="s-panel">
+              <div class="s-panel-head"><b>Curriculum sync</b><span class="count">last night 07:53</span></div>
+              <div class="s-row"><span class="nm">65 lessons · 19 recalls · 6 exam drafts<small>All October rows imported, 0 warnings</small></span><span class="pill b">healthy</span></div>
+              <div class="s-strip"><span class="pill s">Refresh now</span><span>Takes a few minutes — this box will say so</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ 5 · NOTION ═══════════════════════════════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">The Notion question</p>
+      <h2>Keep it. Shrink its job.</h2>
+    </div>
+
+    <div class="verdict">
+      <p class="call">
+        Notion stays where you <span class="keep">write</span>.<br>
+        It stops being what the board <span class="shrink">reads</span>.
+      </p>
+      <p class="body-col" style="max-width:66ch">
+        Right now the child's board phones Notion live, every load. That is why a renamed column can
+        blank the screen, why a normal Saturday reads as “No week loaded”, and why there is a wait
+        before anything is usable. Notion is a great place to write a week and a bad place to serve
+        one. The fix is one-directional: you keep authoring exactly as you do now, a job copies it
+        into the app's own database every night, and the board only ever reads the copy.
+      </p>
+
+      <div class="vd-cols">
+        <div class="vd-col vd-keep">
+          <h4>Notion keeps</h4>
+          <ul>
+            <li>Writing the week — dated subject rows, the way you already do it</li>
+            <li>The standing Subject Guides</li>
+            <li>The human week report, the one shown to VRQA</li>
+            <li>Habits, windows, points and the stretch wallet</li>
+            <li>Every link and switch in Settings</li>
+          </ul>
+        </div>
+        <div class="vd-col vd-move">
+          <h4>The app takes over</h4>
+          <ul>
+            <li>Serving today's lessons to the board</li>
+            <li>Being the durable record of what was taught and when</li>
+            <li>Holding per-subject completions and their proof</li>
+            <li>Surviving a Notion outage, rename or rebuild without a blank screen</li>
+            <li>The evidence export, dated and printable</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="pipe" style="margin-top:1.4rem">
+      <div class="pipe-row pipe-author">
+        <p class="stage">Author<small>in Notion</small></p>
+        <div class="what">
+          <p>You and the agent write dated rows into <code>2 · Daily Programme</code>, exactly as the weekly protocol already says. Nothing about your Sunday night changes.</p>
+        </div>
+      </div>
+      <p class="one-way">↓ one direction only, nightly at 7am Melbourne</p>
+      <div class="pipe-row pipe-store">
+        <p class="stage">Store<small>in the app</small></p>
+        <div class="what">
+          <p>The sync that already writes <code>ansar_assessment_lessons</code> becomes the single source for the board too. Date-keyed, immutable, never overwritten by a later edit.</p>
+        </div>
+      </div>
+      <p class="one-way">↓ the board never calls Notion</p>
+      <div class="pipe-row pipe-read">
+        <p class="stage">Read<small>on screen</small></p>
+        <div class="what">
+          <p>Today, the week, the term, mastery and the recall all read the stored copy. Fast, offline-tolerant, and honest about its own age when a week hasn't been loaded yet.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 6 · PHASES ═══════════════════════════════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">The order</p>
+      <h2>Seven phases, data before pixels</h2>
+      <p class="lede">
+        The rule behind the order: a screen can only show what the system records, so the record
+        gets built first. Phases 0 to 2 change almost nothing you can see, and they are what make
+        phases 3 to 6 safe.
+      </p>
+    </div>
+
+    <div class="phases">
+
+      <div class="phase">
+        <div class="phase-num"></div>
+        <div class="phase-body">
+          <h3>Make it safe to change</h3>
+          <div class="phase-tags"><span class="tag inv">nothing visible changes</span><span class="tag">1 session</span></div>
+          <p>Before anything is restructured, stop the bleeding and get a safety net under the build.</p>
+          <p class="ships"><b>Ships:</b> find out why 65 imported lessons produced zero October exam drafts. Stop the August evidence report showing on the default Progress tab. Stop the weekend showing “No week loaded”. Lock the dependency versions so two deploys can't build differently. Make the app buildable without live secrets. Write down what the product is and what the design rules are, in two files, so the next six phases argue against something.</p>
+          <p class="gate"><b>Gate:</b> screenshots of every screen captured as a before. 401 tests still pass. Opened live, not just built.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num"></div>
+        <div class="phase-body">
+          <h3>Build the record</h3>
+          <div class="phase-tags"><span class="tag inv">invisible to Ansar</span><span class="tag">1–2 sessions</span></div>
+          <p>The keystone. Five hours of school stop being one checkbox — but the points stay exactly the same, so nothing he's earned moves.</p>
+          <p class="ships"><b>Ships:</b> a per-subject completion record, one row per block per day, keyed to the Notion row it came from. The existing single tick keeps working and keeps paying 5 points; it just becomes the total of the six rather than a separate claim. The new path writes alongside the old one for a week so you can compare them before trusting it.</p>
+          <p class="gate"><b>Gate:</b> point totals for a given week are byte-identical before and after. The scoring and gating files are not touched.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num"></div>
+        <div class="phase-body">
+          <h3>Switch what the board reads</h3>
+          <div class="phase-tags"><span class="tag vis">faster, same look</span><span class="tag">1 session</span></div>
+          <p>Notion becomes write-only. The board reads the stored copy.</p>
+          <p class="ships"><b>Ships:</b> today's lessons, the week title and the subject guides all served from the app's own database. The four-second wait before the board is usable goes away. A Notion outage stops being able to blank the screen. A weekend stops reading as a failure.</p>
+          <p class="gate"><b>Gate:</b> the stored copy matches a live Notion read, row for row, for a full week before the old path is removed.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num"></div>
+        <div class="phase-body">
+          <h3>Give school a home</h3>
+          <div class="phase-tags"><span class="tag vis">the big visible one</span><span class="tag">2–3 sessions</span></div>
+          <p>School gets its own address, the way football already has one.</p>
+          <p class="ships"><b>Ships:</b> <code>/school</code> with Today, This Week and The Year. Today's blocks carry the real task text and each one ticks. The week grid and the term arc come from data that already exists. On the dashboard, the homeschool section shrinks to a summary that links in.</p>
+          <p class="gate"><b>Gate:</b> every habit configured in Notion still appears somewhere. Nothing disappears to make the layout tidy.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num"></div>
+        <div class="phase-body">
+          <h3>Make them peers</h3>
+          <div class="phase-tags"><span class="tag vis">the restructure</span><span class="tag">2 sessions</span></div>
+          <p>The dashboard becomes Today: two pillars at equal size, habits underneath as scaffolding.</p>
+          <p class="ships"><b>Ships:</b> one navigation bar instead of two stacked ones — and the hidden one that links to your ecommerce dashboard goes. The Weekday/Saturday toggle either works or is removed. The phone overflow and the clipped clock are fixed. Real Madrid stays, as context rather than as the biggest thing on the page.</p>
+          <p class="gate"><b>Gate:</b> before-and-after screenshots at phone, tablet and desktop. No horizontal scroll at any width.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num"></div>
+        <div class="phase-body">
+          <h3>The rituals</h3>
+          <div class="phase-tags"><span class="tag vis">the payoff</span><span class="tag">2 sessions</span></div>
+          <p>Friday recall and the monthly exam become occasions instead of an audit behind a locked tab.</p>
+          <p class="ships"><b>Ships:</b> the recall gets its own screen, its own framing, and a sentence that tells him admitting a gap is the right answer. The exam gets a start screen that explains what happens if time runs out or the iPad dies — the system already handles both, he's just never told. Gaps start accumulating across papers into the Mastery map. The Parent Desk pulls Nihal's four scattered PIN panels into one door.</p>
+          <p class="gate"><b>Gate:</b> approved papers and submitted attempts are never rebuilt. Practice stays isolated from the real record.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-num"></div>
+        <div class="phase-body">
+          <h3>One record</h3>
+          <div class="phase-tags"><span class="tag vis">both academies</span><span class="tag">1–2 sessions</span></div>
+          <p>Progress stops being a habit-tick percentage and becomes the record of both academies.</p>
+          <p class="ships"><b>Ships:</b> school and football side by side across weeks and terms — blocks done, proof filed, marks earned, load carried. The hardcoded Targets brochure either gets wired to this or goes. A dated, printable evidence export that a registration reviewer could actually read.</p>
+          <p class="gate"><b>Gate:</b> every number on the screen traces to a stored row. Nothing is inferred from a schedule.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ 7 · RULES ════════════════════════════════════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">The guardrails</p>
+      <h2>How to do this without breaking it</h2>
+      <p class="lede">
+        Most of what is already built is good — the server-side rules, the assessment engine, the
+        honesty about evidence. These are the rules that keep a restructure from costing you any of it.
+      </p>
+    </div>
+
+    <div class="rules">
+      <div class="rule"><b>One layer per change</b><span>Never move data and redesign a screen in the same commit. If a week's points look wrong afterwards, you need to know which of the two did it.</span></div>
+      <div class="rule"><b>Add alongside, prove, then switch</b><span>The new path runs in parallel with the old until they agree for a full week. Only then delete the old one.</span></div>
+      <div class="rule"><b>The protected files stay protected</b><span>Scoring, gating and the tick endpoint do not change during a design phase. Those rules are what make the board hard to cheat.</span></div>
+      <div class="rule"><b>Approved exams are finished</b><span>An approved paper or a submitted attempt is never rebuilt, not even to fix a rollover. Add a correction instead.</span></div>
+      <div class="rule"><b>Never delete a dated row without a snapshot</b><span>A date-keyed copy must exist and be verified before any Notion row is moved or re-dated. Losing coverage is the one unrecoverable mistake here.</span></div>
+      <div class="rule"><b>Green build is not proof</b><span>Every phase ends by opening the deployed site and clicking through it. A successful deploy has never once meant the feature works.</span></div>
+      <div class="rule"><b>Test the value, not the key</b><span>Secret values arrive empty in deploy previews while the names still look present. Checking that a key exists reports success while every write fails.</span></div>
+      <div class="rule"><b>Same screenshots, before and after</b><span>Capture every screen at phone, tablet and desktop before a phase and again after. That is how you catch what you didn't mean to change.</span></div>
+      <div class="rule"><b>Half-done ships off</b><span>If a phase can't finish, it goes out behind a switch that is off — never half-on. A child's board is not the place to discover an unfinished idea.</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Ansar OS · restructure proposal · evaluation and plan only · no code changed · 4 October 2026</p>
+  </footer>
+
+</div>

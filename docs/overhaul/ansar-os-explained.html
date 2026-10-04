@@ -1,0 +1,543 @@
+<title>Ansar OS Explained</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&display=swap">
+
+<style>
+/* Layout: eight full-width signage panels, stacked. Each one is a huge step
+   numeral, a short headline, one big flat picture, one line underneath.
+   Flat blocks and oversized type — meant to read like a wall poster, not a doc. */
+
+:root {
+  --paper: #f2efe9;
+  --paper-2: #e6e2d9;
+  --card: #ffffff;
+  --ink: #15171a;
+  --ink-2: #5c6269;
+  --ink-3: #8c9299;
+  --edge: #d3cec3;
+  --school: #0d7f92;
+  --school-soft: #cbe8ed;
+  --ball: #4a7a1f;
+  --ball-soft: #d7e8c4;
+  --warn: #b4531b;
+  --warn-soft: #f4ddcb;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14161a;
+    --paper-2: #1b1e23;
+    --card: #21252b;
+    --ink: #f1efe9;
+    --ink-2: #aeb5bd;
+    --ink-3: #767e87;
+    --edge: #333a42;
+    --school: #4fd3e8;
+    --school-soft: #123b43;
+    --ball: #9ad964;
+    --ball-soft: #1f3312;
+    --warn: #e9904f;
+    --warn-soft: #3b2211;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14161a;
+  --paper-2: #1b1e23;
+  --card: #21252b;
+  --ink: #f1efe9;
+  --ink-2: #aeb5bd;
+  --ink-3: #767e87;
+  --edge: #333a42;
+  --school: #4fd3e8;
+  --school-soft: #123b43;
+  --ball: #9ad964;
+  --ball-soft: #1f3312;
+  --warn: #e9904f;
+  --warn-soft: #3b2211;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, .num { font-family: "Archivo Black", "Archivo", Impact, sans-serif; font-weight: 400; margin: 0; }
+
+.inner {
+  max-width: 880px; margin: 0 auto;
+  padding-inline: 20px;
+}
+
+/* ── top ──────────────────────────────────────────────────────────────── */
+.top { background: var(--ink); color: var(--paper); padding-block: clamp(3rem, 10vw, 5.5rem); }
+.top .inner { display: grid; gap: 1.2rem; }
+.kick {
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.top h1 {
+  font-size: clamp(2.8rem, 11vw, 5.5rem); line-height: 0.88;
+  text-transform: uppercase; letter-spacing: -0.02em;
+}
+.top h1 .a { color: var(--school); }
+.top h1 .b { color: var(--ball); }
+.top p { margin: 0; font-size: clamp(1.05rem, 2.6vw, 1.3rem); color: var(--paper-2); max-width: 36ch; }
+
+/* ── panels ───────────────────────────────────────────────────────────── */
+.panel { padding-block: clamp(2.6rem, 8vw, 4.5rem); border-bottom: 2px solid var(--edge); }
+.panel:nth-of-type(even) { background: var(--paper-2); }
+.panel .inner { display: grid; gap: 1.5rem; }
+
+.head { display: grid; grid-template-columns: auto 1fr; gap: 0 1.1rem; align-items: start; }
+.num {
+  font-size: clamp(2.6rem, 9vw, 4.2rem); line-height: 0.8;
+  color: var(--edge); letter-spacing: -0.04em;
+}
+.head h2 {
+  font-size: clamp(1.6rem, 5.5vw, 2.6rem); line-height: 1.02;
+  text-transform: uppercase; text-wrap: balance; letter-spacing: -0.01em;
+}
+.say { font-size: clamp(1rem, 2.4vw, 1.2rem); color: var(--ink-2); max-width: 46ch; grid-column: 2; }
+
+/* the picture area */
+.pic {
+  background: var(--card); border: 2px solid var(--edge);
+  padding: clamp(1.1rem, 4vw, 2rem);
+  display: grid; gap: 1rem; place-content: center;
+  min-height: 150px;
+}
+
+.lbl {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+
+/* ── 1 · hour bars ────────────────────────────────────────────────────── */
+.hours { display: grid; gap: 1.1rem; }
+.hour-row { display: grid; gap: 0.5rem; }
+.hour-row .top-line { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.hour-row .who { font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.hour-row .amt { font-family: "Archivo Black", sans-serif; font-size: 1.5rem; }
+.blocks { display: flex; gap: 6px; }
+.blocks i { height: 46px; flex: 1 1 0; max-width: 78px; border-radius: 2px; }
+.r-school .amt { color: var(--school); }
+.r-school .blocks i { background: var(--school); }
+.r-ball .amt { color: var(--ball); }
+.r-ball .blocks i { background: var(--ball); }
+.blocks.one i { max-width: 78px; flex: 0 0 78px; }
+
+/* ── 2 · lopsided app ─────────────────────────────────────────────────── */
+.lop { display: grid; grid-template-columns: 2.4fr 1fr; gap: 12px; align-items: start; }
+@media (max-width: 520px) { .lop { grid-template-columns: 1fr; } }
+.box {
+  border: 2px solid var(--edge); border-radius: 3px; padding: 12px;
+  display: grid; gap: 7px; align-content: start; background: var(--paper);
+}
+.box h3 {
+  margin: 0; font-family: "Archivo Black", sans-serif; font-weight: 400;
+  font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em;
+}
+.box.b-ball { border-color: var(--ball); }
+.box.b-ball h3 { color: var(--ball); }
+.box.b-school { border-color: var(--school); }
+.box.b-school h3 { color: var(--school); }
+.lines { display: grid; gap: 5px; }
+.lines i { height: 9px; border-radius: 2px; background: var(--ball-soft); }
+.lines i:nth-child(odd) { width: 86%; }
+.lines i:nth-child(3n) { width: 64%; }
+.tiny-tick { display: flex; align-items: center; gap: 8px; }
+.tick-sq {
+  width: 26px; height: 26px; flex: none; border: 2px solid var(--school);
+  border-radius: 3px; display: grid; place-items: center;
+  color: var(--school); font-weight: 700; font-size: 15px;
+}
+.tiny-tick span { font-size: 0.85rem; color: var(--ink-2); }
+.count-note { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+
+/* ── 3 · six into one ─────────────────────────────────────────────────── */
+.funnel { display: grid; gap: 14px; justify-items: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; }
+.chip {
+  border: 2px solid var(--edge); border-radius: 3px; padding: 7px 11px;
+  font-size: 0.85rem; font-weight: 600; background: var(--paper);
+}
+.chip.fade { color: var(--ink-3); border-style: dashed; }
+.arrow-down {
+  font-family: "Archivo Black", sans-serif; font-size: 1.8rem;
+  color: var(--ink-3); line-height: 1;
+}
+.one-tick {
+  display: flex; align-items: center; gap: 11px;
+  border: 3px solid var(--warn); background: var(--warn-soft);
+  border-radius: 3px; padding: 12px 16px;
+}
+.one-tick .big-sq {
+  width: 34px; height: 34px; flex: none; border-radius: 3px;
+  background: var(--warn); color: var(--card);
+  display: grid; place-items: center; font-weight: 700; font-size: 19px;
+}
+.one-tick b { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.forget { font-size: 0.85rem; font-weight: 700; color: var(--warn); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ── 4 · knows / doesn't ──────────────────────────────────────────────── */
+.knows { display: grid; gap: 10px; }
+.know-row {
+  display: flex; align-items: center; gap: 14px;
+  border: 2px solid var(--edge); border-radius: 3px; padding: 14px 16px;
+  background: var(--paper);
+}
+.know-row .mark {
+  width: 38px; height: 38px; flex: none; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: "Archivo Black", sans-serif; font-size: 20px;
+}
+.know-row .q { flex: 1; font-size: clamp(1rem, 2.6vw, 1.25rem); font-weight: 600; }
+.know-row .a { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; flex: none; }
+.know-yes { border-color: var(--ball); }
+.know-yes .mark { background: var(--ball-soft); color: var(--ball); }
+.know-yes .a { color: var(--ball); }
+.know-no { border-color: var(--warn); }
+.know-no .mark { background: var(--warn-soft); color: var(--warn); }
+.know-no .a { color: var(--warn); }
+
+/* ── 5 · six ticks ────────────────────────────────────────────────────── */
+.six { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+@media (max-width: 520px) { .six { grid-template-columns: repeat(2, 1fr); } }
+.six-cell {
+  border: 2px solid var(--school); border-radius: 3px; padding: 11px;
+  display: grid; gap: 8px; background: var(--paper);
+}
+.six-cell .sq {
+  width: 24px; height: 24px; border-radius: 3px; background: var(--school);
+  color: var(--card); display: grid; place-items: center; font-weight: 700; font-size: 14px;
+}
+.six-cell b { font-size: 0.9rem; }
+.six-cell span { font-size: 0.75rem; color: var(--ink-2); }
+.now-strip {
+  margin-top: 4px; display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--school);
+}
+.now-bar { flex: 1; height: 10px; border-radius: 5px; background: var(--school-soft); overflow: hidden; }
+.now-bar i { display: block; height: 100%; width: 33%; background: var(--school); }
+
+/* ── 6 · four screens ────────────────────────────────────────────────── */
+.screens { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 620px) { .screens { grid-template-columns: repeat(2, 1fr); } }
+.mini {
+  border: 2px solid var(--edge); border-radius: 3px; background: var(--paper);
+  padding: 10px; display: grid; gap: 7px; align-content: start;
+}
+.mini h4 {
+  margin: 0; font-family: "Archivo Black", sans-serif; font-weight: 400;
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--school);
+}
+.mini .rows { display: grid; gap: 4px; }
+.mini .rows i { height: 7px; border-radius: 2px; background: var(--school-soft); }
+.mini .rows i.full { background: var(--school); }
+.mini .wkgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+.mini .wkgrid i { height: 22px; border-radius: 2px; background: var(--school-soft); }
+.mini .wkgrid i.on { background: var(--school); }
+.mini .arc { display: flex; gap: 3px; }
+.mini .arc i { flex: 1; height: 16px; border-radius: 2px; background: var(--school-soft); }
+.mini .arc i.here { background: var(--school); }
+.mini .bars { display: flex; gap: 3px; align-items: flex-end; height: 40px; }
+.mini .bars i { flex: 1; border-radius: 2px 2px 0 0; background: var(--school); }
+.mini small { font-size: 0.68rem; color: var(--ink-3); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ── 7 · write / keep / read ─────────────────────────────────────────── */
+.flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: center; }
+@media (max-width: 620px) { .flow { grid-template-columns: 1fr; } .flow .arw { transform: rotate(90deg); justify-self: center; } }
+.stage {
+  border: 3px solid var(--edge); border-radius: 3px; padding: 16px 12px;
+  text-align: center; display: grid; gap: 6px; background: var(--paper);
+}
+.stage .ic { font-size: 1.9rem; line-height: 1; }
+.stage b { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.stage span { font-size: 0.8rem; color: var(--ink-2); }
+.stage.s-write { border-color: var(--warn); }
+.stage.s-write b { color: var(--warn); }
+.stage.s-keep { border-color: var(--school); }
+.stage.s-keep b { color: var(--school); }
+.stage.s-read { border-color: var(--ball); }
+.stage.s-read b { color: var(--ball); }
+.arw { font-family: "Archivo Black", sans-serif; font-size: 1.6rem; color: var(--ink-3); text-align: center; }
+
+.never {
+  margin-top: 2px; text-align: center; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+
+/* ── 8 · order ────────────────────────────────────────────────────────── */
+.steps { display: grid; gap: 10px; }
+.step {
+  display: grid; grid-template-columns: 56px 1fr; gap: 0 14px;
+  border: 2px solid var(--edge); border-radius: 3px; background: var(--paper);
+  align-items: center; padding: 14px 16px 14px 0;
+}
+.step .sn {
+  font-family: "Archivo Black", sans-serif; font-size: 2rem; text-align: center;
+  color: var(--card); background: var(--ink); align-self: stretch;
+  display: grid; place-items: center; border-radius: 2px;
+}
+.step .st { display: grid; gap: 3px; }
+.step b { font-family: "Archivo Black", sans-serif; font-weight: 400; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.step span { font-size: 0.9rem; color: var(--ink-2); }
+.step.s1 .sn { background: var(--warn); }
+.step.s2 .sn { background: var(--school); }
+.step.s3 .sn { background: var(--ball); }
+
+/* ── close ────────────────────────────────────────────────────────────── */
+.close { background: var(--ink); color: var(--paper); padding-block: clamp(2.5rem, 8vw, 4rem); }
+.close .inner { display: grid; gap: 1rem; }
+.close h2 { font-size: clamp(1.7rem, 6vw, 3rem); line-height: 1; text-transform: uppercase; }
+.close h2 .a { color: var(--school); }
+.close p { margin: 0; color: var(--paper-2); max-width: 44ch; font-size: 1.1rem; }
+
+:where(a, [tabindex]):focus-visible { outline: 3px solid var(--school); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<header class="top">
+  <div class="inner">
+    <p class="kick">Ansar OS · the whole plan, in pictures</p>
+    <h1>One tick<br>is <span class="a">not</span><br>five <span class="b">hours</span></h1>
+    <p>Why the homeschool side needs rebuilding, and the order to do it in.</p>
+  </div>
+</header>
+
+<section class="panel">
+  <div class="inner">
+    <div class="head">
+      <p class="num">1</p>
+      <h2>Ansar's day, in hours</h2>
+      <p class="say">School is most of his day. Football is a slice of it.</p>
+    </div>
+    <div class="pic">
+      <div class="hours">
+        <div class="hour-row r-school">
+          <div class="top-line"><span class="who">School</span><span class="amt">5 hours</span></div>
+          <div class="blocks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="hour-row r-ball">
+          <div class="top-line"><span class="who">Football</span><span class="amt">1 hour</span></div>
+          <div class="blocks one" aria-hidden="true"><i></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="inner">
+    <div class="head">
+      <p class="num">2</p>
+      <h2>The app does it backwards</h2>
+      <p class="say">Football got a whole world built for it. School got one box to tap.</p>
+    </div>
+    <div class="pic">
+      <div class="lop">
+        <div class="box b-ball">
+          <h3>Football</h3>
+          <div class="lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <p class="count-note">14 screens · the year · the season · every drill</p>
+        </div>
+        <div class="box b-school">
+          <h3>School</h3>
+          <div class="tiny-tick">
+            <span class="tick-sq" aria-hidden="true">✓</span>
+            <span>Done</span>
+          </div>
+          <p class="count-note">1 box</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="inner">
+    <div class="head">
+      <p class="num">3</p>
+      <h2>Six subjects go in. One tick comes out.</h2>
+      <p class="say">He does all six. He taps once. The other five are never written down.</p>
+    </div>
+    <div class="pic">
+      <div class="funnel">
+        <p class="lbl">What he actually did</p>
+        <div class="chips">
+          <span class="chip">English</span>
+          <span class="chip fade">Turkish</span>
+          <span class="chip fade">Maths</span>
+          <span class="chip fade">Science</span>
+          <span class="chip fade">History</span>
+          <span class="chip fade">Coding</span>
+        </div>
+        <p class="arrow-down" aria-hidden="true">↓</p>
+        <div class="one-tick">
+          <span class="big-sq" aria-hidden="true">✓</span>
+          <b>4 hours completed</b>
+        </div>
+        <p class="forget">Everything else is forgotten</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="inner">
+    <div class="head">
+      <p class="num">4</p>
+      <h2>So nobody can answer the real question</h2>
+      <p class="say">The app can prove he turned up. It cannot show what he understood.</p>
+    </div>
+    <div class="pic">
+      <div class="knows">
+        <div class="know-row know-yes">
+          <span class="mark" aria-hidden="true">✓</span>
+          <span class="q">Did he show up?</span>
+          <span class="a">Yes</span>
+        </div>
+        <div class="know-row know-no">
+          <span class="mark" aria-hidden="true">?</span>
+          <span class="q">Did he learn it?</span>
+          <span class="a">No idea</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="inner">
+    <div class="head">
+      <p class="num">5</p>
+      <h2>The fix is boring. One tick per subject.</h2>
+      <p class="say">Same points, same rules. The app just finally writes down which subject happened.</p>
+    </div>
+    <div class="pic">
+      <div class="six">
+        <div class="six-cell"><span class="sq" aria-hidden="true">✓</span><b>English</b><span>The Giver, ch. 7–9</span></div>
+        <div class="six-cell"><span class="sq" aria-hidden="true">✓</span><b>Turkish</b><span>Locative case</span></div>
+        <div class="six-cell"><span class="sq" aria-hidden="true">✓</span><b>Maths</b><span>Equivalent fractions</span></div>
+        <div class="six-cell"><span class="sq" aria-hidden="true">✓</span><b>Science</b><span>Filtration</span></div>
+        <div class="six-cell"><span class="sq" aria-hidden="true">✓</span><b>History</b><span>Ottoman trade</span></div>
+        <div class="six-cell"><span class="sq" aria-hidden="true">✓</span><b>Coding</b><span>Loops in loops</span></div>
+      </div>
+      <div class="now-strip"><span>Today</span><span class="now-bar" aria-hidden="true"><i></i></span><span>2 of 6</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="inner">
+    <div class="head">
+      <p class="num">6</p>
+      <h2>Then the good screens draw themselves</h2>
+      <p class="say">A screen can only show what the app remembers. Give it a memory and all of this becomes possible.</p>
+    </div>
+    <div class="pic">
+      <div class="screens">
+        <div class="mini">
+          <h4>Today</h4>
+          <div class="rows" aria-hidden="true"><i class="full"></i><i class="full"></i><i></i><i></i><i></i><i></i></div>
+          <small>2 of 6</small>
+        </div>
+        <div class="mini">
+          <h4>This week</h4>
+          <div class="wkgrid" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <small>Mon–Fri</small>
+        </div>
+        <div class="mini">
+          <h4>The year</h4>
+          <div class="arc" aria-hidden="true"><i></i><i></i><i></i><i class="here"></i></div>
+          <small>You are here</small>
+        </div>
+        <div class="mini">
+          <h4>Strong / weak</h4>
+          <div class="bars" aria-hidden="true"><i style="height:82%"></i><i style="height:70%"></i><i style="height:14%"></i><i style="height:58%"></i></div>
+          <small>8 subjects</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="inner">
+    <div class="head">
+      <p class="num">7</p>
+      <h2>Notion stays. It just stops being the delivery truck.</h2>
+      <p class="say">Right now the board phones Notion every time it opens. That's why a normal Saturday says "no week loaded".</p>
+    </div>
+    <div class="pic">
+      <div class="flow">
+        <div class="stage s-write">
+          <p class="ic" aria-hidden="true">✏️</p>
+          <b>You write</b>
+          <span>In Notion, same as always</span>
+        </div>
+        <p class="arw" aria-hidden="true">→</p>
+        <div class="stage s-keep">
+          <p class="ic" aria-hidden="true">🗄️</p>
+          <b>App keeps</b>
+          <span>Copied in overnight, kept forever</span>
+        </div>
+        <p class="arw" aria-hidden="true">→</p>
+        <div class="stage s-read">
+          <p class="ic" aria-hidden="true">📱</p>
+          <b>Screen reads</b>
+          <span>Fast, and never blank</span>
+        </div>
+      </div>
+      <p class="never">One direction only · the board never phones Notion</p>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="inner">
+    <div class="head">
+      <p class="num">8</p>
+      <h2>The order matters more than the ideas</h2>
+      <p class="say">Memory first, screens second. Do it the other way and you build pretty screens with nothing behind them.</p>
+    </div>
+    <div class="pic">
+      <div class="steps">
+        <div class="step s1">
+          <p class="sn">1</p>
+          <span class="st"><b>Fix what's quietly broken</b><span>Exams aren't being created. An old August report shows as if it's this week. Nothing visible changes.</span></span>
+        </div>
+        <div class="step s2">
+          <p class="sn">2</p>
+          <span class="st"><b>Build the memory</b><span>One tick per subject. Points stay identical, so nothing he's earned moves.</span></span>
+        </div>
+        <div class="step s3">
+          <p class="sn">3</p>
+          <span class="st"><b>Then redesign</b><span>School gets its own home, equal in size to football. Today, the week, the year, the proof.</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="close">
+  <div class="inner">
+    <h2>Two academies.<br><span class="a">Same size.</span></h2>
+    <p>Football already proved this app can show a kid where he's going. School just needs the same thing — and it needs a memory first.</p>
+  </div>
+</footer>

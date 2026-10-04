@@ -23,7 +23,11 @@ export default function EvidenceReviewPanel({ selectedWeek }: { selectedWeek: st
   const [mode, setMode] = useState<"coverage" | "integrity" | "next">("coverage");
   const [gapsOnly, setGapsOnly] = useState(false);
   const [selectedArea, setSelectedArea] = useState<Area | null>(null);
-  const imported = selectedWeek === "overview" || selectedWeek === "2026-08-31";
+  // Week 8 only. "overview" is the DEFAULT tab, so including it here meant every
+  // visit to /progress opened on a hand-transcribed report from 31 August and
+  // read as current -- contradicting the comment on WEEK_8 above. Removed
+  // 4 Oct 2026; the !imported branch below is the correct default.
+  const imported = selectedWeek === "2026-08-31";
   if (!imported) return <section className={styles.evidenceEmpty}><h2>Evidence review</h2><p>No verified evidence review has been imported for this week yet. Habit completion remains visible above; this panel will not guess curriculum coverage.</p></section>;
   const shown = gapsOnly ? WEEK_8.filter(area => area.state !== "clear") : WEEK_8;
   return <section className={styles.evidence} aria-label="Week 8 evidence review">
