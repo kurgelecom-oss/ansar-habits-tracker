@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
 import { getSchoolDay } from "../../lib/homeschool";
-import { sydneyDateKey } from "../../lib/time";
+import { sydneyDateKey, sydneyNow } from "../../lib/time";
+import { getHabits } from "../../lib/notion";
+import { gateWindow, isWeekendDate, type GateContext } from "../../lib/gating";
+
+/** The habit whose window the school blocks live inside. One tick of this id
+ *  is the five-hour claim this table decomposes, so a block may only be
+ *  recorded while that same window is open. */
+const SCHOOL_HABIT = "homeschool_session";
 
 /* ════════════════════════════════════════════════════════════════════════════
    /api/school-block — the per-subject record. PHASE 1.
@@ -30,6 +37,16 @@ import { sydneyDateKey } from "../../lib/time";
    WHY THE STORED COLUMNS ARE DENORMALISED
    A Notion row can be re-dated, re-labelled or deleted. The evidence of what
    was ticked on a given day must not change when it is.
+
+   GATE PARITY — WHY POST IS NOT OPEN
+   The table is hardened so anon cannot write to it, but this route holds the
+   service role, so an ungated POST here would BE the bypass that hardening
+   exists to prevent. Worse, Subject.rowId is served publicly by
+   /api/homeschool, so the ids needed to post are discoverable by anyone.
+   A block is therefore accepted only while the SAME window the
+   "homeschool_session" tick obeys is open, and never on a weekend. The gate is
+   imported from lib/gating.ts, not reimplemented here: a second copy of the
+   rules is a second thing to drift. Those files are read, never modified.
    ══════════════════════════════════════════════════════════════════════════ */
 
 export const dynamic = "force-dynamic";
@@ -111,6 +128,37 @@ export async function POST(request: Request) {
       reason: "not_on_todays_programme",
       message: "That block is not on today's programme.",
     }, { status: 409, headers: noStore });
+  }
+
+  // GATE PARITY with /api/tick. Evidence recorded outside the hours school
+  // actually runs is not evidence, and an ungated write here would undo
+  // db/tick_hardening.sql by the back door.
+  if (isWeekendDate(date)) {
+    return NextResponse.json({
+      ok: false, reason: "closed", message: "No school programme on the weekend.",
+    }, { status: 409, headers: noStore });
+  }
+
+  const now = sydneyNow();
+  const school = (await getHabits()).find(h => h.id === SCHOOL_HABIT);
+  if (school) {
+    // gateWindow reads only serverDate and nowMinutes, but the context is
+    // built in full and typed so a future gate cannot silently receive junk.
+    const ctx: GateContext = {
+      habits: [],
+      completions: [],
+      serverDate: date,
+      nowMinutes: now.minutesOfDay,
+      nowMs: now.ms,
+      defaultDwellSeconds: 0,
+      habitsLoaded: true,
+    };
+    const verdict = gateWindow(school, ctx, date);
+    if (!verdict.allowed) {
+      return NextResponse.json({
+        ok: false, reason: verdict.reason, message: verdict.message,
+      }, { status: 409, headers: noStore });
+    }
   }
 
   const { error } = await adminClient()
