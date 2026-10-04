@@ -29,7 +29,7 @@ export default function Programme({ id }: { id: P["id"] }) {
         <h2>🚩 Stop and tell Mum if…</h2>
         <ul className={styles.list}>{p.redFlags.map(r => <li key={r}>{r}</li>)}</ul>
       </section>
-      <p className={styles.footerNote}>This is a coaching plan, not medical advice. <Link href="/pathway" style={{ color: "var(--pw-lime)" }}>Back to today →</Link></p>
+      <p className={styles.footerNote}>This is a coaching plan, not medical advice. <Link href="/pathway" style={{ color: "var(--pw-accent)" }}>Back to today →</Link></p>
     </>
   );
 }

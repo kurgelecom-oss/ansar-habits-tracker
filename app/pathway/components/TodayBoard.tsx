@@ -95,7 +95,7 @@ export default function TodayBoard() {
           </div>
           <div className={styles.scoreboard} aria-label={`${done.length} of ${checklist.length} done`}>
             <small>Today&apos;s score</small>
-            <span className={styles.score}>{done.length}<span style={{ color: "#6d7a82" }}>–</span>{checklist.length}</span>
+            <span className={styles.score}>{done.length}<span style={{ color: "#8a96b8" }}>–</span>{checklist.length}</span>
             <GreenBall size={30} spin={pct === 100} />
             <small>{pct === 100 ? "FULL TIME · PERFECT DAY" : `${pct}% complete`}</small>
           </div>
@@ -157,7 +157,7 @@ export default function TodayBoard() {
         <section className={styles.card}>
           <p className={styles.kicker}>📅 This month</p>
           <h3>{month?.focus ?? "Keep building"}</h3>
-          {monthDrill ? <p className={styles.muted}>Signature drill: <Link href={`/pathway/drills#${monthDrill.id}`} style={{ color: "var(--pw-lime)" }}>{monthDrill.name} →</Link></p> : null}
+          {monthDrill ? <p className={styles.muted}>Signature drill: <Link href={`/pathway/drills#${monthDrill.id}`} style={{ color: "var(--pw-accent)" }}>{monthDrill.name} →</Link></p> : null}
           <Link href="/pathway/season" className={`${styles.btn} ${styles.btnGhost}`}>See the year</Link>
         </section>
         <section className={styles.card}>

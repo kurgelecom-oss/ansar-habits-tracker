@@ -62,7 +62,7 @@ export function groupHabitsByBlock(habits: DashboardHabit[]): HabitBlockGroups {
  */
 const TIER_PRESENTATION: Record<string, { emoji: string; desc: string; color: string }> = {
   "First Team":      { emoji: "🏆", desc: "42+ pts",   color: "var(--ansar-gold)" },
-  "Bench":           { emoji: "✅", desc: "34–41 pts", color: "var(--cyan)" },
+  "Bench":           { emoji: "✅", desc: "34–41 pts", color: "var(--accent)" },
   "Reserves":        { emoji: "⚠️", desc: "26–33 pts", color: "var(--ansar-warning)" },
   "Training Ground": { emoji: "❌", desc: "0–25 pts",  color: "var(--ansar-danger)" },
 };

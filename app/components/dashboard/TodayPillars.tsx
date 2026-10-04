@@ -83,7 +83,7 @@ function SchoolPillar() {
   }, []);
   return (
     <PillarCard
-      title="School" icon="🎓" accent="var(--cyan)" href="/school" linkLabel="Open School"
+      title="School" icon="🎓" accent="var(--accent)" href="/school" linkLabel="Open School"
       summary={week && Array.isArray(week.days) ? schoolPillar(week) : null}
       status={failed ? "The week could not be loaded." : "Loading…"}
     />

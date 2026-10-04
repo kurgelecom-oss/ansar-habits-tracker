@@ -45,10 +45,10 @@ export function GreenBall({ size = 28, spin = false }: { size?: number; spin?: b
     <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" style={{ flex: "none" }}>
       <g>
         {spin ? <animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="6s" repeatCount="indefinite" /> : null}
-        <circle cx="20" cy="20" r="18" fill="#f3f7ef" stroke="#0a2a14" strokeWidth="1.5" />
-        <polygon points="20,12 27,17 24.5,25 15.5,25 13,17" fill="#8fe35a" stroke="#0a2a14" strokeWidth="1" />
-        <path d="M20 12 L20 3 M27 17 L35 13 M24.5 25 L30 33 M15.5 25 L10 33 M13 17 L5 13" stroke="#0a2a14" strokeWidth="1" />
-        <path d="M17 3.5 L23 3.5 L20 7 Z M35.5 16 L36 22 L32 19 Z M31 34 L26 36.5 L27 32 Z M9 34 L14 36.5 L13 32 Z M4.5 16 L4 22 L8 19 Z" fill="#8fe35a" />
+        <circle cx="20" cy="20" r="18" fill="#eef2ff" stroke="#0b1020" strokeWidth="1.5" />
+        <polygon points="20,12 27,17 24.5,25 15.5,25 13,17" fill="#5b8cff" stroke="#0b1020" strokeWidth="1" />
+        <path d="M20 12 L20 3 M27 17 L35 13 M24.5 25 L30 33 M15.5 25 L10 33 M13 17 L5 13" stroke="#0b1020" strokeWidth="1" />
+        <path d="M17 3.5 L23 3.5 L20 7 Z M35.5 16 L36 22 L32 19 Z M31 34 L26 36.5 L27 32 Z M9 34 L14 36.5 L13 32 Z M4.5 16 L4 22 L8 19 Z" fill="#5b8cff" />
       </g>
     </svg>
   );
@@ -97,28 +97,28 @@ export function PitchDiagram({ d, title }: { d: Diagram; title: string }) {
   return (
     <figure style={{ margin: 0 }}>
       <svg className={styles.pitch} viewBox="0 0 100 64" role="img" aria-label={`Diagram: ${title}. ${d.label ?? ""}`}>
-        {Array.from({ length: 10 }, (_, i) => <rect key={i} x={i * 10} y="0" width="10" height="64" fill={i % 2 ? "#12693a" : "#0f5a2e"} />)}
+        {Array.from({ length: 10 }, (_, i) => <rect key={i} x={i * 10} y="0" width="10" height="64" fill={i % 2 ? "#141b30" : "#141b30"} />)}
         <rect x="2" y="2" width="96" height="60" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth=".5" />
         <line x1="50" y1="2" x2="50" y2="62" stroke="rgba(255,255,255,.35)" strokeWidth=".4" />
         <circle cx="50" cy="32" r="8" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".4" />
-        {d.wall ? <><rect x="94" y="6" width="4" height="52" fill="#8a949c" /><text x="96" y="4.5" fontSize="3" fill="#fff" textAnchor="middle">WALL</text></> : null}
+        {d.wall ? <><rect x="94" y="6" width="4" height="52" fill="#8a96b8" /><text x="96" y="4.5" fontSize="3" fill="#fff" textAnchor="middle">WALL</text></> : null}
         {d.goal ? <><rect x="97" y="22" width="2.5" height="20" fill="none" stroke="#fff" strokeWidth=".8" /><rect x="84" y="16" width="14" height="32" fill="none" stroke="rgba(255,255,255,.45)" strokeWidth=".4" /></> : null}
         <path d={d.ball} fill="none" stroke="rgba(255,255,255,.35)" strokeWidth=".5" strokeDasharray="1.5 1.5" />
-        {d.cones?.map(([x, y], i) => <polygon key={i} points={`${x},${y - 2.2} ${x - 1.8},${y + 1.4} ${x + 1.8},${y + 1.4}`} fill="#ff8a1f" stroke="#7a3b00" strokeWidth=".3" />)}
-        {d.partner ? <g><circle cx={d.partner[0]} cy={d.partner[1]} r="2.6" fill="#3aa0ff" stroke="#fff" strokeWidth=".4" /><text x={d.partner[0]} y={d.partner[1] + 1} fontSize="2.6" fill="#fff" textAnchor="middle" fontWeight="700">P</text></g> : null}
-        {d.defender ? <g transform={reduced ? `translate(${startOf(d.defender)[0]} ${startOf(d.defender)[1]})` : undefined}><circle r="2.6" fill="#ff5a5a" stroke="#fff" strokeWidth=".4" />{move(d.defender)}</g> : null}
+        {d.cones?.map(([x, y], i) => <polygon key={i} points={`${x},${y - 2.2} ${x - 1.8},${y + 1.4} ${x + 1.8},${y + 1.4}`} fill="#f2c14e" stroke="#333234" strokeWidth=".3" />)}
+        {d.partner ? <g><circle cx={d.partner[0]} cy={d.partner[1]} r="2.6" fill="#8a96b8" stroke="#fff" strokeWidth=".4" /><text x={d.partner[0]} y={d.partner[1] + 1} fontSize="2.6" fill="#fff" textAnchor="middle" fontWeight="700">P</text></g> : null}
+        {d.defender ? <g transform={reduced ? `translate(${startOf(d.defender)[0]} ${startOf(d.defender)[1]})` : undefined}><circle r="2.6" fill="#ff7a7a" stroke="#fff" strokeWidth=".4" />{move(d.defender)}</g> : null}
         <g transform={reduced ? `translate(${px} ${py})` : undefined}>
-          <circle r="3" fill="#e7c55b" stroke="#fff" strokeWidth=".5" />
-          <text y="1.1" fontSize="3" fill="#062010" textAnchor="middle" fontWeight="900">A</text>
+          <circle r="3" fill="#f2c14e" stroke="#fff" strokeWidth=".5" />
+          <text y="1.1" fontSize="3" fill="#0b1020" textAnchor="middle" fontWeight="900">A</text>
           {move(d.player)}
         </g>
         <g transform={reduced ? `translate(${bx} ${by})` : undefined}>
-          <circle r="1.5" fill="#fff" stroke="#111" strokeWidth=".3" />
-          <circle r=".55" fill="#8fe35a" />
+          <circle r="1.5" fill="#fff" stroke="#0b1020" strokeWidth=".3" />
+          <circle r=".55" fill="#5b8cff" />
           {move(d.ball)}
         </g>
       </svg>
-      {d.label ? <figcaption className={styles.pitchCaption}>{d.label} · <span style={{ color: "#e7c55b" }}>A</span> = you{d.partner ? " · P = partner" : ""}{d.defender ? " · red = defender" : ""}</figcaption> : null}
+      {d.label ? <figcaption className={styles.pitchCaption}>{d.label} · <span style={{ color: "#f2c14e" }}>A</span> = you{d.partner ? " · P = partner" : ""}{d.defender ? " · red = defender" : ""}</figcaption> : null}
     </figure>
   );
 }

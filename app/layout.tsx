@@ -19,8 +19,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-// The reset and the --bg-base/--bg-card/--cyan tokens live in app/globals.css. They used to live in an inline <style> string
-// here, which is how #00d9ff drifted in with nothing to grep against.
+// The reset and the palette tokens live in app/globals.css.
 export default function RootLayout({
   children,
 }: {

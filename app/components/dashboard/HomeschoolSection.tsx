@@ -46,7 +46,7 @@ export default function HomeschoolSection({
         <div key={habit.id} data-testid="homeschool-item" className={styles.programmeItem}>
           <HabitRow
             habit={habit}
-            accent="var(--cyan)"
+            accent="var(--accent)"
             icon={HABIT_ICONS[habit.id] ?? DEFAULT_ICON}
             saving={savingId === habit.id}
             holding={holdId === habit.id}

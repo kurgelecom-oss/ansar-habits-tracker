@@ -6,8 +6,8 @@
 
 .page {
   min-height: 100vh;
-  color: #f5f7fb;
-  background: linear-gradient(rgba(4, 11, 22, .89), rgba(4, 11, 22, .96)),
+  color: #eef2ff;
+  background: linear-gradient(rgba(11, 16, 32, .89), rgba(11, 16, 32, .96)),
               url('/stadium-lights.jpg') center top / cover fixed;
 }
 .content { max-width: 1120px; margin: 0 auto; padding: 38px 28px 72px; }
@@ -18,14 +18,14 @@
 
 .tabs { display: flex; gap: 7px; overflow-x: auto; padding: 20px 0 18px; }
 .tab {
-  appearance: none; cursor: pointer; color: #fff; background: transparent;
+  appearance: none; cursor: pointer; color: var(--ansar-text); background: transparent;
   border: 1px solid var(--ansar-border); border-radius: 999px;
   padding: 11px 15px; font: 600 13px inherit; white-space: nowrap; min-height: 44px;
 }
-.tabOn { color: #09111d; border-color: var(--ansar-gold-bright); background: var(--ansar-gold-bright); }
+.tabOn { color: var(--ansar-base); border-color: var(--accent); background: var(--accent); }
 
 .card {
-  border: 1px solid var(--ansar-border); background: rgba(14, 20, 32, .93);
+  border: 1px solid var(--ansar-border); background: rgba(20, 27, 48, .93);
   border-radius: var(--ansar-radius-panel); padding: 22px; margin-bottom: 16px;
 }
 .cardHead { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; flex-wrap: wrap; }
@@ -42,11 +42,11 @@
 .blockDone { border-left-color: var(--ansar-success); }
 .tickBtn {
   flex: 0 0 auto; width: 44px; height: 44px; border-radius: var(--ansar-radius-row);
-  border: 1px solid var(--ansar-border); background: #101a29; color: #fff;
+  border: 1px solid var(--ansar-border); background: #141b30; color: var(--ansar-text);
   font-size: 19px; cursor: pointer; line-height: 1;
 }
 .tickBtn:disabled { cursor: not-allowed; }
-.tickOn { background: #0c3d26; border-color: var(--ansar-success); color: var(--ansar-success); }
+.tickOn { background: #1a353d; border-color: var(--ansar-success); color: var(--ansar-success); }
 .blockBody { min-width: 0; flex: 1; }
 .blockLabel { font-weight: 700; font-size: 15px; display: flex; gap: 9px; align-items: baseline; flex-wrap: wrap; }
 .blockDur { color: var(--ansar-subtext); font-weight: 500; font-size: 12.5px; }
@@ -60,16 +60,16 @@
 .dayName { font-weight: 700; font-size: 14px; margin: 0; }
 .dayDate { color: var(--ansar-muted); font-size: 12px; margin: 2px 0 9px; }
 .dayTopic { color: var(--ansar-subtext); font-size: 12px; margin: 0 0 11px; line-height: 1.45; }
-.chip { display: block; background: #101a29; border: 1px solid var(--ansar-border); border-radius: 8px; padding: 8px 9px; margin-bottom: 6px; color: #fff; font-size: 12.5px; }
+.chip { display: block; background: #141b30; border: 1px solid var(--ansar-border); border-radius: 8px; padding: 8px 9px; margin-bottom: 6px; color: var(--ansar-text); font-size: 12.5px; }
 .chipDone { border-color: var(--ansar-success); color: var(--ansar-success); }
 
 .arc { display: flex; gap: 6px; margin: 18px 0 10px; }
-.arcCell { flex: 1; height: 10px; border-radius: 4px; background: #202b3c; }
+.arcCell { flex: 1; height: 10px; border-radius: 4px; background: #1a223b; }
 .arcCellOn { background: var(--ansar-gold); }
 .arcNow { background: #fff; }
 
 .note { color: var(--ansar-subtext); font-size: 13px; margin: 12px 0 0; line-height: 1.5; }
-.warn { color: #ffd9d9; background: #17151d; border: 1px solid #563030; border-left: 3px solid var(--ansar-danger); border-radius: var(--ansar-radius-row); padding: 13px; font-size: 13.5px; margin-bottom: 14px; }
+.warn { color: #eef2ff; background: #141b30; border: 1px solid #7e4651; border-left: 3px solid var(--ansar-danger); border-radius: var(--ansar-radius-row); padding: 13px; font-size: 13.5px; margin-bottom: 14px; }
 .empty { color: var(--ansar-subtext); font-size: 14px; padding: 10px 0 0; }
 
 @media (max-width: 650px) {

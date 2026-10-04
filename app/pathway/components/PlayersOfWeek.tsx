@@ -13,7 +13,7 @@ function Story({ p }: { p: PlayerStory }) {
   return (
     <>
       <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-        {p.image ? <img src={p.image} alt={p.name} width={110} height={110} style={{ width: 110, height: 110, objectFit: "cover", objectPosition: "top", borderRadius: 14, border: "2px solid var(--pw-lime)" }} /> : <span style={{ fontSize: 60 }}>{p.flag}</span>}
+        {p.image ? <img src={p.image} alt={p.name} width={110} height={110} style={{ width: 110, height: 110, objectFit: "cover", objectPosition: "top", borderRadius: 14, border: "2px solid var(--pw-accent)" }} /> : <span style={{ fontSize: 60 }}>{p.flag}</span>}
         <div>
           <p className={styles.kicker}>{p.flag} {pos?.label ?? p.pos}</p>
           <h2 style={{ margin: "4px 0", font: "800 30px Georgia, serif" }}>{p.name}</h2>
@@ -46,7 +46,7 @@ export default function PlayersOfWeek() {
       <div className={styles.sectionHead}><h2>This week · {WEEK_FMT.format(monday)} – {WEEK_FMT.format(sunday)}</h2><span className={styles.muted}>{PER_WEEK} new players every Monday · {pool.length} in the pool</span></div>
       <div className={styles.legendGrid}>
         {picks.map(p => (
-          <button key={p.id} type="button" className={styles.legendCard} onClick={() => setOpen(p)} aria-haspopup="dialog" style={{ ["--legend" as string]: "var(--pw-lime)" }}>
+          <button key={p.id} type="button" className={styles.legendCard} onClick={() => setOpen(p)} aria-haspopup="dialog" style={{ ["--legend" as string]: "var(--pw-accent)" }}>
             {p.image ? <img src={p.image} alt="" loading="lazy" style={{ width: "100%", height: 170, objectFit: "cover", objectPosition: "top", borderRadius: 10 }} /> : <span className={styles.legendEmoji}>{p.flag}</span>}
             <h3>{p.flag} {p.name}</h3>
             <p>{POSITION[p.pos]?.label ?? p.pos}</p>
