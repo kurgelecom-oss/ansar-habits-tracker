@@ -41,6 +41,15 @@ describe("WeekBadge", () => {
     expect(badge).toHaveAttribute("data-state", "none");
   });
 
+  it("states the reason instead of blaming the table on a weekend", async () => {
+    stub({ weekTitle: "", weekUrl: null, stale: false, subjects: [], message: "No school programme on the weekend." });
+    render(<WeekBadge />);
+    const badge = await screen.findByTestId("week-badge");
+    expect(badge).toHaveTextContent("No school programme on the weekend.");
+    expect(badge).not.toHaveTextContent("No week loaded");
+    expect(badge).toHaveAttribute("data-state", "explained");
+  });
+
   it("renders nothing when the route cannot be reached", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("down"); }));
     const { container } = render(<WeekBadge />);
