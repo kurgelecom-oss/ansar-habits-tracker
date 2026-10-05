@@ -257,13 +257,6 @@ export default function AnsarPage() {
   /** Mon–Fri days this week with `homeschool_session` done / every applicable
    *  habit ticked. null until the week has loaded. */
   const [week, setWeek] = useState<{ schoolDays: number; fullDays: number } | null>(null);
-  /* Rule 1b of lib/weekend.ts: Target Map zones done / needed, null while the
-     week is exempt (before 12 Oct 2026). Read from /api/targets. */
-  const [ps5Targets, setPs5Targets] = useState<{ done: number; need: number } | null>(null);
-  useEffect(() => {
-    fetch("/api/targets", { cache: "no-store" }).then(r => r.json())
-      .then(d => setPs5Targets(d.ps5Targets ?? null)).catch(() => {});
-  }, []);
   const [streak, setStreak] = useState<number | null>(null);
   /** Saturdays in a row with the full Push verified. null until known. */
   const [satStreak, setSatStreak] = useState<number | null>(null);
@@ -1125,7 +1118,6 @@ export default function AnsarPage() {
     week?.schoolDays ?? 0,
     pushRows.filter(h => h.state === "DONE").length,
     pushRows.length,
-    ps5Targets,
   );
 
   /* ── MORNING FEASIBILITY ────────────────────────────────────────────────────

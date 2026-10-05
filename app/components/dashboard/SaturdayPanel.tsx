@@ -51,12 +51,6 @@ export default function SaturdayPanel({ schoolDays, ps5, saturdayStreak }: Satur
         {ps5.weekUnlocked ? "✅ " : <span aria-hidden className={styles.walletLockGlyph}>🔒</span>}
         {weekLine}{ps5.weekUnlocked ? " — weekend earned" : " — weekend not earned"}
       </p>
-      {ps5.targets ? (
-        <p className={ps5.targets.done >= ps5.targets.need ? styles.walletBonusOn : styles.walletBonus} data-testid="ps5-targets">
-          {ps5.targets.done >= ps5.targets.need ? "🎯 " : "🔒 "}
-          Target Map {ps5.targets.done}/{ps5.targets.need} zones done
-        </p>
-      ) : null}
       <p className={ps5.pushComplete ? styles.walletBonusOn : styles.walletBonus} data-testid="ps5-push">
         {ps5.pushComplete ? "🏆 " : "🔥 "}
         Saturday Push {ps5.pushDone}/{ps5.pushTotal} verified

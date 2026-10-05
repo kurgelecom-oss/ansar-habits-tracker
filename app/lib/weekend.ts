@@ -11,9 +11,6 @@
                                 was removed, tk, 5 Oct 2026.)
      2. SATURDAY DECIDES WHEN. PS5 starts only once every Saturday Push row is
                                 parent-verified. The Push happens either way.
-     1b. THE TARGET MAP TOO.   From the week of 12 Oct 2026, the week also needs
-                                TARGET_ZONES_FOR_PS5 of the eight Target Map
-                                zones done (lib/targets.ts). tk, 5 Oct 2026.
      3. SUNDAY DOES NOT EXIST. Nothing to view, nothing to tick.
 
    No I/O, no React, no clock.
@@ -35,10 +32,8 @@ export function weekendUnlocked(schoolDays: number): boolean {
 }
 
 export type SaturdayPs5 = {
-  /** Rule 1 verdict (school days, and the Target Map when it applies). */
+  /** Rule 1 verdict. */
   weekUnlocked: boolean;
-  /** Rule 1b: zones done / needed, or null when the week is exempt. */
-  targets: { done: number; need: number } | null;
   /** Rule 2 progress. */
   pushDone: number;
   pushTotal: number;
@@ -57,25 +52,18 @@ export type SaturdayPs5 = {
  * A Push block with NO rows is never "complete" — a Notion outage, or a Saturday
  * before the rows exist, must not read as a finished Push.
  */
-export function saturdayPs5(
-  schoolDays: number, pushDone: number, pushTotal: number,
-  targets: { done: number; need: number } | null = null,
-): SaturdayPs5 {
-  const schoolOk = weekendUnlocked(schoolDays);
-  const targetsOk = targets === null || targets.done >= targets.need;
-  const weekUnlocked = schoolOk && targetsOk;
+export function saturdayPs5(schoolDays: number, pushDone: number, pushTotal: number): SaturdayPs5 {
+  const weekUnlocked = weekendUnlocked(schoolDays);
   const pushComplete = pushTotal > 0 && pushDone >= pushTotal;
   const ready = weekUnlocked && pushComplete;
-  const message = !schoolOk
+  const message = !weekUnlocked
     ? `No PS5 this weekend — school was finished on fewer than ${WEEKEND_UNLOCK_MIN_SCHOOL_DAYS} days. Push still on.`
-    : !targetsOk
-      ? `PS5 waits — Target Map ${targets!.done}/${targets!.need} zones done. Push still on.`
     : pushTotal === 0
       ? "Saturday Push not loaded — nothing to unlock against"
       : pushComplete
         ? "PS5 unlocked — Push done, week earned it"
         : `PS5 waits — Push ${pushDone}/${pushTotal} verified`;
-  return { weekUnlocked, targets, pushDone, pushTotal, pushComplete, ready, message };
+  return { weekUnlocked, pushDone, pushTotal, pushComplete, ready, message };
 }
 
 /**
