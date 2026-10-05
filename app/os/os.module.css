@@ -1,0 +1,12 @@
+/* Zone OSes reuse the Football Pathway's components but not its pitch: each
+   zone's header is lit in its own accent with its icon as a watermark. Doubled
+   classes so these win over pathway.module.css whatever order the CSS loads in. */
+.zoneHero.zoneHero {
+  background:
+    radial-gradient(circle at 88% 15%, color-mix(in srgb, var(--pw-lime) 30%, transparent), transparent 55%),
+    linear-gradient(135deg, color-mix(in srgb, var(--pw-lime) 20%, #0b1020) 0%, #0b1020 75%);
+  border-color: color-mix(in srgb, var(--pw-lime) 55%, transparent);
+}
+.zoneHero.zoneHero::before, .zoneHero.zoneHero::after { display: none; }
+.mark { position: absolute; right: 18px; bottom: -28px; font-size: 170px; line-height: 1; opacity: 0.09; pointer-events: none; user-select: none; }
+@media (max-width: 700px) { .mark { font-size: 110px; bottom: -16px; } }

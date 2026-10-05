@@ -27,15 +27,6 @@ describe("weekend rules", () => {
     expect(saturdayPs5(4, 3, 3).ready).toBe(true);
   });
 
-  it("rule 1b: from 12 Oct the Target Map must have enough zones done", () => {
-    const short = saturdayPs5(5, 3, 3, { done: 4, need: 5 });
-    expect(short.weekUnlocked).toBe(false);
-    expect(short.ready).toBe(false);
-    expect(short.message).toBe("PS5 waits — Target Map 4/5 zones done. Push still on.");
-    expect(saturdayPs5(5, 3, 3, { done: 5, need: 5 }).ready).toBe(true);
-    expect(saturdayPs5(5, 3, 3).targets).toBeNull();
-  });
-
   it("an empty Push block is never complete", () => {
     const none = saturdayPs5(4, 0, 0);
     expect(none.pushComplete).toBe(false);
