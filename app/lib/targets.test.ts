@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { zoneStates } from "./targets";
+import { zoneStates, zonesDone } from "./targets";
 
 const empty = { habitDays: {}, blocks: [] };
 
@@ -8,7 +8,8 @@ describe("zoneStates", () => {
     const s = zoneStates(empty);
     expect(s.scholar.status).toBe("not-started");
     expect(s.languages.note).toBe("Nothing planned this week");
-    expect([s.outdoors, s.combat, s.chess].every(z => z.status === "untracked")).toBe(true);
+    expect([s.outdoors, s.combat, s.chess].every(z => z.status === "not-started")).toBe(true);
+    expect(zonesDone(s)).toBe(0);
   });
 
   it("school matches the weekend rule: 4 days is done, 3 is waiting", () => {
@@ -30,5 +31,13 @@ describe("zoneStates", () => {
     ] });
     expect(s.languages).toMatchObject({ status: "waiting", done: 1, target: 2 });
     expect(s.digital).toMatchObject({ status: "waiting", done: 1, target: 2 });
+  });
+
+  it("proof zones need a parent's confirmation to count", () => {
+    const s = zoneStates({ ...empty, proofs: { outdoors: { confirmed: false }, chess: { confirmed: true } } });
+    expect(s.outdoors.status).toBe("waiting");
+    expect(s.chess.status).toBe("done");
+    expect(s.combat.status).toBe("not-started");
+    expect(zonesDone(s)).toBe(1);
   });
 });
