@@ -7,7 +7,7 @@ import styles from "./dashboard.module.css";
 /**
  * One quiet line under the navigation: what Ansar, Mum and Dad each need to do
  * today, this week and this month, one notice at a time. Everyone reads the
- * same iPad, so each notice names who it is for.
+ * same MacBook, so each notice names who it is for.
  *
  * It advances every eight seconds, and holds still while it is pressed,
  * hovered or focused. With reduced motion it only moves when tapped.

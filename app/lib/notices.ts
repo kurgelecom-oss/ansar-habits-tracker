@@ -6,7 +6,7 @@ export type Notice = { who: "Ansar" | "Mum" | "Dad"; text: string };
 // Ranges are inclusive Sydney dates; "" as a start means "from the beginning".
 const DATED: { ranges: [string, string][]; notices: Notice[] }[] = [
   { ranges: [["", "2026-10-09"]], notices: [
-    { who: "Dad", text: "Unlock the iPad once at Tests with the parent PIN before Friday." },
+    { who: "Dad", text: "Unlock the MacBook once at Tests with the parent PIN before Friday." },
   ] },
   { ranges: [["2026-10-12", "2026-10-16"]], notices: [
     { who: "Ansar", text: "Maths level check is open in Tests. It shows where you are; there is nothing to pass." },
