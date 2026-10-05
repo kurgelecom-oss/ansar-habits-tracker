@@ -49,9 +49,68 @@
   --ansar-danger: #ff7a7a;       /* MISSED */
   --ansar-wallet: #5b8cff;       /* the wallet is an action like any other */
 
+  /* THE TWO ACADEMIES HAVE THEIR OWN COLOURS (tk, 5 Oct 2026).
+     School is blue, Football is pitch green. A section colour appears only on
+     things that section owns: its nav item, its pillar on Today, its own
+     screens. Shared chrome stays neutral, gold stays the club, and green/red
+     stay Done/Missed. Fills in either colour carry dark text. */
+  --school: #5b8cff;
+  --football: #8fe35a;           /* floodlit grass: bright enough for text on navy */
+  --football-pitch: #0e5a2c;     /* the pitch itself, for surfaces */
+
   --ansar-radius-panel: 14px;
   --ansar-radius-row: 10px;
   --ansar-gap: 12px;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THE THREE LOOKS. The block above is Matchday, the default. Each look below
+   redefines the same tokens, so every screen follows without knowing a look
+   exists. Chosen per device with the Look control in the nav; the words that
+   change with a look are in components/looks/looks.ts.
+
+   Two rules every look must keep:
+     - Fills in the accent, gold, school or football colour carry
+       var(--ansar-base) as their text. So in a light look those four must be
+       dark enough for LIGHT text (4.5:1), the reverse of Matchday.
+     - Football's own screens stay a night pitch in every look.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --font-body: "Barlow", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display-case: uppercase;
+  --display-track: 0.01em;
+  --display-weight: 800;
+  --display-shadow: 0 3px 24px rgba(0, 0, 0, 0.85);   /* lifts light lettering off the photo */
+}
+
+html[data-look="bernabeu"] {
+  color-scheme: light;
+  --bg-base: #f4f6fb; --bg-card: #ffffff; --accent: #1d4ed8;
+  --ansar-base: #f4f6fb; --ansar-card: #ffffff; --ansar-panel: #ffffff; --ansar-fixture: #ffffff;
+  --ansar-rowflat: #f4f6fb; --ansar-row: #e8ecf5; --ansar-border: #d9dfec; --ansar-hairline: #d9dfec; --ansar-navy: #e8ecf5;
+  --ansar-text: #0b1f4b; --ansar-muted: #55627f; --ansar-subtext: #55627f;
+  --ansar-gold: #8f6a00; --ansar-gold-bright: #8f6a00; --ansar-warning: #8f6a00;
+  --ansar-success: #15803d; --ansar-danger: #c0362c; --ansar-wallet: #1d4ed8;
+  --school: #1d4ed8; --football: #15803d; --football-pitch: #15803d;
+  --font-display: "Bodoni Moda", Didot, Georgia, serif;
+  --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display-case: none; --display-track: 0; --display-weight: 700; --display-shadow: none;
+  --ansar-radius-panel: 8px; --ansar-radius-row: 6px;
+}
+
+html[data-look="notebook"] {
+  color-scheme: light;
+  --bg-base: #f3ecdd; --bg-card: #fbf6ea; --accent: #2f5c8f;
+  --ansar-base: #f3ecdd; --ansar-card: #fbf6ea; --ansar-panel: #fbf6ea; --ansar-fixture: #fbf6ea;
+  --ansar-rowflat: #f3ecdd; --ansar-row: #eadfc8; --ansar-border: #ddd0b8; --ansar-hairline: #ddd0b8; --ansar-navy: #eadfc8;
+  --ansar-text: #2b2620; --ansar-muted: #6b6152; --ansar-subtext: #6b6152;
+  --ansar-gold: #8a5a12; --ansar-gold-bright: #8a5a12; --ansar-warning: #8a5a12;
+  --ansar-success: #3f6b2a; --ansar-danger: #a63d2f; --ansar-wallet: #2f5c8f;
+  --school: #2f5c8f; --football: #3f6b2a; --football-pitch: #3f6b2a;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display-case: none; --display-track: -0.005em; --display-weight: 600; --display-shadow: none;
 }
 
 ::selection { background: var(--accent); color: var(--ansar-base); }
@@ -70,5 +129,8 @@ body {
   height: 100%;
   background: var(--ansar-base);
   color: var(--ansar-text);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
 }
+
+/* Headings take the look's display face and its case. */
+h1, h2 { font-family: var(--font-display); text-transform: var(--display-case); letter-spacing: var(--display-track); }

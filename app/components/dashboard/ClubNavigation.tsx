@@ -1,6 +1,8 @@
 import type React from "react";
 import styles from "./dashboard.module.css";
 import { CONTROL_ROOM_FALLBACK_URL } from "../../lib/notion-sources";
+import GuideMode from "../guide/GuideMode";
+import LookSwitch from "../looks/LookSwitch";
 
 /**
  * The dashboard's own club navigation.
@@ -73,6 +75,9 @@ export default function ClubNavigation(
                   : item.label === activeLabel ? { "aria-current": "page" as const } : {})}
                 className={`${styles.clubNavItem} ${item.label === activeLabel ? styles.clubNavItemActive : ""}`}
                 data-testid="club-nav-item"
+                // Football wears its own colour when active; everything else
+                // uses the default accent, which is also School's blue.
+                data-section={item.label === "Football" ? "football" : undefined}
               >
                 <span aria-hidden="true" className={styles.clubNavIcon}>{item.icon}</span>
                 <span data-testid="club-nav-label">{item.label}</span>
@@ -96,6 +101,11 @@ export default function ClubNavigation(
           streak, both clocks and the connection state. A slot rather than
           props, so the nav stays a presentational bar and page.tsx keeps
           owning every value inside it. */}
+      {/* The guide switch rides in the one bar every screen already draws, so
+          every screen gets the guide without each page mounting its own. */}
+      <GuideMode />
+      <LookSwitch />
+
       {status ? <div className={styles.clubNavStatus}>{status}</div> : null}
     </nav>
   );

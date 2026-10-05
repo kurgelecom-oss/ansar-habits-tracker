@@ -1,4 +1,6 @@
+"use client";
 import styles from "./dashboard.module.css";
+import { useCopy } from "../looks/looks";
 import WeekBadge from "./WeekBadge";
 
 /**
@@ -17,6 +19,8 @@ import WeekBadge from "./WeekBadge";
  * identity-adjacent — it is the one live value that belongs next to the name.
  */
 export default function ClubHeader() {
+  // The name and the line under it are the look's own words.
+  const copy = useCopy();
   return (
     <header className={styles.clubHeader}>
       {/* One text node, deliberately. The gold identity is carried by the rule
@@ -24,8 +28,8 @@ export default function ClubHeader() {
           The motto under it is fixed brand copy, not data — it says nothing
           about points, results or progress and so cannot go stale or lie. */}
       <div className={styles.clubIdentity}>
-        <h1 className={styles.clubWordmark}>Ansar · ANSAR FC</h1>
-        <p className={styles.clubMotto}>Discipline Today. Greatness Forever.</p>
+        <h1 className={styles.clubWordmark}>{copy.clubName}</h1>
+        <p className={styles.clubMotto}>{copy.clubLine}</p>
       </div>
       <div className={styles.clubWeek}>
         <WeekBadge />

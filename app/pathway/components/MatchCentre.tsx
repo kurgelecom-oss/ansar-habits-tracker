@@ -9,7 +9,7 @@ const shortTeam = (name: string) => name.replace(/\s+(U\d{2}).*$/i, " $1").repla
 
 function Crest({ src, name }: { src: string | null; name: string }) {
   // Dribl logos are hosted on ocean.dribl.com — plain <img>, no Next optimisation needed.
-  return src ? <img src={src} alt="" width={56} height={56} style={{ borderRadius: 10, background: "#fff", objectFit: "contain", padding: 4 }} /> : <span aria-hidden="true" style={{ display: "grid", placeItems: "center", width: 56, height: 56, borderRadius: 10, background: "#1a223b", fontWeight: 900 }}>{name.slice(0, 2).toUpperCase()}</span>;
+  return src ? <img src={src} alt="" width={56} height={56} style={{ borderRadius: 10, background: "#fff", objectFit: "contain", padding: 4 }} /> : <span aria-hidden="true" style={{ display: "grid", placeItems: "center", width: 56, height: 56, borderRadius: 10, background: "#12303a", fontWeight: 900 }}>{name.slice(0, 2).toUpperCase()}</span>;
 }
 
 function Countdown({ iso }: { iso: string }) {
@@ -24,7 +24,7 @@ function Countdown({ iso }: { iso: string }) {
 function NextMatch({ f }: { f: Fixture }) {
   const map = mapsUrl(f);
   return (
-    <section className={styles.card} style={{ borderColor: "var(--pw-accent)" }}>
+    <section className={styles.card} style={{ borderColor: "var(--pw-lime)" }}>
       <p className={styles.kicker}>⏭ Next match · {f.round ?? ""} · {f.league ?? f.competition}</p>
       <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", margin: "10px 0" }}>
         <Crest src={f.homeLogo} name={f.home} /><b style={{ fontSize: 18 }}>{shortTeam(f.home)}</b>
@@ -34,7 +34,7 @@ function NextMatch({ f }: { f: Fixture }) {
       <div style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
         <div><div className={styles.small} style={{ color: "var(--pw-sub)" }}>KICK-OFF</div><b>{kickoff(f.date)}</b></div>
         <div><div className={styles.small} style={{ color: "var(--pw-sub)" }}>KICK-OFF IN</div><Countdown iso={f.date} /></div>
-        <div><div className={styles.small} style={{ color: "var(--pw-sub)" }}>GROUND</div><b>{f.ground ?? "TBC"}{f.field ? ` · ${f.field}` : ""}</b> {map ? <a href={map} target="_blank" rel="noopener noreferrer" style={{ color: "var(--pw-accent)" }}>Map ↗</a> : null}</div>
+        <div><div className={styles.small} style={{ color: "var(--pw-sub)" }}>GROUND</div><b>{f.ground ?? "TBC"}{f.field ? ` · ${f.field}` : ""}</b> {map ? <a href={map} target="_blank" rel="noopener noreferrer" style={{ color: "var(--pw-lime)" }}>Map ↗</a> : null}</div>
         <span className={`${styles.pill} ${f.isHome ? styles.pillLime : styles.pillGold}`}>{f.isHome ? "🏠 Home" : "🚌 Away"}</span>
       </div>
       <p className={styles.small} style={{ marginBottom: 0 }}><b>Match-day fuel:</b> <span className={styles.muted}>main meal 3 hours before, banana 1 hour before, water all morning. Set 3 personal goals before kick-off.</span></p>
@@ -70,7 +70,7 @@ function LadderTable({ l }: { l: Ladder }) {
         <table className={styles.weekTable}>
           <thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead>
           <tbody>{l.rows.map(r => (
-            <tr key={r.team} style={r.us ? { background: "rgba(91, 140, 255,.14)", fontWeight: 800 } : undefined}>
+            <tr key={r.team} style={r.us ? { background: "rgba(143,227,90,.14)", fontWeight: 800 } : undefined}>
               <td>{r.position}</td><td>{r.us ? "⚽ " : ""}{shortTeam(r.team)}</td><td>{r.played}</td><td>{r.won}</td><td>{r.drawn}</td><td>{r.lost}</td><td>{r.gd > 0 ? `+${r.gd}` : r.gd}</td><td><b>{r.points}</b></td>
             </tr>
           ))}</tbody>
@@ -119,7 +119,7 @@ export default function MatchCentre() {
           <p className={styles.kicker}>🔌 Connect his team</p>
           <h2>His fixtures and results plug in from Football Victoria</h2>
           <p className={styles.muted}>Every junior game in Victoria is on Football Victoria&apos;s Dribl Match Centre. Once his club and team are set, this page fills itself every night: every upcoming match, kick-off, ground with a map, results and the season record. When the 2027 fixtures are published, they appear here automatically.</p>
-          <p className={styles.small} style={{ marginBottom: 0 }}>Set once in <code>app/pathway/data/team.json</code> — his club&apos;s name as it appears on <a href="https://fv.dribl.com/fixtures/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--pw-accent)" }}>fv.dribl.com</a> and his age group/team.</p>
+          <p className={styles.small} style={{ marginBottom: 0 }}>Set once in <code>app/pathway/data/team.json</code> — his club&apos;s name as it appears on <a href="https://fv.dribl.com/fixtures/" target="_blank" rel="noopener noreferrer" style={{ color: "var(--pw-lime)" }}>fv.dribl.com</a> and his age group/team.</p>
         </section>
       ) : s.next ? <NextMatch f={s.next} /> : (
         <section className={styles.card}><p className={styles.kicker}>{SEASON.club} · {SEASON.season}</p><h2>No upcoming matches</h2><p className={styles.muted} style={{ margin: 0 }}>The season&apos;s done or the next fixtures aren&apos;t published yet. They&apos;ll appear here the night Football Victoria releases them.</p></section>
@@ -173,7 +173,7 @@ export default function MatchCentre() {
         ) : <p className={styles.muted} style={{ margin: 0 }}>Real Madrid&apos;s next match will show here.</p>}
       </section>
 
-      <p className={styles.footerNote}>{SEASON.configured ? <>Fixtures from <a href={SEASON.source} target="_blank" rel="noopener noreferrer" style={{ color: "var(--pw-accent)" }}>Football Victoria · Dribl</a>, synced nightly{SEASON.syncedAt ? ` (last ${new Date(SEASON.syncedAt).toLocaleDateString("en-AU")})` : ""}.</> : "Fixtures sync nightly from Football Victoria once his team is set."}</p>
+      <p className={styles.footerNote}>{SEASON.configured ? <>Fixtures from <a href={SEASON.source} target="_blank" rel="noopener noreferrer" style={{ color: "var(--pw-lime)" }}>Football Victoria · Dribl</a>, synced nightly{SEASON.syncedAt ? ` (last ${new Date(SEASON.syncedAt).toLocaleDateString("en-AU")})` : ""}.</> : "Fixtures sync nightly from Football Victoria once his team is set."}</p>
     </>
   );
 }

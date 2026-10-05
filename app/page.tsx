@@ -67,9 +67,9 @@ import { SQUAD_DAYS } from "./lib/goldenBoot";
 // light-on-dark — switching to white surfaces would recolour all of it and
 // re-open the contrast work. RM identity instead comes from Champions-League
 // gold + royal navy + kit-white accents on the dark base.
-const RM_GOLD = "#f2c14e";        // CL gold — FC scoreboard, achievements, top tier
+const RM_GOLD = "var(--ansar-gold)";        // CL gold — FC scoreboard, achievements, top tier
 
-// The canonical accent, from globals.css. This repo used to carry #3dd68c — a
+// The canonical accent, from globals.css. This repo used to carry var(--ansar-success) — a
 // near-identical but WRONG cyan that matched none of the other five surfaces.
 const CYAN = "var(--accent)";
 
@@ -94,11 +94,11 @@ const CYAN = "var(--accent)";
    up, so there is exactly one copy and nothing here to drift from it. */
 
 const BLOCKS = [
-  { id: "pre_homeschool",    label: "Morning Habits", icon: "🌅",      subtitle: "6:30–8:30am · all = +2 pts", color: "#f2c14e" },
+  { id: "pre_homeschool",    label: "Morning Habits", icon: "🌅",      subtitle: "6:30–8:30am · all = +2 pts", color: "var(--ansar-gold)" },
   { id: "homeschool",        label: "Homeschool", icon: "📚",        subtitle: "8:30am–1:30pm · +5 pts",     color: CYAN },
-  { id: "afternoon_evening", label: "Afternoon / Evening", icon: "🌆", subtitle: "1:30–8:30pm",               color: "#3dd68c" },
-  { id: "conditional",       label: "Conditional", icon: "⚽",        subtitle: "Mon & Wed · 3:00–8:00pm",    color: "#5b8cff" },
-  { id: "saturday_push",     label: "Saturday Push", icon: "🔥",      subtitle: "Sat · 9:00am–5:00pm · parent PIN", color: "#f2c14e" },
+  { id: "afternoon_evening", label: "Afternoon / Evening", icon: "🌆", subtitle: "1:30–8:30pm",               color: "var(--ansar-success)" },
+  { id: "conditional",       label: "Conditional", icon: "⚽",        subtitle: "Mon & Wed · 3:00–8:00pm",    color: "var(--accent)" },
+  { id: "saturday_push",     label: "Saturday Push", icon: "🔥",      subtitle: "Sat · 9:00am–5:00pm · parent PIN", color: "var(--ansar-gold)" },
 ];
 
 /* ── Stretch Wallet ────────────────────────────────────────────────────────
@@ -1056,7 +1056,7 @@ export default function AnsarPage() {
    rather than the strip being squeezed to nothing. */
 .ab-src{display:flex;align-items:center;justify-content:center;gap:8px;
   flex-shrink:0;padding:14px 0 20px;font-size:10px;letter-spacing:0.04em;
-  color:#232c47}
+  color:var(--ansar-border)}
 /* Compacted on a short desktop viewport: at 1440x820 the weekday programme
    needs the height more than this strip needs its margins. A parent's link
    list, not part of the day's work. */
@@ -1064,7 +1064,7 @@ export default function AnsarPage() {
   .ab-src{padding:0}
 }
 .ab-src > *{opacity:0.45;transition:opacity 180ms ease,color 180ms ease}
-.ab-src a{color:#232c47;text-decoration:none}
+.ab-src a{color:var(--ansar-border);text-decoration:none}
 .ab-src a:hover{opacity:1;color:var(--accent)}
 .ab-src a:focus-visible{opacity:1;outline:2px solid ${RM_GOLD};outline-offset:2px}
 @media (prefers-reduced-motion:reduce){
@@ -1079,10 +1079,10 @@ export default function AnsarPage() {
 /* ── PARENT OVERRIDE DIALOG ───────────────────────────────────────────────── */
 .ab-ov-pin{letter-spacing:0.5em;font-size:22px!important;text-align:center;
   font-variant-numeric:tabular-nums}
-.ab-ov-note{font-size:11.5px;line-height:1.45;color:#8a96b8;margin-top:8px}
+.ab-ov-note{font-size:11.5px;line-height:1.45;color:var(--ansar-subtext);margin-top:8px}
 .ab-ov-lock{margin-top:12px;padding:10px 12px;border-radius:9px;
-  border:1px solid #ff444455;background:rgba(255, 122, 122,0.10);
-  color:#ff7a7a;font-size:12px;font-weight:800}
+  border:1px solid #ff444455;background:color-mix(in srgb, var(--ansar-danger) 10%, transparent);
+  color:var(--ansar-danger);font-size:12px;font-weight:800}
 
 /* ── GATE REJECTION TOAST ─────────────────────────────────────────────────
    The server's own words, verbatim. Chrome uses the canonical --bg-card so it
@@ -1090,41 +1090,41 @@ export default function AnsarPage() {
 .ab-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1100;
   display:flex;align-items:center;gap:14px;max-width:min(640px,92vw);
   padding:14px 18px;border-radius:12px;background:var(--bg-card);
-  border:1px solid #ff7a7a;box-shadow:0 18px 44px rgba(0,0,0,.6)}
-.ab-toast-x{flex-shrink:0;width:32px;height:32px;border-radius:8px;border:1px solid #232c47;
-  background:var(--bg-base);color:#8a96b8;font:inherit;font-weight:800;cursor:pointer}
+  border:1px solid var(--ansar-danger);box-shadow:0 18px 44px rgba(0,0,0,.6)}
+.ab-toast-x{flex-shrink:0;width:32px;height:32px;border-radius:8px;border:1px solid var(--ansar-border);
+  background:var(--bg-base);color:var(--ansar-subtext);font:inherit;font-weight:800;cursor:pointer}
 .ab-toast-act{flex-shrink:0;padding:8px 14px;border-radius:8px;border:1px solid ${RM_GOLD}66;
   background:${RM_GOLD}1a;color:${RM_GOLD};font:inherit;font-size:12px;font-weight:800;cursor:pointer}
 
 /* ── PARENT OVERRIDE DIALOG ───────────────────────────────────────────────── */
 .ab-ov-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;
-  justify-content:center;padding:24px;background:rgba(11, 16, 32,.75)}
+  justify-content:center;padding:24px;background:color-mix(in srgb, var(--ansar-base) 75%, transparent)}
 .ab-ov{width:min(420px,100%);padding:22px;border-radius:14px;background:var(--bg-card);
-  border:1px solid #232c47;box-shadow:0 24px 64px rgba(0,0,0,.62)}
+  border:1px solid var(--ansar-border);box-shadow:0 24px 64px rgba(0,0,0,.62)}
 .ab-ov input{width:100%;margin-top:6px;padding:11px 13px;border-radius:9px;
-  border:1px solid #232c47;background:var(--bg-base);color: var(--ansar-text);font:inherit;font-size:15px}
+  border:1px solid var(--ansar-border);background:var(--bg-base);color: var(--ansar-text);font:inherit;font-size:15px}
 .ab-ov input:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:1px}
 .ab-ov-row{display:flex;gap:10px;margin-top:18px}
 .ab-ov-row button{flex:1;padding:12px;border-radius:9px;font:inherit;font-size:14px;
-  font-weight:800;cursor:pointer;border:1px solid #232c47;background:var(--bg-base);color:#8a96b8}
-.ab-ov-row button.primary{background:${RM_GOLD};border-color:${RM_GOLD};color:#0b1020}
+  font-weight:800;cursor:pointer;border:1px solid var(--ansar-border);background:var(--bg-base);color:var(--ansar-subtext)}
+.ab-ov-row button.primary{background:${RM_GOLD};border-color:${RM_GOLD};color:var(--ansar-base)}
 .ab-ov-row button:disabled{opacity:.5;cursor:not-allowed}
 
 /* ── LOG WORK MODAL ──────────────────────────────────────────────────────── */
 .lw-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;
-  justify-content:center;padding:24px;background:rgba(11, 16, 32,0.72)}
+  justify-content:center;padding:24px;background:color-mix(in srgb, var(--ansar-base) 72%, transparent)}
 .lw-panel{display:flex;flex-direction:column;width:min(560px,100%);max-height:85vh;
-  background:#141b30;border:1px solid #232c47;border-radius:14px;overflow:hidden;
+  background:var(--ansar-panel);border:1px solid var(--ansar-border);border-radius:14px;overflow:hidden;
   box-shadow:0 24px 64px rgba(0,0,0,0.62)}
 .lw-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  flex-shrink:0;padding:13px 15px;border-bottom:1px solid #232c47}
+  flex-shrink:0;padding:13px 15px;border-bottom:1px solid var(--ansar-border)}
 .lw-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#ffffff}
 .lw-frame{display:block;width:100%;min-height:420px;border:0}
 .lw-x{display:flex;align-items:center;justify-content:center;width:36px;height:36px;
-  flex-shrink:0;border-radius:9px;border:1px solid #232c47;background:#1a223b;
-  color:#8a96b8;font:inherit;font-size:17px;font-weight:800;cursor:pointer;
+  flex-shrink:0;border-radius:9px;border:1px solid var(--ansar-border);background:var(--ansar-rowflat);
+  color:var(--ansar-subtext);font:inherit;font-size:17px;font-weight:800;cursor:pointer;
   -webkit-tap-highlight-color:transparent;transition:background 180ms ease,color 180ms ease}
-.lw-x:hover{background:#232c47;color: var(--ansar-text)}
+.lw-x:hover{background:var(--ansar-border);color: var(--ansar-text)}
 .lw-x:focus-visible{outline:2px solid ${RM_GOLD};outline-offset:2px}
 @media (max-width:820px){
   .lw-backdrop{padding:12px}
@@ -1344,16 +1344,16 @@ export default function AnsarPage() {
   return (
     <div className="ab-root" style={{
       // Decorative Bernabeu backdrop. A near-solid dark scrim (92% of the original
-      // #0b1020 page colour) sits on top of the photo and does ALL the work of
+      // var(--ansar-base) page colour) sits on top of the photo and does ALL the work of
       // preserving contrast — no text/card styling is changed.
-      backgroundColor: "#0b1020",
-      backgroundImage: "linear-gradient(rgba(11, 16, 32,0.88), rgba(11, 16, 32,0.94)), url('/stadium-lights.jpg')",
+      backgroundColor: "var(--ansar-base)",
+      backgroundImage: "linear-gradient(color-mix(in srgb, var(--ansar-base) 88%, transparent), color-mix(in srgb, var(--ansar-base) 94%, transparent)), url('/stadium-lights.jpg')",
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
       backgroundAttachment: "fixed",
       color: "var(--ansar-text)",
-      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      fontFamily: "var(--font-body)",
     }}>
       <style>{BOARD_CSS}</style>
 
@@ -1378,6 +1378,21 @@ export default function AnsarPage() {
         }
       >
 
+      {/* THE MATCH FIRST (tk, 5 Oct 2026). Real Madrid's next fixture opens the
+          board as motivation, with the club band directly under it and the two
+          pillars under that. Phase 4 had moved it to the foot as "context";
+          that was reversed a day later, on purpose. Same component, same data. */}
+      <div style={{ padding: "14px 0", flexShrink: 0 }}>
+      <MatchCentre data={football ?? {
+        available: false,
+        reason: "upstream_unavailable",
+        message: "Loading Real Madrid's fixture…",
+        updatedAt: null,
+        stale: false,
+      }} />
+      </div>
+
+
       <ClubHeader />
 
       {/* TODAY — School and Football as two equal pillars. The habits below
@@ -1388,8 +1403,8 @@ export default function AnsarPage() {
       {/* Server-unreachable banner. The board fails closed, and says so. */}
       {mounted && !gate && (
         <div style={{
-          flexShrink: 0, padding: "10px 20px", background: "rgba(255, 122, 122,0.12)",
-          borderBottom: "1px solid rgba(255, 122, 122,0.35)", color: "#ff7a7a",
+          flexShrink: 0, padding: "10px 20px", background: "color-mix(in srgb, var(--ansar-danger) 12%, transparent)",
+          borderBottom: "1px solid color-mix(in srgb, var(--ansar-danger) 35%, transparent)", color: "var(--ansar-danger)",
           fontSize: 12, fontWeight: 700,
         }}>
           Can&apos;t reach the server — nothing is tappable until it answers. Nothing you tapped was lost.
@@ -1400,8 +1415,8 @@ export default function AnsarPage() {
           board that looks like a finished day. */}
       {gate && gate.habitsError && (
         <div style={{
-          flexShrink: 0, padding: "10px 20px", background: "rgba(255, 122, 122,0.12)",
-          borderBottom: "1px solid rgba(255, 122, 122,0.35)", color: "#ff7a7a",
+          flexShrink: 0, padding: "10px 20px", background: "color-mix(in srgb, var(--ansar-danger) 12%, transparent)",
+          borderBottom: "1px solid color-mix(in srgb, var(--ansar-danger) 35%, transparent)", color: "var(--ansar-danger)",
           fontSize: 12, fontWeight: 700,
         }}>
           Habit list unavailable — {gate.habitsError}. Nothing can be ticked until this is fixed.
@@ -1409,8 +1424,8 @@ export default function AnsarPage() {
       )}
       {gate && gate.warnings.length > 0 && (
         <div style={{
-          flexShrink: 0, padding: "8px 20px", background: "rgba(242, 193, 78,0.10)",
-          borderBottom: "1px solid rgba(242, 193, 78,0.30)", color: "#f2c14e",
+          flexShrink: 0, padding: "8px 20px", background: "color-mix(in srgb, var(--ansar-gold) 10%, transparent)",
+          borderBottom: "1px solid color-mix(in srgb, var(--ansar-gold) 30%, transparent)", color: "var(--ansar-gold)",
           fontSize: 11, fontWeight: 600,
         }}>
           ⚠ {gate.warnings.length} habit{gate.warnings.length === 1 ? " has" : "s have"} no usable window in Notion and {gate.warnings.length === 1 ? "is" : "are"} ungated.
@@ -1495,21 +1510,6 @@ export default function AnsarPage() {
       </div>
       )}
 
-      {/* REAL MADRID — context, not the headline. It sat directly under the
-          masthead as the biggest thing on the page; it now closes the board,
-          after the two pillars and the habits. Same component, same data. */}
-      {/* The gap lives on a wrapper: the frame's own margin shorthand is set
-          per breakpoint, and its sides are part of the fixture's geometry. */}
-      <div style={{ paddingTop: 16, flexShrink: 0 }}>
-      <MatchCentre data={football ?? {
-        available: false,
-        reason: "upstream_unavailable",
-        message: "Loading Real Madrid's fixture…",
-        updatedAt: null,
-        stale: false,
-      }} />
-      </div>
-
       {/* ── NOTION SOURCE STRIP ─────────────────────────────────────────────
           Where the board's own settings live, one click away for a parent
           mid-edit. In normal flow at the bottom of .ab-root, below the board
@@ -1563,7 +1563,7 @@ export default function AnsarPage() {
             <span style={{ display: "block", fontSize: 14, fontWeight: 800, color: "var(--ansar-text)" }}>
               {reject.message}
             </span>
-            <span style={{ display: "block", fontSize: 11, color: "#8a96b8", marginTop: 3 }}>
+            <span style={{ display: "block", fontSize: 11, color: "var(--ansar-subtext)", marginTop: 3 }}>
               {reject.habitName}
             </span>
           </span>
@@ -1609,7 +1609,7 @@ export default function AnsarPage() {
                 one. */}
             <div style={{
               fontSize: 12,
-              color: overrideMode === "verify" ? "#8a96b8" : "#ff7a7a",
+              color: overrideMode === "verify" ? "var(--ansar-subtext)" : "var(--ansar-danger)",
               marginTop: 4,
               fontWeight: 600,
             }}>
@@ -1628,7 +1628,7 @@ export default function AnsarPage() {
               </div>
             ) : (
               <>
-                <label style={{ display: "block", marginTop: 16, fontSize: 11, fontWeight: 800, color: "#8a96b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                <label style={{ display: "block", marginTop: 16, fontSize: 11, fontWeight: 800, color: "var(--ansar-subtext)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                   PIN
                   <input
                     className="ab-ov-pin"
@@ -1651,8 +1651,8 @@ export default function AnsarPage() {
                     365 times a year gets filled with "." and stops being
                     evidence of anything. */}
                 {overrideMode === "override" ? (
-                <label style={{ display: "block", marginTop: 12, fontSize: 11, fontWeight: 800, color: "#8a96b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Reason <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 600, color: "#232c47" }}>· optional</span>
+                <label style={{ display: "block", marginTop: 12, fontSize: 11, fontWeight: 800, color: "var(--ansar-subtext)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Reason <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 600, color: "var(--ansar-border)" }}>· optional</span>
                   <input
                     type="text"
                     value={overrideReason}
@@ -1666,7 +1666,7 @@ export default function AnsarPage() {
             )}
 
             {overrideError && (
-              <div style={{ marginTop: 12, fontSize: 12, fontWeight: 700, color: "#ff7a7a" }}>
+              <div style={{ marginTop: 12, fontSize: 12, fontWeight: 700, color: "var(--ansar-danger)" }}>
                 {overrideError}
               </div>
             )}
@@ -1698,7 +1698,7 @@ export default function AnsarPage() {
                 <div style={{ fontSize: 15, fontWeight: 800, color: "var(--ansar-text)" }}>📝 Log Work</div>
                 <div style={{
                   fontSize: 10, marginTop: 3, fontWeight: 600,
-                  color: logSaved ? "#3dd68c" : "#8a96b8",
+                  color: logSaved ? "var(--ansar-success)" : "var(--ansar-subtext)",
                 }}>
                   {logSaved
                     ? "✅ Logged — resetting for your next entry"

@@ -1,4 +1,4 @@
-# SNAPSHOT — 2026-10-04
+# SNAPSHOT — 2026-10-05
 
 ### Project
 Ansar OS — Next.js 15 board for a Year 6 homeschooled child: habits, points, school programme, football pathway. Deployed on Netlify, data in Notion + Supabase.
@@ -6,8 +6,8 @@ README: none
 Legacy: /Users/taylankursunlu/Projects/ansar-habits-tracker/HANDOFF.md — superseded by this file
 
 ### Working tree
-Branch: `ui/new-palette`
-Commit: `55442df`
+Branch: `main`
+Commit: `7fd7b71` (merge of PR #24)
 Dirty files: none
 Unpushed commits: none
 Deploy trigger: push/merge to `main` auto-builds and publishes Netlify site `ansar-habits-tracker`. Do NOT run `netlify deploy` — a local publish and the git build silently revert each other.
@@ -46,6 +46,6 @@ One Chrome tab left open on the Supabase SQL editor (close call timed out twice)
 - 2026-10-04 — scoring.ts, gating.ts, evidence-gate.ts, streak.ts and api/tick are untouched through Phases 1–3 and must stay so during design phases.
 
 ### Pick### Pick up here
-Two open PRs, neither merged. PR #24 (https://github.com/kurgelecom-oss/ansar-habits-tracker/pull/24, branch `ui/new-palette`, targets `main`) contains Phase 4 PLUS the seven-colour recolour tk approved on 4 Oct 2026; preview https://deploy-preview-24--ansar-habits-tracker.netlify.app. PR #23 is Phase 4 alone. Merging #24 lands both and #23 can be closed. Palette roles and the dark-text-on-blue rule are written at the top of /Users/taylankursunlu/Projects/ansar-habits-tracker/app/globals.css; `--cyan` no longer exists, the accent token is `--accent`.
-Verified on #24: 412 tests, secretless `next build` 22/22, `/api/habits` = 19 and all routes 200 on the preview, seven screens viewed at 1440, home at 390 with no horizontal scroll.
-One gate item left for both: every capture so far is a Sunday rest day, so habit rows in Done / Open / Locked / Missed states have never been seen in the new colours or under the two pillars with real data. On a weekday, open the #24 preview, check `/`, re-capture at 390/834/1440, then merge. The Weekday/Saturday toggle was kept. `main` locally carries one unpushed commit (SNAPSHOT.md) that both PRs contain.
+Phases 0-4 and the seven-colour recolour are LIVE (PR #24 merged Mon 5 Oct 2026; PR #23 closed as contained in it). Verified on the live site after deploy: 19 habits, all routes 200, two pillars on `/`, `/school` shows Monday's 4 blocks, no horizontal scroll. Palette roles and the dark-text-on-blue rule are at the top of /Users/taylankursunlu/Projects/ansar-habits-tracker/app/globals.css; the accent token is `--accent` (`--cyan` is gone).
+Next is Phase 5 ("The rituals") in docs/overhaul/restructure.txt: Friday recall and monthly exam get their own screens, and Nihal's four PIN panels become one Parent Desk. It un-parks tests/exams, which tk parked on 4 Oct, so get tk's go-ahead before starting. Done when approved papers and submitted attempts are never rebuilt and practice stays isolated from the real record.
+Open tk decisions: the Weekday/Saturday toggle (kept as a locked preview); what points redeem for (B001); 338 parent overrides against 840 ticks. Known cosmetic leftover: the BTN row's name wraps into a narrow column beside its "Parent PIN" note.

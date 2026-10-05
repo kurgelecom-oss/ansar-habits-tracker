@@ -84,7 +84,7 @@ function Story({ l }: { l: Legend }) {
           <span className={styles.muted}>Born {l.born}</span>
         </div>
       </div>
-      <p style={{ fontSize: 18, lineHeight: 1.45, fontFamily: "Georgia, serif", color: "#f2c14e", margin: "16px 0 0" }}>{l.tagline}</p>
+      <p style={{ fontSize: 18, lineHeight: 1.45, fontFamily: "Georgia, serif", color: "#e7c55b", margin: "16px 0 0" }}>{l.tagline}</p>
       <div className={styles.storyBlock}><h4>🏠 Growing up</h4><p style={{ margin: 0, lineHeight: 1.6 }}>{l.childhood}</p></div>
       <div className={`${styles.storyBlock} ${styles.storyHard}`}><h4>🧱 What was hard</h4><ul className={styles.list}>{l.hardship.map(h => <li key={h}>{h}</li>)}</ul></div>
       <div className={styles.storyBlock}><h4>🚀 What he did about it</h4><ul className={styles.list}>{l.overcame.map(h => <li key={h}>{h}</li>)}</ul></div>

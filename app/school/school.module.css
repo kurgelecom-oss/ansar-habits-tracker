@@ -6,14 +6,14 @@
 
 .page {
   min-height: 100vh;
-  color: #eef2ff;
-  background: linear-gradient(rgba(11, 16, 32, .89), rgba(11, 16, 32, .96)),
+  color: var(--ansar-text);
+  background: linear-gradient(color-mix(in srgb, var(--ansar-base) 89%, transparent), color-mix(in srgb, var(--ansar-base) 96%, transparent)),
               url('/stadium-lights.jpg') center top / cover fixed;
 }
 .content { max-width: 1120px; margin: 0 auto; padding: 38px 28px 72px; }
 
 .kicker { color: var(--ansar-gold-bright); font-size: 12px; font-weight: 800; letter-spacing: .13em; margin: 0 0 6px; }
-.title { margin: 2px 0 6px; font: 700 clamp(30px, 5vw, 52px)/1.03 Georgia, serif; overflow-wrap: anywhere; }
+.title { margin: 2px 0 6px; font: 700 clamp(30px, 5vw, 52px)/1.03 var(--font-display); overflow-wrap: anywhere; }
 .sub { color: var(--ansar-subtext); margin: 0; font-size: 15px; }
 
 .tabs { display: flex; gap: 7px; overflow-x: auto; padding: 20px 0 18px; }
@@ -25,11 +25,11 @@
 .tabOn { color: var(--ansar-base); border-color: var(--accent); background: var(--accent); }
 
 .card {
-  border: 1px solid var(--ansar-border); background: rgba(20, 27, 48, .93);
+  border: 1px solid var(--ansar-border); background: color-mix(in srgb, var(--ansar-panel) 93%, transparent);
   border-radius: var(--ansar-radius-panel); padding: 22px; margin-bottom: 16px;
 }
 .cardHead { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; flex-wrap: wrap; }
-.cardTitle { font: 700 22px Georgia, serif; margin: 0; }
+.cardTitle { font: 700 22px var(--font-display); margin: 0; }
 .cardMeta { color: var(--ansar-subtext); font-size: 13px; white-space: nowrap; }
 
 /* A block row. The task text is ON the row, not hidden behind a tap —
@@ -42,11 +42,11 @@
 .blockDone { border-left-color: var(--ansar-success); }
 .tickBtn {
   flex: 0 0 auto; width: 44px; height: 44px; border-radius: var(--ansar-radius-row);
-  border: 1px solid var(--ansar-border); background: #141b30; color: var(--ansar-text);
+  border: 1px solid var(--ansar-border); background: var(--ansar-panel); color: var(--ansar-text);
   font-size: 19px; cursor: pointer; line-height: 1;
 }
 .tickBtn:disabled { cursor: not-allowed; }
-.tickOn { background: #1a353d; border-color: var(--ansar-success); color: var(--ansar-success); }
+.tickOn { background: color-mix(in srgb, var(--ansar-success) 14%, var(--ansar-panel)); border-color: var(--ansar-success); color: var(--ansar-success); }
 .blockBody { min-width: 0; flex: 1; }
 .blockLabel { font-weight: 700; font-size: 15px; display: flex; gap: 9px; align-items: baseline; flex-wrap: wrap; }
 .blockDur { color: var(--ansar-subtext); font-weight: 500; font-size: 12.5px; }
@@ -60,16 +60,16 @@
 .dayName { font-weight: 700; font-size: 14px; margin: 0; }
 .dayDate { color: var(--ansar-muted); font-size: 12px; margin: 2px 0 9px; }
 .dayTopic { color: var(--ansar-subtext); font-size: 12px; margin: 0 0 11px; line-height: 1.45; }
-.chip { display: block; background: #141b30; border: 1px solid var(--ansar-border); border-radius: 8px; padding: 8px 9px; margin-bottom: 6px; color: var(--ansar-text); font-size: 12.5px; }
+.chip { display: block; background: var(--ansar-panel); border: 1px solid var(--ansar-border); border-radius: 8px; padding: 8px 9px; margin-bottom: 6px; color: var(--ansar-text); font-size: 12.5px; }
 .chipDone { border-color: var(--ansar-success); color: var(--ansar-success); }
 
 .arc { display: flex; gap: 6px; margin: 18px 0 10px; }
-.arcCell { flex: 1; height: 10px; border-radius: 4px; background: #1a223b; }
+.arcCell { flex: 1; height: 10px; border-radius: 4px; background: var(--ansar-rowflat); }
 .arcCellOn { background: var(--ansar-gold); }
-.arcNow { background: #fff; }
+.arcNow { background: var(--ansar-text); }
 
 .note { color: var(--ansar-subtext); font-size: 13px; margin: 12px 0 0; line-height: 1.5; }
-.warn { color: #eef2ff; background: #141b30; border: 1px solid #7e4651; border-left: 3px solid var(--ansar-danger); border-radius: var(--ansar-radius-row); padding: 13px; font-size: 13.5px; margin-bottom: 14px; }
+.warn { color: var(--ansar-text); background: var(--ansar-panel); border: 1px solid color-mix(in srgb, var(--ansar-danger) 45%, var(--ansar-panel)); border-left: 3px solid var(--ansar-danger); border-radius: var(--ansar-radius-row); padding: 13px; font-size: 13.5px; margin-bottom: 14px; }
 .empty { color: var(--ansar-subtext); font-size: 14px; padding: 10px 0 0; }
 
 @media (max-width: 650px) {
