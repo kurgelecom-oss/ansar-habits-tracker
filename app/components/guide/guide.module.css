@@ -1,0 +1,101 @@
+/* Guide mode. Tokens only; the glow is the club gold so the lit area reads as
+   "look here" on every screen, whichever academy's colour that screen wears. */
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ansar-border);
+  background: transparent;
+  color: var(--ansar-subtext);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.switch:hover { color: var(--ansar-text); border-color: var(--ansar-gold); }
+.switchDot { width: 8px; height: 8px; border-radius: 50%; background: var(--ansar-border); }
+.switchOn { color: var(--ansar-base); background: var(--ansar-gold); border-color: var(--ansar-gold); }
+.switchOn .switchDot { background: var(--ansar-base); }
+
+.layer { position: fixed; inset: 0; z-index: 1200; pointer-events: auto; }
+
+.veil { position: absolute; inset: 0; background: color-mix(in srgb, var(--ansar-base) 82%, transparent); }
+
+.spot {
+  position: absolute;
+  border-radius: 16px;
+  border: 2px solid var(--ansar-gold);
+  /* One shadow does both jobs: the wide spread dims everything else, and the
+     soft gold ring is the glow. */
+  box-shadow:
+    0 0 0 9999px color-mix(in srgb, var(--ansar-base) 82%, transparent),
+    0 0 34px 6px color-mix(in srgb, var(--ansar-gold) 45%, transparent);
+  pointer-events: none;
+  transition: top 0.32s cubic-bezier(0.16, 1, 0.3, 1), left 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.32s cubic-bezier(0.16, 1, 0.3, 1), height 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card {
+  position: absolute;
+  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  width: min(480px, calc(100vw - 32px));
+  max-height: min(72vh, 640px);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 24px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--ansar-border);
+  background: var(--ansar-panel);
+  color: var(--ansar-text);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+/* Focus is moved here by script so a screen reader starts on the step. It is
+   a container, not a control, so it draws no ring of its own. */
+.card:focus { outline: none; }
+.cardLeft { right: auto; left: 20px; }
+
+.count {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ansar-gold);
+}
+.title { margin: 0 0 14px; font: 700 24px/1.15 Georgia, "Times New Roman", serif; text-wrap: balance; }
+
+.body { margin: 0; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--ansar-border) transparent; }
+.body dt {
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ansar-subtext);
+}
+.body dt:first-child { margin-top: 0; }
+.body dd { margin: 4px 0 0; font-size: 15px; line-height: 1.55; color: var(--ansar-text); max-width: 62ch; }
+
+.actions { display: flex; align-items: center; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--ansar-border); }
+.spacer { flex: 1; }
+.actions button { min-height: 44px; padding: 0 16px; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.actions .quiet { border: 0; background: none; color: var(--ansar-subtext); padding-left: 0; }
+.actions .quiet:hover { color: var(--ansar-text); }
+.ghost { border: 1px solid var(--ansar-border); background: transparent; color: var(--ansar-text); }
+.ghost:disabled { opacity: 0.4; cursor: default; }
+.next { border: 0; background: var(--ansar-gold); color: var(--ansar-base); }
+
+@media (max-width: 640px) {
+  .card { left: 16px; right: 16px; width: auto; max-height: 52vh; padding: 18px 18px 14px; }
+  .cardHigh { bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px)); }
+  .title { font-size: 20px; }
+  .body dd { font-size: 14.5px; }
+}
+@media (prefers-reduced-motion: reduce) { .spot { transition: none; } }

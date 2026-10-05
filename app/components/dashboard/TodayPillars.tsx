@@ -20,8 +20,8 @@ import styles from "./dashboard.module.css";
 const WEEKDAY_FMT = new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Melbourne", weekday: "long" });
 
 export function PillarCard(
-  { title, icon, accent, href, linkLabel, summary, status, footnote = null }: {
-    title: string; icon: string; accent: string; href: string; linkLabel: string;
+  { title, icon, accent, href, linkLabel, summary, status, footnote = null, className }: {
+    title: string; icon: string; accent: string; href: string; linkLabel: string; className?: string;
     /** Null while loading or when the source is unavailable; `status` says which. */
     summary: PillarSummary | null; status?: string; footnote?: string | null;
   },
@@ -29,6 +29,7 @@ export function PillarCard(
   const counted = summary !== null && summary.total > 0;
   return (
     <Panel
+      className={className}
       title={title}
       icon={icon}
       accent={accent}
@@ -83,7 +84,7 @@ function SchoolPillar() {
   }, []);
   return (
     <PillarCard
-      title="School" icon="🎓" accent="var(--accent)" href="/school" linkLabel="Open School"
+      title="School" icon="🎓" accent="var(--school)" href="/school" linkLabel="Open School" className={styles.pillarSchool}
       summary={week && Array.isArray(week.days) ? schoolPillar(week) : null}
       status={failed ? "The week could not be loaded." : "Loading…"}
     />
@@ -100,7 +101,7 @@ function FootballPillar() {
   const ready = weekday !== null && state.storage !== "loading";
   return (
     <PillarCard
-      title="Football" icon="⚽" accent="var(--ansar-success)" href="/pathway" linkLabel="Open Football"
+      title="Football" icon="⚽" accent="var(--football)" href="/pathway" linkLabel="Open Football" className={styles.pillarFootball}
       summary={ready ? footballPillar(planFor(weekday), state.done) : null}
       status="Loading…"
       // The PLANNED week, from the fixed programme — not hours carried. Said

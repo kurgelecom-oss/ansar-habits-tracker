@@ -1378,6 +1378,21 @@ export default function AnsarPage() {
         }
       >
 
+      {/* THE MATCH FIRST (tk, 5 Oct 2026). Real Madrid's next fixture opens the
+          board as motivation, with the club band directly under it and the two
+          pillars under that. Phase 4 had moved it to the foot as "context";
+          that was reversed a day later, on purpose. Same component, same data. */}
+      <div style={{ padding: "14px 0", flexShrink: 0 }}>
+      <MatchCentre data={football ?? {
+        available: false,
+        reason: "upstream_unavailable",
+        message: "Loading Real Madrid's fixture…",
+        updatedAt: null,
+        stale: false,
+      }} />
+      </div>
+
+
       <ClubHeader />
 
       {/* TODAY — School and Football as two equal pillars. The habits below
@@ -1494,21 +1509,6 @@ export default function AnsarPage() {
         )}
       </div>
       )}
-
-      {/* REAL MADRID — context, not the headline. It sat directly under the
-          masthead as the biggest thing on the page; it now closes the board,
-          after the two pillars and the habits. Same component, same data. */}
-      {/* The gap lives on a wrapper: the frame's own margin shorthand is set
-          per breakpoint, and its sides are part of the fixture's geometry. */}
-      <div style={{ paddingTop: 16, flexShrink: 0 }}>
-      <MatchCentre data={football ?? {
-        available: false,
-        reason: "upstream_unavailable",
-        message: "Loading Real Madrid's fixture…",
-        updatedAt: null,
-        stale: false,
-      }} />
-      </div>
 
       {/* ── NOTION SOURCE STRIP ─────────────────────────────────────────────
           Where the board's own settings live, one click away for a parent

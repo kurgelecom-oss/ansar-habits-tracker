@@ -213,6 +213,7 @@
   color: var(--ansar-base);
   background: var(--accent);
 }
+.clubNavItemActive[data-section="football"] { background: var(--football); }
 .clubNavItemActive:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -1953,3 +1954,15 @@ a.weekBadge:focus-visible {
   .matchScore { order: 3; flex: 1 1 100%; min-width: 0; }
   .matchCentre { height: auto; max-height: none; }
 }
+
+/* ── Section colours on the Today pillars ──────────────────────────────────
+   Each pillar re-points --accent at its own academy's colour, so its subtitle,
+   progress bar and link all follow without a second set of rules. */
+.pillarSchool { --accent: var(--school); border-color: color-mix(in srgb, var(--school) 38%, var(--ansar-hairline)); }
+.pillarFootball {
+  --accent: var(--football);
+  border-color: color-mix(in srgb, var(--football) 34%, var(--ansar-hairline));
+  background: color-mix(in srgb, var(--football-pitch) 16%, var(--ansar-panel));
+}
+.pillarFootball .pillarRow { background: color-mix(in srgb, var(--football-pitch) 22%, var(--ansar-rowflat)); }
+.pillarLink:hover { border-color: var(--accent); }

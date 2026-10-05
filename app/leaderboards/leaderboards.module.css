@@ -1,2 +1,101 @@
-.page{min-height:100vh;color: var(--ansar-text);background:linear-gradient(125deg,rgba(11, 16, 32,.96),rgba(20, 27, 48,.88)),url('/stadium-lights.jpg') center/cover fixed}.content{max-width:1050px;margin:auto;padding:46px 28px 80px}.content header p{color:var(--ansar-gold-bright);font-size:12px;font-weight:800;letter-spacing:.14em}.content h1{font:700 clamp(40px,5vw,70px)/1 Georgia,serif;margin:9px 0}.content header span,.loading{color:var(--ansar-subtext)}.tabs{display:flex;gap:8px;overflow:auto;margin:30px 0 15px}.tabs button{cursor:pointer;white-space:nowrap;color: var(--ansar-text);border:1px solid var(--ansar-border);background:#141b30;border-radius:999px;padding:9px 13px}.tabs .active{background:var(--accent);color:#0b1020;border-color:var(--accent)}.board,.empty{border:1px solid var(--ansar-border);border-radius:14px;overflow:hidden;background:rgba(20, 27, 48,.96)}.head,.row,.madrid{display:grid;grid-template-columns:50px 1fr 60px 60px 60px;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid #232c47}.head{grid-template-columns:1fr auto;color:var(--ansar-subtext)}.head h2{font:700 27px Georgia,serif;color: var(--ansar-text)}.row strong,.madrid strong{font-weight:700}.madrid{background:#232c47;border-left:4px solid var(--ansar-gold-bright)}.empty{padding:28px}.empty h2{font:700 27px Georgia,serif;margin-bottom:8px}.empty p{color:var(--ansar-subtext)}@media(max-width:600px){.content{padding:25px 14px}.head,.row,.madrid{padding:11px;grid-template-columns:35px 1fr 40px 35px 35px}.head{grid-template-columns:1fr auto}}
-.board{overflow:auto}.head,.row,.madrid{grid-template-columns:42px minmax(180px,1fr) repeat(8,42px);min-width:620px}.head{grid-template-columns:minmax(222px,1fr) repeat(8,42px)}.views{display:flex;gap:7px;margin:-5px 0 15px}.views button{cursor:pointer;color: var(--ansar-text);background:#1a223b;border:0;border-radius:8px;padding:10px 18px}.views .active{background:var(--ansar-row);color:var(--ansar-text)}
+.page {
+  min-height: 100vh;
+  color: var(--ansar-text);
+  background: linear-gradient(125deg, rgba(11, 16, 32, 0.96), rgba(20, 27, 48, 0.88)), url("/stadium-lights.jpg") center/cover fixed;
+}
+.content { max-width: 1050px; margin: auto; padding: 46px 28px 80px; }
+
+.header p { color: var(--ansar-gold-bright); font-size: 12px; font-weight: 800; letter-spacing: 0.14em; }
+.title { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
+.title h1 { font: 700 clamp(30px, 4.4vw, 54px)/1.05 Georgia, serif; }
+.title span, .loading, .note, .zone { color: var(--ansar-subtext); }
+.title div span { display: block; margin-top: 6px; }
+/* Competition emblems are drawn dark for white pages; a light plate keeps them legible. */
+.emblem { flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 14px; background: var(--ansar-text); }
+.emblem img { object-fit: contain; }
+
+.tabs { display: flex; gap: 8px; overflow: auto; margin: 28px 0 12px; }
+.tabs button { cursor: pointer; white-space: nowrap; color: var(--ansar-text); border: 1px solid var(--ansar-border); background: var(--ansar-card); border-radius: 999px; padding: 9px 13px; }
+.tabs .active { background: var(--accent); color: var(--ansar-base); border-color: var(--accent); }
+
+.views, .statTabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.views button, .statTabs button { cursor: pointer; color: var(--ansar-text); background: var(--ansar-rowflat); border: 1px solid var(--ansar-border); border-radius: 10px; padding: 10px 20px; font-weight: 600; }
+.views .active { border-color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); background: var(--ansar-row); }
+.statTabs button { border: 0; background: none; padding: 8px 12px; color: var(--ansar-subtext); }
+.statTabs .active { background: var(--ansar-row); color: var(--ansar-text); }
+
+.panel { border: 1px solid var(--ansar-border); border-radius: 14px; background: rgba(20, 27, 48, 0.96); padding: 18px; min-width: 0; }
+.panel h2 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.note { padding: 10px 2px; font-size: 14px; }
+.zone { font-size: 12px; margin-top: 12px; }
+
+.overview { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 16px; align-items: start; }
+.standings { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 16px; align-items: start; }
+.standings > :only-child { grid-column: 1 / -1; }
+.scroll { overflow-x: auto; padding: 8px 14px; }
+
+/* Matches: a two-up grid of fixtures, ruled like the standings rows. */
+.fixtures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.panel.fixtures { padding: 0 18px; }
+.match { display: flex; align-items: center; gap: 12px; padding: 20px 4px; border-bottom: 1px solid var(--ansar-hairline); }
+.match:nth-child(odd) { padding-right: 16px; border-right: 1px solid var(--ansar-hairline); }
+.match:nth-child(even) { padding-left: 16px; }
+.panel.fixtures .match:nth-last-child(1), .panel.fixtures .match:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
+.matchMadrid strong { color: var(--ansar-gold); }
+.sides { flex: 1; min-width: 0; display: grid; gap: 12px; }
+.side { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.side strong { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side b { font-variant-numeric: tabular-nums; }
+.when { flex: none; display: grid; gap: 4px; justify-items: center; min-width: 86px; padding-left: 12px; border-left: 1px solid var(--ansar-hairline); color: var(--ansar-subtext); font-size: 13px; text-transform: capitalize; }
+.when b { color: var(--ansar-text); }
+.when .live { color: var(--ansar-danger); }
+.crest { flex: none; display: inline-block; object-fit: contain; }
+
+.more { cursor: pointer; margin-top: 16px; border: 0; border-radius: 10px; padding: 11px 18px; font-weight: 700; background: var(--accent); color: var(--ansar-base); }
+
+.day { scroll-margin-top: 16px; }
+.day + .day { margin-top: 22px; }
+.day h2 { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+
+/* Standings and player tables */
+.table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.table th, .table td { padding: 12px 8px; text-align: center; font-weight: 400; white-space: nowrap; }
+.table thead th { color: var(--ansar-subtext); font-size: 13px; padding-block: 8px; }
+.table tbody tr { border-top: 1px solid var(--ansar-hairline); }
+.table th[scope="row"], .table thead th:first-child { text-align: left; }
+.table th[scope="row"] { width: 100%; font-weight: 600; }
+.table .pts { font-weight: 800; color: var(--ansar-text); }
+.table .formHead { text-align: left; }
+.team { display: flex; align-items: center; gap: 10px; }
+.team small { display: block; margin-top: 2px; font-weight: 400; font-size: 12px; color: var(--ansar-subtext); }
+.pos { width: 34px; font-weight: 600; box-shadow: inset 3px 0 0 transparent; }
+.pos.zoneTop { box-shadow: inset 3px 0 0 var(--accent); }
+.pos.zoneMid { box-shadow: inset 3px 0 0 var(--ansar-subtext); }
+.madrid { background: var(--ansar-row); }
+.madrid th[scope="row"] { color: var(--ansar-gold); }
+.compact th, .compact td { padding-inline: 6px; }
+.players td { width: 70px; }
+
+.form { display: flex; gap: 4px; }
+.form i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--ansar-row); font-style: normal; font-size: 11px; font-weight: 800; color: var(--ansar-base); }
+.form .formW { background: var(--ansar-success); }
+.form .formD { background: var(--ansar-subtext); }
+.form .formL { background: var(--ansar-danger); }
+
+.key { padding: 2px 0 2px 10px; margin-top: 8px; font-size: 14px; color: var(--ansar-subtext); border-left: 3px solid transparent; }
+.key.zoneTop { border-color: var(--accent); }
+.key.zoneMid { border-color: var(--ansar-subtext); }
+
+.stats { max-width: 560px; }
+
+@media (max-width: 860px) {
+  .overview, .standings { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .content { padding: 25px 16px 60px; }
+  .emblem { width: 52px; height: 52px; }
+  .fixtures { grid-template-columns: minmax(0, 1fr); }
+  .match:nth-child(n) { padding-inline: 0; border-right: 0; }
+  .panel.fixtures .match:nth-last-child(2):nth-child(odd) { border-bottom: 1px solid var(--ansar-hairline); }
+  .when { min-width: 76px; }
+}
