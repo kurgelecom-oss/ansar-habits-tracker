@@ -18,6 +18,14 @@
    WHAT COUNTS AS DONE: Ansar submitting it. A parent's marking is not required
    to lift the lock, because he cannot make that happen.
 
+   MASTERY (tk, 5 Oct 2026). One exception to the line above. A monthly exam is
+   marked the moment it is handed in, and under MASTERY_PASS it is not finished:
+   the board locks again on school days until a parent has gone through the
+   missed questions with him and he has written his correction. That does wait
+   on a parent, on purpose; the PIN lift below is the way out on a day nobody
+   can sit down with him. Level checks (ids starting `placement:`) are exempt:
+   they exist to find where he is, not to be passed.
+
    IT NEVER TRAPS HIM. The lock applies only to a paper he can actually open: a
    published one. An exam still waiting for a parent's approval does not lock
    anything. If the papers cannot be read at all, the board stays OPEN. This is
@@ -41,7 +49,10 @@ export type AssessmentLock =
   | { locked: true; due: DuePaper[]; message: string };
 
 type PaperRow = { id: string; kind: 'review' | 'exam'; title: string; status: string; due_date: string; opens_on: string };
-type AttemptRow = { paper_id: string; status: string; submitted_at: string | null };
+type AttemptRow = { paper_id: string; status: string; submitted_at: string | null; result?: { percentage?: number | null } | null; correction?: string | null };
+
+/** The mark a monthly exam must reach to count as mastered. */
+export const MASTERY_PASS = 80;
 
 const isSchoolDay = (date: string) => !['Saturday', 'Sunday'].includes(dayNameOf(date));
 
@@ -75,8 +86,18 @@ export function lockFor(today: string, papers: PaperRow[], attempts: AttemptRow[
     examsDue = exams.slice(0, Math.max(0, shareToday));
   }
 
-  const due = [...reviews, ...examsDue].map(({ id, kind, title }) => ({ id, kind, title }));
+  // Handed in, marked under the pass mark, and not yet corrected.
+  const toFix = !isSchoolDay(today) ? [] : papers.filter(p => p.kind === 'exam' && p.status === 'published'
+    && p.due_date >= GATE_START && !p.id.startsWith('placement:')
+    && attempts.some(a => a.paper_id === p.id && a.status !== 'in_progress' && !a.correction
+      && typeof a.result?.percentage === 'number' && a.result.percentage < MASTERY_PASS));
+
+  const due = [...reviews, ...examsDue, ...toFix].map(({ id, kind, title }) => ({ id, kind, title }));
   if (!due.length) return { locked: false };
+  if (!reviews.length && !examsDue.length) {
+    const what = due.length === 1 ? due[0].title : `${due.length} exams`;
+    return { locked: true, due, message: `Under ${MASTERY_PASS}% on ${what}. Go through the missed questions with Mum, then write your correction in Tests.` };
+  }
   const what = due.length === 1 ? due[0].title : `${due.length} papers`;
   return { locked: true, due, message: `Locked until ${what} ${due.length === 1 ? 'is' : 'are'} handed in. Open Tests to do ${due.length === 1 ? 'it' : 'them'}.` };
 }
@@ -96,7 +117,7 @@ export async function assessmentLock(today: string = sydneyDateKey()): Promise<A
     if (papers.error || bypass.error) return { locked: false };
     const rows = (papers.data ?? []) as PaperRow[];
     if (!rows.length) return { locked: false };
-    const attempts = await db.from('ansar_assessment_attempts').select('paper_id,status,submitted_at').in('paper_id', rows.map(p => p.id));
+    const attempts = await db.from('ansar_assessment_attempts').select('paper_id,status,submitted_at,result,correction').in('paper_id', rows.map(p => p.id));
     if (attempts.error) return { locked: false };
     return lockFor(today, rows, (attempts.data ?? []) as AttemptRow[], !!bypass.data);
   } catch {

@@ -29,6 +29,14 @@ function subjectsFor(label: string): string[] {
 
 function splitTask(task: string, subject: string, combined: boolean): string {
   if (!combined) return task;
+  // Rows written as "Technology: … Turkish: … Financial learning: …" keep each
+  // whole section, not just the sentences that happen to repeat the keyword.
+  const sections = task.split(/(?=(?:^|\s)(?:Technology|Typing|Turkish|Arabic|Financial learning):\s)/).map(s => s.trim());
+  if (sections.length > 1) {
+    const mine = subject === 'Languages' ? /^(Turkish|Arabic):/ : subject === 'Technologies' ? /^(Technology|Typing):/ : /^Financial learning:/;
+    const own = sections.filter(s => mine.test(s)).join(' ');
+    if (own) return own;
+  }
   // Preserve domain names such as Typing.com and Code.org while separating sentences.
   const parts = task.split(/(?<=[.!?])\s+|\n|;\s*|\s+Then\s+/i);
   const pattern = subject === 'Languages' ? /duolingo|turkish|arabic|language/i

@@ -27,6 +27,7 @@ import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
 import SaturdayPanel from "./components/dashboard/SaturdayPanel";
 import RestDayCard from "./components/dashboard/RestDayCard";
 import TodayPillars from "./components/dashboard/TodayPillars";
+import Noticeboard from "./components/dashboard/Noticeboard";
 import AssessmentLockCard from "./components/dashboard/AssessmentLockCard";
 import { saturdayPs5, saturdayStreak as saturdayStreakOf } from "./lib/weekend";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
@@ -1271,6 +1272,10 @@ export default function AnsarPage() {
           </>
         }
       >
+
+      {/* One quiet line of what each of us needs to do today. Renders nothing
+          when the day has no notices. */}
+      <Noticeboard />
 
       {/* THE MATCH FIRST (tk, 5 Oct 2026). Real Madrid's next fixture opens the
           board as motivation, with the club band directly under it and the two

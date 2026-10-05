@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import ClubNavigation from "../components/dashboard/ClubNavigation";
-import type { Answers, Attempt, Paper, Workspace } from "../lib/assessments/types";
+import type { Answers, Attempt, Levels, Paper, Workspace } from "../lib/assessments/types";
 import styles from "./tests.module.css";
 import { isHistoricalBaseline, preferredPaperId } from "./assessment-status";
 
@@ -121,6 +121,7 @@ export function AssessmentWorkspace({ practice = false }: { practice?: boolean }
         {workspace && <>
           <section className={styles.stats} aria-label={practice ? "Practice overview" : "Monthly overview"}><div><strong>{workspace.papers.filter(p => p.kind === "review").length}</strong><span>{practice ? "Practice reviews" : "Friday recalls"}</span></div><div><strong>{workspace.papers.filter(p => p.kind === "exam").length}</strong><span>{practice ? "Practice exams" : "Monthly exams"}</span></div><div><strong>{submitted.length}</strong><span>{practice ? "Practice submitted" : "Submitted"}</span></div><div><strong>{submitted.filter(a => a.status === "submitted").length}</strong><span>{practice ? "Ready to rehearse review" : "Awaiting Nihal"}</span></div></section>
           <div className={styles.source}><span className={styles.dot} /><details className={styles.coverageDetails}><summary>{practice ? "Practice samples" : "Curriculum & coverage"}<span>{workspace.sourceStatus.split(/\.\s/)[0].slice(0, 140)}</span></summary><p>{workspace.sourceStatus}</p></details><small>Sydney time</small></div>
+          {!practice && workspace.levels && <Level levels={workspace.levels} />}
           {practice ? <PracticeTools activeAttempt={attempt} onAttempt={updateAttempt} onCreated={selectCreatedPaper} /> : parentOpen && !inProgress && <ParentSync integrations={workspace.integrations} onComplete={async text => { setNotice(text); await load(); }} />}
           {inProgress && <p className={styles.muted}>Finish the open assessment before switching papers or months. Your draft is saved if you leave this page.</p>}
           <div className={styles.room}>
@@ -143,6 +144,16 @@ export function AssessmentWorkspace({ practice = false }: { practice?: boolean }
       <footer className={styles.footer}>ANSAR FC · Progress comes from the next good explanation.</footer>
     </div>
   </main></MutationContext.Provider>;
+}
+
+function Level({ levels }: { levels: Levels }) {
+  const monthName = (month: string) => new Date(`${month}-15T12:00:00Z`).toLocaleDateString("en-AU", { month: "long" });
+  return <section className={styles.level} aria-label="Level"><p className={styles.eyebrow}>LEVEL</p>
+    {!levels.subjects.length && !levels.placement ? <p className={styles.muted}>Level appears here after the first monthly exam or the maths level check.</p> : <>
+      {levels.subjects.map(s => <p key={s.subject}><strong>{s.subject}</strong> · {s.percentage}% · {s.band} · {monthName(s.month)}{s.previous !== null && s.previous !== s.percentage && <small>{s.percentage > s.previous ? "up" : "down"} from {s.previous}%</small>}</p>)}
+      {levels.placement && <p><strong>Maths level check</strong> · {levels.placement.statement}<small>{levels.placement.years.map(y => `Year ${y.year} ${y.correct}/${y.total}`).join(" · ")}</small></p>}
+    </>}
+  </section>;
 }
 
 function PracticeTools({ activeAttempt, onAttempt, onCreated }: { activeAttempt?: Attempt; onAttempt: (attempt: Attempt) => void; onCreated: (paper: Paper) => Promise<void> }) {

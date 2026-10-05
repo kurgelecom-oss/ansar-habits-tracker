@@ -33,6 +33,6 @@ export function grade(paper:Paper,answers:Answers,marks?:Record<string,number>):
   const writtenPoints=written.reduce((n,q)=>n+(marks?.[q.id]??0),0),writtenTotal=written.length*2;
   const percentage=writtenPending?null:Math.round(100*(objectiveCorrect+writtenPoints)/(objective.length+writtenTotal||1));
   const gaps=paper.questions.filter(q=>q.type==='choice'?answers[q.id]!==q.answer:marks?.[q.id]!==undefined&&marks[q.id]<2).map(q=>q.prompt);
-  const summary=writtenPending?`${objective.length?`${objectiveCorrect}/${objective.length} automatically marked. `:''}${writtenPending} written answers await Nihal’s review. Completion is recorded; understanding is not yet confirmed.`:percentage!>=75?'Strong understanding. Explain any missed questions in your correction.':'Revisit the gaps with Nihal, then write a correction in your own words.';
+  const summary=writtenPending?`${objective.length?`${objectiveCorrect}/${objective.length} automatically marked. `:''}${writtenPending} written answers await Nihal’s review. Completion is recorded; understanding is not yet confirmed.`:percentage!>=80?'Strong understanding. Explain any missed questions in your correction.':'Revisit the gaps with Nihal, then write a correction in your own words.';
   return {objectiveCorrect,objectiveTotal:objective.length,writtenPending,writtenPoints,writtenTotal,percentage,summary,gaps};
 }

@@ -9,5 +9,6 @@ describe('assessment integrity',()=>{
  it('retains explanations after submission',()=>expect(publicPaper(paper,true).questions[0].answer).toBe(0));
  it('rejects unknown answers, bad choice index and oversized text',()=>{expect(()=>validateAnswers(paper,{forged:1})).toThrow();expect(()=>validateAnswers(paper,{q1:2})).toThrow();expect(()=>validateAnswers(paper,{q2:'x'.repeat(8001)})).toThrow()});
  it('requires all written marks and rejects injected choice marks',()=>{expect(()=>validateMarks(paper,{})).toThrow();expect(()=>validateMarks(paper,{q2:2,q1:1})).toThrow();expect(()=>validateMarks(paper,{q2:2})).not.toThrow()});
+ it('accepts an empty mark sheet when an exam has no written questions',()=>{const choiceOnly={...paper,questions:[paper.questions[0]]};expect(validateMarks(choiceOnly,{})).toEqual({});expect(()=>validateMarks(choiceOnly,{q1:2})).toThrow()});
  it('validates calendar months instead of accepting arbitrary date text',()=>{expect(validateMonth('2026-09')).toBe('2026-09');expect(()=>validateMonth('2026-13')).toThrow();expect(()=>validateMonth('2026-1')).toThrow()});
 });

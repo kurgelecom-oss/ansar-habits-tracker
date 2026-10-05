@@ -382,6 +382,49 @@
   }
 }
 
+/* ── Noticeboard ────────────────────────────────────────────────────────────
+   One line of small text under the navigation. Deliberately not a card: it
+   must not compete with the habits. */
+.noticeboard {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 0;
+  color: var(--ansar-subtext);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.noticeLine {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.noticeText { animation: noticeIn .4s ease-out; }
+.noticeText strong { color: var(--ansar-gold-bright); font-weight: 650; }
+.noticeStep {
+  /* Small to the eye, but a full-height tap target for a finger on the iPad. */
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+.noticeStep:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@keyframes noticeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* ── Club header ────────────────────────────────────────────────────────────
    Budget: 40px against a 48px cap. */
 .clubHeader {
