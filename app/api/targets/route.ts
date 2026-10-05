@@ -10,7 +10,7 @@ import {
 /* /api/targets — this week's Target Map.
      GET                                  zone states, logged proofs, PS5 rule 1b
      POST { zone, note }                  Ansar logs a proof (proof zones only)
-     POST { zone, confirm: true, pin }    a parent confirms it with the PIN
+     POST { zone, confirm: true, pin, note }  a parent confirms the note they read
    On a weekend this is the week just finished (weekStartOf is ISO), which is
    the week Saturday PS5 is judged on. */
 
@@ -71,25 +71,34 @@ export async function POST(req: Request) {
   const now = sydneyNow();
   const week = weekStartOf(now.date);
   const db = adminClient();
-  const existing = await db.from("target_proofs").select("confirmed_at").eq("week_start", week).eq("zone", zone).maybeSingle();
+  const existing = await db.from("target_proofs").select("id").eq("week_start", week).eq("zone", zone).maybeSingle();
   if (existing.error) return NextResponse.json({ error: "read failed" }, { status: 500, headers: noStore });
 
   if (body.confirm === true) {
+    // Same key as /api/tick's clientKey, so every PIN entry point shares ONE
+    // lockout tally rather than each granting its own five guesses.
     const ip = req.headers.get("x-nf-client-connection-ip") || (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
-    const refusal = await checkPin(typeof body.pin === "string" ? body.pin : "", `targets:${ip}`, now.ms, noStore);
+    const refusal = await checkPin(typeof body.pin === "string" ? body.pin : "", ip, now.ms, noStore);
     if (refusal) return refusal;
-    if (!existing.data) return NextResponse.json({ error: "Nothing logged to confirm yet" }, { status: 409, headers: noStore });
-    const { error } = await db.from("target_proofs").update({ confirmed_at: new Date().toISOString() }).eq("week_start", week).eq("zone", zone);
-    return error ? NextResponse.json({ error: "write failed" }, { status: 500, headers: noStore }) : NextResponse.json({ ok: true }, { headers: noStore });
+    // Confirm only the exact note the parent read, and only if still unconfirmed:
+    // a note rewritten between reading and typing the PIN matches nothing.
+    const seen = typeof body.note === "string" ? body.note.trim() : "";
+    const { data, error } = await db.from("target_proofs").update({ confirmed_at: new Date().toISOString() })
+      .eq("week_start", week).eq("zone", zone).eq("note", seen).is("confirmed_at", null).select("id");
+    if (error) return NextResponse.json({ error: "write failed" }, { status: 500, headers: noStore });
+    return data?.length ? NextResponse.json({ ok: true }, { headers: noStore })
+      : NextResponse.json({ error: "The proof changed or was already confirmed. Reload and read it again." }, { status: 409, headers: noStore });
   }
 
   const note = typeof body.note === "string" ? body.note.trim() : "";
   if (note.length < 3 || note.length > 500) return NextResponse.json({ error: "Write 3 to 500 characters about what you did" }, { status: 400, headers: noStore });
   // A confirmed proof is the parent's word; Ansar cannot rewrite it afterwards.
-  if (existing.data?.confirmed_at) return NextResponse.json({ error: "Already confirmed by a parent" }, { status: 409, headers: noStore });
-  const { error } = await db.from("target_proofs").upsert(
-    { week_start: week, zone: zone as ZoneId, note, logged_at: new Date().toISOString(), confirmed_at: null },
-    { onConflict: "week_start,zone" },
-  );
-  return error ? NextResponse.json({ error: "write failed" }, { status: 500, headers: noStore }) : NextResponse.json({ ok: true }, { headers: noStore });
+  // Conditional on confirmed_at IS NULL so a confirm landing mid-request is never undone.
+  const write = existing.data
+    ? await db.from("target_proofs").update({ note, logged_at: new Date().toISOString() })
+        .eq("week_start", week).eq("zone", zone).is("confirmed_at", null).select("id")
+    : await db.from("target_proofs").insert({ week_start: week, zone: zone as ZoneId, note }).select("id");
+  if (write.error) return NextResponse.json({ error: "write failed" }, { status: write.error.code === "23505" ? 409 : 500, headers: noStore });
+  return write.data?.length ? NextResponse.json({ ok: true }, { headers: noStore })
+    : NextResponse.json({ error: "Already confirmed by a parent" }, { status: 409, headers: noStore });
 }
