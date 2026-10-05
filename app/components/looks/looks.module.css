@@ -1,0 +1,14 @@
+.look { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; font-size: 13px; font-weight: 650; color: var(--ansar-subtext); }
+.lookLabel { white-space: nowrap; }
+.lookSelect {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ansar-border);
+  background: var(--ansar-panel);
+  color: var(--ansar-text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.lookSelect:hover { border-color: var(--ansar-gold); }

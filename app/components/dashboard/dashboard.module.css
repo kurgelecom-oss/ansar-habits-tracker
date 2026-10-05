@@ -5,7 +5,7 @@
    and the repo has already been burned once by a hex that drifted off the
    canonical cyan.
 
-   Two neutrals are exempt, and only these two: #000000 and #ffffff, used as
+   Two neutrals are exempt, and only these two: #000000 and var(--ansar-text), used as
    mixers inside color-mix() and as rgba() shadow and scrim values. The rule
    exists to stop a BRAND colour drifting — pure black and pure white have
    nothing to drift from, and there is no token for either. Every hue still
@@ -135,7 +135,7 @@
   gap: 2px;
   padding: 3px;
   border-radius: 9px;
-  background: color-mix(in srgb, #000000 34%, transparent);
+  background: var(--ansar-row);
   border: 1px solid var(--ansar-hairline);
   flex-shrink: 0;
 }
@@ -272,7 +272,7 @@
 .panelTitle {
   display: flex;
   align-items: center;
-  font-size: 20px;
+  font-size: 22px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-weight: 700;
@@ -298,7 +298,7 @@
   height: 5px;
   margin: 0 14px 10px;
   border-radius: 3px;
-  background: color-mix(in srgb, #ffffff 8%, transparent);
+  background: color-mix(in srgb, var(--ansar-text) 8%, transparent);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -400,7 +400,7 @@
      on bright blue plastic. The photo is atmosphere, not content — it stays
      under a floor dark enough for white text everywhere it lands. */
   background-image:
-    linear-gradient(90deg, rgba(11, 16, 32, 0.88), rgba(11, 16, 32, 0.72) 45%, rgba(11, 16, 32, 0.90)),
+    linear-gradient(90deg, color-mix(in srgb, var(--ansar-base) 88%, transparent), color-mix(in srgb, var(--ansar-base) 72%, transparent) 45%, color-mix(in srgb, var(--ansar-base) 90%, transparent)),
     url('/stadium-lights.jpg');
   background-size: cover;
   background-position: center 34%;
@@ -431,24 +431,27 @@
 }
 
 .clubWordmark {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 50px;
-  font-weight: 700;
+  font-weight: var(--display-weight);
   letter-spacing: 0.01em;
   line-height: 1.05;
-  text-shadow: 0 3px 24px rgba(0, 0, 0, 0.85);
+  text-shadow: var(--display-shadow);
+  text-transform: var(--display-case);
   white-space: nowrap;
 }
 
 /* Fixed brand copy. It states no number and tracks no state, so unlike every
    other line on this board it cannot go stale or disagree with the server. */
 .clubMotto {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: 23px;
   font-style: normal;
   font-weight: 700;
   color: var(--ansar-gold-bright);
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
+  text-shadow: var(--display-shadow);
+  text-transform: var(--display-case);
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
@@ -480,7 +483,7 @@
   align-items: stretch;
   flex-shrink: 0;
   min-height: 62px;
-  border: 1px solid color-mix(in srgb, var(--ansar-border) 88%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--ansar-border) 88%, var(--ansar-text));
   border-radius: 10px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--ansar-card) 92%, #000000), color-mix(in srgb, var(--ansar-base) 90%, #000000));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
@@ -676,7 +679,7 @@
 .matchTeamMeta {
   margin-top: 2px;
   font-size: 14px;
-  color: color-mix(in srgb, #ffffff 62%, transparent);
+  color: color-mix(in srgb, var(--ansar-text) 62%, transparent);
   white-space: nowrap;
 }
 
@@ -705,14 +708,14 @@
 .matchScoreDash {
   font-size: 34px;
   font-weight: 700;
-  color: color-mix(in srgb, #ffffff 55%, transparent);
+  color: color-mix(in srgb, var(--ansar-text) 55%, transparent);
 }
 
 .matchStatus {
   margin-top: 6px;
   font-size: 14px;
   font-weight: 500;
-  color: color-mix(in srgb, #ffffff 68%, transparent);
+  color: color-mix(in srgb, var(--ansar-text) 68%, transparent);
   white-space: nowrap;
 }
 
@@ -741,8 +744,8 @@
   font-size: 30px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: color-mix(in srgb, #ffffff 86%, transparent);
-  background: color-mix(in srgb, #ffffff 8%, transparent);
+  color: color-mix(in srgb, var(--ansar-text) 86%, transparent);
+  background: color-mix(in srgb, var(--ansar-text) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--ansar-gold) 28%, transparent);
 }
 
@@ -752,7 +755,7 @@
   font-size: 16px;
   font-weight: 500;
   text-align: center;
-  color: color-mix(in srgb, #ffffff 70%, transparent);
+  color: color-mix(in srgb, var(--ansar-text) 70%, transparent);
 }
 
 /* ── Habit rows ─────────────────────────────────────────────────────────────
@@ -917,7 +920,7 @@
 }
 .habitRowMissed .habitBox { border-color: color-mix(in srgb, var(--ansar-danger) 40%, transparent); }
 
-.habitTick { font-size: 15px; font-weight: 700; color: color-mix(in srgb, var(--ansar-success) 82%, #ffffff); }
+.habitTick { font-size: 15px; font-weight: 700; color: color-mix(in srgb, var(--ansar-success) 82%, var(--ansar-text)); }
 .habitGlyph { font-size: 12px; }
 
 .habitIcon { font-size: 19px; flex-shrink: 0; line-height: 1; }
@@ -997,7 +1000,7 @@
   display: block;
   font-size: 15px;
   font-weight: 600;
-  color: color-mix(in srgb, #ffffff 62%, transparent);
+  color: color-mix(in srgb, var(--ansar-text) 62%, transparent);
   font-variant-numeric: tabular-nums;
 }
 .panelPoints {
@@ -1472,7 +1475,7 @@
   gap: 2px;
   padding: 3px;
   border-radius: 9px;
-  background: color-mix(in srgb, #000000 34%, transparent);
+  background: var(--ansar-row);
   border: 1px solid var(--ansar-hairline);
   flex-shrink: 0;
 }
@@ -1578,7 +1581,7 @@
   gap: 2px;
   padding: 3px;
   border-radius: 9px;
-  background: color-mix(in srgb, #000000 34%, transparent);
+  background: var(--ansar-row);
   border: 1px solid var(--ansar-hairline);
   flex-shrink: 0;
 }
@@ -1638,7 +1641,7 @@
   gap: 2px;
   padding: 3px;
   border-radius: 9px;
-  background: color-mix(in srgb, #000000 34%, transparent);
+  background: var(--ansar-row);
   border: 1px solid var(--ansar-hairline);
   flex-shrink: 0;
 }
@@ -1966,3 +1969,5 @@ a.weekBadge:focus-visible {
 }
 .pillarFootball .pillarRow { background: color-mix(in srgb, var(--football-pitch) 22%, var(--ansar-rowflat)); }
 .pillarLink:hover { border-color: var(--accent); }
+
+.pillarNext { white-space: nowrap; }

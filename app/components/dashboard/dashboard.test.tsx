@@ -260,8 +260,8 @@ describe("fixtures", () => {
 describe("ClubHeader", () => {
   it("carries the club identity and the motto, and no live data", () => {
     render(<ClubHeader />);
-    expect(screen.getByText("Ansar · ANSAR FC")).toBeInTheDocument();
-    expect(screen.getByText("Discipline Today. Greatness Forever.")).toBeVisible();
+    expect(screen.getByText("Ansar FC")).toBeInTheDocument();
+    expect(screen.getByText("Win the morning. Win the day.")).toBeVisible();
     // The motto is fixed copy. Nothing here may render a clock, a percentage
     // or a streak — those belong to the cluster that can go stale.
     expect(screen.queryByText(/Sydney|device|Streak|Today \d/)).not.toBeInTheDocument();
@@ -1443,7 +1443,7 @@ describe("DashboardShell composition", () => {
       </DashboardShell>,
     );
     expect(screen.getByRole("img", { name: "ANSAR FC" })).toBeVisible();
-    expect(screen.getByText("Ansar · ANSAR FC")).toBeVisible();
+    expect(screen.getByText("Ansar FC")).toBeVisible();
     expect(screen.getByText(/Sydney/)).toBeVisible();
   });
 });
@@ -1466,7 +1466,8 @@ describe("visual parity contracts", () => {
     // No /s: tsconfig targets ES2017, where the dotAll flag is a compile
     // error, and [^}] already crosses newlines without it.
     expect(dashboardCss).toMatch(/\.clubHeader\s*\{[^}]*background-image:/);
-    expect(dashboardCss).toMatch(/\.clubWordmark\s*\{[^}]*font-family:[^;}]*serif/);
+    // The face is the look's, not a fixed serif: three looks, one token.
+    expect(dashboardCss).toMatch(/\.clubWordmark\s*\{[^}]*font-family:\s*var\(--font-display\)/);
     expect(declaredRowMinHeight(dashboardCss)).toBeGreaterThanOrEqual(ROW_TARGET_FLOOR_PX);
   });
 

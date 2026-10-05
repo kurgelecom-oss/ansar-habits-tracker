@@ -69,7 +69,7 @@
   text-transform: uppercase;
   color: var(--ansar-gold);
 }
-.title { margin: 0 0 14px; font: 700 24px/1.15 Georgia, "Times New Roman", serif; text-wrap: balance; }
+.title { margin: 0 0 14px; font: 700 24px/1.15 var(--font-display); text-wrap: balance; }
 
 .body { margin: 0; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--ansar-border) transparent; }
 .body dt {

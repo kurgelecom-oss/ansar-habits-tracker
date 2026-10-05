@@ -5,6 +5,7 @@ import { footballPillar, schoolPillar, type PillarSummary, type SchoolWeek } fro
 import { WEEKLY_CAP_HOURS, planFor, weeklyLoadMinutes } from "../../pathway/data/week";
 import { todayMelbourne, usePathwayStore } from "../../pathway/components/usePathwayStore";
 import Panel from "./Panel";
+import { useCopy } from "../looks/looks";
 import styles from "./dashboard.module.css";
 
 /**
@@ -26,6 +27,7 @@ export function PillarCard(
     summary: PillarSummary | null; status?: string; footnote?: string | null;
   },
 ) {
+  const copy = useCopy();
   const counted = summary !== null && summary.total > 0;
   return (
     <Panel
@@ -44,7 +46,7 @@ export function PillarCard(
       footer={
         <span className={styles.pillarFoot}>
           {footnote ? <span>{footnote}</span> : <span />}
-          <Link href={href} className={styles.pillarLink}>{linkLabel} →</Link>
+          <Link href={href} className={styles.pillarLink}>{linkLabel}</Link>
         </span>
       }
     >
@@ -56,7 +58,7 @@ export function PillarCard(
                 <li key={row.id} className={styles.pillarRow} data-testid="pillar-row">
                   <div className={styles.pillarRowHead}>
                     <span className={styles.pillarRowTitle}>{row.title}</span>
-                    {i === 0 ? <span className={styles.pillarNext}>next</span> : null}
+                    {i === 0 ? <span className={styles.pillarNext}>{copy.next}</span> : null}
                     {row.meta ? <span className={styles.pillarMeta}>{row.meta}</span> : null}
                   </div>
                   {row.detail ? <p className={styles.pillarDetail}>{row.detail}</p> : null}
@@ -74,6 +76,7 @@ export function PillarCard(
 function SchoolPillar() {
   const [week, setWeek] = useState<SchoolWeek | null>(null);
   const [failed, setFailed] = useState(false);
+  const copy = useCopy();
   useEffect(() => {
     let live = true;
     fetch("/api/school-week", { cache: "no-store" })
@@ -84,9 +87,9 @@ function SchoolPillar() {
   }, []);
   return (
     <PillarCard
-      title="School" icon="🎓" accent="var(--school)" href="/school" linkLabel="Open School" className={styles.pillarSchool}
+      title="School" icon="🎓" accent="var(--school)" href="/school" linkLabel={copy.openSchool} className={styles.pillarSchool}
       summary={week && Array.isArray(week.days) ? schoolPillar(week) : null}
-      status={failed ? "The week could not be loaded." : "Loading…"}
+      status={failed ? copy.weekFailed : copy.loading}
     />
   );
 }
@@ -97,16 +100,17 @@ function FootballPillar() {
   // during the server render would desync hydration.
   const [weekday, setWeekday] = useState<string | null>(null);
   const { state } = usePathwayStore(today);
+  const copy = useCopy();
   useEffect(() => { setWeekday(WEEKDAY_FMT.format(new Date())); }, []);
   const ready = weekday !== null && state.storage !== "loading";
   return (
     <PillarCard
-      title="Football" icon="⚽" accent="var(--football)" href="/pathway" linkLabel="Open Football" className={styles.pillarFootball}
+      title="Football" icon="⚽" accent="var(--football)" href="/pathway" linkLabel={copy.openFootball} className={styles.pillarFootball}
       summary={ready ? footballPillar(planFor(weekday), state.done) : null}
-      status="Loading…"
+      status={copy.loading}
       // The PLANNED week, from the fixed programme — not hours carried. Said
       // in the label so the number is not read as a record.
-      footnote={`${(weeklyLoadMinutes() / 60).toFixed(1)} of ${WEEKLY_CAP_HOURS} hrs planned this week`}
+      footnote={copy.load((weeklyLoadMinutes() / 60).toFixed(1), WEEKLY_CAP_HOURS)}
     />
   );
 }

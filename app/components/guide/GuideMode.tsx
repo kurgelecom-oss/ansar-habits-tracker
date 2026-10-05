@@ -11,67 +11,57 @@ import styles from "./guide.module.css";
  * it is, how it is tracked, how it is measured, who controls it, and what it
  * leads to. The words live in steps.ts.
  *
- * STARTS BY ITSELF ONCE PER SCREEN, PER DEVICE. The first time a screen is
- * opened on a device the guide runs. After that it stays out of the way until
- * someone presses the Guide switch. This is deliberate: the Today board has
- * timed windows, and a guide that covered it every morning would cost ticks.
- *
- * The switch is the on/off. Off means no guide ever starts by itself. Turning
- * it on starts the guide for the current screen straight away.
+ * OFF UNLESS SOMEONE TURNS IT ON (tk, 5 Oct 2026). It never starts by itself.
+ * Pressing the Guide switch turns it on for this device; while it is on, each
+ * screen opens its own guide on arrival. "Finish" closes the guide for the
+ * screen you are on and leaves the switch on. "Turn guide off", or pressing
+ * the switch again, turns it off everywhere.
  *
  * Nothing here reads or writes the record. It only looks at the page.
  */
-const STORE = "ansar-guide-v1";
-type Saved = { off: boolean; seen: string[] };
-
-function load(): Saved {
-  try {
-    const v = JSON.parse(localStorage.getItem(STORE) ?? "null");
-    return { off: v?.off === true, seen: Array.isArray(v?.seen) ? v.seen : [] };
-  } catch { return { off: false, seen: [] }; }
-}
-function save(s: Saved) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch { /* private mode */ } }
+const STORE = "ansar-guide-v2";
+const isOn = () => { try { return localStorage.getItem(STORE) === "on"; } catch { return false; } };
+const setOn = (on: boolean) => { try { localStorage.setItem(STORE, on ? "on" : "off"); } catch { /* private mode */ } };
 
 type Box = { top: number; left: number; width: number; height: number };
 
 export default function GuideMode() {
   const pathname = usePathname();
   const steps = guideFor(pathname);
-  const [off, setOff] = useState(false);
+  /** The switch: is guide mode on for this device? */
+  const [on, setOnState] = useState(false);
+  /** Is the card showing on this screen right now? */
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
   const switchRef = useRef<HTMLButtonElement | null>(null);
 
-  // Decide after mount: localStorage does not exist on the server, and a
-  // null pathname means there is no router (a test render), so stay shut.
+  // Read the switch after mount: localStorage does not exist on the server.
+  // A null pathname means there is no router (a test render), so stay shut.
   useEffect(() => {
     if (!pathname) return;
-    const s = load();
-    setOff(s.off);
+    const mode = isOn();
+    setOnState(mode);
     setIndex(0);
+    if (!mode || guideFor(pathname).length === 0) { setOpen(false); return; }
     // A short wait lets the screen's own data arrive, so the first spotlight
     // lands on a panel that exists rather than on an empty frame.
-    const t = setTimeout(() => {
-      if (!s.off && !s.seen.includes(pathname) && guideFor(pathname).length > 0) setOpen(true);
-    }, 1200);
+    const t = setTimeout(() => setOpen(true), 900);
     return () => clearTimeout(t);
   }, [pathname]);
 
+  /** Close the card. `turnOff` also flips the switch off for the device. */
   const close = useCallback((turnOff = false) => {
     setOpen(false);
     setBox(null);
-    const s = load();
-    const seen = pathname && !s.seen.includes(pathname) ? [...s.seen, pathname] : s.seen;
-    save({ off: turnOff ? true : s.off, seen });
-    if (turnOff) setOff(true);
+    if (turnOff) { setOn(false); setOnState(false); }
     switchRef.current?.focus();
-  }, [pathname]);
+  }, []);
 
   const toggle = () => {
-    if (open) { close(true); return; }
-    if (off) { save({ off: false, seen: [] }); setOff(false); }
+    if (on) { close(true); return; }
+    setOn(true); setOnState(true);
     setIndex(0);
     setOpen(true);
   };
@@ -126,13 +116,13 @@ export default function GuideMode() {
       <button
         ref={switchRef}
         type="button"
-        className={`${styles.switch} ${open ? styles.switchOn : ""}`}
-        aria-pressed={open}
+        className={`${styles.switch} ${on ? styles.switchOn : ""}`}
+        aria-pressed={on}
         onClick={toggle}
-        title={open ? "Turn the guide off" : "Explain this screen, one area at a time"}
+        title={on ? "Turn the guide off" : "Explain this screen, one area at a time"}
       >
         <span className={styles.switchDot} aria-hidden="true" />
-        Guide {open ? "on" : "off"}
+        Guide {on ? "on" : "off"}
       </button>
 
       {step ? (
