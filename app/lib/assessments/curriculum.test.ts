@@ -37,20 +37,26 @@ describe('weekly papers', () => {
     expect(fridayFor('2026-09-18')).toBe('2026-09-18');
     expect(fridayFor('2026-10-04')).toBe('2026-10-09');
   });
-  it('creates four source-linked recall prompts in Friday month', () => {
-    const paper = buildWeeklyReview([lesson], fridayFor(lesson.date));
-    expect(paper.id).toBe('review:2026-09-04:maths');
+  it('creates one weekly recall with a prompt per subject and a final uncertainty prompt', () => {
+    const science: Lesson = { ...lesson, id: 'science-source', date: '2026-09-02', subject: 'Science', task: 'Float a foil hull and load it with coins.', topic: 'Floating' };
+    const paper = buildWeeklyReview([science, lesson], fridayFor(lesson.date));
+    expect(paper.id).toBe('review:2026-09-04:week');
     expect(paper.month).toBe('2026-09');
     expect(paper.opens_on).toBe(paper.due_date);
     expect(paper.status).toBe('published');
-    expect(paper.questions).toHaveLength(4);
-    expect(paper.questions.every(q => q.type === 'written' && q.sourceIds.includes(lesson.id))).toBe(true);
+    expect(paper.questions.map(q => q.id)).toEqual(['q-maths', 'q-science', 'q-unclear']);
+    expect(paper.questions.every(q => q.type === 'written')).toBe(true);
+    expect(paper.questions[0].sourceIds).toEqual([lesson.id]);
+    expect(paper.questions[1].sourceIds).toEqual([science.id]);
+    expect(paper.questions[2].sourceIds).toEqual([science.id, lesson.id]);
     expect(paper.questions[0].prompt).toContain(lesson.date);
     expect(paper.questions[0].prompt).toContain(lesson.topic);
     expect(paper.questions[0].prompt).not.toContain(lesson.task);
-    expect(paper.lessons[0].task).toBe(lesson.task);
-    expect(new Set(paper.questions.map(q => q.rubric)).size).toBe(4);
+    expect(paper.questions[0].prompt).not.toContain(science.topic);
+    expect(paper.lessons).toHaveLength(2);
     expect(paper.questions.every(q => /0 =/.test(q.rubric || '') && /1 =/.test(q.rubric || '') && /2 =/.test(q.rubric || ''))).toBe(true);
-    expect(paper.questions[3].rubric).toContain('Do not penalize admitting uncertainty');
+    expect(paper.questions[2].rubric).toContain('Do not penalize admitting uncertainty');
+    // Marking a written recall must never require attesting to a practical demonstration.
+    expect(paper.coverage_note).not.toMatch(/practical|demonstration/i);
   });
 });

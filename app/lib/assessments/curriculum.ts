@@ -2,7 +2,7 @@ import { adminClient } from '../supabase-admin';
 import { PROGRAMME_DS, GUIDES_DS } from '../notion-sources';
 import { addDays, sydneyDateKey, weekStartOf } from '../time';
 import { coverageNote, curriculumFingerprint, generateExam, subjectSlug } from './generation';
-import type { Lesson, Paper } from './types';
+import type { Lesson, Paper, Question } from './types';
 
 type RichText = { plain_text?: string; text?: { content?: string } };
 type Property = { rich_text?: RichText[]; title?: RichText[]; date?: { start?: string } | null; relation?: { id: string }[] };
@@ -67,26 +67,27 @@ export function mapProgramme(programme: NotionPage[], guides: NotionPage[]): { l
   return { lessons: lessons.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)), warnings };
 }
 
+/** One recall for the whole week: a prompt per subject worked on, then one about what is still unclear. */
 export function buildWeeklyReview(lessons: Lesson[], due: string): Paper {
-  if (!lessons.length || new Set(lessons.map(l => l.subject)).size !== 1) throw new Error('Weekly review requires one subject');
-  const subject = lessons[0].subject;
-  const sourceIds = lessons.map(l => l.id);
-  const dates = [...new Set(lessons.map(l => l.date))].sort().join(', ');
-  const topics = [...new Set(lessons.map(l => l.topic.trim()).filter(Boolean))].map(topic => topic.slice(0, 80)).join('; ');
-  const focus = `Dates: ${dates}.${topics ? ` Topic cues: ${topics}.` : ''}`;
-  const rubrics = [
-    'Recall accuracy: 0 = no relevant recalled learning or mainly incorrect; 1 = some accurate recall but incomplete or unclear; 2 = three relevant, accurate points in the learner’s own words, checked against the actual taught work. Completion alone is not mastery.',
-    'Explained example: 0 = no relevant explanation or example; 1 = a partly correct idea or example with limited explanation; 2 = an accurate main idea explained clearly with a specific, relevant example from the learner’s work.',
-    'New application or connection: 0 = no relevant attempt or an incorrect connection; 1 = a plausible application or connection with missing steps or reasoning; 2 = an accurate new example or connection with clear steps and an explanation of why it works.',
-    'Gap and next action: 0 = no reflection or next action; 1 = a relevant gap or question but a vague or missing next action, or an action without a clear question; 2 = an honest, specific uncertainty or check-for-understanding question and a concrete next action to resolve or verify it. Do not penalize admitting uncertainty; this mark rewards reflection and a useful plan, not claimed mastery.',
-  ];
-  const prompts = [
-    `Without opening notes, recall three things you learned in ${subject} from your work on these dates. Use your own words. If a task was not completed, say so.\n${focus}`,
-    `Choose one of those ${subject} tasks. Explain the main idea and give a specific example from your own work. Name the task or date.`,
-    `Apply one idea from those ${subject} tasks to a new example, or connect two of the tasks. Explain each step and why the connection works.`,
-    `What is still unclear in those ${subject} tasks? Write one specific question and one action you will take next to resolve it.`,
-  ];
-  return { id: `review:${due}:${subjectSlug(subject)}`, kind: 'review', month: due.slice(0, 7), due_date: due, opens_on: due, subject, title: `${subject} · Friday recall · ${due}`, status: 'published', duration_minutes: null, questions: prompts.map((prompt, i) => ({ id: `q${i + 1}`, type: 'written', prompt, sourceIds, rubric: rubrics[i] })), lessons, coverage_note: coverageNote(lessons) };
+  if (!lessons.length) throw new Error('Weekly review requires source lessons');
+  const subjects = [...new Set(lessons.map(l => l.subject))].sort();
+  const questions: Question[] = subjects.map(subject => {
+    const own = lessons.filter(l => l.subject === subject);
+    const dates = [...new Set(own.map(l => l.date))].sort().join(', ');
+    const topics = [...new Set(own.map(l => l.topic.trim()).filter(Boolean))].map(topic => topic.slice(0, 80)).join('; ');
+    return {
+      id: `q-${subjectSlug(subject)}`, type: 'written', sourceIds: own.map(l => l.id),
+      prompt: `${subject}: without opening notes, explain one thing you learned this week and give a specific example from your own work. If the work was not done, say so.\nDates: ${dates}.${topics ? ` Topic cues: ${topics}.` : ''}`,
+      rubric: `Recall and explanation: 0 = no relevant recalled learning or mainly incorrect; 1 = an accurate idea with a missing or unclear example; 2 = an accurate idea explained in the learner’s own words with a specific example, checked against the actual taught ${subject} work. Completion alone is not mastery.`,
+    };
+  });
+  questions.push({
+    id: 'q-unclear', type: 'written', sourceIds: lessons.map(l => l.id),
+    prompt: 'Across the whole week, what is still unclear? Write one specific question and one action you will take next to resolve it.',
+    rubric: 'Gap and next action: 0 = no reflection or next action; 1 = a relevant gap or question but a vague or missing next action, or an action without a clear question; 2 = an honest, specific uncertainty or check-for-understanding question and a concrete next action to resolve or verify it. Do not penalize admitting uncertainty; this mark rewards reflection and a useful plan, not claimed mastery.',
+  });
+  // A written recall is not a demonstration, so the practical check stays with the monthly exam.
+  return { id: `review:${due}:week`, kind: 'review', month: due.slice(0, 7), due_date: due, opens_on: due, subject: 'All subjects', title: `Friday recall · week ending ${due}`, status: 'published', duration_minutes: null, questions, lessons, coverage_note: coverageNote(lessons, false) };
 }
 
 async function queryAll(source: string): Promise<NotionPage[]> {
@@ -138,7 +139,7 @@ export async function syncCurriculum(): Promise<{ lessons: number; reviews: numb
   const monthly = new Map<string, Lesson[]>();
   for (const lesson of stored) {
     if (lesson.date > today) continue; // Future scheduled work is not taught coverage.
-    for (const [map, key] of [[weekly, `${fridayFor(lesson.date)}:${lesson.subject}`], [monthly, `${lesson.date.slice(0, 7)}:${lesson.subject}`]] as const) map.set(key, [...(map.get(key) || []), lesson]);
+    for (const [map, key] of [[weekly, fridayFor(lesson.date)], [monthly, `${lesson.date.slice(0, 7)}:${lesson.subject}`]] as const) map.set(key, [...(map.get(key) || []), lesson]);
   }
   const getPaper = async (id: string): Promise<Paper | null> => {
     const { data, error } = await db.from('ansar_assessment_papers').select('*').eq('id', id).maybeSingle();
@@ -160,8 +161,18 @@ export async function syncCurriculum(): Promise<{ lessons: number; reviews: numb
     if (error) throw new Error('Paper could not be saved; existing work was preserved');
     return true;
   };
-  for (const [key, lessons] of weekly) {
-    const paper = buildWeeklyReview(lessons, key.slice(0, 10));
+  for (const [due, lessons] of weekly) {
+    const paper = buildWeeklyReview(lessons, due);
+    // Weeks set before the single weekly recall hold one paper per subject.
+    const perSubject = await db.from('ansar_assessment_papers').select('id').like('id', `review:${due}:%`).neq('id', paper.id);
+    if (perSubject.error) throw new Error('Could not read existing weekly reviews');
+    const ids = (perSubject.data || []).map(p => p.id as string);
+    if (ids.length) {
+      // Past and started weeks keep the papers they were set with.
+      if (due < today || (await Promise.all(ids.map(attempted))).some(Boolean)) continue;
+      const removed = await db.from('ansar_assessment_papers').delete().in('id', ids);
+      if (removed.error) throw new Error('Could not replace per-subject weekly reviews; existing work was preserved');
+    }
     const existing = await getPaper(paper.id);
     if (existing && curriculumFingerprint(existing.lessons) === curriculumFingerprint(lessons) && JSON.stringify(existing.questions) === JSON.stringify(paper.questions)) continue;
     if (await save(paper, existing)) summary.reviews++;
