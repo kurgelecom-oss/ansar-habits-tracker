@@ -985,11 +985,11 @@
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
-  color: color-mix(in srgb, var(--ansar-success) 70%, #ffffff);
+  /* Gold is the colour of points everywhere on the board. */
+  color: var(--ansar-gold);
   background: none;
   border: 0;
 }
-.habitRowDone .pointChip { color: color-mix(in srgb, var(--ansar-success) 70%, #ffffff); }
 
 /* ── Panel summary and the morning feasibility banner ───────────────────────*/
 .panelCount {
