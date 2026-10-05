@@ -50,6 +50,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
           penalties: x.penalties ?? 0,
         })) ?? null,
     },
-    { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=300" } },
+    // Half an answer (one call refused) is served but not cached, so the next visit fills it in.
+    { headers: { "Cache-Control": m && s ? "public, s-maxage=300, stale-while-revalidate=300" : "no-store" } },
   );
 }

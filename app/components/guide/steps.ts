@@ -261,8 +261,8 @@ const TESTS: GuideStep[] = [
 const LEADERBOARDS: GuideStep[] = [
   {
     target: '[class*="leaderboards_board__"], [class*="leaderboards_content__"]',
-    title: "Real Madrid's tables",
-    what: "The league and cup tables Real Madrid plays in, with Real Madrid's row marked.",
+    title: "The league tables",
+    what: "La Liga, the Champions League, the Premier League and Serie A, one at a time. Real Madrid's row is marked in the two it plays in.",
     tracked: "From the same live football data service as the match bar on Today. If the service has no data for a view, the screen says so.",
     measured: "Standard league columns: matches played, wins, draws, losses, goals for and against, goal difference and points.",
     controlled: "Nobody in the house. It is the real competition.",

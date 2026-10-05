@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const TEAM = 86;
+// The leagues the Season Centre offers, in the order the page lists them. Fixed rather than
+// discovered from Real Madrid's fixtures: the list no longer costs a provider call, and it
+// carries leagues Madrid does not play in. Names are the fallback when a table fails to load.
+const LEAGUES = [
+  { code: "PD", name: "Primera Division" },
+  { code: "CL", name: "UEFA Champions League" },
+  { code: "PL", name: "Premier League" },
+  { code: "SA", name: "Serie A" },
+];
 const API = "https://api.football-data.org/v4";
 
 // "2026-27" for a season that crosses the new year, "2026" for one that does not.
@@ -19,23 +27,18 @@ export async function GET() {
 
   try {
     const headers = { "X-Auth-Token": token };
-    const matches = await fetch(`${API}/teams/${TEAM}/matches?limit=100`, { headers, cache: "no-store" });
-    if (!matches.ok) throw new Error();
-    const data = (await matches.json()) as { matches?: any[] };
-    const comps = [
-      ...new Map((data.matches ?? []).map((m) => [m.competition?.code || m.competition?.id, m.competition])).values(),
-    ].filter(Boolean);
-
     const tables = await Promise.all(
-      comps.map(async (c: any) => {
-        const base = { name: c.name, code: c.code, emblem: c.emblem ?? null, season: null as string | null };
+      LEAGUES.map(async (c) => {
+        const base = { name: c.name, code: c.code, emblem: null as string | null, season: null as string | null };
         try {
-          const r = await fetch(`${API}/competitions/${c.code || c.id}/standings`, { headers, cache: "no-store" });
+          const r = await fetch(`${API}/competitions/${c.code}/standings`, { headers, cache: "no-store" });
           if (!r.ok) return { ...base, table: null };
           const d = (await r.json()) as any;
           const table = (d.standings ?? []).find((s: any) => s.type === "TOTAL")?.table ?? d.standings?.[0]?.table ?? null;
           return {
             ...base,
+            name: d.competition?.name || c.name,
+            emblem: d.competition?.emblem ?? null,
             season: seasonLabel(d.season),
             table:
               table?.map((x: any) => ({
@@ -59,9 +62,12 @@ export async function GET() {
       }),
     );
 
+    if (tables.every((t) => !t.table)) throw new Error();
+    // A table the provider refused (usually its per-minute quota) must not be cached as "no table".
+    const complete = tables.every((t) => t.table);
     return NextResponse.json(
       { available: true, tables, updatedAt: new Date().toISOString() },
-      { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=300" } },
+      { headers: { "Cache-Control": complete ? "public, s-maxage=300, stale-while-revalidate=300" : "no-store" } },
     );
   } catch {
     return NextResponse.json({ available: false, message: "Competition tables are temporarily unavailable." });
