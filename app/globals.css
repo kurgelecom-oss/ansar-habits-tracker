@@ -1,77 +1,63 @@
 /* ════════════════════════════════════════════════════════════════════════════
-   DESIGN AUTHORITY.
+   DESIGN AUTHORITY — the seven-colour palette (tk, 4 Oct 2026).
 
-   These three tokens are canonical across all six Kurgel surfaces. If a hex in
-   this repo disagrees with a token below, the hex is wrong.
+     Page            #0B1020   the ground behind everything
+     Panel           #141B30   cards, the nav bar, dialogs
+     Line and raise  #232C47   borders, tracks, pressed and selected controls
+     Text            #EEF2FF   headings and habit names
+     Quiet text      #8A96B8   guidance, times, done rows
+     Gold            #F2C14E   club identity, points, tier reached, "next"
+     Blue            #5B8CFF   buttons, the active tab, progress, the row to tap
 
-     --bg-base  #1e2140   shared page base
-     --bg-card  #252a4a   shared card surface
-     --cyan     #00d4ff   the accent
+   Two status colours sit outside the seven, approved with the palette: a child
+   must not have to read a word to know a habit is done or missed.
 
-   #00d9ff IS WRONG. It is a near-identical but different cyan that this repo
-   drifted onto, and it does not match the other five surfaces. Every occurrence
-   has been replaced with var(--cyan). Do not reintroduce it — run
-   `grep -rn "00d9ff" app` before committing.
+     Done   #3DD68C        Missed  #FF7A7A
 
-   ── What this file does NOT change ──────────────────────────────────────────
-   The Real Madrid / Bernabéu reskin on the board stays exactly as it is: the
-   stadium photograph, the 92% #0f1419 scrim tuned on top of it, the #16192d
-   card surfaces that scrim was tuned FOR, and the Champions-League gold
-   (#D4AF37) / royal navy (#0d2350) accents. Repainting those surfaces to
-   --bg-base / --bg-card would recolour every text token sitting on them and
-   re-open contrast work that is already settled.
+   FILLS IN BLUE OR GOLD CARRY DARK TEXT (--ansar-base). Light text on the blue
+   measures 2.8:1 and fails; dark navy on it measures 6:1.
 
-   So the tokens below are the authority for shared and NEW chrome — the top
-   nav's active cue, the gate rejection toast, the parent-override dialog — and
-   the board keeps its stadium palette. Both instructions hold at once.
+   This replaced the earlier cyan (#00d4ff) that was shared with the other
+   Kurgel surfaces. Ansar OS no longer matches them, by decision. The accent
+   token is --accent; there is no --cyan any more.
+
+   The stadium photograph stays, under a scrim of the page colour.
    ══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg-base: #1e2140;
-  --bg-card: #252a4a;
-  --cyan: #00d4ff;
+  color-scheme: dark;
+  --bg-base: #0b1020;
+  --bg-card: #141b30;
+  --accent: #5b8cff;
 
-  /* Height of the fixed TopNav. Layouts subtract this from the viewport. */
-  --nav-h: 40px;
-
-  /* ── Dashboard V2 (ANSAR FC) ──────────────────────────────────────────────
-     The board's stadium palette, written down as tokens.
-
-     These are NOT a second opinion on --bg-base/--bg-card. The header note
-     above settles that: shared and new chrome uses the canonical three, and
-     the Real Madrid board keeps the stadium surfaces the 92% #0f1419 scrim
-     was tuned for. Every value below is one of those already-settled hexes,
-     collected out of inline styles so a panel can reference a token instead
-     of re-typing a hex — spec §11.2.
-
-     The accent stays var(--cyan). There is deliberately no --ansar-cyan:
-     a second cyan token is exactly how #00d9ff got in last time. */
-  --ansar-base: #0f1419;         /* page ground, under the stadium scrim */
-  --ansar-card: #16192d;         /* panel surface */
-  --ansar-row: #1f2438;          /* row surface inside a panel */
-  --ansar-border: #2d3543;       /* hairline, same value the TopNav uses */
-  --ansar-muted: #757f8f;        /* secondary text, same as .topnav-link */
-  --ansar-navy: #0d2350;         /* Real Madrid royal navy */
-  /* Sampled straight off the approved reference image rather than guessed:
-     the fixture plate is a FLAT deep royal navy with no gradient in it at all,
-     the panels are a touch darker than the rows, and the rows are separated by
-     a hairline rather than by a fill. */
-  --ansar-fixture: #02193c;      /* Match Centre plate — flat, no gradient */
-  --ansar-panel: #0e1420;        /* panel plate */
-  --ansar-rowflat: #0f1521;      /* row surface inside a panel */
-  --ansar-hairline: #1b232f;     /* the line between rows */
-  --ansar-subtext: #b1b8be;      /* secondary line under a habit name */
-  --ansar-gold: #d4af37;         /* Champions League gold — override marker */
-  --ansar-gold-bright: #e7c55b;  /* gold, lifted for text on dark surfaces */
-  --ansar-success: #00ff88;      /* DONE */
-  --ansar-warning: #ffa500;      /* Reserves tier, caution */
-  --ansar-danger: #ff4444;       /* MISSED, Training Ground tier */
-  --ansar-wallet: #a78bfa;       /* reserved for wallet value and reward actions */
+  --ansar-base: #0b1020;         /* page ground, under the stadium scrim */
+  --ansar-card: #141b30;         /* panel surface */
+  --ansar-panel: #141b30;        /* panel plate */
+  --ansar-fixture: #141b30;      /* Match Centre plate */
+  --ansar-rowflat: #1a223b;      /* row surface inside a panel: panel and line, mixed */
+  --ansar-row: #232c47;          /* raised row, pressed and selected controls */
+  --ansar-border: #232c47;       /* borders */
+  --ansar-hairline: #232c47;     /* the line between rows */
+  --ansar-navy: #232c47;         /* raised control ground */
+  --ansar-text: #eef2ff;         /* primary text */
+  --ansar-muted: #8a96b8;        /* quiet text */
+  --ansar-subtext: #8a96b8;      /* secondary line under a habit name */
+  --ansar-gold: #f2c14e;         /* club identity, points, override marker */
+  --ansar-gold-bright: #f2c14e;  /* one gold now; the name is kept for its callers */
+  --ansar-success: #3dd68c;      /* DONE */
+  --ansar-warning: #f2c14e;      /* caution is gold; there is no separate amber */
+  --ansar-danger: #ff7a7a;       /* MISSED */
+  --ansar-wallet: #5b8cff;       /* the wallet is an action like any other */
 
   --ansar-radius-panel: 14px;
   --ansar-radius-row: 10px;
   --ansar-gap: 12px;
 }
+
+::selection { background: var(--accent); color: var(--ansar-base); }
+
+/* One focus ring for every surface. Components may restate it; none may remove it. */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 * {
   margin: 0;
@@ -82,66 +68,7 @@
 html,
 body {
   height: 100%;
+  background: var(--ansar-base);
+  color: var(--ansar-text);
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-/* ── TOP NAV ────────────────────────────────────────────────────────────────
-   The nav is one shared object and must read identically on all six surfaces.
-   Its chrome stays on ansar's own card/border/secondary values so it sits
-   flush against the board beneath it; the active cue is the canonical
-   var(--cyan). */
-.topnav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--nav-h);
-  z-index: 900; /* above the page's sticky header (100) */
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 0 10px;
-  background: #16192d;
-  border-bottom: 1px solid #2d3543;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.topnav::-webkit-scrollbar {
-  display: none;
-}
-
-.topnav-link {
-  position: relative;
-  flex-shrink: 0;
-  padding: 0 10px;
-  line-height: var(--nav-h);
-  font-size: 12px;
-  font-weight: 600;
-  color: #757f8f;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 0.2s ease;
-}
-.topnav-link:hover {
-  color: #ffffff;
-}
-.topnav-link.active {
-  color: var(--cyan);
-}
-.topnav-link.active::after {
-  content: "";
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 0;
-  height: 2px;
-  background: var(--cyan);
-  border-radius: 1px 1px 0 0;
-}
-
-/* Dashboard V2 owns a full ANSAR FC navigation bar matching its stadium
-   interface. Hide the shared cross-surface strip only while that labelled main
-   is present; every other surface and route keeps the shared TopNav unchanged. */
-body:has(main[aria-label^="ANSAR"]) .topnav {
-  display: none;
 }

@@ -3,7 +3,6 @@ import { displayNameFor, guidanceFor, noteFor } from "../../dashboard/rowCopy";
 import { DEFAULT_ICON, HABIT_ICONS } from "../../dashboard/icons";
 import HabitRow from "./HabitRow";
 import HomeschoolSection from "./HomeschoolSection";
-import SchoolProgramme from "./SchoolProgramme";
 import Panel from "./Panel";
 import styles from "./dashboard.module.css";
 
@@ -108,13 +107,10 @@ export default function DayProgrammePanel({
         </>
       }
     >
-      {/* TODAY'S LESSONS. What he is learning, from the live Notion week page,
-          above the habits that gate the session. Read-only and self-fetching —
-          see SchoolProgramme.tsx. It renders nothing on a weekend, nothing when
-          no week page is set, and nothing while its own fetch is in flight, so
-          it can never hold up the rows below it. */}
-      <SchoolProgramme />
-
+      {/* The lessons list that used to open this panel moved out in Phase 4:
+          the School pillar above the habits summarises today's blocks and
+          /school carries every task in full. The Homeschool HABIT rows below
+          stay — they are ticks, not lessons. */}
       {saturdayPush.length > 0 ? (
         <section data-testid="programme-section" data-section="Saturday Push" className={styles.programmeSection}>
           <h3 className={styles.programmeSectionTitle}>🔥 Saturday Push</h3>

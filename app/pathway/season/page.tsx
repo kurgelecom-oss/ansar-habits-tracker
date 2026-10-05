@@ -21,12 +21,12 @@ export default function SeasonPage() {
         <div className={styles.grid3}>{YEAR_GOALS.map(g => <div key={g.goal} className={styles.card}><h3>{g.icon} {g.goal}</h3><span className={`${styles.pill} ${styles.pillLime}`}>{g.measure}</span></div>)}</div>
       </section>
       <section className={styles.section}>
-        <div className={styles.sectionHead}><h2>The season</h2><span className={styles.muted}>You are here: <b style={{ color: "var(--pw-lime)" }}>{nowPhase}</b></span></div>
+        <div className={styles.sectionHead}><h2>The season</h2><span className={styles.muted}>You are here: <b style={{ color: "var(--pw-accent)" }}>{nowPhase}</b></span></div>
         <div className={styles.phaseRow}>{YEAR_PHASES.map(p => <div key={p.name} className={`${styles.phase} ${p.name === nowPhase ? styles.phaseNow : ""}`}><b>{p.icon} {p.name}</b><div className={styles.small} style={{ color: "var(--pw-gold)", margin: "4px 0" }}>{p.months}</div><div className={`${styles.small} ${styles.muted}`}>{p.aim}</div></div>)}</div>
       </section>
       <section className={styles.section}>
         <div className={styles.sectionHead}><h2>Monthly focus</h2></div>
-        <div className={styles.monthGrid}>{MONTH_FOCUS.map(m => { const d = drillById(m.drill); return <div key={m.month} className={`${styles.month} ${m.month === nowMonth ? styles.monthNow : ""}`}><b>{m.month}</b>{m.focus}{d ? <div><Link href={`/pathway/drills#${d.id}`} style={{ color: "var(--pw-lime)" }}>{d.name} →</Link></div> : null}</div>; })}</div>
+        <div className={styles.monthGrid}>{MONTH_FOCUS.map(m => { const d = drillById(m.drill); return <div key={m.month} className={`${styles.month} ${m.month === nowMonth ? styles.monthNow : ""}`}><b>{m.month}</b>{m.focus}{d ? <div><Link href={`/pathway/drills#${d.id}`} style={{ color: "var(--pw-accent)" }}>{d.name} →</Link></div> : null}</div>; })}</div>
       </section>
       <section className={styles.section}>
         <div className={styles.sectionHead}><h2>The week</h2></div>

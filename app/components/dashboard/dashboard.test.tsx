@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEvent, fireEvent, render, screen, within } from "@testing-library/react";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import ClubHeader from "./ClubHeader";
 import ClubStatus from "./ClubStatus";
@@ -33,11 +33,12 @@ import { requiresParentVerification } from "../../lib/parent-verified";
  * tables. It is asserted separately below, so putting it back here (and
  * dropping the href in ClubNavigation) is all that reverting takes.
  */
-const FUTURE_ITEMS = ["History"];
-// School joined the bar in Phase 3, straight after Dashboard: it is the other
-// academy, not a sub-section of Progress. Football already had fourteen routes
-// of its own while school had none.
-const NAV_ORDER = ["Dashboard", "School", "Progress", "Targets", "Tests", "Leaderboards", ...FUTURE_ITEMS, "Settings"];
+// Empty since Phase 4: "History" was a disabled label to a screen that was
+// never built, and it cost the bar the width Football needed.
+const FUTURE_ITEMS: string[] = [];
+// School joined the bar in Phase 3 and Football in Phase 4, side by side
+// straight after Today: the two academies are peers, not sub-sections.
+const NAV_ORDER = ["Today", "School", "Football", "Progress", "Targets", "Tests", "Leaderboards", ...FUTURE_ITEMS, "Settings"];
 
 /**
  * The habit row's declared min-height.
@@ -74,9 +75,9 @@ function navItem(label: string): HTMLElement {
 }
 
 describe("ClubNavigation", () => {
-  it("marks Dashboard as the only active destination", () => {
+  it("marks Today as the only active destination", () => {
     render(<ClubNavigation />);
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Today" })).toHaveAttribute("aria-current", "page");
     for (const label of FUTURE_ITEMS) {
       expect(navItem(label)).toHaveAttribute("aria-disabled", "true");
       expect(navItem(label)).toHaveAttribute("title", "Coming in a later ANSAR OS stage");
@@ -89,7 +90,8 @@ describe("ClubNavigation", () => {
    */
   it("gives built OS sections links and keeps unfinished OS sections disabled", () => {
     render(<ClubNavigation />);
-    expect(screen.getAllByRole("link")).toHaveLength(7);
+    expect(screen.getAllByRole("link")).toHaveLength(8);
+    expect(screen.getByRole("link", { name: "Football" })).toHaveAttribute("href", "/pathway");
     expect(screen.getByRole("link", { name: "School" })).toHaveAttribute("href", "/school");
     expect(screen.getByRole("link", { name: "Progress" })).toHaveAttribute("href", "/progress");
     expect(screen.getByRole("link", { name: "Targets" })).toHaveAttribute("href", "/targets");
@@ -150,7 +152,7 @@ describe("DashboardShell", () => {
   it("names the landmark and renders navigation above its children", () => {
     render(<DashboardShell><p>board</p></DashboardShell>);
     const main = screen.getByRole("main", { name: "ANSAR FC Dashboard" });
-    expect(within(main).getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
+    expect(within(main).getByRole("link", { name: "Today" })).toBeInTheDocument();
     expect(within(main).getByText("board")).toBeInTheDocument();
   });
 });
@@ -158,7 +160,7 @@ describe("DashboardShell", () => {
 describe("Panel", () => {
   it("renders title, subtitle and summary without nesting a second card border", () => {
     render(
-      <Panel title="Morning Habits" subtitle="06:30–08:30" accent="var(--cyan)" summary={<span>5 / 7</span>}>
+      <Panel title="Morning Habits" subtitle="06:30–08:30" accent="var(--accent)" summary={<span>5 / 7</span>}>
         <p>rows</p>
       </Panel>
     );
@@ -169,7 +171,7 @@ describe("Panel", () => {
   });
 
   it("omits the subtitle and summary slots entirely when not supplied", () => {
-    const { container } = render(<Panel title="Bare" accent="var(--cyan)"><p>x</p></Panel>);
+    const { container } = render(<Panel title="Bare" accent="var(--accent)"><p>x</p></Panel>);
     expect(screen.getByRole("heading", { name: "Bare" })).toBeInTheDocument();
     expect(container.querySelectorAll("header p")).toHaveLength(0);
   });
@@ -446,6 +448,14 @@ describe("responsive rules for the header and Match Centre", () => {
     expect(rule("clubStatus")).toMatch(/flex-wrap:\s*wrap/);
   });
 
+  /** Phase 4: at 390px nothing may push the document sideways or clip. */
+  it("wraps the nav items and the motto instead of clipping or overflowing", () => {
+    expect(rule("clubNavList")).toMatch(/flex-wrap:\s*wrap/);
+    expect(rule("clubNavList")).not.toMatch(/overflow-x/);
+    expect(rule("clubMotto")).toMatch(/white-space:\s*normal/);
+    expect(rule("clubNavStatus")).toMatch(/flex-wrap:\s*wrap/);
+  });
+
   it("keeps the status cards visible instead of leaving them beyond the nav scroller", () => {
     expect(rule("clubNav")).toMatch(/flex-wrap:\s*wrap/);
     expect(rule("clubNavStatus")).toMatch(/width:\s*100%/);
@@ -644,9 +654,8 @@ describe("vertical budget before the panels", () => {
   // constraint — 1440 x 820 is, and it is measured separately below.
   const FUNDED_CEILING = 362;
 
-  it("still funds the raised ceiling by hiding the shared bar", () => {
-    expect(globalCss).toContain('body:has(main[aria-label^="ANSAR"]) .topnav');
-    expect(globalCss).toMatch(/--nav-h:\s*40px/);
+  it("still funds the raised ceiling by having no shared bar at all", () => {
+    expect(globalCss).not.toContain(".topnav");
     expect(pageSource).toMatch(/\.ab-root\{[^}]*padding-top:0/);
   });
 
@@ -724,11 +733,11 @@ describe("HabitRow", () => {
   it("renders the five server-decided states in one vocabulary", () => {
     render(
       <>
-        <HabitRow habit={row({ id: "live", name: "Live habit" })} accent="var(--cyan)" {...rowHandlers} />
-        <HabitRow habit={row({ id: "locked", name: "Locked habit", state: "LOCKED", label: "Opens 1:30pm" })} accent="var(--cyan)" {...rowHandlers} />
-        <HabitRow habit={row({ id: "missed", name: "Missed habit", state: "MISSED", label: "Missed" })} accent="var(--cyan)" {...rowHandlers} />
-        <HabitRow habit={row({ id: "done", name: "Done habit", state: "DONE", label: "Done" })} accent="var(--cyan)" {...rowHandlers} />
-        <HabitRow habit={row({ id: "over", name: "Override habit", state: "DONE", overridden: true })} accent="var(--cyan)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "live", name: "Live habit" })} accent="var(--accent)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "locked", name: "Locked habit", state: "LOCKED", label: "Opens 1:30pm" })} accent="var(--accent)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "missed", name: "Missed habit", state: "MISSED", label: "Missed" })} accent="var(--accent)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "done", name: "Done habit", state: "DONE", label: "Done" })} accent="var(--accent)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "over", name: "Override habit", state: "DONE", overridden: true })} accent="var(--accent)" {...rowHandlers} />
       </>
     );
     expect(screen.getByRole("button", { name: "Live habit" })).toBeEnabled();
@@ -756,9 +765,9 @@ describe("HabitRow", () => {
     const holds: string[] = [];
     render(
       <>
-        <HabitRow habit={row({ id: "locked", name: "Locked habit", state: "LOCKED" })} accent="var(--cyan)"
+        <HabitRow habit={row({ id: "locked", name: "Locked habit", state: "LOCKED" })} accent="var(--accent)"
           onTick={noop} onHoldStart={h => holds.push(h.id)} onHoldCancel={noop} />
-        <HabitRow habit={row({ id: "missed", name: "Missed habit", state: "MISSED" })} accent="var(--cyan)"
+        <HabitRow habit={row({ id: "missed", name: "Missed habit", state: "MISSED" })} accent="var(--accent)"
           onTick={noop} onHoldStart={h => holds.push(h.id)} onHoldCancel={noop} />
       </>
     );
@@ -773,7 +782,7 @@ describe("HabitRow", () => {
 
   it("forwards a tick with the habit's id and name", () => {
     const ticks: [string, string][] = [];
-    render(<HabitRow habit={row({ id: "quran", name: "Qur'an recitation - 20 min" })} accent="var(--cyan)"
+    render(<HabitRow habit={row({ id: "quran", name: "Qur'an recitation - 20 min" })} accent="var(--accent)"
       onTick={(id, name) => ticks.push([id, name])} onHoldStart={noop} onHoldCancel={noop} />);
     fireEvent.click(screen.getByRole("button", { name: "Qur'an recitation - 20 min" }));
     expect(ticks).toEqual([["quran", "Qur'an recitation - 20 min"]]);
@@ -782,7 +791,7 @@ describe("HabitRow", () => {
   it("cancels the hold on release, leave and cancel alike", () => {
     let cancels = 0;
     const habit = row({ id: "locked", name: "Locked habit", state: "LOCKED" });
-    render(<HabitRow habit={habit} accent="var(--cyan)"
+    render(<HabitRow habit={habit} accent="var(--accent)"
       onTick={noop} onHoldStart={noop} onHoldCancel={() => { cancels += 1; }} />);
     const button = screen.getByRole("button", { name: "Locked habit" });
     fireEvent.pointerUp(button);
@@ -793,7 +802,7 @@ describe("HabitRow", () => {
 
   /** A long-press must not raise the browser's own context menu over the ring. */
   it("suppresses the native context menu", () => {
-    render(<HabitRow habit={row({ id: "locked", name: "Locked habit", state: "LOCKED" })} accent="var(--cyan)" {...rowHandlers} />);
+    render(<HabitRow habit={row({ id: "locked", name: "Locked habit", state: "LOCKED" })} accent="var(--accent)" {...rowHandlers} />);
     const event = createEvent.contextMenu(screen.getByRole("button", { name: "Locked habit" }));
     fireEvent(screen.getByRole("button", { name: "Locked habit" }), event);
     expect(event.defaultPrevented).toBe(true);
@@ -806,13 +815,13 @@ describe("HabitRow", () => {
    */
   it("marks an override in both the visible row and its accessible name", () => {
     render(<HabitRow habit={row({ id: "feet_floor", name: "Feet on floor", state: "DONE", overridden: true })}
-      accent="var(--cyan)" {...rowHandlers} />);
+      accent="var(--accent)" {...rowHandlers} />);
     expect(screen.getByRole("button", { name: "Feet on floor — restored by parent override" })).toBeInTheDocument();
     expect(screen.getByText("Parent override")).toBeVisible();
   });
 
   it("gives an earned completion no override marker", () => {
-    render(<HabitRow habit={row({ id: "quran", name: "Qur'an", state: "DONE" })} accent="var(--cyan)" {...rowHandlers} />);
+    render(<HabitRow habit={row({ id: "quran", name: "Qur'an", state: "DONE" })} accent="var(--accent)" {...rowHandlers} />);
     expect(screen.queryByText("Parent override")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Qur'an" })).toBeInTheDocument();
   });
@@ -821,8 +830,8 @@ describe("HabitRow", () => {
   it("disables only the row currently being saved", () => {
     render(
       <>
-        <HabitRow habit={row({ id: "a", name: "Saving habit" })} accent="var(--cyan)" saving {...rowHandlers} />
-        <HabitRow habit={row({ id: "b", name: "Idle habit" })} accent="var(--cyan)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "a", name: "Saving habit" })} accent="var(--accent)" saving {...rowHandlers} />
+        <HabitRow habit={row({ id: "b", name: "Idle habit" })} accent="var(--accent)" {...rowHandlers} />
       </>
     );
     expect(screen.getByRole("button", { name: "Saving habit" })).toBeDisabled();
@@ -830,23 +839,23 @@ describe("HabitRow", () => {
   });
 
   it("shows a point chip only when the habit is worth points", () => {
-    const { unmount } = render(<HabitRow habit={row({ id: "a", name: "Scored", points: 5 })} accent="var(--cyan)" {...rowHandlers} />);
+    const { unmount } = render(<HabitRow habit={row({ id: "a", name: "Scored", points: 5 })} accent="var(--accent)" {...rowHandlers} />);
     expect(screen.getByText("+5 pts")).toBeVisible();
     unmount();
-    render(<HabitRow habit={row({ id: "b", name: "Unscored", points: 0 })} accent="var(--cyan)" {...rowHandlers} />);
+    render(<HabitRow habit={row({ id: "b", name: "Unscored", points: 0 })} accent="var(--accent)" {...rowHandlers} />);
     expect(screen.queryByText(/^\+\d+ pts?$/)).not.toBeInTheDocument();
   });
 
   it("uses the singular for a one-point habit", () => {
-    render(<HabitRow habit={row({ id: "a", name: "One", points: 1 })} accent="var(--cyan)" {...rowHandlers} />);
+    render(<HabitRow habit={row({ id: "a", name: "One", points: 1 })} accent="var(--accent)" {...rowHandlers} />);
     expect(screen.getByText("+1 pt")).toBeVisible();
   });
 
   it("shows the hold ring only on the row being held", () => {
     render(
       <>
-        <HabitRow habit={row({ id: "a", name: "Held", state: "LOCKED" })} accent="var(--cyan)" holding {...rowHandlers} />
-        <HabitRow habit={row({ id: "b", name: "Untouched", state: "LOCKED" })} accent="var(--cyan)" {...rowHandlers} />
+        <HabitRow habit={row({ id: "a", name: "Held", state: "LOCKED" })} accent="var(--accent)" holding {...rowHandlers} />
+        <HabitRow habit={row({ id: "b", name: "Untouched", state: "LOCKED" })} accent="var(--accent)" {...rowHandlers} />
       </>
     );
     expect(within(screen.getByRole("button", { name: "Held" })).getByTestId("hold-ring")).toBeInTheDocument();
@@ -879,7 +888,7 @@ describe("HabitPanel", () => {
 
   /** habitColumn() returned null for an empty block; that behaviour is kept. */
   it("renders nothing for a block with no applicable habits", () => {
-    const { container } = render(<HabitPanel title="Morning Habits" accent="var(--cyan)" habits={[]}
+    const { container } = render(<HabitPanel title="Morning Habits" accent="var(--accent)" habits={[]}
       doneCount={0} blockPoints={0} {...rowHandlers} />);
     expect(container).toBeEmptyDOMElement();
   });
@@ -1448,7 +1457,8 @@ describe("visual parity contracts", () => {
   const pageSource = readFileSync(resolve(process.cwd(), "app/page.tsx"), "utf8");
 
   it("removes the redundant shared navigation on every ANSAR OS surface", () => {
-    expect(globalCss).toContain('body:has(main[aria-label^="ANSAR"]) .topnav');
+    expect(globalCss).not.toContain(".topnav");
+    expect(existsSync(resolve(process.cwd(), "app/components/TopNav.tsx"))).toBe(false);
     expect(pageSource).toMatch(/\.ab-root\{[^}]*padding-top:0/);
   });
 
@@ -1468,13 +1478,9 @@ describe("visual parity contracts", () => {
    * exemption two values wide instead of becoming a loophole.
    */
   it("keeps no hex literals outside the neutral pair", () => {
-    // #b0b5c1 is grandfathered, not blessed. It is the dim body grey used
-    // across page.tsx too, it predates this branch, and no token covers it.
-    // Tokenising it touches globals.css and every surface that reads it, so it
-    // is deliberately left as its own follow-up rather than smuggled into a
-    // visual-parity commit. It is listed here so the guard still fails on
-    // anything NEW; shrink this list when the token lands, never grow it.
-    const allowed = ["#000000", "#ffffff", "#b0b5c1"];
+    // The grandfathered #b0b5c1 stray was tokenised with the Oct 2026 palette,
+    // so the list is back to the neutral pair and nothing else.
+    const allowed = ["#000000", "#ffffff"];
     const body = dashboardCss.replace(/\/\*[\s\S]*?\*\//g, "");
     const strays = (body.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [])
       .filter((hex) => !allowed.includes(hex.toLowerCase()));
@@ -1484,8 +1490,8 @@ describe("visual parity contracts", () => {
   it("marks Journal and Homeschool as different learning priorities", () => {
     const journal = row({ id: "journal", name: "Daily learning journal entry written", block: "homeschool" });
     const session = row({ id: "homeschool_session", name: "Homeschool session completed (4 hrs)", block: "homeschool", points: 5 });
-    render(<><HabitRow habit={journal} accent="var(--cyan)" {...rowHandlers} />
-      <HabitRow habit={session} accent="var(--cyan)" {...rowHandlers} /></>);
+    render(<><HabitRow habit={journal} accent="var(--accent)" {...rowHandlers} />
+      <HabitRow habit={session} accent="var(--accent)" {...rowHandlers} /></>);
     expect(screen.getByRole("button", { name: journal.name })).toHaveAttribute("data-emphasis", "journal");
     expect(screen.getByRole("button", { name: session.name })).toHaveAttribute("data-emphasis", "homeschool");
   });

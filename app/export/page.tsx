@@ -329,7 +329,6 @@ const CSS = `
 
 /* The shared chrome is for the screen. Paper gets the document alone. */
 @media print {
-  .topnav { display: none !important; }
   .screen-only { display: none !important; }
   body { background: #ffffff !important; }
   .rp { box-shadow: none !important; margin: 0 !important; max-width: none !important; padding: 0 !important; }

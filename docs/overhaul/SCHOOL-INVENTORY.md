@@ -138,9 +138,13 @@ All 7 layers signed off by tk, 4 Oct 2026. This file is the contract phases 1-6 
 
 ---
 
-## OVERDUE — term changeover (found 4 Oct 2026)
+## DONE — term changeover (found overdue 4 Oct 2026, verified complete the same evening)
 
-The break page carries its own switch-back checklist, due **before Mon 5 Oct**. Not done.
+All six items read back in their term value on 4 Oct 2026, both in Notion and from the
+live app (`/api/habits`, `/api/school-week`, `/api/settings`). The table is kept as the
+record of what the changeover consists of; the "Currently" column is the break state it left.
+
+The break page carries its own switch-back checklist, due **before Mon 5 Oct**.
 
 | # | Setting | Currently (break) | Term value |
 |---|---|---|---|
