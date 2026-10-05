@@ -37,14 +37,15 @@ describe('weekly papers', () => {
     expect(fridayFor('2026-09-18')).toBe('2026-09-18');
     expect(fridayFor('2026-10-04')).toBe('2026-10-09');
   });
-  it('creates one weekly recall with a prompt per subject and a final uncertainty prompt', () => {
+  it('creates one weekly review asking about each subject\'s days, and a final uncertainty prompt', () => {
     const science: Lesson = { ...lesson, id: 'science-source', date: '2026-09-02', subject: 'Science', task: 'Float a foil hull and load it with coins.', topic: 'Floating' };
     const paper = buildWeeklyReview([science, lesson], fridayFor(lesson.date));
     expect(paper.id).toBe('review:2026-09-04:week');
     expect(paper.month).toBe('2026-09');
     expect(paper.opens_on).toBe(paper.due_date);
     expect(paper.status).toBe('published');
-    expect(paper.questions.map(q => q.id)).toEqual(['q-maths', 'q-science', 'q-unclear']);
+    expect(paper.questions.map(q => q.id)).toEqual([`q-maths-${lesson.date}`, 'q-science-2026-09-02', 'q-unclear']);
+    expect(paper.questions[0].prompt).toMatch(/what was the task, what did you do/);
     expect(paper.questions.every(q => q.type === 'written')).toBe(true);
     expect(paper.questions[0].sourceIds).toEqual([lesson.id]);
     expect(paper.questions[1].sourceIds).toEqual([science.id]);
@@ -58,5 +59,15 @@ describe('weekly papers', () => {
     expect(paper.questions[2].rubric).toContain('Do not penalize admitting uncertainty');
     // Marking a written recall must never require attesting to a practical demonstration.
     expect(paper.coverage_note).not.toMatch(/practical|demonstration/i);
+  });
+});
+
+describe('weekly review day selection', () => {
+  it('asks about the first and last day of a subject worked on all week', () => {
+    const day = (date: string): Lesson => ({ id: `m-${date}`, date, subject: 'Maths', task: 'Fractions', topic: 'Istanbul', week: 'W1', guide: [], url: '' });
+    const paper = buildWeeklyReview(['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08'].map(day), '2026-10-09');
+    expect(paper.questions.map(q => q.id)).toEqual(['q-maths-2026-10-05', 'q-maths-2026-10-08', 'q-unclear']);
+    expect(paper.questions[0].prompt).toContain('Monday');
+    expect(paper.questions[0].prompt).not.toContain('Fractions');
   });
 });

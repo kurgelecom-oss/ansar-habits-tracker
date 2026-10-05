@@ -22,6 +22,7 @@ import { createClient } from "@supabase/supabase-js";
 import { BLOCK_SCHOOL, blockSatisfied, isWeekendDate, type GateCompletion, type GateContext } from "./gating";
 import { getHabits, habitsForDay } from "./notion";
 import { sydneyNow } from "./time";
+import { assessmentLock } from "./assessments/gate";
 
 export type LeaguesLock = { locked: false } | { locked: true; message: string };
 
@@ -37,7 +38,11 @@ export function leaguesLockFor(ctx: GateContext): LeaguesLock {
 
 export async function leaguesLock(): Promise<LeaguesLock> {
   const now = sydneyNow();
-  if (isWeekendDate(now.date)) return { locked: false };   // no reads needed on a weekend
+  // A paper that is due outranks everything, weekends included: an unfinished
+  // Friday review keeps the tables shut on Saturday too.
+  const paper = await assessmentLock(now.date);
+  if (paper.locked) return { locked: true, message: paper.message };
+  if (isWeekendDate(now.date)) return { locked: false };
 
   let habitsLoaded = true;
   const habitsAll = await getHabits().catch(() => { habitsLoaded = false; return []; });

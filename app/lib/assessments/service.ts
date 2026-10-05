@@ -41,6 +41,14 @@ export async function saveAttempt(body:Record<string,unknown>,scope:AssessmentSc
  const a=await getAttempt(body.attemptId,scope);if(a.status!=='in_progress'){await report(a);return publicAttempt(a);}
  const answers=validateAnswers(a.paper_snapshot,body.answers);if(!Number.isInteger(body.revision))throw new AssessmentError('Refresh to load the saved version.',409);
  if(body.action==='submit'&&(!a.expires_at||Date.now()<Date.parse(a.expires_at))&&a.paper_snapshot.kind==='review'&&a.paper_snapshot.questions.some(q=>typeof answers[q.id]!=='string'||String(answers[q.id]).trim().length<10))throw new AssessmentError('Give each recall prompt a meaningful answer (at least 10 characters).');
+ // An exam cannot be handed in faster than it can be read: 15 seconds a question.
+ // The lock on the board lifts when a paper is submitted, so without this the
+ // quickest way to unlock the day would be to click through it. Learner papers only.
+ if(body.action==='submit'&&scope==='learner'&&a.paper_snapshot.kind==='exam'){
+   const wait=Math.ceil((Date.parse(a.started_at)+a.paper_snapshot.questions.length*15_000-Date.now())/1000);
+   if(wait>0&&(!a.expires_at||Date.now()<Date.parse(a.expires_at)))throw new AssessmentError(`Read each question properly. You can hand this in in ${wait} seconds.`,409);
+   if(a.paper_snapshot.questions.some(q=>answers[q.id]===undefined)&&(!a.expires_at||Date.now()<Date.parse(a.expires_at)))throw new AssessmentError('Answer every question before handing it in.');
+ }
  const r=await adminClient().rpc('save_ansar_assessment_scoped',{p_attempt_id:a.id,p_answers:answers,p_revision:body.revision,p_submit:body.action==='submit',p_is_practice:scope==='practice'});
  if(r.error)throw new AssessmentError(/Revision conflict/.test(r.error.message)?'A newer version is saved. Reload before continuing.':'Could not save. Keep this page open and try again.',409);
  const updated=r.data as Attempt;await report(updated);return publicAttempt(updated);

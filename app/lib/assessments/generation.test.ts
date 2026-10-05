@@ -2,35 +2,33 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { balanceChoiceOptions, coverageNote, curriculumFingerprint, generateExam, hasRecordedTopicDetail, monthWindow, validateExamQuestions } from './generation';
 import type { Lesson, Question } from './types';
 const lessons: Lesson[] = [{ id: 'l1', date: '2026-09-14', subject: 'Maths', task: 'Khan Academy next lesson. A ship has 25 oars each side with 3 rowers each.', topic: 'Ships', week: 'Week 10', guide: [], url: '' }];
-const valid = (): Question[] => Array.from({ length: 12 }, (_, i) => ({ id: `q${i + 1}`, prompt: `Question ${i + 1}`, type: i < 8 ? 'choice' : 'written', sourceIds: ['l1'], explanation: 'Source-grounded explanation', ...(i < 8 ? { options: ['A', 'B', 'C', 'D'], answer: i % 4 } : { rubric: '0 missing, 1 partial, 2 clear and accurate' }) }));
+const valid = (): Question[] => Array.from({ length: 12 }, (_, i) => ({ id: `q${i + 1}`, prompt: `Question ${i + 1}`, type: 'choice' as const, sourceIds: ['l1'], explanation: 'Source-grounded explanation', ...(i < 8 ? { options: ['A', 'B', 'C', 'D'], answer: i % 4 } : { options: ['Yes', 'No'], answer: i % 2 }) }));
 beforeEach(() => { vi.stubGlobal('window', undefined); });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 
 describe('exam shape validation', () => {
-  it('accepts only eight objective plus four written questions', () => {
+  it('accepts only eight multiple-choice plus four yes/no questions', () => {
     expect(validateExamQuestions(valid(), lessons)).toHaveLength(12);
     expect(() => validateExamQuestions(valid().slice(0, 11), lessons)).toThrow('12');
-    const wrongMix = valid(); Object.assign(wrongMix[7], { type: 'written', rubric: 'Some rubric' }); delete wrongMix[7].options; delete wrongMix[7].answer;
+    const wrongMix = valid(); Object.assign(wrongMix[7], { options: ['Yes', 'No'], answer: 0 });
     expect(() => validateExamQuestions(wrongMix, lessons)).toThrow('eight');
   });
-  it.each(['source', 'index', 'duplicate', 'options', 'explanation', 'rubric'])('rejects malformed %s', fault => {
+  it('refuses a written question: exams are marked by the system', () => {
+    const qs = valid() as unknown as Record<string, unknown>[];
+    Object.assign(qs[11], { type: 'written', rubric: '0 missing, 1 partial, 2 clear' }); delete qs[11].options; delete qs[11].answer;
+    expect(() => validateExamQuestions(qs, lessons)).toThrow('multiple choice and yes/no only');
+  });
+  it.each(['source', 'index', 'duplicate', 'options', 'explanation', 'yesno-order', 'yesno-index', 'yesno-same'])('rejects malformed %s', fault => {
     const qs = valid();
     if (fault === 'source') qs[0].sourceIds = ['invented'];
     if (fault === 'index') qs[0].answer = 4;
     if (fault === 'duplicate') qs[1].id = qs[0].id;
     if (fault === 'options') qs[0].options = ['Same', 'same', 'B', 'C'];
     if (fault === 'explanation') qs[0].explanation = '';
-    if (fault === 'rubric') qs[11].rubric = '';
+    if (fault === 'yesno-order') qs[11].options = ['No', 'Yes'];
+    if (fault === 'yesno-index') qs[11].answer = 2;
+    if (fault === 'yesno-same') for (const q of qs.slice(8)) q.answer = 0;
     expect(() => validateExamQuestions(qs, lessons)).toThrow();
-  });
-  it('normalizes explicit null fields on written questions while rejecting real choice answers', () => {
-    const qs = valid();
-    Object.assign(qs[8], { answer: null, options: null });
-    const parsed = validateExamQuestions(qs, lessons);
-    expect(parsed[8]).not.toHaveProperty('answer');
-    expect(parsed[8]).not.toHaveProperty('options');
-    Object.assign(qs[8], { answer: 0 });
-    expect(() => validateExamQuestions(qs, lessons)).toThrow('no choice answer');
   });
   it('is calendar-correct for leap years and the final seven days', () => {
     expect(monthWindow('2028-02')).toEqual({ due_date: '2028-02-29', opens_on: '2028-02-23' });
@@ -55,10 +53,10 @@ describe('exam shape validation', () => {
 
 describe('answer-position balancing', () => {
   it('puts each correct index in two slots while preserving keyed text and explanations', () => {
-    const input = valid().map(q => q.type === 'choice' ? { ...q, answer: 2, explanation: `Reasoning for ${q.id} is preserved.` } : q);
+    const input = valid().map(q => q.options!.length === 4 ? { ...q, answer: 2, explanation: `Reasoning for ${q.id} is preserved.` } : q);
     const original = JSON.stringify(input);
     const result = balanceChoiceOptions(input, 'exam:2026-09:maths');
-    expect([0, 1, 2, 3].map(index => result.filter(q => q.type === 'choice' && q.answer === index).length)).toEqual([2, 2, 2, 2]);
+    expect([0, 1, 2, 3].map(index => result.filter(q => q.options!.length === 4 && q.answer === index).length)).toEqual([2, 2, 2, 2]);
     for (let i = 0; i < 8; i++) {
       expect(result[i].options![result[i].answer!]).toBe(input[i].options![input[i].answer!]);
       expect(result[i].explanation).toBe(input[i].explanation);

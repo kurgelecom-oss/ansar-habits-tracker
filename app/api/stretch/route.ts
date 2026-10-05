@@ -27,6 +27,7 @@ import { sydneyNow } from "../../lib/time";
 import { gateWallet, type GateContext, type GateCompletion } from "../../lib/gating";
 import { getHabits, getSettings, getStretchItems, habitsForDay, SETTINGS_FALLBACK } from "../../lib/notion";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
+import { assessmentLock } from "../../lib/assessments/gate";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -159,6 +160,12 @@ export async function POST(request: Request) {
     earnedToday(now.date),
     roster(),
   ]);
+
+  // A paper is due: the wallet waits for it.
+  const paper = await assessmentLock(now.date);
+  if (paper.locked) {
+    return NextResponse.json({ ok: false, reason: "locked", message: paper.message }, { status: 409, headers: noStore });
+  }
 
   // Cascade first — and on a weekend this is where the request stops.
   const unlock = gateWallet(ctx);

@@ -53,6 +53,7 @@ import { lockoutState, recordFailure, clearFailures, lockoutBackend, LOCKOUT_MAX
 import { getJournalEvidence, type JournalEvidence } from "../../lib/tally";
 import { evidenceRefusal, evidenceWarnings } from "../../lib/evidence-gate";
 import { getQuranEvidence, type QuranEvidence } from "../../lib/quran-os";
+import { assessmentLock } from "../../lib/assessments/gate";
 
 // Never prerendered, never cached: the answer depends on the current second.
 export const dynamic = "force-dynamic";
@@ -594,6 +595,18 @@ export async function POST(request: Request) {
     if (!refusal && evidenceRefusal(habitId, evidence)) {
       const rechecked = evidenceRefusal(habitId, await getJournalEvidence(ctx.serverDate, true));
       if (rechecked) refusal = rechecked;
+    }
+
+    /* Gate 7 — a paper is due (tk, 5 Oct 2026). While a Friday review or a
+       monthly exam is due and not handed in, nothing past the Morning Habits is
+       recorded. Lowest precedence and read last: it speaks only to a tick every
+       other gate has allowed, so it costs one read on the path about to say yes
+       and none on a refusal. The morning block is exempt because its window is
+       timed. A parent override skips this with the other gates, and a parent
+       can lift it for the day from the lock card. See lib/assessments/gate.ts. */
+    if (!refusal && habit.block !== "pre_homeschool") {
+      const lock = await assessmentLock(ctx.serverDate);
+      if (lock.locked) refusal = { reason: "locked", message: lock.message };
     }
 
     if (refusal) {

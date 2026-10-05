@@ -4,6 +4,7 @@ import { getSchoolDay } from "../../lib/homeschool";
 import { sydneyDateKey, sydneyNow } from "../../lib/time";
 import { getHabits } from "../../lib/notion";
 import { gateWindow, isWeekendDate, type GateContext } from "../../lib/gating";
+import { assessmentLock } from "../../lib/assessments/gate";
 
 /** The habit whose window the school blocks live inside. One tick of this id
  *  is the five-hour claim this table decomposes, so a block may only be
@@ -137,6 +138,12 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: false, reason: "closed", message: "No school programme on the weekend.",
     }, { status: 409, headers: noStore });
+  }
+
+  // A paper is due: school blocks wait for it, the same as the Homeschool tick.
+  const paper = await assessmentLock(date);
+  if (paper.locked) {
+    return NextResponse.json({ ok: false, reason: "locked", message: paper.message }, { status: 409, headers: noStore });
   }
 
   const now = sydneyNow();
