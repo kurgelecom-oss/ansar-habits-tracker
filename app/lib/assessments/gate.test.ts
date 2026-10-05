@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GATE_START, lockFor, schoolDaysBetween } from './gate';
+import { GATE_START, MASTERY_PASS, lockFor, schoolDaysBetween } from './gate';
 
 const FRI = '2026-10-09', SAT = '2026-10-10', MON = '2026-10-12';
 const review = (due: string, status = 'published') =>
@@ -58,6 +58,23 @@ describe('the assessment lock', () => {
 
   it('is lifted for the day by a parent', () => {
     expect(lockFor(FRI, [review(FRI)], [], true)).toEqual({ locked: false });
+  });
+
+  it('locks again when an exam is marked under the pass mark, until he has corrected it', () => {
+    const NOV = '2026-11-02';
+    const marked = (pct: number, correction: string | null = null) =>
+      ({ ...handedIn('exam:2026-10:maths', '2026-10-28T03:00:00Z'), result: { percentage: pct }, correction });
+    expect(lockFor(NOV, [exam('maths')], [marked(MASTERY_PASS)], false)).toEqual({ locked: false });
+    const lock = lockFor(NOV, [exam('maths')], [marked(MASTERY_PASS - 1)], false);
+    expect(lock.locked).toBe(true);
+    if (lock.locked) expect(lock.message).toContain('correction');
+    expect(lockFor(NOV, [exam('maths')], [marked(50, 'I mixed up the denominators.')], false)).toEqual({ locked: false });
+    expect(lockFor('2026-11-01', [exam('maths')], [marked(50)], false)).toEqual({ locked: false });   // a Sunday
+  });
+
+  it('never asks for a pass on a level check', () => {
+    const check = { ...exam('maths'), id: 'placement:2026-10:maths' };
+    expect(lockFor('2026-11-02', [check], [{ ...handedIn(check.id, '2026-10-28T03:00:00Z'), result: { percentage: 40 }, correction: null }], false)).toEqual({ locked: false });
   });
 
   it('counts school days', () => {

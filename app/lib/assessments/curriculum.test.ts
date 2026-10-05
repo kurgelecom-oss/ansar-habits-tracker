@@ -20,6 +20,14 @@ describe('curriculum mapping', () => {
     expect(result.lessons.map(l => l.subject).sort()).toEqual(['HASS', 'Languages', 'Technologies']);
     expect(mapProgramme([row('Grammar', 'Use commas in your essay.')], []).lessons[0].subject).toBe('English');
   });
+  it('keeps a whole labelled section for each subject of a combined row', () => {
+    const { lessons } = mapProgramme([row('Block 4 — Technologies + Languages', 'Technology: Scratch — variables. Make a variable called score. Turkish: anne (mother), baba (father). Practise annem and babam.')], []);
+    expect(lessons.find(l => l.subject === 'Technologies')?.task).toBe('Technology: Scratch — variables. Make a variable called score.');
+    expect(lessons.find(l => l.subject === 'Languages')?.task).toBe('Turkish: anne (mother), baba (father). Practise annem and babam.');
+    const mix = mapProgramme([row('Skills mix', 'Typing: Typing.com 15 min, write your speed down. Turkish: add su (water). Say five sentences. Financial learning: EverFi 20 min, then split $20 three ways.')], []).lessons;
+    expect(mix.find(l => l.subject === 'HASS')?.task).toBe('Financial learning: EverFi 20 min, then split $20 three ways.');
+    expect(mix.find(l => l.subject === 'Languages')?.task).toBe('Turkish: add su (water). Say five sentences.');
+  });
   it('excludes flex instructions, missing dates and impossible dates', () => {
     expect(mapProgramme([row('Review + tidy', 'Present work'), row('Go deeper', 'Extend it'), row('Maths', 'Count', ''), row('Maths', 'Count', '2026-02-30')], []).lessons).toEqual([]);
   });

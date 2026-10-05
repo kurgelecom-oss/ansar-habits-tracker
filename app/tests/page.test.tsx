@@ -218,6 +218,42 @@ describe("assessment workspace", () => {
     expect(screen.getByText("Good example. Explain the force.")).toBeInTheDocument();
   });
 
+  it("lets a parent review an all-multiple-choice exam so the correction opens", async () => {
+    const exam: Paper = { ...paper, id: "exam-1", kind: "exam", subject: "Maths", duration_minutes: 25, questions: [{ id: "c1", type: "choice", prompt: "What is 7 × 8?", options: ["54", "56"], answer: 1, sourceIds: [] }] };
+    const attempt = { ...makeAttempt(exam), status: "submitted" as const, answers: { c1: 0 }, result: { objectiveCorrect: 0, objectiveTotal: 1, writtenPending: 0, writtenPoints: 0, writtenTotal: 0, percentage: 0, summary: "Revisit the gaps with Nihal, then write a correction in your own words.", gaps: ["What is 7 × 8?"] } };
+    const sent: Record<string, unknown>[] = [];
+    fetchMock.mockImplementation((_url: string, options?: RequestInit) => {
+      if (!options?.body) return response(workspace(exam, [attempt]));
+      const body = JSON.parse(String(options.body)); sent.push(body);
+      const reviewed = { ...attempt, status: "reviewed" as const, parent_review: { marks: {}, feedback: "We went through 7 × 8.", nextStep: "Practise the 7 times table.", reviewer: "Nihal", reviewedAt: new Date().toISOString() } };
+      return response({ attempt: body.action === "review" ? reviewed : { ...reviewed, correction: body.text } });
+    });
+    render(<TestsPage />);
+    fireEvent.click(await screen.findByText("Nihal · review this work"));
+    expect(screen.queryByRole("combobox", { name: /Mark:/ })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Feedback"), { target: { value: "We went through 7 × 8." } });
+    fireEvent.change(screen.getByLabelText("Next learning step"), { target: { value: "Practise the 7 times table." } });
+    fireEvent.change(screen.getByLabelText("Parent PIN"), { target: { value: "4821" } });
+    fireEvent.click(screen.getByRole("button", { name: "Record review" }));
+    fireEvent.change(await screen.findByLabelText("What I understand now"), { target: { value: "7 × 8 is 56 because 7 × 7 is 49 and one more 7 makes 56." } });
+    fireEvent.click(screen.getByRole("button", { name: "Save correction" }));
+    await screen.findByText("7 × 8 is 56 because 7 × 7 is 49 and one more 7 makes 56.");
+    expect(sent[0]).toMatchObject({ action: "review", marks: {} });
+    expect(sent[1]).toMatchObject({ action: "correction", attemptId: "attempt-1" });
+  });
+
+  it("shows the level block: a quiet line when empty, then subjects and the level check", async () => {
+    fetchMock.mockImplementation(() => response({ ...workspace(), levels: { subjects: [], placement: null } }));
+    const first = render(<TestsPage />);
+    await screen.findByText("Level appears here after the first monthly exam or the maths level check.");
+    first.unmount();
+    fetchMock.mockImplementation(() => response({ ...workspace(), levels: { subjects: [{ subject: "Maths", percentage: 84, month: "2026-10", band: "On track", previous: 72 }], placement: { years: [{ year: 5, correct: 8, total: 8 }, { year: 6, correct: 6, total: 8 }, { year: 7, correct: 2, total: 8 }], statement: "Secure in Year 6. On track, ready to start Year 7 work." } } }));
+    render(<TestsPage />);
+    const level = await screen.findByRole("region", { name: "Level" });
+    expect(level).toHaveTextContent("Maths · 84% · On track · Octoberup from 72%");
+    expect(level).toHaveTextContent("Secure in Year 6. On track, ready to start Year 7 work.Year 5 8/8 · Year 6 6/8 · Year 7 2/8");
+  });
+
   it("keeps original answers when a separate correction is saved", async () => {
     const attempt = { ...makeAttempt(), status: "reviewed" as const, answers: { q1: "Original reasoning" } };
     fetchMock.mockImplementation((_url: string, options?: RequestInit) => { if (!options?.body) return response(workspace(paper, [attempt])); const body = JSON.parse(String(options.body)); expect(body).toEqual({ action: "correction", attemptId: "attempt-1", text: "Now I understand attraction." }); return response({ attempt: { ...attempt, correction: body.text } }); });
