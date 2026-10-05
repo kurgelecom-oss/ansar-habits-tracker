@@ -14,7 +14,7 @@ import styles from "./dashboard.module.css";
  * dashboard/rowCopy.ts for the words — the copy travels with the habit instead
  * of with the heading it happened to sit under.
  *
- * Nothing is hidden or dropped for being worth zero points (spec §10.3).
+ * Nothing is hidden or dropped (spec §10.3).
  */
 type HomeschoolSectionProps = {
   habits: DashboardHabit[];

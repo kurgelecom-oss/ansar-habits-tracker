@@ -19,11 +19,12 @@ const SCHOOL_HABIT = "homeschool_session";
    "school: yes" and can never say "he did Maths and skipped Science".
 
    This route records the blocks. It is ADDITIVE and it is deliberately NOT
-   wired into points:
+   wired into the habits:
 
-     • /api/tick is untouched. "homeschool_session" still pays its 5 points.
+     • /api/tick is untouched. "homeschool_session" is still the tick that makes
+       a school day done (and, in lib/weekend.ts, earns the weekend).
      • lib/scoring.ts and lib/gating.ts are untouched.
-     • Nothing here can change a total. Writing a block is evidence, not score.
+     • Nothing here can change a count. Writing a block is evidence.
 
    The two paths run alongside each other until a week of real data shows they
    agree — "add alongside, prove, then switch", not "replace and hope".

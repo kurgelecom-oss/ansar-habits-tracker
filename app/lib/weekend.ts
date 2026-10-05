@@ -3,25 +3,21 @@
 
    Decided with tk on 5 Sep 2026 (docs/superpowers/specs/2026-09-05-saturday-push-design.md):
 
-     1. THE WEEK DECIDES IF.   Mon–Fri points reach Bench (34/55) or better →
-                                Saturday PS5 is unlocked. Below that, no PS5 that
+     1. THE WEEK DECIDES IF.   School (the `homeschool_session` habit) was
+                                finished on at least 4 of the 5 weekdays Mon–Fri →
+                                Saturday PS5 is unlocked. Fewer, no PS5 that
                                 weekend, and nothing done on Saturday buys it back.
+                                (Was "points reach Bench" until the points system
+                                was removed, tk, 5 Oct 2026.)
      2. SATURDAY DECIDES WHEN. PS5 starts only once every Saturday Push row is
                                 parent-verified. The Push happens either way.
      3. SUNDAY DOES NOT EXIST. Nothing to view, nothing to tick.
 
-   No I/O, no React, no clock. The threshold is read from scoring.ts's THRESHOLDS
-   rather than re-typed, so a tier change there moves this rule with it.
+   No I/O, no React, no clock.
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { THRESHOLDS } from "./scoring";
-
-/** The tier label a week must reach for Saturday PS5. */
-export const WEEKEND_UNLOCK_TIER = "Bench";
-
-/** Points needed for that tier — 34 today, read from scoring.ts not typed here. */
-export const WEEKEND_UNLOCK_MIN_POINTS =
-  THRESHOLDS.find(t => t.label === WEEKEND_UNLOCK_TIER)?.min ?? 34;
+/** Weekdays (of Mon–Fri) with `homeschool_session` done that earn Saturday PS5. */
+export const WEEKEND_UNLOCK_MIN_SCHOOL_DAYS = 4;
 
 /** The one day the whole system is switched off. */
 export const REST_DAY = "Sunday";
@@ -31,8 +27,8 @@ export function isRestDay(weekday: string): boolean {
 }
 
 /** Rule 1: did the week earn the weekend? */
-export function weekendUnlocked(weekPoints: number): boolean {
-  return weekPoints >= WEEKEND_UNLOCK_MIN_POINTS;
+export function weekendUnlocked(schoolDays: number): boolean {
+  return schoolDays >= WEEKEND_UNLOCK_MIN_SCHOOL_DAYS;
 }
 
 export type SaturdayPs5 = {
@@ -50,18 +46,18 @@ export type SaturdayPs5 = {
 
 /**
  * The Saturday PS5 verdict, from facts the server has already decided:
- * `weekPoints` is the Mon–Fri total, `pushDone`/`pushTotal` count DONE rows in
+ * `schoolDays` is how many of Mon–Fri have `homeschool_session` done, `pushDone`/`pushTotal` count DONE rows in
  * the saturday_push block as /api/tick reports them.
  *
  * A Push block with NO rows is never "complete" — a Notion outage, or a Saturday
  * before the rows exist, must not read as a finished Push.
  */
-export function saturdayPs5(weekPoints: number, pushDone: number, pushTotal: number): SaturdayPs5 {
-  const weekUnlocked = weekendUnlocked(weekPoints);
+export function saturdayPs5(schoolDays: number, pushDone: number, pushTotal: number): SaturdayPs5 {
+  const weekUnlocked = weekendUnlocked(schoolDays);
   const pushComplete = pushTotal > 0 && pushDone >= pushTotal;
   const ready = weekUnlocked && pushComplete;
   const message = !weekUnlocked
-    ? `No PS5 this weekend — the week finished under ${WEEKEND_UNLOCK_MIN_POINTS}. Push still on.`
+    ? `No PS5 this weekend — school was finished on fewer than ${WEEKEND_UNLOCK_MIN_SCHOOL_DAYS} days. Push still on.`
     : pushTotal === 0
       ? "Saturday Push not loaded — nothing to unlock against"
       : pushComplete

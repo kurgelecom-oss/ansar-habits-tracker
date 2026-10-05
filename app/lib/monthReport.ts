@@ -12,11 +12,11 @@
    print route — and the assembly came here verbatim rather than being written a
    second time against the same tables.
 
-   THE ARITHMETIC IS NOT HERE. Every point comes from scoreDay() in scoring.ts,
+   THE RULES ARE NOT HERE. The full-day check comes from scoreDay() in scoring.ts,
    which is hash-synced byte-for-byte with family-dashboard and must never be
    restated; every "does this habit apply today" comes from habitsOnDay() in
    days.ts; every calendar hop comes from time.ts. This file decides only what a
-   month LOOKS like, never what it is worth.
+   month LOOKS like. No points: the points system was removed (tk, 5 Oct 2026).
    ══════════════════════════════════════════════════════════════════════════ */
 
 import { scoreDay } from "./scoring";
@@ -35,8 +35,6 @@ export interface Completion {
 /** One finalised week from week_results. */
 export interface WeekRow {
   week_start: string;
-  total_points: number;
-  tier: string;
   perfect_week: boolean;
   partial: boolean;
 }
@@ -48,8 +46,8 @@ export interface RosterHabit {
   block: string;
   days: string[];
   /** Notion "Point Type". `prerequisite` unlocks and scores nothing — it is
-   *  still shown as a ✓/✗ on the day, but it is not part of the points or of
-   *  the Perfect Day. See lib/days.ts. */
+   *  still shown as a ✓/✗ on the day and counted in done/planned, but it is
+   *  not required for a full day. See lib/days.ts. */
   pointType?: string | null;
 }
 
@@ -67,17 +65,14 @@ export interface DayRow {
   retired: { id: string; name: string; at: string }[];
   /**
    * Ticked, on the roster, but not scheduled for this weekday — a homeschool
-   * session logged on a Saturday, say.
-   *
-   * These are why a day can score above its own ceiling. scoreDay() reads the
-   * completed set, not the schedule: `completedIds.has("homeschool_session")`
-   * pays 5 whatever day it is. That is scoring.ts's behaviour, it is what the
-   * board shows too, and it is not this file's to correct — so the row is
-   * disclosed under the day instead of being quietly dropped.
+   * session logged on a Saturday, say. Disclosed under the day instead of being
+   * quietly dropped; it is not part of done/planned.
    */
   offSchedule: { id: string; name: string; at: string }[];
-  points: number;
-  max: number;
+  /** Applicable habits ticked / applicable habits — the ✓ count of the grid. */
+  done: number;
+  planned: number;
+  /** A full day: every habit required that day was ticked. */
   perfect: boolean;
 }
 
@@ -86,6 +81,10 @@ export interface WeekSection {
   label: string;
   row: WeekRow | null;
   days: DayRow[];
+  /** Over this section's recorded days — the days listed, not the ledger week. */
+  done: number;
+  planned: number;
+  fullDays: number;
 }
 
 export interface MonthReport {
@@ -98,8 +97,8 @@ export interface MonthReport {
   weeks: WeekSection[];
   days: DayRow[];
   recordedDays: number;
-  monthPoints: number;
-  monthMax: number;
+  habitsDone: number;
+  habitsPlanned: number;
   perfectDays: number;
   completions: number;
   /** Sydney wall-clock stamp for the footer. */
@@ -194,7 +193,7 @@ export function buildMonthReport(input: MonthReportInput): MonthReport {
 
   if (roster.length === 0) {
     // Fail closed, for the same reason /api/golden-boot refuses an empty roster:
-    // with no habits every day scores zero and the document would report a month
+    // with no habits every day reads empty and the document would report a month
     // of total failure that never happened.
     throw new Error("empty roster — refusing to render a month against no habits");
   }
@@ -217,18 +216,13 @@ export function buildMonthReport(input: MonthReportInput): MonthReport {
     const applicable = habitsOnDay(roster, weekday);
     // The same split the board and the ledger apply: a prerequisite is still
     // "applicable" — it belongs in the ✓/✗ grid, and a missed one is a real
-    // miss — but it is not in preIds or baseIds, so it moves neither the points
-    // nor the Perfect Day. Three surfaces, one rule. See lib/days.ts.
+    // miss — but it is not in preIds or baseIds, so it is not required for a
+    // full day. Three surfaces, one rule. See lib/days.ts.
     const scored = scoringHabits(applicable);
     const preIds = scored.filter(h => h.block === "pre_homeschool").map(h => h.id);
     const baseIds = scored.filter(h => h.block !== "conditional").map(h => h.id);
 
-    const score = scoreDay(completedIds, weekday, preIds, baseIds);
-    // The ceiling is asked of scoring.ts rather than restated here: a day where
-    // every applicable habit is ticked is, by definition, worth the maximum. That
-    // is how a weekend comes out of 5 and a training day out of 11 with no table
-    // of magic numbers in this file.
-    const max = scoreDay(new Set(applicable.map(h => h.id)), weekday, preIds, baseIds).total;
+    const { perfect } = scoreDay(completedIds, weekday, preIds, baseIds);
 
     return {
       date,
@@ -245,9 +239,9 @@ export function buildMonthReport(input: MonthReportInput): MonthReport {
       offSchedule: rows
         .filter(r => rosterIds.has(r.habit_id) && !applicable.some(h => h.id === r.habit_id))
         .map(r => ({ id: r.habit_id, name: nameOf.get(r.habit_id) ?? r.habit_id, at: r.completed_at })),
-      points: score.total,
-      max,
-      perfect: score.perfect,
+      done: applicable.filter(h => doneAt.has(h.id)).length,
+      planned: applicable.length,
+      perfect,
     };
   });
 
@@ -259,12 +253,18 @@ export function buildMonthReport(input: MonthReportInput): MonthReport {
   const weekRowOf = new Map(weekRows.map(w => [w.week_start, w]));
   const weeks: WeekSection[] = [...new Set(days.map(d => weekStartOf(d.date)))]
     .sort()
-    .map(weekStart => ({
-      weekStart,
-      label: weekLabel(weekStart, month),
-      row: weekRowOf.get(weekStart) ?? null,
-      days: days.filter(d => weekStartOf(d.date) === weekStart),
-    }));
+    .map(weekStart => {
+      const inWeek = recorded.filter(d => weekStartOf(d.date) === weekStart);
+      return {
+        weekStart,
+        label: weekLabel(weekStart, month),
+        row: weekRowOf.get(weekStart) ?? null,
+        days: days.filter(d => weekStartOf(d.date) === weekStart),
+        done: inWeek.reduce((n, d) => n + d.done, 0),
+        planned: inWeek.reduce((n, d) => n + d.planned, 0),
+        fullDays: inWeek.filter(d => d.perfect).length,
+      };
+    });
 
   return {
     month,
@@ -275,8 +275,8 @@ export function buildMonthReport(input: MonthReportInput): MonthReport {
     weeks,
     days,
     recordedDays: recorded.length,
-    monthPoints: recorded.reduce((n, d) => n + d.points, 0),
-    monthMax: recorded.reduce((n, d) => n + d.max, 0),
+    habitsDone: recorded.reduce((n, d) => n + d.done, 0),
+    habitsPlanned: recorded.reduce((n, d) => n + d.planned, 0),
     perfectDays: recorded.filter(d => d.perfect).length,
     completions: completions.length,
     generatedAt: STAMP_FMT.format(input.now ?? new Date()),

@@ -4,12 +4,10 @@
    Pure functions, no I/O, no React. Given data the server has already decided,
    they answer only "how is this arranged on screen".
 
-   ONE-WAY DEPENDENCY. This file imports from app/lib/scoring.ts; nothing in
-   app/lib or app/api may ever import from here. Gates, scoring and rewards stay
+   ONE-WAY DEPENDENCY. Nothing in app/lib or app/api may ever import from here. Gates, scoring and rewards stay
    server-authoritative — a display module must not become an input to them.
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { THRESHOLDS } from "@/app/lib/scoring";
 import {
   HABIT_BLOCKS,
   type DashboardHabit,
@@ -17,8 +15,6 @@ import {
   type JournalEvidenceState,
   type MatchReadiness,
   type ReadinessInput,
-  type Tier,
-  type TierThreshold,
 } from "./types";
 
 /**
@@ -30,9 +26,7 @@ import {
  * 8027d53 requires that no configured habit disappears, and a block added in
  * Notion tomorrow must surface as a visible extra rather than vanish.
  *
- * Sorting is by `order`, which is why the journal works. It is order 7.5 and
- * worth zero points, so any sort keyed on points would bury the one row the
- * homeschool session depends on. The input array is not mutated.
+ * Sorting is by `order`, Notion's own. The input array is not mutated.
  */
 export function groupHabitsByBlock(habits: DashboardHabit[]): HabitBlockGroups {
   const groups = {} as HabitBlockGroups;
@@ -45,52 +39,6 @@ export function groupHabitsByBlock(habits: DashboardHabit[]): HabitBlockGroups {
     groups[block].sort((a, b) => a.order - b.order);
   }
   return groups;
-}
-
-/**
- * The weekly tiers.
- *
- * The `min` boundaries are NOT declared here — they are read from
- * lib/scoring.ts, which is the mirrored, byte-checked source of that truth.
- * Only presentation is added: the emoji, the range caption and a colour token.
- * scoring.ts says so itself ("each surface owns its own presentation"), and
- * re-typing 42/34/26/0 here is precisely the drift check-scoring-sync.sh exists
- * to prevent.
- *
- * Colours are CSS custom-property references rather than hex literals so the
- * palette stays in globals.css (spec §11.2). The tokens land in Task 3.
- */
-const TIER_PRESENTATION: Record<string, { emoji: string; desc: string; color: string }> = {
-  "First Team":      { emoji: "🏆", desc: "42+ pts",   color: "var(--ansar-gold)" },
-  "Bench":           { emoji: "✅", desc: "34–41 pts", color: "var(--accent)" },
-  "Reserves":        { emoji: "⚠️", desc: "26–33 pts", color: "var(--ansar-warning)" },
-  "Training Ground": { emoji: "❌", desc: "0–25 pts",  color: "var(--ansar-danger)" },
-};
-
-export const TIERS: TierThreshold[] = THRESHOLDS.map(threshold => {
-  const presentation = TIER_PRESENTATION[threshold.label];
-  return {
-    min: threshold.min,
-    label: presentation ? `${threshold.label} ${presentation.emoji}` : threshold.label,
-    desc: presentation?.desc ?? `${threshold.min}+ pts`,
-    color: presentation?.color ?? "var(--ansar-muted)",
-  };
-});
-
-/**
- * The tier a weekly total falls in, plus the whole scale.
- *
- * The scale rides along because Work + Week renders both at once — the current
- * tier and a compact four-stop threshold track — and passing one object keeps
- * the panel from importing the boundaries separately and drifting from them.
- *
- * A total below the lowest boundary still resolves: `find` would return
- * undefined for a negative, and a dashboard that renders "undefined" because a
- * total came back odd is worse than one that renders Training Ground.
- */
-export function getTier(points: number): Tier {
-  const match = TIERS.find(tier => points >= tier.min) ?? TIERS[TIERS.length - 1];
-  return { ...match, thresholds: TIERS };
 }
 
 /**

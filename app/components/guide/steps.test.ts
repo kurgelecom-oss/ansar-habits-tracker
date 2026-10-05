@@ -26,14 +26,14 @@ describe("guide steps", () => {
 
   /** These numbers are quoted from the rule files. If a rule moves, this fails
    *  until the guide's sentence moves with it. */
-  it("quotes the scoring rules as they stand", async () => {
-    const { WEEKLY_MAX, THRESHOLDS } = await import("../../lib/scoring");
-    const { WEEKEND_UNLOCK_MIN_POINTS } = await import("../../lib/weekend");
+  it("quotes the rules as they stand", async () => {
+    const { WEEKEND_UNLOCK_MIN_SCHOOL_DAYS } = await import("../../lib/weekend");
+    const { GOLDEN_BOOT_TARGET } = await import("../../lib/goldenBoot");
     const { STREAK_QUALIFY_MIN } = await import("../../lib/streak");
     const today = GUIDES["/"].map(s => Object.values(s).join(" ")).join(" ");
-    expect(today).toContain(`out of ${WEEKLY_MAX}`);
-    for (const t of THRESHOLDS.filter(t => t.min > 0)) expect(today).toContain(String(t.min));
-    expect(today).toContain(`Bench (${WEEKEND_UNLOCK_MIN_POINTS} points)`);
+    expect(today).toContain(`School done on at least ${WEEKEND_UNLOCK_MIN_SCHOOL_DAYS} of the 5 weekdays unlocks PS5`);
+    expect(today).toContain(`${["Zero", "One", "Two", "Three", "Four", "Five"][GOLDEN_BOOT_TARGET]} weeks in a row with 5 full days`);
+    expect(today).not.toMatch(/points|Bench|First Team/);
     expect(today).toContain(`at least ${STREAK_QUALIFY_MIN} habits`);
   });
 });

@@ -26,7 +26,7 @@ export default function ClubHeader() {
       {/* One text node, deliberately. The gold identity is carried by the rule
           beneath the header rather than by splitting the wordmark into spans.
           The motto under it is fixed brand copy, not data — it says nothing
-          about points, results or progress and so cannot go stale or lie. */}
+          about results or progress and so cannot go stale or lie. */}
       <div className={styles.clubIdentity}>
         <h1 className={styles.clubWordmark}>{copy.clubName}</h1>
         <p className={styles.clubMotto}>{copy.clubLine}</p>

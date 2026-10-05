@@ -66,7 +66,6 @@ export default function HabitRow({
   const isDone = habit.state === "DONE";
   const isLive = habit.state === "LIVE";
   const isMissed = habit.state === "MISSED";
-  const chip = habit.points > 0 ? `+${habit.points} pt${habit.points === 1 ? "" : "s"}` : "";
   const emphasis = habit.id === "journal" ? "journal"
     : habit.id === "homeschool_session" ? "homeschool" : undefined;
 
@@ -122,8 +121,6 @@ export default function HabitRow({
           <span className={styles.overrideWord}>Parent override</span>
         </span>
       ) : null}
-
-      {chip ? <span className={styles.pointChip}>{chip}</span> : null}
 
       {/* The state marker sits at the END of the row, where a checkbox is
           expected and where the eye lands after reading the habit. It is the

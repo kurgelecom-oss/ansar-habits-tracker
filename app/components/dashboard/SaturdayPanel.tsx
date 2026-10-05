@@ -1,6 +1,5 @@
-import type { Tier } from "../../dashboard/types";
 import type { SaturdayPs5 } from "../../lib/weekend";
-import { WEEKEND_UNLOCK_MIN_POINTS } from "../../lib/weekend";
+import { WEEKEND_UNLOCK_MIN_SCHOOL_DAYS } from "../../lib/weekend";
 import Panel from "./Panel";
 import styles from "./dashboard.module.css";
 
@@ -9,8 +8,8 @@ import styles from "./dashboard.module.css";
  *
  * Two rules, both decided elsewhere and only reported here (lib/weekend.ts):
  *
- *   1. THE WEEK DECIDES IF.   `weekPoints` is the Mon–Fri total; `tier` is the
- *                              label the board already shows in Work + Week.
+ *   1. THE WEEK DECIDES IF.   `schoolDays` is how many of Mon–Fri had school
+ *                              finished, the count Work + Week already shows.
  *   2. SATURDAY DECIDES WHEN. `ps5.pushDone`/`pushTotal` count DONE rows in the
  *                              Saturday Push block as /api/tick reports them.
  *
@@ -18,17 +17,16 @@ import styles from "./dashboard.module.css";
  * card is the verdict, the streak, and one sentence about what happens next.
  */
 type SaturdayPanelProps = {
-  weekPoints: number | null;
-  tier: Tier | null;
+  schoolDays: number | null;
   ps5: SaturdayPs5;
   /** Saturdays in a row with the full Push verified. null while loading. */
   saturdayStreak: number | null;
 };
 
-export default function SaturdayPanel({ weekPoints, tier, ps5, saturdayStreak }: SaturdayPanelProps) {
-  const weekLine = weekPoints === null || !tier
+export default function SaturdayPanel({ schoolDays, ps5, saturdayStreak }: SaturdayPanelProps) {
+  const weekLine = schoolDays === null
     ? "Week: —"
-    : `Week: ${weekPoints} pts · ${tier.label}`;
+    : `Week: school days done ${schoolDays}/5`;
 
   return (
     <Panel
@@ -40,7 +38,7 @@ export default function SaturdayPanel({ weekPoints, tier, ps5, saturdayStreak }:
       }
       title="Saturday"
       icon="🎮"
-      subtitle={`Week earns it (${WEEKEND_UNLOCK_MIN_POINTS}+) · Push starts it`}
+      subtitle={`Week earns it (school ${WEEKEND_UNLOCK_MIN_SCHOOL_DAYS}+ days) · Push starts it`}
       accent="var(--ansar-wallet)"
       className={styles.walletPanel}
       summary={

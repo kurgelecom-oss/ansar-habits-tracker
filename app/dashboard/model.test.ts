@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupHabitsByBlock, getTier, deriveMatchReadiness, journalEvidenceState } from "./model";
+import { groupHabitsByBlock, deriveMatchReadiness, journalEvidenceState } from "./model";
 import type { DashboardHabit } from "./types";
 
 /**
@@ -11,7 +11,6 @@ function habit(overrides: Partial<DashboardHabit> & Pick<DashboardHabit, "id">):
     name: overrides.id,
     block: "pre_homeschool",
     order: 1,
-    points: 0,
     pointType: "block",
     state: "LIVE",
     label: "",
@@ -33,9 +32,9 @@ describe("groupHabitsByBlock", () => {
    */
   it("sorts on the fractional order, so the journal lands between teeth and reading", () => {
     const grouped = groupHabitsByBlock([
-      habit({ id: "reading", block: "afternoon_evening", order: 17, points: 0, pointType: "perfect_day_only" }),
-      habit({ id: "journal", block: "afternoon_evening", order: 16.5, points: 0, pointType: "perfect_day_only" }),
-      habit({ id: "teeth", block: "afternoon_evening", order: 16, points: 0, pointType: "perfect_day_only" }),
+      habit({ id: "reading", block: "afternoon_evening", order: 17, pointType: "perfect_day_only" }),
+      habit({ id: "journal", block: "afternoon_evening", order: 16.5, pointType: "perfect_day_only" }),
+      habit({ id: "teeth", block: "afternoon_evening", order: 16, pointType: "perfect_day_only" }),
     ]);
     expect(grouped.afternoon_evening.map(h => h.id)).toEqual(["teeth", "journal", "reading"]);
   });
@@ -79,27 +78,6 @@ describe("groupHabitsByBlock", () => {
   it("keeps an unknown block instead of discarding its habits", () => {
     const grouped = groupHabitsByBlock([habit({ id: "mystery", block: "not_a_block", order: 99 })]);
     expect(grouped.not_a_block.map(h => h.id)).toEqual(["mystery"]);
-  });
-});
-
-describe("getTier", () => {
-  it.each([[42, "First Team"], [34, "Bench"], [26, "Reserves"], [0, "Training Ground"]])(
-    "maps %i to %s", (points, label) => expect(getTier(points).label).toContain(label)
-  );
-
-  /** Boundaries are scoring truth, not presentation. They come from lib/scoring.ts. */
-  it.each([
-    [55, "First Team"], [41, "Bench"], [33, "Reserves"], [25, "Training Ground"],
-  ])("maps boundary-adjacent %i to %s", (points, label) => {
-    expect(getTier(points).label).toContain(label);
-  });
-
-  it("floors a negative total at Training Ground rather than returning undefined", () => {
-    expect(getTier(-1).label).toContain("Training Ground");
-  });
-
-  it("exposes all four thresholds in descending order for the compact scale", () => {
-    expect(getTier(0).thresholds.map(t => t.min)).toEqual([42, 34, 26, 0]);
   });
 });
 

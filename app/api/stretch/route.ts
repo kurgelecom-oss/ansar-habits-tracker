@@ -4,7 +4,7 @@
    THE MODEL CHANGED AGAIN HERE (tk, 5 Sep 2026), and it got simpler:
 
      • MON–FRI ONLY.  gateWallet() refuses a weekend outright. The weekend runs
-                      on the tier + Saturday Push rules in lib/weekend.ts, and
+                      on the school-days + Saturday Push rules in lib/weekend.ts, and
                       Sunday is switched off. The wallet is not rendered there.
      • A DAILY SWITCH. Every active stretch item earned today = the day's reward,
                       "1h 15m PS5 today". Nothing is banked, nothing converts,

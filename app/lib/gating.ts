@@ -26,7 +26,7 @@ export const BLOCK_PRE = "pre_homeschool";
 export const BLOCK_SCHOOL = "homeschool";
 export const BLOCK_ARVO = "afternoon_evening";
 export const BLOCK_CONDITIONAL = "conditional";
-/** Saturday-only. Three parent-verified push rows; zero FC points — see lib/weekend.ts. */
+/** Saturday-only. Three parent-verified push rows — see lib/weekend.ts. */
 export const BLOCK_PUSH = "saturday_push";
 
 /**
@@ -285,10 +285,10 @@ export function isWeekendDate(date: string): boolean {
  * converted to PS5 on Sat/Sun. Nobody tracked minutes, so that model is gone.
  * The wallet is now a daily switch — every item done = 1h15 PS5 that day — and
  * the weekend runs on two different rules entirely (lib/weekend.ts): the week's
- * tier decides IF, the Saturday Push decides WHEN. Sunday is switched off.
+ * school days decide IF, the Saturday Push decides WHEN. Sunday is switched off.
  *
- * The Qur'an daily minimum is an ungamified gate: it earns nothing and is worth
- * zero points, it only unlocks. It sits in pre_homeschool, so requiring that
+ * The Qur'an daily minimum is an ungamified gate: it earns nothing, it only
+ * unlocks. It sits in pre_homeschool, so requiring that
  * block already requires it — the explicit check is kept so the rule survives
  * the habit being moved to another block in Notion.
  */

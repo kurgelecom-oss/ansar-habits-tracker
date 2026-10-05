@@ -6,7 +6,7 @@
    runs a week apart must render the same pixels, or a visual comparison proves
    nothing.
 
-   Habit ids, names, blocks, orders, point values and windows are transcribed
+   Habit ids, names, blocks, orders and windows are transcribed
    from the live configuration recorded in
    docs/verification/dashboard-v2-baseline.md. They are the real programme, not
    invented stand-ins, so a fixture render is a fair preview of the real board.
@@ -27,29 +27,28 @@ export type DashboardFixture = {
   wallet: DashboardWallet;
   stretchItems: DashboardStretchItem[];
   goldenBoot: DashboardGoldenBoot;
-  weekScore: number;
-  weekMax: number;
+  schoolDays: number;
+  fullDays: number;
   /** Tally submissions counted today. Evidence state, never a score input. */
   workSubmissionCount: number;
-  pointsActive: boolean;
   online: boolean;
 };
 
-type HabitSeed = Pick<DashboardHabit, "id" | "name" | "block" | "order" | "points" | "pointType" | "target">;
+type HabitSeed = Pick<DashboardHabit, "id" | "name" | "block" | "order" | "pointType" | "target">;
 
 /** The live programme, in Notion order. Weekday-only rows are marked. */
 const MORNING: HabitSeed[] = [
-  { id: "bed_dressed", name: "Bed made + dressed", block: "pre_homeschool", order: 1, points: 0, pointType: "block" },
-  { id: "quran", name: "Qur'an recitation - 20 min", block: "pre_homeschool", order: 2, points: 0, pointType: "block" },
-  { id: "fajr", name: "Fajr Namaz done", block: "pre_homeschool", order: 3, points: 0, pointType: "block" },
-  { id: "feet_floor", name: "Feet on floor by 6:45am - no phone", block: "pre_homeschool", order: 4, points: 0, pointType: "block" },
-  { id: "movement", name: "Morning movement - 20 min outside (ball work)", block: "pre_homeschool", order: 5, points: 0, pointType: "block" },
-  { id: "breakfast", name: "Breakfast done - no screens", block: "pre_homeschool", order: 6, points: 0, pointType: "block" },
-  { id: "goals", name: "Daily goals written + Habits page reviewed", block: "pre_homeschool", order: 7, points: 0, pointType: "block" },
+  { id: "bed_dressed", name: "Bed made + dressed", block: "pre_homeschool", order: 1, pointType: "block" },
+  { id: "quran", name: "Qur'an recitation - 20 min", block: "pre_homeschool", order: 2, pointType: "block" },
+  { id: "fajr", name: "Fajr Namaz done", block: "pre_homeschool", order: 3, pointType: "block" },
+  { id: "feet_floor", name: "Feet on floor by 6:45am - no phone", block: "pre_homeschool", order: 4, pointType: "block" },
+  { id: "movement", name: "Morning movement - 20 min outside (ball work)", block: "pre_homeschool", order: 5, pointType: "block" },
+  { id: "breakfast", name: "Breakfast done - no screens", block: "pre_homeschool", order: 6, pointType: "block" },
+  { id: "goals", name: "Daily goals written + Habits page reviewed", block: "pre_homeschool", order: 7, pointType: "block" },
 ];
 
 const HOMESCHOOL: HabitSeed[] = [
-  { id: "homeschool_session", name: "Homeschool session completed (4 hrs)", block: "homeschool", order: 8, points: 5, pointType: "solo" },
+  { id: "homeschool_session", name: "Homeschool session completed (4 hrs)", block: "homeschool", order: 8, pointType: "solo" },
 ];
 
 /* The journal sits at 16.5 — after "Teeth brushed" and before "Reading in bed"
@@ -65,13 +64,13 @@ const HOMESCHOOL: HabitSeed[] = [
    It is still the only Mon–Fri row in this block, so a weekend build must drop
    it — see WEEKEND_ARVO below. */
 const AFTERNOON_EVENING: HabitSeed[] = [
-  { id: "btn_cornell", name: "BTN episode + Cornell notes done", block: "afternoon_evening", order: 12, points: 1, pointType: "solo" },
-  { id: "shower", name: "Shower done", block: "afternoon_evening", order: 13, points: 0, pointType: "perfect_day_only" },
-  { id: "all_namaz", name: "All Namaz done (Fajr, Duhr, Asr, Maghrib, Isha)", block: "afternoon_evening", order: 14, points: 1, pointType: "solo" },
-  { id: "room_tidy", name: "Room tidy", block: "afternoon_evening", order: 15, points: 0, pointType: "perfect_day_only" },
-  { id: "teeth", name: "Teeth brushed", block: "afternoon_evening", order: 16, points: 0, pointType: "perfect_day_only" },
-  { id: "journal", name: "Daily learning journal entry written", block: "afternoon_evening", order: 16.5, points: 0, pointType: "perfect_day_only" },
-  { id: "reading", name: "Reading in bed (15+ min)", block: "afternoon_evening", order: 17, points: 0, pointType: "perfect_day_only" },
+  { id: "btn_cornell", name: "BTN episode + Cornell notes done", block: "afternoon_evening", order: 12, pointType: "solo" },
+  { id: "shower", name: "Shower done", block: "afternoon_evening", order: 13, pointType: "perfect_day_only" },
+  { id: "all_namaz", name: "All Namaz done (Fajr, Duhr, Asr, Maghrib, Isha)", block: "afternoon_evening", order: 14, pointType: "solo" },
+  { id: "room_tidy", name: "Room tidy", block: "afternoon_evening", order: 15, pointType: "perfect_day_only" },
+  { id: "teeth", name: "Teeth brushed", block: "afternoon_evening", order: 16, pointType: "perfect_day_only" },
+  { id: "journal", name: "Daily learning journal entry written", block: "afternoon_evening", order: 16.5, pointType: "perfect_day_only" },
+  { id: "reading", name: "Reading in bed (15+ min)", block: "afternoon_evening", order: 17, pointType: "perfect_day_only" },
 ];
 
 /* Saturday. The journal AND btn_cornell are Mon–Fri in Notion (BTN since 5 Sep
@@ -80,16 +79,16 @@ const AFTERNOON_EVENING: HabitSeed[] = [
    produce. There is no Sunday fixture: Sunday renders one rest card. */
 const WEEKEND_ARVO: HabitSeed[] = AFTERNOON_EVENING.filter(h => h.id !== "journal" && h.id !== "btn_cornell");
 
-/* The Saturday Push (5 Sep 2026). Three parent-PIN rows, zero FC points; the
+/* The Saturday Push (5 Sep 2026). Three parent-PIN rows; the
    Target text is Notion's and is the row's guidance line. */
 const SATURDAY_PUSH: HabitSeed[] = [
-  { id: "push_engine", name: "Engine", block: "saturday_push", order: 9, points: 0, pointType: "perfect_day_only", target: "2 km continuous run, no walking" },
-  { id: "push_strength", name: "Strength & skill", block: "saturday_push", order: 10, points: 0, pointType: "perfect_day_only", target: "3 rounds: 10 push-ups, 30s plank, 50 juggles" },
-  { id: "push_quran", name: "Qur'an memorisation", block: "saturday_push", order: 11, points: 0, pointType: "perfect_day_only", target: "2 new ayat from memory + this week's revision" },
+  { id: "push_engine", name: "Engine", block: "saturday_push", order: 9, pointType: "perfect_day_only", target: "2 km continuous run, no walking" },
+  { id: "push_strength", name: "Strength & skill", block: "saturday_push", order: 10, pointType: "perfect_day_only", target: "3 rounds: 10 push-ups, 30s plank, 50 juggles" },
+  { id: "push_quran", name: "Qur'an memorisation", block: "saturday_push", order: 11, pointType: "perfect_day_only", target: "2 new ayat from memory + this week's revision" },
 ];
 
 const CONDITIONAL: HabitSeed[] = [
-  { id: "soccer_training", name: "Soccer training attended (Mon & Wed only)", block: "conditional", order: 18, points: 1, pointType: "per_session" },
+  { id: "soccer_training", name: "Soccer training attended (Mon & Wed only)", block: "conditional", order: 18, pointType: "per_session" },
 ];
 
 /** The window each block's habits sit in, for the LOCKED reason text. */
@@ -149,10 +148,10 @@ function gate(habits: DashboardHabit[], time: DashboardServerTime): DashboardGat
 }
 
 const STRETCH_ITEMS: DashboardStretchItem[] = [
-  { id: "extra_reading", name: "Extra reading - 20 min", category: "Learning", points: 1, whatCountsAsDone: "20 unbroken minutes with a book" },
-  { id: "ball_work", name: "Ball work - 30 min", category: "Football", points: 1, whatCountsAsDone: "30 minutes of drills outside" },
-  { id: "help_home", name: "Help at home", category: "Home", points: 1, whatCountsAsDone: "A full chore, unprompted" },
-  { id: "extra_quran", name: "Extra Qur'an - 15 min", category: "Deen", points: 1, whatCountsAsDone: "15 minutes beyond the morning recitation" },
+  { id: "extra_reading", name: "Extra reading - 20 min", category: "Learning", whatCountsAsDone: "20 unbroken minutes with a book" },
+  { id: "ball_work", name: "Ball work - 30 min", category: "Football", whatCountsAsDone: "30 minutes of drills outside" },
+  { id: "help_home", name: "Help at home", category: "Home", whatCountsAsDone: "A full chore, unprompted" },
+  { id: "extra_quran", name: "Extra Qur'an - 15 min", category: "Deen", whatCountsAsDone: "15 minutes beyond the morning recitation" },
 ];
 
 /* ── Wednesday, mid-afternoon ────────────────────────────────────────────────
@@ -206,17 +205,16 @@ export const weekdayFixture: DashboardFixture = {
   },
   stretchItems: STRETCH_ITEMS,
   goldenBoot: { ok: true, target: 4, streak: 3, progress: 3 },
-  weekScore: 26,
-  weekMax: 55,
+  schoolDays: 2,
+  fullDays: 1,
   workSubmissionCount: 1,
-  pointsActive: true,
   online: true,
 };
 
 /* ── Saturday, mid-morning ───────────────────────────────────────────────────
    Push Day (5 Sep 2026). Morning Habits, the three Push rows, and Afternoon /
    Evening minus BTN and the journal — 15 rows. The wallet is Mon–Fri and is
-   NOT drawn; its slot carries the Saturday card (week tier + Push verdict). */
+   NOT drawn; its slot carries the Saturday card (school days + Push verdict). */
 export const weekendFixture: DashboardFixture = {
   name: "Saturday 9:20am",
   gate: gate(
@@ -255,10 +253,9 @@ export const weekendFixture: DashboardFixture = {
   },
   stretchItems: STRETCH_ITEMS,
   goldenBoot: { ok: true, target: 4, streak: 3, progress: 3 },
-  weekScore: 42,
-  weekMax: 55,
+  schoolDays: 4,
+  fullDays: 3,
   workSubmissionCount: 0,
-  pointsActive: true,
   online: true,
 };
 
