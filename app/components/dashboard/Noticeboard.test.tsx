@@ -3,8 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Noticeboard from "./Noticeboard";
 
 // Saturday 10 October 2026, midday in Sydney: exactly two notices.
-beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-10T01:00:00Z")); });
-afterEach(() => { vi.useRealTimers(); });
+beforeEach(() => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-10T01:00:00Z"));
+  const store = new Map<string, string>();
+  vi.stubGlobal("localStorage", { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) });
+  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ locked: false, facts: null, unlocked: false }) })));
+});
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe("Noticeboard", () => {
   it("shows one notice at a time, turns every eight seconds and steps on a tap", () => {
@@ -28,5 +33,16 @@ describe("Noticeboard", () => {
     fireEvent.pointerLeave(board);
     act(() => { vi.advanceTimersByTime(8000); });
     expect(board).toHaveTextContent("Ansar · PS5");
+  });
+
+  it("drops a notice for the day when it is ticked, and remembers it", () => {
+    const first = render(<Noticeboard />);
+    fireEvent.click(screen.getByRole("button", { name: "Done for today" }));
+    expect(screen.getByTestId("noticeboard")).not.toHaveTextContent("Saturday Push");
+    expect(screen.getByTestId("noticeboard")).toHaveTextContent("Ansar · PS5");
+    fireEvent.click(screen.getByRole("button", { name: "Done for today" }));
+    expect(screen.queryByTestId("noticeboard")).toBeNull();
+    expect(JSON.parse(localStorage.getItem("ansar-notices-done-v1")!).texts).toHaveLength(2);
+    first.unmount();
   });
 });

@@ -131,3 +131,40 @@ export async function liftLockForToday(today: string = sydneyDateKey()): Promise
     .upsert({ id: bypassId(today), payload: { liftedBy: 'parent' }, updated_at: new Date().toISOString() });
   if (error) throw new Error('Could not lift the lock.');
 }
+
+/** What the message board needs to know to stop asking for things already done. */
+export type NoticeFacts = { drafts: number; reviewOpen: boolean; examsOpen: number; levelCheckOpen: boolean };
+
+/** Pure half of noticeFacts. `papers` are learner papers, drafts included. */
+export function factsFor(today: string, papers: (PaperRow & { month?: string })[], attempts: AttemptRow[]): NoticeFacts {
+  const handedIn = new Set(attempts.filter(a => a.status !== 'in_progress').map(a => a.paper_id));
+  const open = papers.filter(p => p.status === 'published' && !handedIn.has(p.id));
+  const inWindow = (p: PaperRow) => p.opens_on <= today && today <= p.due_date;
+  const levelCheck = (p: PaperRow) => p.id.startsWith('placement:');
+  return {
+    drafts: papers.filter(p => p.kind === 'exam' && p.status === 'draft' && p.month === today.slice(0, 7)).length,
+    reviewOpen: open.some(p => p.kind === 'review' && p.due_date <= today),
+    examsOpen: open.filter(p => p.kind === 'exam' && !levelCheck(p) && inWindow(p)).length,
+    levelCheckOpen: open.some(p => levelCheck(p) && inWindow(p)),
+  };
+}
+
+/** Null when the papers cannot be read: the board then keeps every message up. */
+export async function noticeFacts(today: string = sydneyDateKey()): Promise<NoticeFacts | null> {
+  if (!hasServiceRole()) return null;
+  try {
+    const db = adminClient();
+    const papers = await db.from('ansar_assessment_papers').select('id,kind,title,status,due_date,opens_on,month')
+      .or('is_practice.eq.false,is_practice.is.null').gte('due_date', GATE_START).lte('opens_on', addDays(today, 31));
+    if (papers.error) return null;
+    const rows = (papers.data ?? []) as (PaperRow & { month?: string })[];
+    const published = rows.filter(p => p.status === 'published').map(p => p.id);
+    const attempts = published.length
+      ? await db.from('ansar_assessment_attempts').select('paper_id,status,submitted_at').in('paper_id', published)
+      : { data: [], error: null };
+    if (attempts.error) return null;
+    return factsFor(today, rows, (attempts.data ?? []) as AttemptRow[]);
+  } catch {
+    return null;
+  }
+}

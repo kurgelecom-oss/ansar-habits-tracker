@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GATE_START, MASTERY_PASS, lockFor, schoolDaysBetween } from './gate';
+import { GATE_START, MASTERY_PASS, factsFor, lockFor, schoolDaysBetween } from './gate';
 
 const FRI = '2026-10-09', SAT = '2026-10-10', MON = '2026-10-12';
 const review = (due: string, status = 'published') =>
@@ -80,5 +80,15 @@ describe('the assessment lock', () => {
   it('counts school days', () => {
     expect(schoolDaysBetween('2026-10-26', '2026-10-31')).toBe(5);
     expect(schoolDaysBetween('2026-10-31', '2026-10-31')).toBe(0);
+  });
+
+  it('tells the message board what is still outstanding', () => {
+    const papers = [review(FRI), { ...exam('maths', 'draft'), month: '2026-10' }, { ...exam('hass'), month: '2026-10' },
+      { ...exam('level'), id: 'placement:2026-10:maths', opens_on: '2026-10-12', due_date: '2026-10-16' }];
+    expect(factsFor(FRI, papers, [])).toEqual({ drafts: 1, reviewOpen: true, examsOpen: 0, levelCheckOpen: false });
+    expect(factsFor(MON, papers, [handedIn(`review:${FRI}:week`, '2026-10-09T03:00:00Z')]))
+      .toEqual({ drafts: 1, reviewOpen: false, examsOpen: 0, levelCheckOpen: true });
+    expect(factsFor('2026-10-27', papers, [handedIn('exam:2026-10:hass', '2026-10-27T01:00:00Z')]).examsOpen).toBe(0);
+    expect(factsFor('2026-10-27', papers, []).examsOpen).toBe(1);
   });
 });

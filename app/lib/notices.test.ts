@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { noticesFor } from "./notices";
+import { openNotices, noticesFor } from "./notices";
 
 const lines = (date: string) => noticesFor(date).map(n => `${n.who}: ${n.text}`);
 const EVERYDAY = [
@@ -78,5 +78,30 @@ describe("noticesFor", () => {
       "Ansar: Soccer training tonight.",
       ...EVERYDAY,
     ]);
+  });
+});
+
+describe("openNotices", () => {
+  const friday = noticesFor("2026-10-09");
+  const texts = (state: Parameters<typeof openNotices>[1]) => openNotices(friday, state).map(n => n.text);
+  const nothingDone = { unlocked: false, facts: { drafts: 0, reviewOpen: true, examsOpen: 0, levelCheckOpen: false }, done: [] };
+
+  it("keeps everything up when nothing has been done", () => {
+    expect(texts(nothingDone)).toHaveLength(friday.length);
+  });
+
+  it("drops a notice once the board can see it is done", () => {
+    const left = texts({ ...nothingDone, unlocked: true, facts: { ...nothingDone.facts, reviewOpen: false } });
+    expect(left.some(t => t.startsWith("Unlock the MacBook"))).toBe(false);
+    expect(left.some(t => t.startsWith("Friday review is on the board"))).toBe(false);
+    expect(left).toHaveLength(friday.length - 2);
+  });
+
+  it("clears nothing on facts it could not read, except the unlock it knows about", () => {
+    expect(texts({ unlocked: false, facts: null, done: [] })).toHaveLength(friday.length);
+  });
+
+  it("drops what was ticked off today", () => {
+    expect(texts({ ...nothingDone, done: ["3:30 check. He shows the work, not the ticks."] })).toHaveLength(friday.length - 1);
   });
 });
