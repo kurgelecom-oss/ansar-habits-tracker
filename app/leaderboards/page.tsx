@@ -189,6 +189,14 @@ export default function Leaderboards() {
       .catch(() => setDetails((d) => ({ ...d, [active]: { available: false } })));
   }, [active, details]);
 
+  // The provider allows ten calls a minute, so a league opened in a burst can come back empty.
+  // Forget that answer after a pause and the effect above asks again.
+  useEffect(() => {
+    if (!active || details[active]?.available !== false) return;
+    const retry = setTimeout(() => setDetails(({ [active]: _dropped, ...rest }) => rest), 20000);
+    return () => clearTimeout(retry);
+  }, [active, details]);
+
   const comp = data?.tables.find((t) => t.code === active);
   const detail = details[active];
   const matches = detail?.matches;
@@ -229,14 +237,14 @@ export default function Leaderboards() {
   const scorers = detail?.scorers ?? null;
   const ranked = scorers ? [...scorers].filter((s) => s[stat] > 0).sort((a, b) => b[stat] - a[stat]) : null;
   const zones = ZONES[active];
-  const loadingDetail = <p className={styles.note}>{detail ? "The live provider has not published this yet." : "Loading…"}</p>;
+  const loadingDetail = <p className={styles.note}>{!detail ? "Loading…" : detail.available ? "The live provider has not published this yet." : "The live provider is busy. Trying again shortly…"}</p>;
 
   return (
     <main className={styles.page} aria-label="ANSAR OS Leaderboards">
       <ClubNavigation activeLabel="Leaderboards" />
       <section className={styles.content}>
         <header className={styles.header}>
-          <p>REAL MADRID · SEASON CENTRE</p>
+          <p>{madridRow ? "REAL MADRID · SEASON CENTRE" : "SEASON CENTRE"}</p>
           <div className={styles.title}>
             {comp?.emblem && (
               <span className={styles.emblem}>
