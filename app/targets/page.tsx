@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ClubNavigation from "../components/dashboard/ClubNavigation";
 import styles from "./targets.module.css";
+import type { ZoneState } from "../lib/targets";
+
+const STATUS_LABEL: Record<ZoneState["status"], string> = { done: "Done this week", waiting: "In progress", "not-started": "Not started", untracked: "Not tracked yet" };
 
 type Target = { id: string; icon: string; title: string; horizon: string; destination: string; focus: string; proof: string; steps: string[] };
 const TARGETS: Target[] = [
@@ -21,13 +24,16 @@ export default function TargetsPage() {
   const [active, setActive] = useState(TARGETS[0]);
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
+  const [zones, setZones] = useState<Record<string, ZoneState> | null>(null);
+  useEffect(() => { fetch("/api/targets", { cache: "no-store" }).then(r => r.json()).then(d => setZones(d.zones ?? null)).catch(() => setZones(null)); }, []);
+  const state = zones?.[active.id];
   return <main className={styles.page} aria-label="ANSAR OS Targets"><ClubNavigation activeLabel="Targets" /><section className={styles.content}>
     <header className={styles.hero}><div><p>ANSAR OS · TARGET MAP</p><h1>Build the player.<br />Build the person.</h1><span>Every big goal becomes a next move you can prove.</span></div><aside><b>8</b><span>development zones</span><b>1</b><span>next move at a time</span></aside></header>
-    <div className={styles.map} aria-label="Target zones">{TARGETS.map(target => <button key={target.id} onClick={() => { if (target.id === "football") { router.push("/pathway"); return; } setActive(target); setExpanded(false); }} className={active.id === target.id ? styles.active : ""}><i>{target.icon}</i><span>{target.title}</span><small>{target.horizon}</small></button>)}</div>
+    <div className={styles.map} aria-label="Target zones">{TARGETS.map(target => <button key={target.id} onClick={() => { if (target.id === "football") { router.push("/pathway"); return; } setActive(target); setExpanded(false); }} className={active.id === target.id ? styles.active : ""}><i>{target.icon}</i><span>{target.title}</span><small>{target.horizon}</small>{zones?.[target.id] ? <em className={styles[zones[target.id].status]}>{STATUS_LABEL[zones[target.id].status]}</em> : null}</button>)}</div>
     <section className={styles.route}><div className={styles.routeTop}><span className={styles.bigIcon}>{active.icon}</span><div><p>{active.horizon}</p><h2>{active.title}</h2><strong>{active.destination}</strong></div>{active.id === "football" ? <button onClick={() => router.push("/pathway")}>Open Football Pathway ⚽</button> : <button onClick={() => setExpanded(value => !value)}>{expanded ? "Close route" : "Open route"}</button>}</div>
-      <div className={styles.now}><div><span>Current focus</span><b>{active.focus}</b></div><div><span>Next proof</span><b>{active.proof}</b></div></div>
+      <div className={styles.now}><div><span>Current focus</span><b>{active.focus}</b></div><div><span>Next proof</span><b>{active.proof}</b></div>{state ? <div><span>This week on the board</span><b>{state.note}</b></div> : null}</div>
       {expanded ? <div className={styles.steps}>{active.steps.map((step, i) => <article key={step}><em>{i + 1}</em><b>{step}</b><span>{i === 0 ? "This week" : i === 1 ? "Build evidence" : "Look back honestly"}</span></article>)}</div> : null}
     </section>
-    <section className={styles.rule}><div><p>THE TARGETS RULE</p><h2>No target earns a green light just because it sounds good.</h2><span>A target moves only when there is a real piece of work, practice or evidence behind it. Progress will eventually score these proofs; today this map makes the work visible.</span></div><div className={styles.actions}><button onClick={() => setActive(TARGETS[1])}>Find learning gaps</button><button onClick={() => setActive(TARGETS[4])}>Build something on Mac</button><button onClick={() => router.push("/pathway")}>Open Football Pathway</button></div></section>
+    <section className={styles.rule}><div><p>THE TARGETS RULE</p><h2>No target earns a green light just because it sounds good.</h2><span>A target moves only when there is a real piece of work, practice or evidence behind it. Each zone reads this week from what the board already records: habit ticks and school blocks. Zones the board does not record yet say so instead of guessing.</span></div><div className={styles.actions}><button onClick={() => setActive(TARGETS[1])}>Find learning gaps</button><button onClick={() => setActive(TARGETS[4])}>Build something on Mac</button><button onClick={() => router.push("/pathway")}>Open Football Pathway</button></div></section>
   </section></main>;
 }
