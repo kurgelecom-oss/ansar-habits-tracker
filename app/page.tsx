@@ -21,7 +21,7 @@ import ClubStatus from "./components/dashboard/ClubStatus";
 import DayViewToggle, { type DayView } from "./components/dashboard/DayViewToggle";
 import DashboardShell from "./components/dashboard/DashboardShell";
 import DayProgrammePanel from "./components/dashboard/DayProgrammePanel";
-import MatchCentre from "./components/dashboard/MatchCentre";
+import MatchBoard from "./components/dashboard/MatchBoard";
 import HabitPanel from "./components/dashboard/HabitPanel";
 import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
 import SaturdayPanel from "./components/dashboard/SaturdayPanel";
@@ -1384,7 +1384,7 @@ export default function AnsarPage() {
           pillars under that. Phase 4 had moved it to the foot as "context";
           that was reversed a day later, on purpose. Same component, same data. */}
       <div style={{ padding: "14px 0", flexShrink: 0 }}>
-      <MatchCentre data={football ?? {
+      <MatchBoard data={football ?? {
         available: false,
         reason: "upstream_unavailable",
         message: "Loading Real Madrid's fixture…",

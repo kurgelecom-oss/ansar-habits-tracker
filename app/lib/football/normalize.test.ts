@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeMatch, selectRealMadridMatch } from "./normalize";
+import { normalizeMatch, selectRealMadridMatch, selectTopMatch } from "./normalize";
 
 const NOW = Date.parse("2026-08-30T04:00:00Z");
 
@@ -65,5 +65,30 @@ describe("normalizeMatch", () => {
     expect(normalized.home.score).toBeNull();
     expect(normalized.away.score).toBeNull();
     expect(normalized.home.crest).toBeNull();
+  });
+});
+
+describe("selectTopMatch", () => {
+  // Table positions by team id: 1 and 2 are the top two, 9 and 10 mid-table.
+  const table = new Map([[1, 1], [2, 2], [9, 9], [10, 10]]);
+  const game = (id: number, home: number, away: number, extra: Record<string, unknown> = {}) => match({
+    id, matchday: 8, homeTeam: { id: home, name: `Team ${home}` }, awayTeam: { id: away, name: `Team ${away}` }, ...extra,
+  });
+
+  it("picks the next round's fixture between the highest-placed clubs, not the first kick-off", () => {
+    const selected = selectTopMatch([
+      game(1, 9, 10, { utcDate: "2026-08-31T12:00:00Z" }),
+      game(2, 1, 2, { utcDate: "2026-08-31T19:00:00Z" }),
+      game(3, 1, 9, { utcDate: "2026-09-07T19:00:00Z", matchday: 9 }),
+    ], table, NOW);
+    expect(selected?.id).toBe(2);
+  });
+
+  it("puts a live match ahead of a result, and a result within 24 hours ahead of the next round", () => {
+    const result = game(1, 9, 10, { status: "FINISHED", utcDate: "2026-08-30T01:00:00Z" });
+    const next = game(2, 1, 2);
+    expect(selectTopMatch([result, next], table, NOW)?.id).toBe(1);
+    expect(selectTopMatch([result, next, game(3, 9, 2, { status: "IN_PLAY" })], table, NOW)?.id).toBe(3);
+    expect(selectTopMatch([game(4, 9, 10, { status: "FINISHED", utcDate: "2026-08-28T01:00:00Z" }), next], table, NOW)?.id).toBe(2);
   });
 });
