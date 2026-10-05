@@ -38,7 +38,7 @@ const TODAY: GuideStep[] = [
     target: NAV,
     title: "The menu and the status line",
     what: "This bar is on every screen. On the left are the places you can go. On the right is today at a glance: the share of today's habits done, the day streak, and the Sydney clock.",
-    tracked: "The clock comes from the server, not from the iPad. Changing the iPad's time changes nothing, because every rule checks the server's clock.",
+    tracked: "The clock comes from the server, not from the MacBook. Changing the MacBook's time changes nothing, because every rule checks the server's clock.",
     measured: "\"Today\" is habits done divided by habits scheduled today. The streak counts weekdays in a row with at least 5 habits done. Weekends neither add to it nor break it.",
     controlled: "Nobody sets these by hand. They are worked out from the ticks. The green \"Live\" dot means the board can reach the server; if it says Offline, taps will not save.",
     leadsTo: "The streak and the percentage are for motivation only. Rewards come from the panels further down.",
