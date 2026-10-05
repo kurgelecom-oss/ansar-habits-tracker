@@ -1,6 +1,7 @@
-import { normalizeMatch, selectRealMadridMatch } from "./normalize";
+import { normalizeMatch, selectRealMadridMatch, selectTopMatch } from "./normalize";
+import { MATCH_BAR_LEAGUES } from "./types";
 import type {
-  FootballDataMatch, FootballProvider, MatchCentreData,
+  FootballDataMatch, FootballProvider, MatchBarLeague, MatchCentreData,
 } from "./types";
 
 type ProviderOptions = {
@@ -59,6 +60,48 @@ export function createFootballDataProvider({
           "upstream_unavailable",
           "Real Madrid season data is temporarily unavailable",
         );
+      }
+    },
+
+    /**
+     * One league's match for the bar's league switch. A league Real Madrid
+     * plays in shows Madrid's match in that competition (one call); the others
+     * show the round's top match, which needs the fixtures and the table (two).
+     */
+    async getLeagueMatchCentre(code: MatchBarLeague, teamId: number): Promise<MatchCentreData> {
+      if (!token) return unavailable("not_configured", "Fixture data is not configured yet");
+
+      const get = async (path: string) => {
+        const response = await fetchImpl(`https://api.football-data.org/v4/${path}`, {
+          headers: { "X-Auth-Token": token }, cache: "no-store",
+        });
+        if (!response.ok) throw new Error(String(response.status));
+        return response.json();
+      };
+
+      try {
+        let selected: FootballDataMatch | null;
+        if (MATCH_BAR_LEAGUES.find(league => league.code === code)?.madrid) {
+          const payload = await get(`teams/${teamId}/matches?limit=100`) as { matches?: FootballDataMatch[] };
+          selected = selectRealMadridMatch(
+            (payload.matches ?? []).filter(match => match.competition.code === code), now().getTime(),
+          );
+        } else {
+          const [fixtures, table] = await Promise.all([
+            get(`competitions/${code}/matches`) as Promise<{ matches?: FootballDataMatch[] }>,
+            get(`competitions/${code}/standings`) as Promise<{
+              standings?: { type: string; table: { position: number; team: { id: number } }[] }[];
+            }>,
+          ]);
+          const rows = table.standings?.find(standing => standing.type === "TOTAL")?.table ?? [];
+          selected = selectTopMatch(
+            fixtures.matches ?? [], new Map(rows.map(row => [row.team.id, row.position])), now().getTime(),
+          );
+        }
+        if (!selected) return unavailable("no_match", "No fixture is currently available in this league");
+        return normalizeMatch(selected, now().toISOString());
+      } catch {
+        return unavailable("upstream_unavailable", "Fixture data is temporarily unavailable");
       }
     },
   };

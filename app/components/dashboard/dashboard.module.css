@@ -583,6 +583,34 @@
 
    `max-height` rather than `height`: this frame gets shorter, never taller,
    when a real provider replaces the placeholder copy. */
+/* The league switch: a row of pills on the plate's left edge, directly above
+   it. It sits outside .matchCentre so the plate's own height caps still hold. */
+.matchLeagues {
+  display: flex;
+  gap: 6px;
+  margin: 0 7.24% 8px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.matchLeague {
+  cursor: pointer;
+  flex: none;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid var(--ansar-border);
+  border-radius: 999px;
+  background: var(--ansar-card);
+  color: var(--ansar-muted);
+  font: 600 13px var(--font-body);
+  white-space: nowrap;
+}
+/* A fill in the accent carries the page colour as its text, in every look. */
+.matchLeagueOn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ansar-base);
+}
+
 .matchCentre {
   /* The fixture is centred on the PANEL. Readiness is taken out of flow so its
      width cannot push the score off centre — the same trick the masthead uses
@@ -1526,6 +1554,10 @@
   .clubNavItem { min-height: 44px; padding: 0 10px; font-size: 14px; }
 
   .deviceClock { display: none; }
+
+  /* Four pills do not fit one phone line; wrap rather than hide one off-screen. */
+  .matchLeagues { margin: 0 10px 8px; flex-wrap: wrap; overflow-x: visible; }
+  .matchLeague { min-height: 40px; }
 
   .matchCentre {
     flex-direction: column;

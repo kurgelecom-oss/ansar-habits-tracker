@@ -1,5 +1,5 @@
 import type {
-  FootballDataMatch, MatchCentreAvailable, MatchPhase, MatchTeam,
+  FootballDataMatch, MatchCentreAvailable, MatchCentreData, MatchPhase, MatchTeam,
 } from "./types";
 
 const ACTIVE = new Set(["LIVE", "IN_PLAY", "PAUSED"]);
@@ -26,6 +26,46 @@ export function selectRealMadridMatch(
   return matches
     .filter(match => UPCOMING.has(match.status) && Date.parse(match.utcDate) >= nowMs)
     .sort((a, b) => Date.parse(a.utcDate) - Date.parse(b.utcDate))[0] ?? null;
+}
+
+/**
+ * The one match a league without Real Madrid puts on the bar. Same order as
+ * Madrid's own rule: live, then a result for 24 hours, then the next round.
+ * Where several qualify, the top match wins: the fixture whose two clubs sit
+ * highest in the table (lowest positions added together), earliest kick-off
+ * breaking a tie. A club missing from the table counts as bottom.
+ */
+export function selectTopMatch(
+  matches: FootballDataMatch[], positions: Map<number, number>, nowMs = Date.now(),
+): FootballDataMatch | null {
+  const rank = (match: FootballDataMatch) =>
+    (positions.get(match.homeTeam.id) ?? 99) + (positions.get(match.awayTeam.id) ?? 99);
+  const top = (pool: FootballDataMatch[]) => [...pool].sort(
+    (a, b) => rank(a) - rank(b) || Date.parse(a.utcDate) - Date.parse(b.utcDate),
+  )[0] ?? null;
+
+  const live = matches.filter(match => ACTIVE.has(match.status));
+  if (live.length) return top(live);
+
+  const recent = matches.filter(match => {
+    const age = nowMs - Date.parse(match.utcDate);
+    return match.status === "FINISHED" && age >= 0 && age <= FINISHED_WINDOW_MS;
+  });
+  if (recent.length) return top(recent);
+
+  const upcoming = matches
+    .filter(match => UPCOMING.has(match.status) && Date.parse(match.utcDate) >= nowMs)
+    .sort((a, b) => Date.parse(a.utcDate) - Date.parse(b.utcDate));
+  if (!upcoming.length) return null;
+  return top(upcoming.filter(match => match.matchday === upcoming[0].matchday));
+}
+
+/** How long the CDN may keep a bar: seconds while live, an hour while waiting. */
+export function matchCacheControl(data: MatchCentreData): string {
+  if (!data.available) return "no-store";
+  if (data.phase === "LIVE") return "public, s-maxage=30, stale-while-revalidate=30";
+  if (data.phase === "FINISHED") return "public, s-maxage=300, stale-while-revalidate=300";
+  return "public, s-maxage=3600, stale-while-revalidate=3600";
 }
 
 function safeCrest(value: string | null | undefined): string | null {
@@ -71,6 +111,7 @@ export function normalizeMatch(
     matchId: match.id,
     phase: matchPhase,
     competition: match.competition.name,
+    competitionCode: match.competition.code,
     startTime: match.utcDate,
     home: team(match.homeTeam, score.home),
     away: team(match.awayTeam, score.away),

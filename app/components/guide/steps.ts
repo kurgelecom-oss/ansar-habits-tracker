@@ -45,8 +45,8 @@ const TODAY: GuideStep[] = [
   },
   {
     target: '[class*="matchCentre__"]',
-    title: "Real Madrid's next match",
-    what: "The next Real Madrid fixture, or the live score while a match is on. It sits at the top as a reminder of what the work is for.",
+    title: "The match bar",
+    what: "The next Real Madrid fixture, or the live score while a match is on. The pills above it switch the bar to another league: Real Madrid's match in La Liga or the Champions League, or the top match of the round in the Premier League or Serie A.",
     tracked: "It comes from a live football data service. If that service is down, the bar says so instead of showing a made-up match.",
     measured: "Nothing here is scored. It is not connected to points, habits or rewards.",
     controlled: "Nobody in the house controls it. It updates by itself.",
