@@ -406,7 +406,7 @@
 .noticeText { animation: noticeIn .4s ease-out; }
 .noticeText strong { color: var(--ansar-gold-bright); font-weight: 650; }
 .noticeStep {
-  /* Small to the eye, but a full-height tap target for a finger on the iPad. */
+  /* Small to the eye, but a full-height target that is easy to hit. */
   width: 32px;
   height: 32px;
   flex-shrink: 0;

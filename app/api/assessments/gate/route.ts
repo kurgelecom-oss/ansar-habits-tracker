@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server';
-import { assessmentLock, liftLockForToday } from '../../../lib/assessments/gate';
-import { requireSameOrigin, verifyParent } from '../../../lib/assessments/auth';
+import { assessmentLock, liftLockForToday, noticeFacts } from '../../../lib/assessments/gate';
+import { requireSameOrigin, requireSession, verifyParent } from '../../../lib/assessments/auth';
 import { AssessmentError } from '../../../lib/assessments/engine';
 
 export const dynamic = 'force-dynamic';
 const noStore = { 'Cache-Control': 'no-store' };
 
-/** Is the board locked behind a paper right now? Read by the Today board. */
+/**
+ * Is the board locked behind a paper right now? Read by the Today board. The
+ * message board reads the same answer for `facts` and `unlocked`, so it can
+ * drop a message once the thing it asks for is done.
+ */
 export async function GET() {
-  return NextResponse.json(await assessmentLock(), { headers: noStore });
+  const [lock, facts, unlocked] = await Promise.all([
+    assessmentLock(), noticeFacts(), requireSession().then(() => true, () => false),
+  ]);
+  return NextResponse.json({ ...lock, facts, unlocked }, { headers: noStore });
 }
 
 /** A parent lifts the lock for today with the parent PIN. */

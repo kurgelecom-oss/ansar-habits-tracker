@@ -1,15 +1,41 @@
 import { addDays, dayNameOf, weekStartOf } from "./time";
 
-export type Notice = { who: "Ansar" | "Mum" | "Dad"; text: string };
+/**
+ * `clears` names the fact that retires a notice by itself: the Tests room is
+ * unlocked on this browser, the month's exams are approved, and so on. A
+ * notice without one stays until somebody ticks it off for the day.
+ */
+export type Notice = { who: "Ansar" | "Mum" | "Dad"; text: string; clears?: "unlocked" | "approved" | "review" | "exams" | "levelCheck" };
+
+/** What the board knows has been done. Null facts mean "could not read", which clears nothing. */
+export type NoticeState = {
+  unlocked: boolean;
+  facts: { drafts: number; reviewOpen: boolean; examsOpen: number; levelCheckOpen: boolean } | null;
+  /** Texts ticked off today on this browser. */
+  done: string[];
+};
+
+/** The notices still worth showing. */
+export function openNotices(notices: Notice[], { unlocked, facts, done }: NoticeState): Notice[] {
+  return notices.filter(n => {
+    if (done.includes(n.text)) return false;
+    if (n.clears === "unlocked") return !unlocked;
+    if (!n.clears || !facts) return true;
+    return n.clears === "approved" ? facts.drafts > 0
+      : n.clears === "review" ? facts.reviewOpen
+      : n.clears === "exams" ? facts.examsOpen > 0
+      : facts.levelCheckOpen;
+  });
+}
 
 // Term 4 2026. These dated tables are the place to edit next term.
 // Ranges are inclusive Sydney dates; "" as a start means "from the beginning".
 const DATED: { ranges: [string, string][]; notices: Notice[] }[] = [
   { ranges: [["", "2026-10-09"]], notices: [
-    { who: "Dad", text: "Unlock the MacBook once at Tests with the parent PIN before Friday." },
+    { who: "Dad", text: "Unlock the MacBook once at Tests with the parent PIN before Friday.", clears: "unlocked" },
   ] },
   { ranges: [["2026-10-12", "2026-10-16"]], notices: [
-    { who: "Ansar", text: "Maths level check is open in Tests. It shows where you are; there is nothing to pass." },
+    { who: "Ansar", text: "Maths level check is open in Tests. It shows where you are; there is nothing to pass.", clears: "levelCheck" },
     { who: "Mum", text: "Maths level check this week. The result is in Tests under Level." },
   ] },
   // Mastery weeks, Monday to Friday.
@@ -58,7 +84,7 @@ const DAY: Record<string, (week: string) => Notice[]> = {
   Friday: week => {
     const next = SUPPLIES[addDays(week, 7)];
     return [
-      { who: "Ansar", text: "Friday review is on the board today. Hand it in to unlock the rest." },
+      { who: "Ansar", text: "Friday review is on the board today. Hand it in to unlock the rest.", clears: "review" },
       { who: "Dad", text: "Friday review: ten minutes with Ansar on what he handed in." },
       ...(next ? [{ who: "Mum" as const, text: `Supplies for next week: ${next}.` }] : []),
     ];
@@ -94,9 +120,9 @@ export function noticesFor(dateKey: string): Notice[] {
   const windows = MONTH_WINDOWS[dateKey.slice(0, 7)] ?? { approve: lastSeven, exams: lastSeven };
   const monthName = new Intl.DateTimeFormat("en-AU", { timeZone: "UTC", month: "long" }).format(new Date(Date.UTC(y, m - 1, d)));
   const monthly: Notice[] = [];
-  if (within(windows.approve, d)) monthly.push({ who: "Mum", text: `Approve ${monthName} exams in Tests. He cannot sit them until you do.` });
+  if (within(windows.approve, d)) monthly.push({ who: "Mum", text: `Approve ${monthName} exams in Tests. He cannot sit them until you do.`, clears: "approved" });
   if (schoolDay && d <= 7) monthly.push({ who: "Mum", text: "Screenshot his Khan Academy mastery page for the record." });
-  if (schoolDay && within(windows.exams, d)) monthly.push({ who: "Ansar", text: "Monthly exams are open. One a day. Under 80% means a correction with Mum." });
+  if (schoolDay && within(windows.exams, d)) monthly.push({ who: "Ansar", text: "Monthly exams are open. One a day. Under 80% means a correction with Mum.", clears: "exams" });
 
   return [...dated, ...monthly, ...DAY[dayName](weekStartOf(dateKey)), ...(schoolDay ? EVERY_SCHOOL_DAY : [])];
 }
