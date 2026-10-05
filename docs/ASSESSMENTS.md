@@ -4,7 +4,7 @@ The /tests workspace is a calendar-month learning record for Ansar. Parent PIN s
 
 ## Friday
 
-One review per subject in the dated Notion Daily Programme, opening Friday. Four written prompts cover recall, explanation, application and honest uncertainty. Responses autosave, submissions preserve original work, and Nihal scores each response 0–2 with feedback and a specific next step. Admitting a gap is not a failure. Historical reviews created after their coverage date are baseline work, never overdue obligations.
+One review per week, opening Friday, covering every subject in that week's dated Notion Daily Programme. Each subject gets one written prompt (explain one thing, with an example); a final prompt asks for an honest uncertainty and a next action. It replaced one four-prompt review per subject on 5 October 2026 because that set up to 28 typed answers and seven separate parent reviews each Friday; earlier and already-started weeks keep their per-subject papers. The practical-demonstration check applies to monthly exams only. Responses autosave, submissions preserve original work, and Nihal scores each response 0–2 with feedback and a specific next step. Admitting a gap is not a failure. Historical reviews created after their coverage date are baseline work, never overdue obligations.
 
 ## Monthly exams
 
