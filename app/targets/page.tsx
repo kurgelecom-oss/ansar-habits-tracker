@@ -66,7 +66,7 @@ function ProofPanel({ zone, proof, onSaved }: { zone: string; proof?: Proof; onS
     <textarea id={`proof-${zone}`} value={note} maxLength={500} rows={3} onChange={e => setNote(e.target.value)} placeholder="What did you do, and what changed?" />
     <div className={styles.proofActions}>
       <button disabled={busy || note.trim().length < 3 || note.trim() === proof?.note} onClick={() => send({ note })}>{proof ? "Update proof" : "Log proof"}</button>
-      {proof ? <><label htmlFor={`pin-${zone}`} className={styles.srOnly}>Parent PIN</label><input id={`pin-${zone}`} type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={e => setPin(e.target.value)} placeholder="Parent PIN" /><button disabled={busy || !pin} onClick={() => send({ confirm: true, pin })}>Parent confirm</button></> : null}
+      {proof ? <><label htmlFor={`pin-${zone}`} className={styles.srOnly}>Parent PIN</label><input id={`pin-${zone}`} type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={e => setPin(e.target.value)} placeholder="Parent PIN" /><button disabled={busy || !pin || note.trim() !== proof.note} onClick={() => send({ confirm: true, pin, note: proof.note })}>Parent confirm</button></> : null}
     </div>
     {error ? <p role="alert">{error}</p> : null}
   </div>;
