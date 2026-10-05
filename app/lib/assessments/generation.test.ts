@@ -33,6 +33,7 @@ describe('exam shape validation', () => {
   it('is calendar-correct for leap years and the final seven days', () => {
     expect(monthWindow('2028-02')).toEqual({ due_date: '2028-02-29', opens_on: '2028-02-23' });
     expect(monthWindow('2026-09')).toEqual({ due_date: '2026-09-30', opens_on: '2026-09-24' });
+    expect(monthWindow('2026-12')).toEqual({ due_date: '2026-12-18', opens_on: '2026-12-12' });
   });
   it('fingerprints content independent of row order', () => {
     const other = { ...lessons[0], id: 'l2' };

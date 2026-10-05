@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildDayLabel, daysSince, guideLines, mapProgramme, subjectId, SCHOOL_DAYS,
+  buildDayLabel, daysSince, guideLines, mapProgramme, pickWeek, subjectId, SCHOOL_DAYS,
 } from "./homeschool";
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -163,5 +163,24 @@ describe("SCHOOL_DAYS", () => {
   /** Friday is flex, and still a school day. The weekend is not. */
   it("runs Monday to Friday", () => {
     expect(SCHOOL_DAYS).toEqual(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]);
+  });
+});
+
+describe("pickWeek", () => {
+  const on = (d: string | null) => row({ Date: { date: d ? { start: d } : null } });
+  const term = [on("2026-10-07"), on("2026-10-14"), on("2026-10-14"), on("2026-10-21")];
+  const dates = (rows: any[]) => rows.map(r => r.properties.Date.date?.start ?? null);
+
+  it("keeps only the current week's rows when a whole term is loaded", () => {
+    expect(dates(pickWeek(term, "2026-10-12", "Wednesday"))).toEqual(["2026-10-14", "2026-10-14"]);
+  });
+
+  it("falls back to the last loaded week in the holidays, and the first before term", () => {
+    expect(dates(pickWeek(term, "2026-12-25", "Wednesday"))).toEqual(["2026-10-21"]);
+    expect(dates(pickWeek(term, "2026-09-30", "Wednesday"))).toEqual(["2026-10-07"]);
+  });
+
+  it("returns undated rows untouched when nothing is dated", () => {
+    expect(pickWeek([on(null), on(null)], "2026-10-12", "Wednesday")).toHaveLength(2);
   });
 });

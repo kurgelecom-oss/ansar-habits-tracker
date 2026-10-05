@@ -26,7 +26,7 @@
    this file.
    ══════════════════════════════════════════════════════════════════════════ */
 
-import { sydneyWeekday, sydneyDateKey } from "./time";
+import { sydneyWeekday, sydneyDateKey, addDays, weekStartOf } from "./time";
 import { PROGRAMME_DS, GUIDES_DS, SETTINGS_DS } from "./notion-sources";
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
@@ -238,6 +238,25 @@ export function mapProgramme(
   return { subjects, topic, note, week, isoDate };
 }
 
+/**
+ * The one week's rows to show, out of every active row for a weekday.
+ *
+ * Added 5 Oct 2026 so a whole term can sit in the table at once. The query
+ * returns one batch of rows per loaded week; this keeps the batch dated for
+ * `weekday` in the current Sydney week. Outside a loaded week (holidays, a week
+ * not built yet) it falls back to the most recent earlier one, which the stale
+ * notice then flags, and before the first loaded week to the earliest. Undated
+ * rows are only shown when nothing is dated at all — the old behaviour.
+ */
+export function pickWeek(rows: any[], todayKey: string, weekday: string): any[] {
+  const dateOf = (r: any): string | null => r?.properties?.Date?.date?.start?.slice(0, 10) ?? null;
+  const dates = [...new Set(rows.map(dateOf).filter(Boolean) as string[])].sort();
+  if (dates.length === 0) return rows;
+  const target = addDays(weekStartOf(todayKey), SCHOOL_DAYS.indexOf(weekday));
+  const chosen = dates.filter(d => d <= target).at(-1) ?? dates[0];
+  return rows.filter(r => dateOf(r) === chosen);
+}
+
 let cache: { at: number; value: SchoolDay } | null = null;
 let lastGood: SchoolDay | null = null;
 
@@ -303,7 +322,7 @@ export async function getSchoolDay(fresh = false, weekdayOverride?: string): Pro
     );
 
     const { subjects, topic, note, week, isoDate } =
-      mapProgramme(programme.results ?? [], guides);
+      mapProgramme(pickWeek(programme.results ?? [], date, weekday), guides);
 
     const age = daysSince(isoDate, date);
     const old = age !== null && age > STALE_AFTER_DAYS;

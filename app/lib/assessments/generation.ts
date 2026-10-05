@@ -14,7 +14,10 @@ export function monthWindow(month: string): { due_date: string; opens_on: string
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Invalid assessment month');
   const [year, number] = month.split('-').map(Number);
   const days = new Date(Date.UTC(year, number, 0)).getUTCDate();
-  const due_date = `${month}-${days}`;
+  // Term ends Fri 18 Dec 2026, so December's window is the last school week,
+  // not the holidays. Known limit: one hard-coded year; add 2027 when its
+  // term dates are set.
+  const due_date = month === '2026-12' ? '2026-12-18' : `${month}-${days}`;
   return { due_date, opens_on: addDays(due_date, -6) };
 }
 
