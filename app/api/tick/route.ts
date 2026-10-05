@@ -49,7 +49,7 @@ import { getHabits, getSettings, habitsForDay, SETTINGS_FALLBACK, type Habit } f
 import { isPrerequisite } from "../../lib/days";
 import { requiresParentVerification } from "../../lib/parent-verified";
 import { adminClient, hasServiceRole } from "../../lib/supabase-admin";
-import { lockoutState, recordFailure, clearFailures, lockoutBackend, LOCKOUT_MAX_FAILURES } from "../../lib/pin-lockout";
+import { lockoutState, lockoutBackend, checkPin } from "../../lib/pin-lockout";
 import { getJournalEvidence, type JournalEvidence } from "../../lib/tally";
 import { evidenceRefusal, evidenceWarnings } from "../../lib/evidence-gate";
 import { getQuranEvidence, type QuranEvidence } from "../../lib/quran-os";
@@ -700,73 +700,3 @@ export async function POST(request: Request) {
   }, { headers: noStore });
 }
 
-/**
- * Compare a submitted PIN against PARENT_OVERRIDE_PIN, with the lockout.
- *
- * Returns null when the PIN is good, or the NextResponse to send when it is
- * not. Extracted so the override path and the parent sign-off path cannot drift
- * apart: one lockout tally, one constant-time compare, one set of reason
- * strings. A second hand-rolled copy of this is how a new PIN entry point ends
- * up with no brute-force protection at all, which is precisely the bug
- * lib/pin-lockout.ts was written to end.
- *
- * The env var is shared on purpose — there is one parent PIN, and a second
- * secret to distribute is a second secret to leak. What differs between the two
- * callers is what a correct PIN then BUYS, and that is decided by the caller,
- * not here.
- */
-async function checkPin(
-  pin: string,
-  attemptKey: string,
-  nowMs: number,
-  noStore: Record<string, string>,
-): Promise<NextResponse | null> {
-  // Lockout is checked BEFORE the PIN is compared, so a locked-out caller
-  // learns nothing about whether their guess was right.
-  const { remainingMs: remaining } = await lockoutState(attemptKey, nowMs)
-    .catch(() => ({ remainingMs: 0 }));
-  if (remaining > 0) {
-    return NextResponse.json({
-      ok: false,
-      reason: "locked_out",
-      message: `Too many incorrect PINs. Try again in ${Math.ceil(remaining / 60000)} min.`,
-      lockedMs: remaining,
-    }, { status: 429, headers: noStore });
-  }
-
-  const expectedPin = process.env.PARENT_OVERRIDE_PIN;
-  if (!expectedPin) {
-    return NextResponse.json(
-      { ok: false, reason: "no_override", message: "Parent override is not configured on this deploy." },
-      { status: 503, headers: noStore },
-    );
-  }
-
-  if (!timingSafeEqual(pin, expectedPin)) {
-    await recordFailure(attemptKey, nowMs).catch(() => {});
-    const after = await lockoutState(attemptKey, nowMs)
-      .catch(() => ({ remainingMs: 0, failures: 0 }));
-    const nowLocked = after.remainingMs;
-    return NextResponse.json({
-      ok: false,
-      reason: nowLocked > 0 ? "locked_out" : "bad_pin",
-      message: nowLocked > 0
-        ? `Too many incorrect PINs. Try again in ${Math.ceil(nowLocked / 60000)} min.`
-        : "Incorrect PIN.",
-      attemptsRemaining: Math.max(0, LOCKOUT_MAX_FAILURES - after.failures),
-      lockedMs: nowLocked,
-    }, { status: nowLocked > 0 ? 429 : 403, headers: noStore });
-  }
-
-  // A correct PIN clears the counter — the parent has proved themselves.
-  await clearFailures(attemptKey).catch(() => {});
-  return null;
-}
-
-/** Constant-time string compare, so a wrong PIN leaks nothing through timing. */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
