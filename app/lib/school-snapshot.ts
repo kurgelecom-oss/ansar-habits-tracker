@@ -1,5 +1,6 @@
 import { adminClient, hasServiceRole } from "./supabase-admin";
-import { notionPost, guideLines, SCHOOL_DAYS } from "./homeschool";
+import { notionPost, guideLines, pickWeek, SCHOOL_DAYS } from "./homeschool";
+import { sydneyDateKey } from "./time";
 import { PROGRAMME_DS, GUIDES_DS } from "./notion-sources";
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -60,12 +61,22 @@ export async function syncSchoolSnapshot(): Promise<{
   if (!hasServiceRole()) throw new Error("Snapshot sync needs the service role");
 
   const warnings: string[] = [];
-  const [programme, guideRows] = await Promise.all([
-    notionPost(`/data_sources/${PROGRAMME_DS}/query`, {
-      filter: { property: "Active", checkbox: { equals: true } },
-      sorts: [{ property: "Order", direction: "ascending" }],
-      page_size: 100,
-    }),
+  // Paged: a whole term is loaded at once now, well past one page of 100.
+  const programme: { results: any[] } = { results: [] };
+  const [, guideRows] = await Promise.all([
+    (async () => {
+      let cursor: string | undefined;
+      do {
+        const page = await notionPost(`/data_sources/${PROGRAMME_DS}/query`, {
+          filter: { property: "Active", checkbox: { equals: true } },
+          sorts: [{ property: "Order", direction: "ascending" }],
+          page_size: 100,
+          ...(cursor ? { start_cursor: cursor } : {}),
+        });
+        programme.results.push(...(page.results ?? []));
+        cursor = page.has_more ? page.next_cursor : undefined;
+      } while (cursor);
+    })(),
     notionPost(`/data_sources/${GUIDES_DS}/query`, {
       filter: { property: "Active", checkbox: { equals: true } },
       page_size: 100,
@@ -183,7 +194,7 @@ export async function compareToLive(weekday: string): Promise<{
     page_size: 100,
   });
 
-  const liveRows = (live.results ?? [])
+  const liveRows = pickWeek(live.results ?? [], sydneyDateKey(), weekday)
     .map((row: any) => {
       const p = row.properties ?? {};
       return {
