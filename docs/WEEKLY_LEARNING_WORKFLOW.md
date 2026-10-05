@@ -44,7 +44,7 @@ This version does not have an automatic taught/not-taught classifier. Once a sch
 
 ## Friday process
 
-The system generates one recall per subject represented in that week's dated work. Four prompts ask Ansar to recall, explain, apply and identify an uncertainty. He types and submits the responses before the conversation. Nihal then records 0–2 marks using the rubrics, specific feedback and a next step. Ansar's correction is saved alongside the original work.
+The system generates one recall for the whole week. It holds one prompt for each subject in that week's dated work (explain one thing and give an example from your own work) and a final prompt naming what is still unclear. Weeks set before 5 October 2026 keep their original one-paper-per-subject recalls. He types and submits the responses before the conversation. Nihal then records 0–2 marks using the rubrics, specific feedback and a next step. Ansar's correction is saved alongside the original work.
 
 The conversation now starts from evidence. A vague “we discussed it” is not a recorded review, and a completed form is not automatic mastery. Keep tasks manageable; use one subject at a time. Historical baseline reviews are available to establish a starting point, not newly imposed overdue obligations.
 

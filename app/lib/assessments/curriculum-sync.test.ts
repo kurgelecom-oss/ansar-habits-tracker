@@ -4,7 +4,7 @@ import type { Lesson, Paper } from './types';
 
 const state = vi.hoisted(() => ({ lessons: new Map<string, { id: string; payload: Lesson }>(), papers: new Map<string, Paper>(), attempts: new Set<string>() }));
 vi.mock('../supabase-admin', () => ({ adminClient: () => ({ from: (table: string) => {
-  let id = ''; let status = ''; let write: Paper | undefined;
+  let id = ''; let status = ''; let write: Paper | undefined; let prefix = ''; let not = ''; let remove = false;
   const rows = () => table.endsWith('lessons') ? [...state.lessons.values()] : table.endsWith('attempts') ? (state.attempts.has(id) ? [{ id: 'attempt' }] : []) : [...state.papers.values()].filter(p => !id || p.id === id);
   const query = {
     select: () => query,
@@ -13,13 +13,17 @@ vi.mock('../supabase-admin', () => ({ adminClient: () => ({ from: (table: string
     range: async (start: number, end: number) => ({ data: rows().slice(start, end + 1), error: null }),
     maybeSingle: async () => ({ data: rows()[0] || null, error: null }),
     limit: async () => ({ data: rows(), error: null }),
+    like: (_key: string, pattern: string) => { prefix = pattern.replace(/%$/, ''); return query; },
+    neq: (_key: string, value: string) => { not = value; return query; },
+    delete: () => { remove = true; return query; },
+    in: (_key: string, ids: string[]) => { if (remove) for (const paperId of ids) state.papers.delete(paperId); return query; },
     upsert: (data: unknown, options: { ignoreDuplicates?: boolean }) => {
       if (table.endsWith('lessons')) for (const l of data as { id: string; payload: Lesson }[]) state.lessons.set(l.id, l);
       else { const paper = data as Paper; if (!options.ignoreDuplicates || !state.papers.has(paper.id)) state.papers.set(paper.id, paper); }
       return Promise.resolve({ error: null });
     },
     update: (paper: Paper) => { write = paper; return query; },
-    then: (resolve: (value: unknown) => unknown) => { if (write && state.papers.get(id)?.status === status) state.papers.set(id, write); return Promise.resolve(resolve({ error: null })); },
+    then: (resolve: (value: unknown) => unknown) => { if (write && state.papers.get(id)?.status === status) state.papers.set(id, write); return Promise.resolve(resolve({ data: prefix ? [...state.papers.values()].filter(p => p.id.startsWith(prefix) && p.id !== not) : undefined, error: null })); },
   };
   return query;
 } }) }));
@@ -39,7 +43,7 @@ describe('curriculum persistence', () => {
   it('is idempotent, retains historical dates when Notion reuses a row and protects attempted papers', async () => {
     expect((await syncCurriculum()).reviews).toBe(1);
     expect((await syncCurriculum()).reviews).toBe(0);
-    const id = 'review:2026-09-18:maths';
+    const id = 'review:2026-09-18:week';
     const original = state.papers.get(id);
     state.attempts.add(id);
     source = [row('2026-09-14', 'A changed programme task about fractions.')];
@@ -53,7 +57,7 @@ describe('curriculum persistence', () => {
   });
   it('refreshes unattempted review prompts when the source lessons are unchanged', async () => {
     await syncCurriculum();
-    const paper = state.papers.get('review:2026-09-18:maths')!;
+    const paper = state.papers.get('review:2026-09-18:week')!;
     paper.questions[0].prompt = 'Old prompt includes full source answers';
     expect((await syncCurriculum()).reviews).toBe(1);
     expect(state.papers.get(paper.id)?.questions[0].prompt).not.toContain('full source answers');
@@ -64,8 +68,25 @@ describe('curriculum persistence', () => {
     const result = await syncCurriculum();
     expect(result.exams).toBe(0);
     expect(result.reviews).toBe(1);
-    expect(state.papers.has('review:2026-09-04:maths')).toBe(true);
+    expect(state.papers.has('review:2026-09-04:week')).toBe(true);
     expect(vi.mocked(fetch).mock.calls.every(call => String(call[0]).includes('api.notion.com'))).toBe(true);
+  });
+  it('replaces unstarted per-subject recalls for an open week with the single weekly recall', async () => {
+    const perSubject = (id: string): Paper => ({ id, kind: 'review', subject: 'Maths', month: '2026-09', title: 'Per subject', status: 'published', questions: [], lessons: [], coverage_note: '', due_date: id.slice(7, 17), opens_on: id.slice(7, 17), duration_minutes: null });
+    vi.setSystemTime(new Date('2026-09-16T03:00:00Z'));
+    state.papers.set('review:2026-09-18:maths', perSubject('review:2026-09-18:maths'));
+    await syncCurriculum();
+    expect([...state.papers.keys()]).toEqual(['review:2026-09-18:week']);
+  });
+  it('keeps per-subject recalls for past weeks and for a week already started', async () => {
+    const perSubject = (id: string): Paper => ({ id, kind: 'review', subject: 'Maths', month: '2026-09', title: 'Per subject', status: 'published', questions: [], lessons: [], coverage_note: '', due_date: id.slice(7, 17), opens_on: id.slice(7, 17), duration_minutes: null });
+    state.papers.set('review:2026-09-18:maths', perSubject('review:2026-09-18:maths'));
+    await syncCurriculum();
+    expect([...state.papers.keys()]).toEqual(['review:2026-09-18:maths']);
+    vi.setSystemTime(new Date('2026-09-16T03:00:00Z'));
+    state.attempts.add('review:2026-09-18:maths');
+    await syncCurriculum();
+    expect([...state.papers.keys()]).toEqual(['review:2026-09-18:maths']);
   });
   it('preserves an approved exam and warns when newer lesson coverage arrives even without a model key', async () => {
     const exam: Paper = { id: 'exam:2026-09:maths', kind: 'exam', subject: 'Maths', month: '2026-09', title: 'Approved', status: 'published', questions: [], lessons: [], coverage_note: '', due_date: '2026-09-30', opens_on: '2026-09-24', duration_minutes: 25 };

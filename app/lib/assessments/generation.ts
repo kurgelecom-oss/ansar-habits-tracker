@@ -18,11 +18,11 @@ export function monthWindow(month: string): { due_date: string; opens_on: string
   return { due_date, opens_on: addDays(due_date, -6) };
 }
 
-export function coverageNote(lessons: Lesson[]): string {
+export function coverageNote(lessons: Lesson[], practical = true): string {
   const dates = [...new Set(lessons.map(l => l.date))].sort();
   const notes = [`Based on ${lessons.length} dated programme entries, ${dates[0]} to ${dates.at(-1)}. Scheduled work is not proof of completion or mastery. Nihal must confirm what was actually taught; missing earlier weeks are not assumed.`];
   if (lessons.some(l => /khan|duolingo|readtheory|everfi/i.test(l.task))) notes.push('Unspecified app lessons, Khan mastery progress, unseen passages and unrecorded vocabulary are not tested. Only explicitly recorded topic detail is covered.');
-  if (lessons.some(l => /^(Technologies|Languages|The Arts|Health & PE|Science)$/.test(l.subject))) notes.push('Practical coverage requires Nihal to confirm a recorded demonstration alongside written knowledge questions.');
+  if (practical && lessons.some(l => /^(Technologies|Languages|The Arts|Health & PE|Science)$/.test(l.subject))) notes.push('Practical coverage requires Nihal to confirm a recorded demonstration alongside written knowledge questions.');
   return notes.join(' ');
 }
 
