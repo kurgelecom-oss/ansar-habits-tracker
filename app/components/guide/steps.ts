@@ -265,8 +265,8 @@ const LEADERBOARDS: GuideStep[] = [
     what: "La Liga, the Champions League, the Premier League and Serie A, one at a time. Real Madrid's row is marked in the two it plays in.",
     tracked: "From the same live football data service as the match bar on Today. If the service has no data for a view, the screen says so.",
     measured: "Standard league columns: matches played, wins, draws, losses, goals for and against, goal difference and points.",
-    controlled: "Nobody in the house. It is the real competition.",
-    leadsTo: "Nothing in Ansar OS. This screen is here because following a team closely is part of learning the game.",
+    controlled: "The tables are the real competition. When you can see them is a house rule: on a school day this screen is locked until the Homeschool session is ticked, and it is open all day on Saturday and Sunday. The server enforces that, so reloading does not get around it.",
+    leadsTo: "Nothing else in Ansar OS. It is here because following a team closely is part of learning the game, and it comes after the work.",
   },
 ];
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { leaguesLock } from "../../../../lib/leagues-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,11 @@ const side = (t: any) => ({ id: t?.id ?? null, name: t?.shortName || t?.name || 
 export async function GET(_request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   if (!/^[A-Z0-9]{2,5}$/.test(code)) return NextResponse.json({ available: false }, { status: 400 });
+
+  // The same lock as the tables: no fixtures, results or scorers before school is done.
+  if ((await leaguesLock()).locked) {
+    return NextResponse.json({ available: false, locked: true }, { headers: { "Cache-Control": "no-store" } });
+  }
 
   const token = process.env.FOOTBALL_DATA_API_TOKEN;
   if (!token) return NextResponse.json({ available: false });

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { leaguesLock } from "../../../../lib/leagues-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,14 @@ function seasonLabel(season?: { startDate?: string; endDate?: string }): string 
 }
 
 export async function GET() {
+  // Locked on a school day until the schoolwork is done; see lib/leagues-gate.ts.
+  // `tables: []` keeps the page's own shape, and its existing "not available"
+  // branch prints the message.
+  const lock = await leaguesLock();
+  if (lock.locked) {
+    return NextResponse.json({ available: false, locked: true, tables: [], message: lock.message }, { headers: { "Cache-Control": "no-store" } });
+  }
+
   const token = process.env.FOOTBALL_DATA_API_TOKEN;
   if (!token) return NextResponse.json({ available: false, message: "Football data is not configured." });
 
