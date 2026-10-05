@@ -56,3 +56,20 @@ Final verified deployment: `6aaf910c6013221d96830aab`. The deployed background w
 The parent practice room at `/tests/practice` rehearses the same forms, saved timers, marking, review and correction flow using sample papers. It requires a separate parent-authorized session. Practice is excluded from learner views, reminders and automatic reporting. Parents can inspect report output and deliberately send a labelled PARENT PRACTICE email/Notion system record. A practice-only expiry control exercises deadline handling. Create a new sample for another run; original learner attempts remain untouched.
 
 For weekly/monthly planning by Claude or Codex, follow [WEEKLY_LEARNING_WORKFLOW.md](WEEKLY_LEARNING_WORKFLOW.md). Repository `AGENTS.md` and `CLAUDE.md` load that process. `scripts/assessment-status.mts YYYY-MM` provides read-only coverage and sync evidence without exposing student answers. The reusable blank handoff is [templates/WEEKLY_LEARNING_HANDOFF.md](templates/WEEKLY_LEARNING_HANDOFF.md).
+
+## The assessment lock (5 Oct 2026)
+
+A Friday review or monthly exam that is due locks the board until Ansar hands it in. The rule and its reasons are at the top of `app/lib/assessments/gate.ts`; the short version:
+
+- **Open:** Morning Habits. **Locked:** every other habit tick, school block ticks, the Stretch Wallet and the league tables.
+- **Friday review:** due on its Friday and stays due until handed in, weekends included.
+- **Monthly exam:** due inside its window (the last seven days of the month), spread over the school days left. Only *published* exams lock; a draft waiting for approval never does.
+- **Done means submitted.** Marking does not hold the lock.
+- **It fails open.** If papers cannot be read, nothing is locked.
+- **Parent lift:** the lock card on Today takes the parent PIN and lifts the lock for that day (`POST /api/assessments/gate`).
+- **Off switch:** set `ASSESSMENT_GATE=off` in the Netlify environment.
+- Papers due before `GATE_START` (9 Oct 2026) never lock.
+
+Before the first Friday: the iPad must be unlocked once at `/tests` with the parent PIN (it lasts 30 days), or Ansar cannot open the paper the board is waiting for.
+
+Monthly exams are now twelve automatically marked questions per subject: eight multiple choice and four yes/no. An exam cannot be handed in faster than 15 seconds a question, and every question must be answered.

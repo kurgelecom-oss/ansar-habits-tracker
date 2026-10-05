@@ -1971,3 +1971,43 @@ a.weekBadge:focus-visible {
 .pillarLink:hover { border-color: var(--accent); }
 
 .pillarNext { white-space: nowrap; }
+
+/* ── A paper is due ────────────────────────────────────────────────────────
+   The lock card under the pillars. Gold, because it is the one thing on the
+   board that must happen next. */
+.paperLock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  margin: 16px 20px 0;
+  padding: 18px 20px;
+  border-radius: var(--ansar-radius-panel);
+  border: 2px solid var(--ansar-gold);
+  background: color-mix(in srgb, var(--ansar-gold) 10%, var(--ansar-panel));
+}
+.paperLockText { min-width: 0; flex: 1 1 320px; }
+.paperLockTitle { font-size: 24px; font-weight: var(--display-weight); line-height: 1.1; }
+.paperLockList { margin: 8px 0 0; padding-left: 20px; font-size: 16px; font-weight: 600; color: var(--ansar-text); }
+.paperLockNote { margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--ansar-subtext); max-width: 62ch; }
+.paperLockActions { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.paperLockGo {
+  display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px;
+  border-radius: 10px; background: var(--ansar-gold); color: var(--ansar-base);
+  font-size: 16px; font-weight: 800; text-decoration: none;
+}
+.paperLockQuiet {
+  min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--ansar-border);
+  background: transparent; color: var(--ansar-subtext); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer;
+}
+.paperLockQuiet:disabled { opacity: 0.5; cursor: default; }
+.paperLockForm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.paperLockLabel { font-size: 12px; font-weight: 700; color: var(--ansar-subtext); }
+.paperLockPin {
+  width: 96px; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--ansar-border);
+  background: var(--ansar-base); color: var(--ansar-text); font: inherit; font-size: 18px; letter-spacing: 0.3em; text-align: center;
+}
+.paperLockError { font-size: 13px; font-weight: 700; color: var(--ansar-danger); }
+@media (max-width: 820px) { .paperLock { margin: 12px 10px 0; } }

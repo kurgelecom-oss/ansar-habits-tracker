@@ -1,6 +1,6 @@
 import { adminClient } from '../supabase-admin';
 import { PROGRAMME_DS, GUIDES_DS } from '../notion-sources';
-import { addDays, sydneyDateKey, weekStartOf } from '../time';
+import { addDays, dayNameOf, sydneyDateKey, weekStartOf } from '../time';
 import { coverageNote, curriculumFingerprint, generateExam, subjectSlug } from './generation';
 import type { Lesson, Paper, Question } from './types';
 
@@ -67,19 +67,35 @@ export function mapProgramme(programme: NotionPage[], guides: NotionPage[]): { l
   return { lessons: lessons.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)), warnings };
 }
 
-/** One recall for the whole week: a prompt per subject worked on, then one about what is still unclear. */
+/** How many days of one subject the Friday review asks about. Two keeps a full
+ *  week near a dozen short answers; every day would be closer to twenty. */
+const REVIEW_DAYS_PER_SUBJECT = 2;
+
+/**
+ * One review for the whole week, asking about the work itself (tk, 5 Oct 2026).
+ *
+ * For each subject it picks up to two of the days that subject was worked on,
+ * the first and the last, and asks what the task was, what he did and what he
+ * got. The task text is NOT printed: the point is to recall it, and printing it
+ * would hand him the answer. Day and topic are the only cues. A final prompt
+ * asks what is still unclear.
+ */
 export function buildWeeklyReview(lessons: Lesson[], due: string): Paper {
   if (!lessons.length) throw new Error('Weekly review requires source lessons');
   const subjects = [...new Set(lessons.map(l => l.subject))].sort();
-  const questions: Question[] = subjects.map(subject => {
+  const questions: Question[] = subjects.flatMap(subject => {
     const own = lessons.filter(l => l.subject === subject);
-    const dates = [...new Set(own.map(l => l.date))].sort().join(', ');
-    const topics = [...new Set(own.map(l => l.topic.trim()).filter(Boolean))].map(topic => topic.slice(0, 80)).join('; ');
-    return {
-      id: `q-${subjectSlug(subject)}`, type: 'written', sourceIds: own.map(l => l.id),
-      prompt: `${subject}: without opening notes, explain one thing you learned this week and give a specific example from your own work. If the work was not done, say so.\nDates: ${dates}.${topics ? ` Topic cues: ${topics}.` : ''}`,
-      rubric: `Recall and explanation: 0 = no relevant recalled learning or mainly incorrect; 1 = an accurate idea with a missing or unclear example; 2 = an accurate idea explained in the learner’s own words with a specific example, checked against the actual taught ${subject} work. Completion alone is not mastery.`,
-    };
+    const dates = [...new Set(own.map(l => l.date))].sort();
+    const asked = dates.length <= REVIEW_DAYS_PER_SUBJECT ? dates : [dates[0], dates[dates.length - 1]];
+    return asked.map((date): Question => {
+      const day = own.filter(l => l.date === date);
+      const topics = [...new Set(day.map(l => l.topic.trim()).filter(Boolean))].map(topic => topic.slice(0, 80)).join('; ');
+      return {
+        id: `q-${subjectSlug(subject)}-${date}`, type: 'written', sourceIds: day.map(l => l.id),
+        prompt: `${subject}, ${dayNameOf(date)} ${date}${topics ? ` (${topics})` : ''}: without opening your notes, what was the task, what did you do, and what answer or result did you get? If the work was not done, say so.`,
+        rubric: `Recall of the actual work: 0 = cannot say what the task was, or mainly incorrect; 1 = names the task accurately but the method or the result is missing or unclear; 2 = names the task, explains what he did in his own words and gives the answer or result, checked against the actual ${subject} work for that day. Saying honestly that it was not done is recorded as not done, not marked down as a wrong answer. Completion alone is not mastery.`,
+      };
+    });
   });
   questions.push({
     id: 'q-unclear', type: 'written', sourceIds: lessons.map(l => l.id),
@@ -87,7 +103,7 @@ export function buildWeeklyReview(lessons: Lesson[], due: string): Paper {
     rubric: 'Gap and next action: 0 = no reflection or next action; 1 = a relevant gap or question but a vague or missing next action, or an action without a clear question; 2 = an honest, specific uncertainty or check-for-understanding question and a concrete next action to resolve or verify it. Do not penalize admitting uncertainty; this mark rewards reflection and a useful plan, not claimed mastery.',
   });
   // A written recall is not a demonstration, so the practical check stays with the monthly exam.
-  return { id: `review:${due}:week`, kind: 'review', month: due.slice(0, 7), due_date: due, opens_on: due, subject: 'All subjects', title: `Friday recall · week ending ${due}`, status: 'published', duration_minutes: null, questions, lessons, coverage_note: coverageNote(lessons, false) };
+  return { id: `review:${due}:week`, kind: 'review', month: due.slice(0, 7), due_date: due, opens_on: due, subject: 'All subjects', title: `Friday review · week ending ${due}`, status: 'published', duration_minutes: null, questions, lessons, coverage_note: coverageNote(lessons, false) };
 }
 
 async function queryAll(source: string): Promise<NotionPage[]> {

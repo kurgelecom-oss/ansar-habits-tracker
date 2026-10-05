@@ -27,6 +27,7 @@ import StretchWalletPanel from "./components/dashboard/StretchWalletPanel";
 import SaturdayPanel from "./components/dashboard/SaturdayPanel";
 import RestDayCard from "./components/dashboard/RestDayCard";
 import TodayPillars from "./components/dashboard/TodayPillars";
+import AssessmentLockCard from "./components/dashboard/AssessmentLockCard";
 import { saturdayPs5, saturdayStreak as saturdayStreakOf } from "./lib/weekend";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import dashboardStyles from "./components/dashboard/dashboard.module.css";
@@ -1399,6 +1400,9 @@ export default function AnsarPage() {
           are the scaffolding around them. Drawn on every day including Sunday:
           the rest day switches the habits off, not the academies' summaries. */}
       <TodayPillars />
+
+      {/* Renders only while a Friday review or monthly exam is due. */}
+      <AssessmentLockCard />
 
       {/* Server-unreachable banner. The board fails closed, and says so. */}
       {mounted && !gate && (
