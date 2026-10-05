@@ -23,15 +23,9 @@ type ClubStatusProps = {
   deviceTime: string;
   online: boolean;
   /**
-   * From /api/settings. `null` means the route has not answered yet, which is
-   * not the same as points being off — an unanswered route must not flash a
-   * soft-launch badge that may be wrong a moment later.
-   */
-  pointsActive: boolean | null;
-  /**
    * Today's proportion complete and the streak, carried over from the
    * scoreboard strip the Match Centre replaces. Spec §7.3 allows a compact
-   * points/streak summary here; both are optional, and undefined renders
+   * progress/streak summary here; both are optional, and undefined renders
    * nothing rather than a zero.
    */
   todayPercent?: number | null;
@@ -39,15 +33,11 @@ type ClubStatusProps = {
 };
 
 export default function ClubStatus({
-  serverTime, deviceTime, online, pointsActive,
+  serverTime, deviceTime, online,
   todayPercent = null, streak = null,
 }: ClubStatusProps) {
   return (
     <div className={styles.clubStatus}>
-      {pointsActive === false ? (
-        <span className={styles.softLaunch}>Soft-launch · points preview</span>
-      ) : null}
-
       {todayPercent !== null || streak !== null ? (
         <div className={styles.progressCard} role="group" aria-label="Daily progress">
           {todayPercent === null ? null : (

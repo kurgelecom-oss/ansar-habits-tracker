@@ -13,9 +13,9 @@
    PDF. The artefact is better for it — vector text that stays selectable and
    searchable, at whatever paper size the person printing actually has.
 
-   THE NUMBERS ARE NOT DECIDED HERE. Every point comes from lib/monthReport.ts,
-   which is the assembly the CLI script used, which in turn takes every score
-   from scoring.ts and every schedule from days.ts. This file is presentation
+   THE NUMBERS ARE NOT DECIDED HERE. Every count comes from lib/monthReport.ts,
+   which is the assembly the CLI script used, which in turn takes the full-day
+   check from scoring.ts and every schedule from days.ts. This file is presentation
    and nothing else.
 
    READ-ONLY. The anon key is the only credential used, and
@@ -52,8 +52,6 @@ const BLOCK_LABEL: Record<string, string> = {
   conditional: "Training",
 };
 
-const tierClass = (tier: string): string => "t-" + tier.replace(/\s+/g, "-").toLowerCase();
-
 export default async function ExportPage(
   { searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> },
 ) {
@@ -82,7 +80,7 @@ export default async function ExportPage(
     // predates that migration must still render the days it does have, so a
     // missing table costs the summary and nothing else.
     db.from("week_results")
-      .select("*")
+      .select("week_start,perfect_week,partial")
       .gte("week_start", addDays(monthStart, -6)).lte("week_start", monthEnd)
       .order("week_start", { ascending: true })
       .then(r => (r.data ?? []) as WeekRow[]),
@@ -93,7 +91,7 @@ export default async function ExportPage(
   ]);
 
   if (roster.length === 0) {
-    // Fail closed and SAY SO. An empty roster scores every day zero, and a
+    // Fail closed and SAY SO. An empty roster reads every day as empty, and a
     // document reporting a month of total failure that never happened is worse
     // than no document at all.
     return (
@@ -103,7 +101,7 @@ export default async function ExportPage(
           <h1>{monthTitle(month)}</h1>
           <p>
             The habit roster could not be read from Notion, so this month cannot be
-            scored. Nothing is wrong with the record &mdash; try again shortly.
+            assembled. Nothing is wrong with the record &mdash; try again shortly.
           </p>
         </main>
       </>
@@ -113,7 +111,7 @@ export default async function ExportPage(
   const report = buildMonthReport({
     month,
     // pointType rides along so an unlock-only prerequisite stays out of the
-    // month's points and Perfect Day count. See lib/days.ts.
+    // month's full-day count. See lib/days.ts.
     roster: roster.map(h => ({
       id: h.id, name: h.name, block: h.block, days: h.days, pointType: h.pointType,
     })),
@@ -122,19 +120,11 @@ export default async function ExportPage(
     earliest,
   });
 
-  const finalised = report.weeks.filter(w => w.row);
-  const bestTier = finalised.find(w => w.row?.tier === "First Team")
-    ? "First Team"
-    : finalised[0]?.row?.tier ?? null;
-
   /* One line, plain English, at the top of the document — the thing a parent
      reads before anything else. */
-  const summaryLine = finalised.length === 0
-    ? `${report.recordedDays} days recorded, ${report.completions} habits ticked.`
-    : `${finalised.length} finalised ${finalised.length === 1 ? "week" : "weeks"}` +
-      `, ${report.recordedDays} days recorded, ${report.perfectDays} perfect ` +
-      `${report.perfectDays === 1 ? "day" : "days"}` +
-      (bestTier ? `, holding ${bestTier}.` : ".");
+  const summaryLine =
+    `${report.recordedDays} days recorded, ${report.completions} habits ticked, ` +
+    `${report.perfectDays} full ${report.perfectDays === 1 ? "day" : "days"}.`;
 
   return (
     <>
@@ -161,31 +151,29 @@ export default async function ExportPage(
 
           <div className="rp-cards">
             {report.weeks.map(w => (
-              <div key={w.weekStart} className={"rp-card" + (w.row ? "" : " rp-card-void")}>
+              <div key={w.weekStart} className={"rp-card" + (w.planned ? "" : " rp-card-void")}>
                 <div className="rp-card-wk">Week of {w.label}</div>
-                {w.row ? (
+                {w.planned ? (
                   <>
                     <div className="rp-card-tot">
-                      {w.row.total_points}<span className="rp-of">/55</span>
+                      {w.done}<span className="rp-of">/{w.planned} habits</span>
                     </div>
-                    <div className={"rp-chip " + tierClass(w.row.tier)}>{w.row.tier}</div>
-                    {w.row.partial && <div className="rp-card-note">partial &mdash; began before the record</div>}
-                    {w.row.perfect_week && <div className="rp-card-note">perfect week</div>}
+                    <div className="rp-chip">{w.fullDays} full {w.fullDays === 1 ? "day" : "days"}</div>
                   </>
                 ) : (
-                  <>
-                    <div className="rp-card-tot rp-muted">&mdash;</div>
-                    <div className="rp-chip t-none">not finalised</div>
-                  </>
+                  <div className="rp-card-tot rp-muted">&mdash;</div>
                 )}
+                {w.row?.partial && <div className="rp-card-note">partial &mdash; began before the record</div>}
+                {w.row?.perfect_week && <div className="rp-card-note">full week &mdash; 5/5 full days</div>}
+                {!w.row && <div className="rp-chip t-none">not finalised</div>}
               </div>
             ))}
           </div>
 
           <div className="rp-stats">
             <div><b>{report.recordedDays}</b><span>days recorded</span></div>
-            <div><b>{report.monthPoints}</b><span>of {report.monthMax} daily points</span></div>
-            <div><b>{report.perfectDays}</b><span>perfect days</span></div>
+            <div><b>{report.habitsDone}</b><span>of {report.habitsPlanned} scheduled habits done</span></div>
+            <div><b>{report.perfectDays}</b><span>full days</span></div>
             <div><b>{report.completions}</b><span>habits ticked</span></div>
           </div>
         </section>
@@ -204,11 +192,8 @@ export default async function ExportPage(
             >
               <h2 className="rp-wk-h">
                 <span className="rp-wk-lab">Week of {w.label}</span>
-                {w.row && (
-                  <>
-                    <span className="rp-wk-tot">{w.row.total_points}<span className="rp-of">/55</span></span>
-                    <span className={"rp-chip " + tierClass(w.row.tier)}>{w.row.tier}</span>
-                  </>
+                {w.planned > 0 && (
+                  <span className="rp-wk-tot">{w.done}<span className="rp-of">/{w.planned} habits</span></span>
                 )}
               </h2>
 
@@ -227,9 +212,9 @@ export default async function ExportPage(
             nothing it was never asked to do.
           </p>
           <p>
-            Squad totals are the finalised Monday&ndash;Friday record out of 55. Daily points come
-            from the same scoring the board and the ledger use, and each day&rsquo;s ceiling is what
-            that day would score fully ticked.
+            Each day shows habits done out of the habits scheduled for it, and whether it was a
+            full day &mdash; every habit required that day ticked. Week and month figures add up the
+            days listed in this document.
           </p>
           <p>
             Days with no record are marked &ldquo;no data&rdquo; rather than shown as missed, and are
@@ -237,10 +222,8 @@ export default async function ExportPage(
             {report.earliest && ` The record begins ${report.earliest}; anything before that predates the tracker.`}
           </p>
           <p>
-            A day can score above its ceiling. Scoring reads what was ticked, not what was
-            scheduled, so a habit logged on a day it does not belong to still pays. Those ticks are
-            listed under the day that carries them, and the points are left exactly as the board
-            counts them.
+            A habit ticked on a day it was not scheduled for is listed under that day and is not
+            counted in the day&rsquo;s done / scheduled figure.
           </p>
         </section>
 
@@ -281,9 +264,9 @@ function Day({ d, earliest }: { d: DayRow; earliest: string | null }) {
       <div className="rp-day-h">
         <span className="rp-day-n">{dayLabel(d.date)}</span>
         {d.weekend && <span className="rp-tag">weekend</span>}
-        {d.perfect && <span className="rp-tag rp-tag-gold">perfect day</span>}
-        {d.points > d.max && <span className="rp-tag rp-tag-warn">above the day&rsquo;s ceiling</span>}
-        <span className="rp-day-pts">{d.points}<span className="rp-of">/{d.max}</span></span>
+        <span className="rp-day-pts">
+          {d.done}<span className="rp-of">/{d.planned} habits &middot; full day: {d.perfect ? "yes" : "no"}</span>
+        </span>
       </div>
 
       <div className="rp-grid">
@@ -305,7 +288,7 @@ function Day({ d, earliest }: { d: DayRow; earliest: string | null }) {
 
       {d.offSchedule.length > 0 && (
         <div className="rp-aside">
-          also ticked, not scheduled this day (still scored):{" "}
+          also ticked, not scheduled this day:{" "}
           {d.offSchedule.map(r => `${r.name} ${clickTime(r.at)}`).join(" · ")}
         </div>
       )}
@@ -410,10 +393,6 @@ const CSS = `
   text-transform: uppercase; padding: 2.5px 7px; border-radius: 20px;
   background: #e6eaf1; color: #3a475e;
 }
-.rp-chip.t-first-team { background: #f6e7b5; color: #6b520c; }
-.rp-chip.t-bench { background: #dceaf6; color: #1e4b6b; }
-.rp-chip.t-reserves { background: #fbe7cd; color: #8a5312; }
-.rp-chip.t-training-ground { background: #f7dcda; color: #8d2b23; }
 .rp-chip.t-none { background: #eceff3; color: #8792a3; }
 
 /* ── stat strip ───────────────────────────────────────────────────────── */
@@ -453,8 +432,6 @@ const CSS = `
   font-size: 7.5px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase;
   color: #6b7688; background: #eef1f5; padding: 2px 6px; border-radius: 20px;
 }
-.rp-tag-gold { color: #6b520c; background: #f6e7b5; }
-.rp-tag-warn { color: #8a5312; background: #fbe7cd; }
 
 .rp-grid { display: flex; gap: 12px; align-items: flex-start; }
 .rp-col { flex: 1 1 0; min-width: 0; }

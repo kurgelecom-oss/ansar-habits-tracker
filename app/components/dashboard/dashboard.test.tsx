@@ -13,12 +13,10 @@ import StretchWalletPanel from "./StretchWalletPanel";
 import SaturdayPanel from "./SaturdayPanel";
 import RestDayCard from "./RestDayCard";
 import { saturdayPs5 } from "../../lib/weekend";
-import WeeklyTierProgress from "./WeeklyTierProgress";
 import WorkWeekPanel from "./WorkWeekPanel";
 import DashboardShell from "./DashboardShell";
 import Panel from "./Panel";
 import { weekdayFixture, weekendFixture } from "../../dashboard/fixtures";
-import { getTier } from "../../dashboard/model";
 import type { DashboardHabit } from "../../dashboard/types";
 import type { MatchCentreData } from "../../lib/football/types";
 import { deriveMatchReadiness, groupHabitsByBlock } from "../../dashboard/model";
@@ -277,7 +275,6 @@ describe("ClubStatus", () => {
         serverTime={serverTime}
         deviceTime="1:47pm"
         online
-        pointsActive
         todayPercent={93}
         streak={33}
       />
@@ -294,7 +291,7 @@ describe("ClubStatus", () => {
   });
 
   it("labels the server clock as the one every gate uses", () => {
-    render(<ClubStatus serverTime={serverTime} deviceTime="1:47pm" online pointsActive />);
+    render(<ClubStatus serverTime={serverTime} deviceTime="1:47pm" online />);
     expect(screen.getByText(/Sydney/)).toHaveAttribute("title", "Server clock — every gate uses this");
   });
 
@@ -303,7 +300,7 @@ describe("ClubStatus", () => {
    * disagree are only safe while it is obvious which one decides anything.
    */
   it("keeps the device clock visibly display-only", () => {
-    render(<ClubStatus serverTime={serverTime} deviceTime="1:47pm" online pointsActive />);
+    render(<ClubStatus serverTime={serverTime} deviceTime="1:47pm" online />);
     const device = screen.getByText(/device/);
     expect(device).toHaveAttribute("title", "This device's clock — display only, no gate reads it");
     expect(device).toHaveTextContent("1:47pm");
@@ -311,36 +308,22 @@ describe("ClubStatus", () => {
   });
 
   it("shows the server clock's own weekday and time, not the device's", () => {
-    render(<ClubStatus serverTime={serverTime} deviceTime="9:00pm" online pointsActive />);
+    render(<ClubStatus serverTime={serverTime} deviceTime="9:00pm" online />);
     expect(screen.getByText(/Sydney/)).toHaveTextContent("1:45pm");
     expect(screen.getByText(/Sydney/)).toHaveTextContent("Wednesday");
   });
 
   it("renders no server clock at all before the gate answers", () => {
-    render(<ClubStatus serverTime={null} deviceTime="" online pointsActive />);
+    render(<ClubStatus serverTime={null} deviceTime="" online />);
     expect(screen.queryByText(/Sydney/)).not.toBeInTheDocument();
   });
 
   it("states connection in text, not colour alone", () => {
-    const { unmount } = render(<ClubStatus serverTime={serverTime} deviceTime="" online pointsActive />);
+    const { unmount } = render(<ClubStatus serverTime={serverTime} deviceTime="" online />);
     expect(screen.getByText("Live")).toBeInTheDocument();
     unmount();
-    render(<ClubStatus serverTime={serverTime} deviceTime="" online={false} pointsActive />);
+    render(<ClubStatus serverTime={serverTime} deviceTime="" online={false} />);
     expect(screen.getByText("Offline")).toBeInTheDocument();
-  });
-
-  it("shows the soft-launch badge only while points are inactive", () => {
-    const { unmount } = render(<ClubStatus serverTime={serverTime} deviceTime="" online pointsActive={false} />);
-    expect(screen.getByText("Soft-launch · points preview")).toBeInTheDocument();
-    unmount();
-    render(<ClubStatus serverTime={serverTime} deviceTime="" online pointsActive />);
-    expect(screen.queryByText("Soft-launch · points preview")).not.toBeInTheDocument();
-  });
-
-  /** null means /api/settings has not answered — not that points are off. */
-  it("stays silent about points while settings are still unknown", () => {
-    render(<ClubStatus serverTime={serverTime} deviceTime="" online pointsActive={null} />);
-    expect(screen.queryByText("Soft-launch · points preview")).not.toBeInTheDocument();
   });
 });
 
@@ -719,7 +702,7 @@ describe("vertical budget before the panels", () => {
 
 function row(overrides: Partial<DashboardHabit> & Pick<DashboardHabit, "id" | "name">): DashboardHabit {
   return {
-    block: "pre_homeschool", order: 1, points: 0, pointType: "block",
+    block: "pre_homeschool", order: 1, pointType: "block",
     state: "LIVE", label: "", message: null, reason: null,
     window: null, dwellSeconds: null, overridden: false,
     ...overrides,
@@ -838,17 +821,9 @@ describe("HabitRow", () => {
     expect(screen.getByRole("button", { name: "Idle habit" })).toBeEnabled();
   });
 
-  it("shows a point chip only when the habit is worth points", () => {
-    const { unmount } = render(<HabitRow habit={row({ id: "a", name: "Scored", points: 5 })} accent="var(--accent)" {...rowHandlers} />);
-    expect(screen.getByText("+5 pts")).toBeVisible();
-    unmount();
-    render(<HabitRow habit={row({ id: "b", name: "Unscored", points: 0 })} accent="var(--accent)" {...rowHandlers} />);
-    expect(screen.queryByText(/^\+\d+ pts?$/)).not.toBeInTheDocument();
-  });
-
-  it("uses the singular for a one-point habit", () => {
-    render(<HabitRow habit={row({ id: "a", name: "One", points: 1 })} accent="var(--accent)" {...rowHandlers} />);
-    expect(screen.getByText("+1 pt")).toBeVisible();
+  it("shows no point value on a row", () => {
+    render(<HabitRow habit={row({ id: "a", name: "Plain" })} accent="var(--accent)" {...rowHandlers} />);
+    expect(screen.getByRole("button", { name: "Plain" })).not.toHaveTextContent(/pts?\b|\+\d/);
   });
 
   it("shows the hold ring only on the row being held", () => {
@@ -868,34 +843,30 @@ describe("HabitPanel", () => {
 
   it("renders every habit in the order it was given", () => {
     render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
-      doneCount={6} blockPoints={2} {...rowHandlers} />);
+      doneCount={6} {...rowHandlers} />);
     const names = screen.getAllByRole("button").map(b => b.textContent);
     expect(names).toHaveLength(7);
     expect(names[0]).toContain("Bed made + dressed");
     expect(names[6]).toContain("Daily goals written");
   });
 
-  it("summarises completion in the head and the block score at the foot", () => {
+  it("summarises completion in the head and prints no score", () => {
     render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
-      doneCount={6} blockPoints={2} {...rowHandlers} />);
+      doneCount={6} {...rowHandlers} />);
     expect(screen.getByText("6/7")).toBeVisible();
-    // The header carries the count alone, as the reference does. The block's
-    // points are stated once, in the closing score line — printing them under
-    // the count as well was the same number said twice.
-    expect(screen.getByText(/Morning Habits Score/)).toBeVisible();
-    expect(screen.getByText("+2 pts")).toBeVisible();
+    expect(screen.queryByText(/Score|pts/)).not.toBeInTheDocument();
   });
 
   /** habitColumn() returned null for an empty block; that behaviour is kept. */
   it("renders nothing for a block with no applicable habits", () => {
     const { container } = render(<HabitPanel title="Morning Habits" accent="var(--accent)" habits={[]}
-      doneCount={0} blockPoints={0} {...rowHandlers} />);
+      doneCount={0} {...rowHandlers} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it("renders the feasibility warning above the rows, as a live status", () => {
     render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
-      doneCount={6} blockPoints={2}
+      doneCount={6}
       feasibility={{ level: "red", text: "⏳ 12m left to finish morning — keep tapping", latestSafeNextTick: 492, remaining: 1 }}
       {...rowHandlers} />);
     const banner = screen.getByTestId("morning-feasibility");
@@ -909,21 +880,21 @@ describe("HabitPanel", () => {
 
   it("omits the feasibility banner when there is nothing to warn about", () => {
     render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
-      doneCount={6} blockPoints={2} {...rowHandlers} />);
+      doneCount={6} {...rowHandlers} />);
     expect(screen.queryByTestId("morning-feasibility")).not.toBeInTheDocument();
   });
 
   it("passes hold and tick handlers through to each row", () => {
     const ticks: string[] = [];
     render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
-      doneCount={6} blockPoints={2} onTick={id => ticks.push(id)} onHoldStart={noop} onHoldCancel={noop} />);
+      doneCount={6} onTick={id => ticks.push(id)} onHoldStart={noop} onHoldCancel={noop} />);
     fireEvent.click(screen.getByRole("button", { name: /Bed made/ }));
     expect(ticks).toEqual(["bed_dressed"]);
   });
 
   it("marks the overridden row and no other", () => {
     render(<HabitPanel title="Morning Habits" accent="var(--ansar-warning)" habits={morning}
-      doneCount={6} blockPoints={2} {...rowHandlers} />);
+      doneCount={6} {...rowHandlers} />);
     expect(screen.getAllByText("Parent override")).toHaveLength(1);
     expect(screen.getByRole("button", { name: /Feet on floor.*restored by parent override/ })).toBeInTheDocument();
   });
@@ -1155,8 +1126,8 @@ describe("DayProgrammePanel", () => {
 /* ── Task 7: Work + Week ────────────────────────────────────────────────────*/
 
 const workProps = {
-  weekPoints: 46,
-  weekMax: 55,
+  schoolDays: 4,
+  fullDays: 3,
   goldenBoot: { ok: true, target: 4, streak: 3, progress: 3 },
   submissionCount: null,
   onOpenLogWork: noop,
@@ -1175,13 +1146,13 @@ describe("WorkWeekPanel", () => {
     expect(summary).toHaveTextContent("Journal recorded");
   });
 
-  it("shows the week, the tier, the Golden Boot and a working Log Work", () => {
+  it("shows the week's counts, the Golden Boot and a working Log Work — no points, no tier", () => {
     render(<WorkWeekPanel {...workProps} />);
     expect(screen.getByRole("button", { name: "Log Work" })).toBeEnabled();
-    expect(screen.getByText("46 / 55")).toBeVisible();
-    expect(screen.getByText(/First Team/)).toBeVisible();
+    const panel = screen.getByRole("region", { name: "Work + Week" });
+    expect(panel).toHaveTextContent("School days done 4/5 · Full days 3/5");
+    expect(panel).not.toHaveTextContent(/pts|\/ ?55|First Team|Bench|Reserves|Training Ground/);
     expect(screen.getByText("Golden Boot 3 / 4")).toBeVisible();
-    expect(screen.getAllByTestId("tier-threshold")).toHaveLength(4);
   });
 
   it("opens the existing Tally modal exactly once per click", () => {
@@ -1212,10 +1183,11 @@ describe("WorkWeekPanel", () => {
 
   /* ── Truthfulness ─────────────────────────────────────────────────────────*/
 
-  it("renders no week total before the score has loaded", () => {
-    render(<WorkWeekPanel {...workProps} weekPoints={null} />);
-    expect(screen.getByText("— / 55")).toBeVisible();
-    expect(screen.queryByText("0 / 55")).not.toBeInTheDocument();
+  it("renders no week counts before the week has loaded", () => {
+    render(<WorkWeekPanel {...workProps} schoolDays={null} fullDays={null} />);
+    const panel = screen.getByRole("region", { name: "Work + Week" });
+    expect(panel).toHaveTextContent("School days done — · Full days —");
+    expect(panel).not.toHaveTextContent("0/5");
   });
 
   /**
@@ -1251,82 +1223,6 @@ describe("WorkWeekPanel", () => {
     expect(screen.getByText("Golden Boot")).toBeVisible();
     expect(screen.queryByText("Golden Boot 4 / 4")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Golden Boot earned")).toBeInTheDocument();
-  });
-});
-
-describe("WeeklyTierProgress", () => {
-  it("names the tier the week's points actually reach", () => {
-    const { unmount } = render(<WeeklyTierProgress weekPoints={26} weekMax={55} />);
-    expect(screen.getByTestId("tier-current")).toHaveTextContent("Reserves");
-    unmount();
-    render(<WeeklyTierProgress weekPoints={41} weekMax={55} />);
-    expect(screen.getByTestId("tier-current")).toHaveTextContent("Bench");
-  });
-
-  it("lists all four thresholds in descending order", () => {
-    render(<WeeklyTierProgress weekPoints={46} weekMax={55} />);
-    const stops = screen.getAllByTestId("tier-threshold");
-    expect(stops).toHaveLength(4);
-    expect(stops.map(s => s.getAttribute("data-min"))).toEqual(["42", "34", "26", "0"]);
-  });
-
-  it("marks exactly one threshold as the one currently reached", () => {
-    render(<WeeklyTierProgress weekPoints={35} weekMax={55} />);
-    const active = screen.getAllByTestId("tier-threshold").filter(s => s.getAttribute("data-active") === "true");
-    expect(active).toHaveLength(1);
-    expect(active[0]).toHaveAttribute("data-min", "34");
-  });
-
-  it("exposes the week as a labelled progress value, capped at the max", () => {
-    render(<WeeklyTierProgress weekPoints={46} weekMax={55} />);
-    const meter = screen.getByRole("progressbar", { name: "Week total" });
-    expect(meter).toHaveAttribute("aria-valuenow", "46");
-    expect(meter).toHaveAttribute("aria-valuemax", "55");
-  });
-
-  it("does not overflow its track when a weekend pushes past the max", () => {
-    render(<WeeklyTierProgress weekPoints={60} weekMax={55} />);
-    expect(screen.getByTestId("tier-fill")).toHaveStyle({ width: "100%" });
-  });
-
-  /**
-   * The bar must not tell assistive tech something the screen denies. A week
-   * that has not loaded shows an em dash, so the bar is INDETERMINATE — it has
-   * no value yet, and announcing 0 would report a real, bad week.
-   */
-  it("announces no value at all before the score loads", () => {
-    render(<WeeklyTierProgress weekPoints={null} weekMax={55} />);
-    const meter = screen.getByRole("progressbar", { name: "Week total" });
-    expect(meter).not.toHaveAttribute("aria-valuenow");
-    expect(meter).toHaveAttribute("aria-valuemin", "0");
-    expect(meter).toHaveAttribute("aria-valuemax", "55");
-  });
-
-  /**
-   * A weekend can push the total past a ceiling built from weekday points. The
-   * bar caps visually, so the announced value must cap with it — valuenow above
-   * valuemax is an invalid range that screen readers report unpredictably.
-   */
-  it("clamps the announced value to the track's own range", () => {
-    const { unmount } = render(<WeeklyTierProgress weekPoints={60} weekMax={55} />);
-    expect(screen.getByRole("progressbar", { name: "Week total" })).toHaveAttribute("aria-valuenow", "55");
-    unmount();
-    render(<WeeklyTierProgress weekPoints={-3} weekMax={55} />);
-    expect(screen.getByRole("progressbar", { name: "Week total" })).toHaveAttribute("aria-valuenow", "0");
-  });
-
-  it("keeps the announced value and the visible bar telling the same story", () => {
-    for (const [points, expected] of [[0, "0"], [26, "26"], [55, "55"], [60, "55"]] as const) {
-      const { unmount } = render(<WeeklyTierProgress weekPoints={points} weekMax={55} />);
-      expect(screen.getByRole("progressbar", { name: "Week total" })).toHaveAttribute("aria-valuenow", expected);
-      unmount();
-    }
-  });
-
-  it("marks nothing active and shows no bar before the score loads", () => {
-    render(<WeeklyTierProgress weekPoints={null} weekMax={55} />);
-    expect(screen.queryAllByTestId("tier-threshold").filter(s => s.getAttribute("data-active") === "true")).toHaveLength(0);
-    expect(screen.getByTestId("tier-fill")).toHaveStyle({ width: "0%" });
   });
 });
 
@@ -1402,21 +1298,21 @@ describe("StretchWalletPanel", () => {
 
 describe("SaturdayPanel", () => {
   it("rule 1: a bad week locks PS5 whatever the Push says", () => {
-    render(<SaturdayPanel weekPoints={20} tier={getTier(20)} ps5={saturdayPs5(20, 3, 3)} saturdayStreak={2} />);
+    render(<SaturdayPanel schoolDays={3} ps5={saturdayPs5(3, 3, 3)} saturdayStreak={2} />);
     expect(screen.getByTestId("ps5-verdict")).toHaveTextContent("PS5 🔒");
-    expect(screen.getByTestId("ps5-week")).toHaveTextContent("weekend not earned");
+    expect(screen.getByTestId("ps5-week")).toHaveTextContent("Week: school days done 3/5 — weekend not earned");
     expect(screen.getByTestId("ps5-message")).toHaveTextContent(/No PS5 this weekend/);
     expect(screen.getByTestId("saturday-streak")).toHaveTextContent("2");
   });
 
   it("rule 2: a good week waits for the Push, then unlocks", () => {
-    const { rerender } = render(<SaturdayPanel weekPoints={44} tier={getTier(44)} ps5={saturdayPs5(44, 1, 3)} saturdayStreak={null} />);
+    const { rerender } = render(<SaturdayPanel schoolDays={4} ps5={saturdayPs5(4, 1, 3)} saturdayStreak={null} />);
     expect(screen.getByTestId("ps5-verdict")).toHaveTextContent("PS5 🔒");
     expect(screen.getByTestId("ps5-push")).toHaveTextContent("Saturday Push 1/3 verified");
     expect(screen.getByTestId("saturday-streak")).toHaveTextContent("—");
-    rerender(<SaturdayPanel weekPoints={44} tier={getTier(44)} ps5={saturdayPs5(44, 3, 3)} saturdayStreak={3} />);
+    rerender(<SaturdayPanel schoolDays={4} ps5={saturdayPs5(4, 3, 3)} saturdayStreak={3} />);
     expect(screen.getByTestId("ps5-verdict")).toHaveTextContent("PS5 ✅");
-    expect(screen.getByTestId("ps5-week")).toHaveTextContent("First Team");
+    expect(screen.getByTestId("ps5-week")).toHaveTextContent("Week: school days done 4/5 — weekend earned");
   });
 });
 
@@ -1437,7 +1333,7 @@ describe("DashboardShell composition", () => {
     render(
       <DashboardShell
         status={<ClubStatus serverTime={weekdayFixture.gate.serverTime}
-          deviceTime="1:47pm" online pointsActive />}
+          deviceTime="1:47pm" online />}
       >
         <ClubHeader />
       </DashboardShell>,
@@ -1490,7 +1386,7 @@ describe("visual parity contracts", () => {
 
   it("marks Journal and Homeschool as different learning priorities", () => {
     const journal = row({ id: "journal", name: "Daily learning journal entry written", block: "homeschool" });
-    const session = row({ id: "homeschool_session", name: "Homeschool session completed (4 hrs)", block: "homeschool", points: 5 });
+    const session = row({ id: "homeschool_session", name: "Homeschool session completed (4 hrs)", block: "homeschool" });
     render(<><HabitRow habit={journal} accent="var(--accent)" {...rowHandlers} />
       <HabitRow habit={session} accent="var(--accent)" {...rowHandlers} /></>);
     expect(screen.getByRole("button", { name: journal.name })).toHaveAttribute("data-emphasis", "journal");
@@ -1533,7 +1429,7 @@ describe("parent verification", () => {
 describe("rowCopy", () => {
   const row = (over: Partial<DashboardHabit>): DashboardHabit => ({
     id: "journal", name: "Daily learning journal entry written",
-    block: "afternoon_evening", order: 16.5, points: 0,
+    block: "afternoon_evening", order: 16.5,
     pointType: "perfect_day_only", state: "LIVE", label: "", message: null,
     reason: null, window: "21:00–21:30", dwellSeconds: null, overridden: false,
     ...over,

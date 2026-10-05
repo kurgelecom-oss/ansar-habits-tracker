@@ -10,8 +10,8 @@ import { addDays, dayNameOf, sydneyMinutesOfDay, parseHHMM } from "./lib/time";
 // Pure day rule, shared with the server's habitsForDay(). lib/days.ts imports no
 // Notion code, so nothing server-only reaches this bundle.
 // scoringHabits/isPrerequisite are the second rule in the same pure module: a
-// habit whose Notion "Point Type" is `prerequisite` unlocks and scores nothing,
-// so it is stripped out of every count before any total is taken.
+// habit whose Notion "Point Type" is `prerequisite` only unlocks, so it is
+// stripped out of every count before any total is taken.
 import { habitsOnDay, scoringHabits } from "./lib/days";
 // Mirrored byte-for-byte with family-dashboard/app/lib/streak.ts — see the
 // header there, and scripts/check-scoring-sync.sh which guards the pair.
@@ -31,16 +31,16 @@ import AssessmentLockCard from "./components/dashboard/AssessmentLockCard";
 import { saturdayPs5, saturdayStreak as saturdayStreakOf } from "./lib/weekend";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import dashboardStyles from "./components/dashboard/dashboard.module.css";
-import { deriveMatchReadiness, getTier, journalEvidenceState } from "./dashboard/model";
+import { deriveMatchReadiness, journalEvidenceState } from "./dashboard/model";
 // One written-down copy of the journal's habit id. The auto-sync effect and
 // the Match Readiness lookup below both key off it, and rowCopy.ts already
 // owned it for the row's captions.
 import { JOURNAL_ID } from "./dashboard/rowCopy";
 import { HABIT_BLOCKS, type DashboardHabit } from "./dashboard/types";
 import type { MatchCentreData } from "./lib/football/types";
-// The squad week, Mon–Fri. This file used to declare its own copy beside the
-// /55 note below; lib/goldenBoot.ts asked for the collapse the moment page.tsx
-// was next edited, and the Golden Boot cell is that edit. Nothing server-only
+// The squad week, Mon–Fri. This file used to declare its own copy;
+// lib/goldenBoot.ts asked for the collapse the moment page.tsx was next
+// edited, and the Golden Boot cell is that edit. Nothing server-only
 // arrives with it: goldenBoot.ts imports only scoring/days/time — all three
 // already in this bundle — plus a type-only Supabase import that erases.
 import { SQUAD_DAYS } from "./lib/goldenBoot";
@@ -68,22 +68,11 @@ import { SQUAD_DAYS } from "./lib/goldenBoot";
 // light-on-dark — switching to white surfaces would recolour all of it and
 // re-open the contrast work. RM identity instead comes from Champions-League
 // gold + royal navy + kit-white accents on the dark base.
-const RM_GOLD = "var(--ansar-gold)";        // CL gold — FC scoreboard, achievements, top tier
+const RM_GOLD = "var(--ansar-gold)";        // CL gold — FC scoreboard, achievements
 
 // The canonical accent, from globals.css. This repo used to carry var(--ansar-success) — a
 // near-identical but WRONG cyan that matched none of the other five surfaces.
 const CYAN = "var(--accent)";
-
-// ANSAR FC reward gate. NO LONGER A CONSTANT — it is the "Points Active"
-// checkbox on the ANSAR OS App Settings row, read through /api/settings.
-//
-// It used to be `const POINTS_ACTIVE = false` here. Notion had said true since
-// 14 Jul, so the board kept showing "Soft-launch · points preview" for two
-// weeks after the soft launch ended, and fixing that needed a deploy. It is now
-// a checkbox tk can tick.
-//
-// See `pointsActive` state below: null means "not loaded yet" and renders
-// neither state, so the chip cannot flash the wrong answer on first paint.
 
 /* ── Habits ────────────────────────────────────────────────────────────────
    The list itself is Notion's. Icons are not: Notion's Habit Blocks source has
@@ -95,8 +84,8 @@ const CYAN = "var(--accent)";
    up, so there is exactly one copy and nothing here to drift from it. */
 
 const BLOCKS = [
-  { id: "pre_homeschool",    label: "Morning Habits", icon: "🌅",      subtitle: "6:30–8:30am · all = +2 pts", color: "var(--ansar-gold)" },
-  { id: "homeschool",        label: "Homeschool", icon: "📚",        subtitle: "8:30am–1:30pm · +5 pts",     color: CYAN },
+  { id: "pre_homeschool",    label: "Morning Habits", icon: "🌅",      subtitle: "6:30–8:30am", color: "var(--ansar-gold)" },
+  { id: "homeschool",        label: "Homeschool", icon: "📚",        subtitle: "8:30am–1:30pm", color: CYAN },
   { id: "afternoon_evening", label: "Afternoon / Evening", icon: "🌆", subtitle: "1:30–8:30pm",               color: "var(--ansar-success)" },
   { id: "conditional",       label: "Conditional", icon: "⚽",        subtitle: "Mon & Wed · 3:00–8:00pm",    color: "var(--accent)" },
   { id: "saturday_push",     label: "Saturday Push", icon: "🔥",      subtitle: "Sat · 9:00am–5:00pm · parent PIN", color: "var(--ansar-gold)" },
@@ -105,13 +94,13 @@ const BLOCKS = [
 /* ── Stretch Wallet ────────────────────────────────────────────────────────
    A DAILY SWITCH, Mon–Fri (tk, 5 Sep 2026): every item done = the day's reward,
    which /api/stretch names. No minutes, no bank, no cap, no Spend — nobody was
-   tracking minutes. The weekend runs on lib/weekend.ts instead: the week's tier
-   decides IF there is PS5 on Saturday, the Saturday Push decides WHEN, and
+   tracking minutes. The weekend runs on lib/weekend.ts instead: the week's school
+   days decide IF there is PS5 on Saturday, the Saturday Push decides WHEN, and
    Sunday is switched off entirely. */
 
 // ── LOG WORK ────────────────────────────────────────────────────────────────
 // Tally intake form, opened in a modal so Ansar never leaves the board. It
-// still reads and writes no points, tier, streak, screen time or wallet — but
+// still reads and writes no streak, screen time or wallet — but
 // it is no longer inert: a "Daily Journal" submission on THIS form is what
 // unlocks the journal row (gate 6 in /api/tick) and what promotes a ticked
 // journal from "Recorded" to "Verified ✓". `TALLY_ORIGIN` is the postMessage
@@ -193,15 +182,15 @@ type AppLinksView = {
   activeWeekPage?: string | null;
 };
 
-/** Notion habit, from /api/habits. Supplies the point values the chips show. */
+/** Notion habit, from /api/habits. */
 type NotionHabit = {
-  id: string; name: string; block: string; order: number; points: number;
+  id: string; name: string; block: string; order: number;
   pointType: string; days: string[];
   windowStart: string | null; windowEnd: string | null; dwellSeconds: number | null;
   target?: string | null;
 };
 
-type StretchItem = { id: string; name: string; category: string; points: number; whatCountsAsDone: string };
+type StretchItem = { id: string; name: string; category: string; whatCountsAsDone: string };
 
 type WalletState = {
   ok: boolean; serverDate: string; weekday: string;
@@ -226,49 +215,15 @@ type GoldenBootState = { ok: boolean; target: number; streak: number; progress: 
 /** What a refused tap left on screen. */
 type Rejection = { habitId: string; habitName: string; reason: string; message: string };
 
-// ANSAR FC weekly tiers. Weekly max = 55 (incl. +3 streak bonus for 5 Perfect
-// Days Mon–Fri): Mon 11 + Tue 10 + Wed 11 + Thu 10 + Fri 10 = 52, plus 3. It was
-// 56, which no combination of ticks could reach. Kept in step with
-// lib/scoring.ts's WEEKLY_MAX by hand — this file declares its own copy rather
-// than importing it, as the dashboard's two surfaces also do.
-const WEEKLY_MAX = 55;
-
 /**
- * The days the squad total is made of. Mon–Fri, and nothing else, ever.
+ * The days the squad week is made of. Mon–Fri, and nothing else, ever.
  *
- * This is a HARD filter, not a consequence of the habit schedule. It used to be
- * the latter: every habit was Mon–Fri, so a Saturday resolved to zero applicable
- * habits and scored nothing, and the /55 came out right as a side effect.
- * Morning Habits and Afternoon/Evening are now scheduled seven days a week, so
- * that side effect is gone — a fully-ticked Saturday resolves 13 applicable
- * habits and would score 5 straight into a ceiling with no room for it.
- * WEEKLY_MAX is 52 + 3 of strictly weekday points; anything a weekend adds is
- * overflow, and "Week total 60 / 55" is how that overflow would show up.
- *
- * Weekend effort is not discarded, it is reported elsewhere: the weekend daily
- * rating on the scoreboard (see WEEKEND_MAX) and the Stretch Wallet, which is
- * what a weekend actually earns.
- *
- * The list itself is no longer declared here. It is imported at the top of this
- * file from lib/goldenBoot.ts, which is the record-keeping side of the same
- * rule — the display copy and the written-down copy cannot drift if there is
- * only one of them. This note stays because the reasoning is the board's.
+ * This is a HARD filter, not a consequence of the habit schedule: Morning Habits
+ * and Afternoon/Evening are scheduled seven days a week, so a weekend day has
+ * applicable habits of its own and must not be counted as a school or full day
+ * of the week. The list is imported at the top of this file from
+ * lib/goldenBoot.ts, the record-keeping side of the same rule.
  */
-
-/**
- * The weekend daily ceiling: the weekday ceiling minus the 5 the Homeschool
- * block pays, because Homeschool is the one block that stays Mon–Fri.
- *
- * 10 − 5 = 5, and it reconciles against scoreDay() term by term: 2 for the
- * all-or-nothing Morning block, 1 for btn_cornell, 1 for all_namaz, 1 for a
- * perfect day. There is no conditional term — SOCCER_DAYS is Mon/Wed, so nothing
- * on a weekend can reach the 11 a training day allows.
- */
-/* The weekend ceiling and the tier table used to be declared here. Both are
-   gone from this file: the tiers now come from app/dashboard/model.ts, which
-   reads the 42/34/26/0 boundaries out of lib/scoring.ts rather than re-typing
-   them. That leaves exactly one written-down copy of the tier boundaries in
-   the repo, which is what check-scoring-sync.sh has always been guarding. */
 
 
 export default function AnsarPage() {
@@ -278,8 +233,6 @@ export default function AnsarPage() {
   const [dayView, setDayView] = useState<DayView | null>(null);
   const [wallet, setWallet] = useState<WalletState | null>(null);
   const [stretchItems, setStretchItems] = useState<StretchItem[]>([]);
-  // null until /api/settings answers — see the POINTS_ACTIVE note at the top.
-  const [pointsActive, setPointsActive] = useState<boolean | null>(null);
   // Notion destinations, from App Settings. Null until /api/settings answers;
   // the nav falls back to the Control Room's last known URL for that first
   // paint, and the source strip simply omits a link it does not have yet.
@@ -300,7 +253,9 @@ export default function AnsarPage() {
   const [nowMin, setNowMin] = useState<number | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
-  const [weeklyPts, setWeeklyPts] = useState<number | null>(null);
+  /** Mon–Fri days this week with `homeschool_session` done / every applicable
+   *  habit ticked. null until the week has loaded. */
+  const [week, setWeek] = useState<{ schoolDays: number; fullDays: number } | null>(null);
   const [streak, setStreak] = useState<number | null>(null);
   /** Saturdays in a row with the full Push verified. null until known. */
   const [satStreak, setSatStreak] = useState<number | null>(null);
@@ -407,13 +362,12 @@ export default function AnsarPage() {
     try {
       const res = await fetch("/api/settings");
       if (!res.ok) return;
-      const s = (await res.json()) as { pointsActive?: boolean; links?: AppLinksView };
-      if (typeof s?.pointsActive === "boolean") setPointsActive(s.pointsActive);
+      const s = (await res.json()) as { links?: AppLinksView };
       // Every Notion destination the board offers now arrives here rather than
       // being written into the markup. Moving a page in Notion is a paste into
       // the App Settings row; nothing in this repo has to change.
       if (s?.links) setLinks(s.links);
-    } catch { /* best-effort: the chip stays hidden rather than lying */ }
+    } catch { /* best-effort */ }
   }, []);
 
   const loadStretchItems = useCallback(async () => {
@@ -441,7 +395,7 @@ export default function AnsarPage() {
     } catch { setGoldenBoot(null); }
   }, []);
 
-  // Weekly total and streak are read-only history. They still read Supabase
+  // The week's counts and the streak are read-only history. They still read Supabase
   // directly with the anon key — SELECT stays open to anon after the RLS
   // hardening; only writes moved to the server.
   const loadWeeklyData = useCallback(async (today: string) => {
@@ -472,7 +426,7 @@ export default function AnsarPage() {
       // `applicable` stays UNFILTERED — it is only used for the "was anything
       // scheduled at all" guard below, and a day that scheduled nothing but a
       // prerequisite still scheduled something. Only the two id lists that feed
-      // scoreDay() drop prerequisites, so the /55 cannot move when one is added.
+      // scoreDay() drop prerequisites, so a full day cannot move when one is added.
       const scored = scoringHabits(applicable);
       return {
         applicable,
@@ -481,28 +435,19 @@ export default function AnsarPage() {
       };
     };
 
-    let total = 0;
-    Object.keys(byDate).forEach(ds => {
-      // THE WEEKDAY FILTER, and it is deliberately the first thing here.
-      // Weekend rows are skipped because of the DATE, never because the day
-      // happened to schedule nothing — that used to be the mechanism, and it
-      // stopped being true the moment weekend habits were restored. A Saturday
-      // with all 13 of its habits ticked contributes exactly 0 to the /55.
-      if (!SQUAD_DAYS.includes(dayNameOf(ds))) return;
-      const { applicable, preIds, baseIds } = idsFor(ds);
-      if (applicable.length === 0) return;   // nothing scheduled that day → 0
-      total += scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).total;
+    // THE WEEKDAY FILTER is the date list itself: Mon–Fri of this week, by
+    // DATE, never because a day happened to schedule nothing. A Saturday with
+    // all 13 of its habits ticked is neither a school day nor a full day here.
+    const weekdayDates = [0, 1, 2, 3, 4].map(i => addDays(weekStart, i))
+      .filter(ds => SQUAD_DAYS.includes(dayNameOf(ds)) && byDate[ds]);
+    setWeek({
+      // Rule 1 of lib/weekend.ts counts exactly this.
+      schoolDays: weekdayDates.filter(ds => byDate[ds].has("homeschool_session")).length,
+      fullDays: weekdayDates.filter(ds => {
+        const { applicable, preIds, baseIds } = idsFor(ds);
+        return applicable.length > 0 && scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).perfect;
+      }).length,
     });
-
-    const weekdayDates = [0, 1, 2, 3, 4].map(i => addDays(weekStart, i));
-    const allWeekdaysPerfect = weekdayDates.every(ds => {
-      if (!byDate[ds]) return false;
-      const { applicable, preIds, baseIds } = idsFor(ds);
-      return applicable.length > 0 && scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).perfect;
-    });
-    if (allWeekdaysPerfect) total += 3;
-
-    setWeeklyPts(total);
   }, [notionHabits]);
 
   /**
@@ -992,39 +937,17 @@ export default function AnsarPage() {
 
   const gateHabits = gate?.habits ?? [];
   const dayName = gate?.serverTime.weekday ?? "";
-  const completedIds = new Set(gateHabits.filter(h => h.state === "DONE").map(h => h.id));
   const overriddenIds = new Set(gate?.overriddenHabitIds ?? []);
-  const pointsById: Record<string, number> = {};
-  notionHabits.forEach(h => { pointsById[h.id] = h.points; });
 
   /* Prerequisites are stripped BEFORE anything is counted.
-     A `prerequisite` habit is worth no points, is not part of the all-or-nothing
-     morning block, is not required for a Perfect Day, and is not in the Today %
-     denominator. Adding one in Notion therefore moves nothing on this strip —
-     it only decides what is tappable. See lib/days.ts for why the flag is Point
-     Type and not Points == 0 (eleven live habits already score zero).
-
-     `completedIds` above is deliberately left over ALL habits: scoreDay() only
-     ever looks up specific ids, and baseIds is what decides the perfect day. */
+     A `prerequisite` habit is not required for a full day and is not in the
+     Today % denominator. Adding one in Notion therefore moves nothing on this
+     strip — it only decides what is tappable. See lib/days.ts for why the flag
+     is Point Type. */
   const scored = scoringHabits(gateHabits);
-  const preIds = scored.filter(h => h.block === "pre_homeschool").map(h => h.id);
-  const baseIds = scored.filter(h => h.block !== "conditional").map(h => h.id);
-  const dayScore = scoreDay(completedIds, dayName, preIds, baseIds);
   const todayDone = scored.filter(h => h.state === "DONE").length;
   const overallPct = scored.length > 0 ? Math.round((todayDone / scored.length) * 100) : 0;
 
-  // Weekend is read from the SERVER's Sydney weekday, never `new Date()` — same
-  // rule as every gate on this page. Empty until /api/tick answers, so the
-  // scoreboard cannot flash the weekday cell on a Saturday before the server has
-  // spoken. It is declared BEFORE DAILY_MAX because the ceiling now depends on
-  // it: a weekend day is a real scoring day with a real, lower ceiling, not a
-  // blank one.
-
-  // Three ceilings, one expression. 11 on a training day, 10 on a school day, 5
-  // on a weekend — see WEEKEND_MAX for why the weekend number is 10 minus the
-  // Homeschool block's 5. `todayPts` needs no branch at all: it comes from
-  // scoreDay() over the habits the SERVER says apply today, so a weekend already
-  // scores itself correctly out of this ceiling.
   const earnedItemIds = new Set(wallet?.earnedItemIds ?? []);
 
   /* ── Styles ─────────────────────────────────────────────────────────────── */
@@ -1143,24 +1066,11 @@ export default function AnsarPage() {
 }`;
 
 
-  /**
-   * Column shell: accent rail, title/subtitle, optional right-hand count.
-   *
-   * `compact` is opt-in and only Weekly Tiers passes it. It buys back 11px of
-   * header (61 -> 50) by thinning the rail, halving the block padding, and
-   * dropping the static subline to 9px with a 1px gap — the title keeps its 15px.
-   * The other four callers (Morning/Evening, Homeschool, Conditional, Stretch
-   * Wallet) omit the flag and render byte-identically, which is why the tightening
-   * lives here as a parameter rather than in the shared style: editing the base
-   * would have restyled every card on the board.
-   */
-
-
   /* habitButton, heroButton and habitColumn were the inline presentation for
      Morning, Afternoon/Evening, Homeschool and Conditional. Every one of those
      blocks now renders through HabitPanel or DayProgrammePanel, so the closures
      are gone rather than left to rot beside their replacements. The behaviour
-     they carried - the four states, the point chip, the override marker, the
+     they carried - the four states, the override marker, the
      tick and long-hold wiring - moved into HabitRow unchanged. */
 
   /* ── WEEKDAY / WEEKEND PREVIEW ──────────────────────────────────────────────
@@ -1169,7 +1079,7 @@ export default function AnsarPage() {
      habitsOnDay() — the same rule the server applies — and every row comes back
      LOCKED. A tick belongs to a date and the server would refuse one for a day
      that is not today, so the board says so up front rather than letting a tap
-     fail silently. Nothing here touches scoring, the gate, or any write. */
+     fail silently. Nothing here touches the gate or any write. */
   const liveView: DayView | null =
     dayName === "" ? null : (dayName === "Saturday" || dayName === "Sunday" ? "weekend" : "weekday");
   const previewing = dayView !== null && liveView !== null && dayView !== liveView;
@@ -1178,7 +1088,7 @@ export default function AnsarPage() {
   const previewHabits: DashboardHabit[] = previewing
     ? habitsOnDay(notionHabits, previewDayName).map(h => ({
         id: h.id, name: h.name, block: h.block, order: h.order,
-        pointType: h.pointType, points: h.points,
+        pointType: h.pointType,
         state: "LOCKED" as ButtonState,
         label: `Preview · ${previewDayName}`,
         message: null, reason: "preview",
@@ -1199,12 +1109,12 @@ export default function AnsarPage() {
   /* The day the board is SHOWING — the server's, or the previewed one. */
   const viewDayName = previewing ? previewDayName : dayName;
   const viewIsSaturday = viewDayName === "Saturday";
-  /* Rule 1 + rule 2, from lib/weekend.ts: the week's Mon–Fri total (weeklyPts is
-     already summed over SQUAD_DAYS, so on a Saturday it IS the finished week)
+  /* Rule 1 + rule 2, from lib/weekend.ts: the week's Mon–Fri school days
+     (counted over SQUAD_DAYS, so on a Saturday it IS the finished week)
      and the DONE count of the Saturday Push block as /api/tick reports it. */
   const pushRows = inBlock("saturday_push");
   const ps5 = saturdayPs5(
-    weeklyPts ?? 0,
+    week?.schoolDays ?? 0,
     pushRows.filter(h => h.state === "DONE").length,
     pushRows.length,
   );
@@ -1266,19 +1176,18 @@ export default function AnsarPage() {
 
   const morning = BLOCKS.find(b => b.id === "pre_homeschool")!;
   /**
-   * Morning rows for HabitPanel: the gate's own habit views, plus the two facts
-   * a row renders that /api/tick does not carry — the Notion point value and
-   * whether a parent override stands behind the completion. Both are read from
-   * the same `pointsById` and `overriddenIds` the rest of this file uses, so
-   * the panel cannot disagree with the board about either.
+   * Morning rows for HabitPanel: the gate's own habit views, plus the one fact
+   * a row renders that /api/tick does not carry on the row — whether a parent
+   * override stands behind the completion. It is read from the same
+   * `overriddenIds` the rest of this file uses, so the panel cannot disagree
+   * with the board about it.
    */
   const rowsFor = (blockId: string): DashboardHabit[] =>
     inBlock(blockId).map(h => ({
       ...h,
-      points: pointsById[h.id] ?? 0,
       overridden: overriddenIds.has(h.id),
       // Spread already carries this from the gate view; naming it keeps the
-      // field visible at the one place rows are built, next to the two facts
+      // field visible at the one place rows are built, next to the fact
       // the gate does not supply.
       parentVerifyRequired: h.parentVerifyRequired ?? false,
     }));
@@ -1327,21 +1236,6 @@ export default function AnsarPage() {
     workSubmissionCount: 0,
   });
 
-  /**
-   * One scoreboard cell. `opts` is additive and defaulted, so the four calls
-   * that predate it render byte-identically to before.
-   *
-   *   color  the value's colour. Gold is the scoreboard default; the Golden Boot
-   *          takes CYAN, the same var(--accent) every other surface uses.
-   *   side   which edge carries the divider. Every cell has drawn it on the
-   *          RIGHT, because every cell had a neighbour to its right. The Golden
-   *          Boot sits last, after Banked and before the right-aligned tier
-   *          badge — a right-hand rule there would hang in the gap with nothing
-   *          after it, so it draws on the LEFT instead and separates itself from
-   *          Banked, which has never drawn one of its own.
-   */
-
-
   return (
     <div className="ab-root" style={{
       // Decorative Bernabeu backdrop. A near-solid dark scrim (92% of the original
@@ -1371,7 +1265,6 @@ export default function AnsarPage() {
             serverTime={gate?.serverTime ?? null}
             deviceTime={mounted ? time : ""}
             online={online}
-            pointsActive={pointsActive}
             todayPercent={gate ? overallPct : null}
             streak={streak}
           />
@@ -1449,12 +1342,10 @@ export default function AnsarPage() {
         <HabitPanel
           title={morning.label}
           icon={morning.icon}
-          scoreLabel="Morning"
           subtitle={morning.subtitle}
           accent={morning.color}
           habits={morningRows}
           doneCount={morningRows.filter(h => h.state === "DONE").length}
-          blockPoints={dayScore.blocks.pre_homeschool ?? 0}
           savingId={saving}
           holdId={holdId}
           feasibility={morningFeasibility}
@@ -1483,8 +1374,8 @@ export default function AnsarPage() {
             piece of Tally wiring (origin allow-list, form URL, embed script,
             submitted message, reset) stays in this file, untouched. */}
         <WorkWeekPanel
-          weekPoints={weeklyPts}
-          weekMax={WEEKLY_MAX}
+          schoolDays={week?.schoolDays ?? null}
+          fullDays={week?.fullDays ?? null}
           goldenBoot={goldenBoot}
           submissionCount={null}
           readiness={readiness}
@@ -1497,8 +1388,7 @@ export default function AnsarPage() {
             weekend rules instead. Both cards are render-only. */}
         {viewIsSaturday ? (
           <SaturdayPanel
-            weekPoints={weeklyPts}
-            tier={weeklyPts === null ? null : getTier(weeklyPts)}
+            schoolDays={week?.schoolDays ?? null}
             ps5={ps5}
             saturdayStreak={satStreak}
           />

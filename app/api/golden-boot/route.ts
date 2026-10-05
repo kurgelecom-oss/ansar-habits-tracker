@@ -39,7 +39,7 @@ import {
   finalizeWeeks,
   loadWeekResults,
   loadAwards,
-  trailingFirstTeamStreak,
+  trailingFullWeekStreak,
   GOLDEN_BOOT_TARGET,
   type RosterHabit,
 } from "../../lib/goldenBoot";
@@ -104,7 +104,7 @@ export async function GET() {
   try {
     const db = readClient();
     const [weeks, awards] = await Promise.all([loadWeekResults(db), loadAwards(db)]);
-    const streak = trailingFirstTeamStreak(weeks);
+    const streak = trailingFullWeekStreak(weeks);
     return NextResponse.json({
       ok: true,
       serverDate: now.date,

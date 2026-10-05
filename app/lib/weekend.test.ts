@@ -1,34 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { isRestDay, saturdayPs5, saturdayStreak, weekendUnlocked, WEEKEND_UNLOCK_MIN_POINTS } from "./weekend";
+import { isRestDay, saturdayPs5, saturdayStreak, weekendUnlocked, WEEKEND_UNLOCK_MIN_SCHOOL_DAYS } from "./weekend";
 
 describe("weekend rules", () => {
-  it("reads the Bench boundary from scoring.ts", () => {
-    expect(WEEKEND_UNLOCK_MIN_POINTS).toBe(34);
+  it("needs school finished on 4 of the 5 weekdays", () => {
+    expect(WEEKEND_UNLOCK_MIN_SCHOOL_DAYS).toBe(4);
   });
 
   it("rule 1: the week decides IF", () => {
-    expect(weekendUnlocked(33)).toBe(false);
-    expect(weekendUnlocked(34)).toBe(true);
-    expect(weekendUnlocked(55)).toBe(true);
+    expect(weekendUnlocked(3)).toBe(false);
+    expect(weekendUnlocked(4)).toBe(true);
+    expect(weekendUnlocked(5)).toBe(true);
   });
 
   it("rule 2: Saturday decides WHEN — Push cannot rescue a bad week", () => {
-    const bad = saturdayPs5(20, 3, 3);
+    const bad = saturdayPs5(3, 3, 3);
     expect(bad.weekUnlocked).toBe(false);
     expect(bad.pushComplete).toBe(true);
     expect(bad.ready).toBe(false);
-    expect(bad.message).toMatch(/No PS5 this weekend/);
+    expect(bad.message).toBe("No PS5 this weekend — school was finished on fewer than 4 days. Push still on.");
   });
 
   it("a good week still waits for the Push", () => {
-    const waiting = saturdayPs5(44, 1, 3);
+    const waiting = saturdayPs5(4, 1, 3);
     expect(waiting.ready).toBe(false);
     expect(waiting.message).toBe("PS5 waits — Push 1/3 verified");
-    expect(saturdayPs5(44, 3, 3).ready).toBe(true);
+    expect(saturdayPs5(4, 3, 3).ready).toBe(true);
   });
 
   it("an empty Push block is never complete", () => {
-    const none = saturdayPs5(44, 0, 0);
+    const none = saturdayPs5(4, 0, 0);
     expect(none.pushComplete).toBe(false);
     expect(none.ready).toBe(false);
   });

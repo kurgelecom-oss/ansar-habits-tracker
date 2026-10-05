@@ -3,7 +3,7 @@
 
    Two halves, deliberately separated:
 
-     • PURE       computeWeek / isFinalizable / trailingFirstTeamStreak / …
+     • PURE       computeWeek / isFinalizable / trailingFullWeekStreak / …
                   No I/O, no clock, no Supabase. Each takes what it needs as an
                   argument, which is what makes them testable against real
                   history without a database.
@@ -14,12 +14,12 @@
                   client bundle no matter who imports it. The route supplies the
                   privileged client; this file only knows how to use one.
 
-   WHY FINALISE AT ALL. The live /55 on the board is recomputed from raw
+   WHY FINALISE AT ALL. The live week counts on the board are recomputed from raw
    habit_completions on every load. That is right for the week in progress and
    wrong for every week before it, because the rules keep moving: WEEKLY_MAX was
    56; homeschool used to pay 3+1+1 across three habits that are now retired; the
    weekend used to schedule nothing. Recomputing an old week a year from now
-   scores it under next year's rules, so a "four First Team weeks in a row"
+   scores it under next year's rules, so a "four full weeks in a row"
    streak built on live recomputation would silently rewrite itself every time
    the scoring changed. A finalised week is a fact. Facts get written down once.
 
@@ -52,10 +52,10 @@ import { addDays, dayNameOf, weekStartOf } from "./time";
  */
 export const SQUAD_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-/** The tier label that counts toward the Golden Boot. From scoring.ts THRESHOLDS. */
-export const FIRST_TEAM = "First Team";
-
-/** Consecutive First Team weeks that earn a Golden Boot. */
+/** Consecutive full weeks (5/5 full days, `perfect_week`) that earn a Golden
+ *  Boot. It counted "First Team" tier weeks until the points system was removed
+ *  (tk, 5 Oct 2026); total_points and tier are still written to the ledger
+ *  because its columns are NOT NULL, but nothing reads them any more. */
 export const GOLDEN_BOOT_TARGET = 4;
 
 /** A habit as far as week scoring is concerned — Notion's block + days, plus
@@ -84,12 +84,11 @@ export interface WeekResultRow {
 /**
  * Score one Mon–Fri week.
  *
- * This is loadWeeklyData() in app/page.tsx term for term: the same per-date
- * roster resolve, the same SQUAD_DAYS filter, the same empty-roster guard, the
- * same +3 for five perfect weekdays. It is not shared code because the board
- * scores a PARTIAL week ending today while this scores a CLOSED week ending
- * Friday — different windows, identical arithmetic. The verification harness
- * asserts the two produce the same number for the same week.
+ * `perfect` (5/5 full days) is the only field the Golden Boot reads. It uses
+ * the same per-date roster resolve and full-day check as loadWeeklyData() in
+ * app/page.tsx; the board counts a PARTIAL week ending today while this closes
+ * a week ending Friday. `total` and `tier` are the retired points, still
+ * computed only because week_results declares both columns NOT NULL.
  */
 export function computeWeek(
   weekStart: string,
@@ -98,9 +97,9 @@ export function computeWeek(
 ): WeekComputation {
   const idsFor = (ds: string) => {
     const applicable = habitsOnDay(roster, dayNameOf(ds));
-    // Identical to the board's idsFor, deliberately — the /55 Ansar watches
-    // during the week and the /55 written into week_results at the end of it
-    // must be the same number. Prerequisites drop out of both id lists and out
+    // Identical to the board's idsFor, deliberately — the full days Ansar
+    // watches during the week and the week written into week_results at the
+    // end of it must agree. Prerequisites drop out of both id lists and out
     // of neither `applicable` guard. See lib/days.ts.
     const scored = scoringHabits(applicable);
     return {
@@ -176,10 +175,10 @@ export function isPartialWeek(weekStart: string, earliestCompletionDate: string)
 }
 
 /**
- * Consecutive First Team weeks ending at the most recent finalised week.
+ * Consecutive full weeks ending at the most recent finalised week.
  *
- * Walks backwards and stops at the first week that is not First Team, is
- * partial, or is missing. The gap check matters: two First Team weeks either
+ * Walks backwards and stops at the first week that is not a full week, is
+ * partial, or is missing. The gap check matters: two full weeks either
  * side of an un-finalised week are not "in a row", and array order alone would
  * happily call them consecutive.
  *
@@ -187,13 +186,13 @@ export function isPartialWeek(weekStart: string, earliestCompletionDate: string)
  * data is not evidence that a streak continued, and treating it as transparent
  * would let a run span a month the tracker was switched off.
  */
-export function trailingFirstTeamStreak(rows: WeekResultRow[]): number {
+export function trailingFullWeekStreak(rows: WeekResultRow[]): number {
   const sorted = [...rows].sort((a, b) => (a.week_start < b.week_start ? 1 : -1));
   let streak = 0;
   let expected: string | null = null;
   for (const row of sorted) {
     if (expected !== null && row.week_start !== expected) break;   // gap in the run
-    if (row.partial || row.tier !== FIRST_TEAM) break;
+    if (row.partial || !row.perfect_week) break;
     streak += 1;
     expected = addDays(row.week_start, -7);
   }
@@ -220,7 +219,7 @@ export function awardWeeks(rows: WeekResultRow[]): string[] {
   let expected: string | null = null;
   for (const row of sorted) {
     const contiguous = expected === null || row.week_start === expected;
-    streak = contiguous && !row.partial && row.tier === FIRST_TEAM ? streak + 1 : 0;
+    streak = contiguous && !row.partial && row.perfect_week ? streak + 1 : 0;
     if (streak > 0 && streak % GOLDEN_BOOT_TARGET === 0) due.push(row.week_start);
     expected = addDays(row.week_start, 7);
   }
@@ -356,6 +355,6 @@ export async function finalizeWeeks(
     skippedExisting,
     skippedInProgress,
     awardsInserted: missing,
-    streak: trailingFirstTeamStreak(allRows),
+    streak: trailingFullWeekStreak(allRows),
   };
 }

@@ -30,7 +30,7 @@ import { HABITS_DS, SETTINGS_DS, STRETCH_DS, CONTROL_ROOM_FALLBACK_URL } from ".
 const CACHE_MS = 5 * 60 * 1000;
 
 export interface Habit extends GateHabit {
-  /** Notion "Points". Displayed on chips; the scoring math does NOT read it. */
+  /** Notion "Points". Still read, no longer displayed anywhere (points removed, tk, 5 Oct 2026). */
   points: number;
   pointType: string;
   /** Notion "Days" multi-select, e.g. ["Mon","Wed"]. Empty means every day. */

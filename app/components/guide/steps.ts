@@ -11,12 +11,12 @@
      leadsTo    what it unlocks or feeds
 
    KEEP THIS BESIDE THE RULES IT DESCRIBES. Every number below is copied from
-   lib/scoring.ts, lib/gating.ts, lib/weekend.ts or lib/streak.ts. When one of
+   lib/gating.ts, lib/weekend.ts or lib/streak.ts. When one of
    those changes, change the sentence here in the same commit — a guide that is
    confidently out of date is worse than no guide.
 
    Written to be read by a 17-year-old: plain words, short sentences, and the
-   real numbers rather than "some points".
+   real numbers rather than "some days".
    ══════════════════════════════════════════════════════════════════════════ */
 
 export type GuideStep = {
@@ -41,14 +41,14 @@ const TODAY: GuideStep[] = [
     tracked: "The clock comes from the server, not from the iPad. Changing the iPad's time changes nothing, because every rule checks the server's clock.",
     measured: "\"Today\" is habits done divided by habits scheduled today. The streak counts weekdays in a row with at least 5 habits done. Weekends neither add to it nor break it.",
     controlled: "Nobody sets these by hand. They are worked out from the ticks. The green \"Live\" dot means the board can reach the server; if it says Offline, taps will not save.",
-    leadsTo: "The streak and the percentage are for motivation only. Points and rewards come from the panels further down.",
+    leadsTo: "The streak and the percentage are for motivation only. Rewards come from the panels further down.",
   },
   {
     target: '[class*="matchCentre__"]',
     title: "The match bar",
     what: "The next Real Madrid fixture, or the live score while a match is on. The pills above it switch the bar to another league: Real Madrid's match in La Liga or the Champions League, or the top match of the round in the Premier League or Serie A.",
     tracked: "It comes from a live football data service. If that service is down, the bar says so instead of showing a made-up match.",
-    measured: "Nothing here is scored. It is not connected to points, habits or rewards.",
+    measured: "Nothing here is scored. It is not connected to habits or rewards.",
     controlled: "Nobody in the house controls it. It updates by itself.",
     leadsTo: "The Leaderboards screen shows the full league tables this fixture belongs to.",
   },
@@ -59,7 +59,7 @@ const TODAY: GuideStep[] = [
     tracked: "The blocks come from the Daily Programme in Notion. The app keeps its own copy and refreshes it every night, so a change made in Notion today shows up tomorrow. Each block is ticked on the School screen, and each tick is saved against that exact block.",
     measured: "Blocks done out of blocks planned for today. On a weekend it shows the next school day instead of a zero.",
     controlled: "A parent writes the week in Notion. Ansar ticks each block when it is finished. This card only reports; you cannot tick from here.",
-    leadsTo: "Ticking blocks builds the school record. The 5 daily points still come from the \"Homeschool session completed\" habit in Today's Programme, not from this card.",
+    leadsTo: "Ticking blocks builds the school record. The school day itself is counted by the \"Homeschool session completed\" habit in Today's Programme, not by this card.",
   },
   {
     target: '[data-testid="today-pillars"] > section:last-child',
@@ -68,14 +68,14 @@ const TODAY: GuideStep[] = [
     tracked: "Sessions come from a fixed weekly plan built around the school day. They are ticked on the Football screen. If the football database is not switched on, ticks are kept on this device only, and the Football screen says so.",
     measured: "Sessions done out of sessions planned today. The line at the bottom is the planned football load for the week against a cap of 12 hours, which is one hour per year of age. It is the plan, not hours actually played.",
     controlled: "The plan is set in the app. Ansar ticks what he really did. Mum sets one focus for the week at the Sunday meeting.",
-    leadsTo: "Football ticks do not earn habit points, except \"Soccer training attended\" on Mondays and Wednesdays, which is a habit worth 1 point.",
+    leadsTo: "Football ticks are not habits, except \"Soccer training attended\" on Mondays and Wednesdays, which is a habit and counts toward a full day.",
   },
   {
     target: 'section[aria-label="Morning Habits"]',
     title: "Morning Habits",
     what: "The seven things that start the day, from making the bed to writing the day's goals. They have to be done between 6:30am and 8:30am.",
     tracked: "Each tap is sent to the server, which checks four rules before saving it. One: the time must be inside the window. Two: the habits must be done in order, top to bottom. Three: there must be at least 90 seconds between taps, so the list cannot be swept in one go. Four: the date must be today.",
-    measured: "All seven done earns 2 points. Six done earns 0. It is all or nothing on purpose.",
+    measured: "Habits done out of seven. The block only counts as finished when all seven are done.",
     controlled: "The server decides, not the screen. If a habit was really done but the tap was missed, a parent can hold the row for two seconds and enter the parent PIN. That is saved as an override and the row is marked, so it never looks like an ordinary tick.",
     leadsTo: "Finishing this block unlocks the Homeschool session and, later, the Stretch Wallet. If it is not finished, both stay locked.",
   },
@@ -84,18 +84,18 @@ const TODAY: GuideStep[] = [
     title: "Today's Programme",
     what: "Everything else the day asks for: the homeschool session, the afternoon and evening habits, and soccer training on Mondays and Wednesdays. On a Saturday it shows the Saturday Push instead of homeschool.",
     tracked: "The same four server rules apply. Each habit has its own time window, shown on the row. The BTN habit also needs a parent to enter the PIN, which confirms a parent has seen the Cornell notes. The journal row checks for a real journal entry submitted through the form.",
-    measured: "Homeschool session: 5 points. BTN and notes: 1 point. All five prayers: 1 point. Soccer training: 1 point on training days. The other habits earn no points on their own, but every scheduled habit must be done for a Perfect Day, which adds 1 bonus point. The most a day can score is 10, or 11 on a training day.",
+    measured: "Habits done out of habits scheduled today. A full day is every scheduled habit done, including soccer training on training days. Ticking the Homeschool session is what makes it a school day done.",
     controlled: "The habit list, windows and order are set by a parent in Notion. The server enforces them. A parent override works here the same way as in the morning.",
-    leadsTo: "These points make up most of the week's total, which decides the weekend.",
+    leadsTo: "School days done decide the weekend. Full days build the week's count and the Golden Boot.",
   },
   {
     target: 'section[aria-label="Work + Week"]',
     title: "Work + Week",
-    what: "The week's scoreboard, plus the button for logging finished work.",
-    tracked: "\"Log Work\" opens a form where a piece of finished work is recorded. The week total adds up the daily points from Monday to Friday.",
-    measured: "The week is out of 55. That is 52 from five perfect days plus a 3-point bonus for getting all five. The tiers are: First Team at 42 or more, Bench at 34 to 41, Reserves at 26 to 33, and Training Ground below 26. \"Match Readiness\" is a quick picture of today's learning and does not affect points.",
-    controlled: "Nobody can type a score in. It only moves when habits are ticked or a parent override is recorded.",
-    leadsTo: "Reaching Bench (34 points) or better by Friday unlocks PS5 on Saturday. Below that there is no PS5 that weekend, and nothing done on Saturday can buy it back.",
+    what: "The week's counts, plus the button for logging finished work.",
+    tracked: "\"Log Work\" opens a form where a piece of finished work is recorded. The week counts are taken from the habit ticks from Monday to Friday.",
+    measured: "Two counts out of 5. School days done is the weekdays with the Homeschool session ticked. Full days is the weekdays with every scheduled habit done. Four weeks in a row with 5 full days earns the Golden Boot. \"Match Readiness\" is a quick picture of today's learning and does not affect either count.",
+    controlled: "Nobody can type a count in. It only moves when habits are ticked or a parent override is recorded.",
+    leadsTo: "School done on at least 4 of the 5 weekdays unlocks PS5 on Saturday. Fewer than that, there is no PS5 that weekend, and nothing done on Saturday can buy it back.",
   },
   {
     target: 'section[aria-label="Stretch Wallet"], section[aria-label="Saturday"]',
@@ -103,7 +103,7 @@ const TODAY: GuideStep[] = [
     what: "On weekdays this is the Stretch Wallet: four extra challenges. On a Saturday it is replaced by the Saturday card, which shows whether PS5 is unlocked.",
     tracked: "Each stretch item is ticked here and saved for today only. The wallet stays locked until the Qur'an recitation, the whole Morning Habits block and the Homeschool session are done.",
     measured: "All four items done earns 1 hour 15 minutes of PS5 that same day. Three out of four earns nothing. Nothing is banked or carried to another day.",
-    controlled: "The four items are set by a parent in Notion. On Saturday, PS5 needs two things: the week reached Bench or better, and every Saturday Push task has been signed off by a parent.",
+    controlled: "The four items are set by a parent in Notion. On Saturday, PS5 needs two things: school was done on at least 4 of the 5 weekdays, and every Saturday Push task has been signed off by a parent.",
     leadsTo: "Same-day PS5 on weekdays. On Saturday, the controller comes out only when both Saturday rules are met.",
   },
 ];
@@ -155,7 +155,7 @@ const FOOTBALL: GuideStep[] = [
     tracked: "The scoreboard counts ticks from the checklist lower on this page.",
     measured: "Items done out of items on today's checklist, shown like a match score and as a percentage.",
     controlled: "The theme for each weekday is fixed in the weekly plan. The pills show the next session, the treat window if there is one, and lights-out time.",
-    leadsTo: "A full checklist is a \"perfect day\" for football. It does not add habit points.",
+    leadsTo: "A full checklist is a \"perfect day\" for football. It is separate from the habits.",
   },
   {
     target: 'section[aria-labelledby="plan-h"]',
@@ -245,7 +245,7 @@ const TESTS: GuideStep[] = [
     tracked: "A parent unlocks this device once with the parent PIN, and it stays unlocked for 30 days. Answers save as they are typed and are kept exactly as first written. A correction is stored beside the original, never over it.",
     measured: "The Friday review picks up to two days for each subject and asks what the task was, what he did and what he got, plus one question about what is still unclear. A parent marks each answer from 0 to 2. A monthly exam is twelve questions a subject: eight multiple choice and four yes or no. The system marks it the moment it is handed in.",
     controlled: "Questions are written from the dated lessons in the Daily Programme. A parent must preview and approve an exam before it can be sat, and approving it freezes it. The server enforces the time limit, and an exam cannot be handed in faster than 15 seconds a question.",
-    leadsTo: "The learning record at the bottom of this screen. Scores are for finding gaps. They do not add or remove points.",
+    leadsTo: "The learning record at the bottom of this screen. Scores are for finding gaps. They do not change anything else in Ansar OS.",
   },
   {
     target: '[class*="tests_stats__"]',
@@ -278,7 +278,7 @@ export const GUIDES: Record<string, GuideStep[]> = {
   "/pathway/drills": footballPage("Drills", "Sixteen drills with moving pitch diagrams, each with what to do and what to count.", "Nothing is recorded on this page. Drills are done as part of a session, and the session is ticked on the football Today screen.", "Each drill names something to count, such as clean first touches out of 50, so progress can be felt week to week.", "The daily plan links straight to the drill it needs."),
   "/pathway/fitness": footballPage("Fitness", "Speed, agility and movement work that is right for his age.", "Reference only. Nothing is ticked here.", "Not scored on this page. Timed tests live in Scout's Eye.", "Sessions in the weekly plan draw from this page."),
   "/pathway/conditioning": footballPage("Conditioning", "Building the engine for the last ten minutes of a match.", "Reference only. Nothing is ticked here.", "Not scored on this page.", "The plan schedules this work so the weekly load stays under 12 hours."),
-  "/pathway/strength": footballPage("Strength", "Bodyweight strength first. Weights come later and have to be earned.", "Reference only. Mum signs off the test results that unlock level 2.", "Levels, not points. A level is passed by meeting its bodyweight standard with good form.", "Level 2 strength, and fewer injuries."),
+  "/pathway/strength": footballPage("Strength", "Bodyweight strength first. Weights come later and have to be earned.", "Reference only. Mum signs off the test results that unlock level 2.", "By levels. A level is passed by meeting its bodyweight standard with good form.", "Level 2 strength, and fewer injuries."),
   "/pathway/fuel": footballPage("Fuel", "What to eat and drink around training and matches, and when the treat windows are.", "The daily checklist has two food items: two full water bottles, and every meal with a protein and a colour.", "Ticked or not ticked each day. There is no calorie counting.", "Mum opens and closes the treat windows."),
   "/pathway/screens": footballPage("Screens", "What is worth watching and what is not, for a footballer.", "Reference only. Screen time limits themselves are a house rule, not tracked on this page.", "Not scored.", "Film study days in the weekly plan."),
   "/pathway/scouts": footballPage("Scout's Eye", "What coaches and scouts look for, and the physical and technical tests that show it.", "Each test result can be entered. The app keeps the best one as a personal best, with its date.", "Each test says whether higher or lower is better. A new result replaces the personal best only if it beats it.", "Personal bests are the proof of improvement over a season."),

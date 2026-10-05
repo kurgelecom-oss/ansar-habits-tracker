@@ -1,6 +1,5 @@
 import type { DashboardGoldenBoot, MatchReadiness } from "../../dashboard/types";
 import Panel from "./Panel";
-import WeeklyTierProgress from "./WeeklyTierProgress";
 import styles from "./dashboard.module.css";
 
 /**
@@ -13,9 +12,10 @@ import styles from "./dashboard.module.css";
  * security boundary inside a presentational component.
  */
 type WorkWeekPanelProps = {
-  /** null until the week's score has loaded. */
-  weekPoints: number | null;
-  weekMax: number;
+  /** Mon–Fri days with `homeschool_session` done. null until the week has loaded. */
+  schoolDays: number | null;
+  /** Mon–Fri days with every applicable habit ticked. null until loaded. */
+  fullDays: number | null;
   /** null while the week_results ledger has not answered; the run is hidden. */
   goldenBoot: DashboardGoldenBoot | null;
   /**
@@ -29,7 +29,7 @@ type WorkWeekPanelProps = {
 };
 
 export default function WorkWeekPanel({
-  weekPoints, weekMax, goldenBoot, submissionCount, readiness, logOpen = false, onOpenLogWork,
+  schoolDays, fullDays, goldenBoot, submissionCount, readiness, logOpen = false, onOpenLogWork,
 }: WorkWeekPanelProps) {
   const bootEarned = goldenBoot !== null && goldenBoot.progress >= goldenBoot.target;
 
@@ -37,13 +37,15 @@ export default function WorkWeekPanel({
     <Panel
       footer={
         <span className={styles.panelScore}>
-          Week Score:{" "}
-          <strong>{weekPoints === null ? "—" : `${weekPoints} / ${weekMax} pts`}</strong>
+          School days done{" "}
+          <strong>{schoolDays === null ? "—" : `${schoolDays}/5`}</strong>
+          {" · "}Full days{" "}
+          <strong>{fullDays === null ? "—" : `${fullDays}/5`}</strong>
         </span>
       }
       title="Work + Week"
       icon="📝"
-      subtitle="Log the day's work · Mon–Fri squad total"
+      subtitle="Log the day's work · Mon–Fri squad week"
       accent="var(--ansar-gold)"
     >
       <button
@@ -90,8 +92,6 @@ export default function WorkWeekPanel({
           } as const)[readiness.journalState]}</p>
         </div>
       ) : null}
-
-      <WeeklyTierProgress weekPoints={weekPoints} weekMax={weekMax} />
 
       {goldenBoot ? (
         <p className={styles.goldenBoot}>

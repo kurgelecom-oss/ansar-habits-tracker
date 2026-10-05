@@ -2,7 +2,7 @@
    Dashboard V2 display types.
 
    PRESENTATION ONLY. Nothing in this directory decides whether a habit may be
-   ticked, what a day scores, or what a reward costs — the server owns all of
+   ticked, whether a day is full, or what a reward costs — the server owns all of
    that (see app/lib/gating.ts, scoring.ts, goldenBoot.ts and the /api routes).
    These types describe what the dashboard *renders* after the server has
    already decided.
@@ -31,8 +31,8 @@ export const HABIT_BLOCKS: HabitBlock[] = [
 ];
 
 /**
- * One habit as the dashboard renders it: /api/tick's gate view, plus the point
- * value from /api/habits and whether a parent override stands behind it.
+ * One habit as the dashboard renders it: /api/tick's gate view, plus whether a
+ * parent override stands behind it.
  *
  * `overridden` is carried on the row rather than looked up from a set at render
  * time so the gold audit marker cannot be lost by a component forgetting to
@@ -46,7 +46,6 @@ export type DashboardHabit = {
   order: number;
   /** Notion "Point Type". `prerequisite` means unlocks-only — see lib/days.ts. */
   pointType?: string | null;
-  points: number;
   state: ButtonState;
   label: string;
   message: string | null;
@@ -144,7 +143,7 @@ export type DashboardWallet = {
 
 /** One redeemable stretch item, from /api/stretch-items. */
 export type DashboardStretchItem = {
-  id: string; name: string; category: string; points: number;
+  id: string; name: string; category: string;
   whatCountsAsDone: string;
 };
 
@@ -152,18 +151,6 @@ export type DashboardStretchItem = {
 export type DashboardGoldenBoot = {
   ok: boolean; target: number; streak: number; progress: number;
 };
-
-/** One weekly tier boundary. `min` is scoring truth; the rest is presentation. */
-export type TierThreshold = {
-  min: number;
-  label: string;
-  desc: string;
-  /** A CSS custom property reference, resolved from globals.css in Task 3. */
-  color: string;
-};
-
-/** The tier a weekly total falls in, plus the full scale for the compact track. */
-export type Tier = TierThreshold & { thresholds: TierThreshold[] };
 
 /** Everything readiness is derived from. All of it is already server-approved. */
 export type ReadinessInput = {
