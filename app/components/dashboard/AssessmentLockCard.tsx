@@ -1,40 +1,26 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "./dashboard.module.css";
+import type { PaperLock } from "./usePaperLock";
 
 /**
- * Shown on Today while a Friday review or a monthly exam is due and not handed
- * in. It says what is due, takes him straight to it, and gives a parent one
- * way to lift the lock for the day.
+ * The paper lock (tk, 5 + 11 Oct 2026). While a Friday review or that day's
+ * exam is due and not handed in, the board shows this and nothing else except
+ * the Morning Habits, which never lock. It names what is due and takes him to
+ * Tests. A parent can always lift it for today with the PIN: a small, quiet
+ * "Parent" link, there as a fallback, not as a way round the work.
  *
- * It only REPORTS the lock. The lock itself is enforced by the server on every
- * tick (lib/assessments/gate.ts), so hiding this card unlocks nothing.
+ * It only REPORTS the lock. The server refuses every locked tick anyway
+ * (lib/assessments/gate.ts), so hiding this screen unlocks nothing.
  */
-type Lock = { locked: false } | { locked: true; due: { id: string; kind: string; title: string }[]; message: string };
-
-export default function AssessmentLockCard() {
-  const [lock, setLock] = useState<Lock | null>(null);
+export default function AssessmentLockCard({ lock, onLifted, fullScreen = false }: {
+  lock: PaperLock | null; onLifted: () => void; fullScreen?: boolean;
+}) {
   const [asking, setAsking] = useState(false);
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  const load = useCallback(() => {
-    fetch("/api/assessments/gate", { cache: "no-store" })
-      .then(r => r.json())
-      .then(d => setLock(d as Lock))
-      .catch(() => { /* unreachable: say nothing rather than claim a lock */ });
-  }, []);
-
-  // Re-read when he comes back from the Tests screen, so the card clears itself.
-  useEffect(() => {
-    load();
-    const onShow = () => { if (document.visibilityState === "visible") load(); };
-    document.addEventListener("visibilitychange", onShow);
-    window.addEventListener("focus", load);
-    return () => { document.removeEventListener("visibilitychange", onShow); window.removeEventListener("focus", load); };
-  }, [load]);
 
   if (!lock?.locked) return null;
 
@@ -47,24 +33,26 @@ export default function AssessmentLockCard() {
       });
       const body = await r.json();
       if (!r.ok || !body.ok) setError(body.message ?? "That did not work.");
-      else { setPin(""); setAsking(false); load(); }
+      else { setPin(""); setAsking(false); onLifted(); }
     } catch { setError("Could not reach the server."); }
     finally { setBusy(false); }
   }
 
-  return (
-    <section className={styles.paperLock} aria-label="A paper is due" data-testid="paper-lock">
+  const card = (
+    <section className={`${styles.paperLock} ${fullScreen ? styles.paperLockFull : ""}`} aria-label="A paper is due" data-testid="paper-lock">
       <div className={styles.paperLockText}>
         <h2 className={styles.paperLockTitle}>Hand this in first</h2>
         <ul className={styles.paperLockList}>
           {lock.due.map(p => <li key={p.id}>{p.title}</li>)}
         </ul>
         <p className={styles.paperLockNote}>
-          The morning habits are open. Everything after them is locked until {lock.due.length === 1 ? "this is" : "these are"} handed in.
+          The board is locked until {lock.due.length === 1 ? "this is" : "these are"} handed in. Morning habits stay open.
         </p>
       </div>
       <div className={styles.paperLockActions}>
         <Link href="/tests" className={styles.paperLockGo}>Open Tests</Link>
+      </div>
+      <div className={styles.paperLockParent}>
         {asking ? (
           <form onSubmit={lift} className={styles.paperLockForm}>
             <label htmlFor="paper-lock-pin" className={styles.paperLockLabel}>Parent PIN</label>
@@ -74,14 +62,17 @@ export default function AssessmentLockCard() {
               onChange={e => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
             />
             <button type="submit" className={styles.paperLockQuiet} disabled={pin.length !== 4 || busy}>
-              {busy ? "Working…" : "Lift for today"}
+              {busy ? "Working…" : "Unlock for today"}
             </button>
+            <button type="button" className={styles.paperLockQuiet} onClick={() => { setAsking(false); setPin(""); setError(""); }}>Cancel</button>
           </form>
         ) : (
-          <button type="button" className={styles.paperLockQuiet} onClick={() => setAsking(true)}>Parent: lift for today</button>
+          <button type="button" className={styles.paperLockParentLink} onClick={() => setAsking(true)}>Parent</button>
         )}
         {error ? <p role="alert" className={styles.paperLockError}>{error}</p> : null}
       </div>
     </section>
   );
+
+  return fullScreen ? <div className={styles.paperLockScreen} role="dialog" aria-modal="true" aria-label="A paper is due">{card}</div> : card;
 }

@@ -30,7 +30,7 @@ generated 6 drafts. It was never switched on. Working and used are different thi
 | Year level (Year 6) | **nowhere** | 0 references in code, Notion or docs | REBUILD — needs to exist |
 | Australian Curriculum v9 mapping | **nowhere** | 0 references anywhere | REBUILD |
 | Achievement standard per subject | **nowhere** | 0 references anywhere | REBUILD |
-| Year goals ("by Christmas") | restructure doc prose only | never in the system | REBUILD |
+| Year goals ("end of term") | restructure doc prose only | never in the system | REBUILD |
 | Term / phase arc | `Week` text field, e.g. "Phase 1 — Week 8" | present on 78/80 rows | REBUILD — string, not structure |
 
 Layer 1 is almost entirely absent. Football has all of it (`pathway/data/week.ts`).

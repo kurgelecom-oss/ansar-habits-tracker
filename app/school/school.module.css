@@ -77,3 +77,26 @@
   .card { padding: 16px; }
   .weekGrid { grid-template-columns: repeat(5, 78vw); }
 }
+
+/* ── The year (tk + Nihal, 11 Oct 2026) ── */
+.term { list-style: none; margin: 16px 0 6px; padding: 0; display: grid; grid-template-columns: repeat(11, minmax(74px, 1fr)); gap: 6px; overflow-x: auto; }
+.termWeek { display: flex; flex-direction: column; gap: 3px; padding: 9px 8px; border-radius: var(--ansar-radius-row); background: var(--ansar-rowflat); font-size: 12px; min-width: 0; }
+.termPast { opacity: .62; }
+.termNow { background: color-mix(in srgb, var(--ansar-gold) 22%, var(--ansar-panel)); outline: 2px solid var(--ansar-gold); }
+.termN { font-weight: 800; color: var(--ansar-gold-bright); }
+.termUnit { font-weight: 700; line-height: 1.25; }
+.termDate { color: var(--ansar-subtext); }
+.proofs { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.proof { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: baseline; padding: 10px 12px; border-radius: var(--ansar-radius-row); background: var(--ansar-rowflat); font-size: 14px; line-height: 1.45; }
+.proof:not(:has(.proofMark)) { grid-template-columns: 1fr auto; }
+.proofMark { text-align: center; }
+.proofState { color: var(--ansar-subtext); font-size: 12.5px; white-space: nowrap; }
+.coming { margin: 12px 0 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; line-height: 1.45; }
+.later { color: var(--ansar-subtext); }
+.goals { margin: 12px 0 0; display: grid; gap: 10px; }
+.goals dt { font-weight: 800; font-size: 13px; color: var(--ansar-gold-bright); }
+.goals dd { margin: 2px 0 0; font-size: 14px; line-height: 1.5; color: var(--ansar-text); }
+@media (max-width: 640px) {
+  .proof { grid-template-columns: 22px 1fr; }
+  .proofState { grid-column: 2; white-space: normal; }
+}

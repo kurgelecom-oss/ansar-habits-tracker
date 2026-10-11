@@ -13,6 +13,12 @@ describe('exam shape validation', () => {
     const wrongMix = valid(); Object.assign(wrongMix[7], { options: ['Yes', 'No'], answer: 0 });
     expect(() => validateExamQuestions(wrongMix, lessons)).toThrow('eight');
   });
+  it('refuses a question too long for a 12-year-old to read', () => {
+    const qs = valid(); qs[0].prompt = Array.from({ length: 41 }, () => 'word').join(' ');
+    expect(() => validateExamQuestions(qs, lessons)).toThrow('longer than 40 words');
+    qs[0].prompt = Array.from({ length: 40 }, (_, i) => `w${i}`).join(' ');
+    expect(validateExamQuestions(qs, lessons)).toHaveLength(12);
+  });
   it('refuses a written question: exams are marked by the system', () => {
     const qs = valid() as unknown as Record<string, unknown>[];
     Object.assign(qs[11], { type: 'written', rubric: '0 missing, 1 partial, 2 clear' }); delete qs[11].options; delete qs[11].answer;

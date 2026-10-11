@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import PaperLockGate from "./components/PaperLockGate";
 
 export const metadata: Metadata = {
   title: "Ansar · Daily Habits Tracker",
@@ -42,6 +43,8 @@ export default function RootLayout({
       </head>
       <body>
         {children}
+        {/* A due Friday review or exam covers every page but Today and Tests. */}
+        <PaperLockGate />
       </body>
     </html>
   );

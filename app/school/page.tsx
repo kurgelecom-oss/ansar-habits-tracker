@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ClubNavigation from "../components/dashboard/ClubNavigation";
 import styles from "./school.module.css";
+import { TERM, TRACKED, TRACKING_FROM_WEEK, WEEKLY_PROOF, TERM_TARGETS, YEAR6_GOALS, YEAR_LEVEL, type Area, type ProofState } from "./data/year";
 
 /* ════════════════════════════════════════════════════════════════════════════
    /school — the academy.
@@ -16,7 +17,8 @@ import styles from "./school.module.css";
                 each one tickable on its own (Phase 1's record).
      This week  Monday to Friday. A homeschooled child could not see his own
                 week before this screen.
-     The year   the term arc, from the Week label Notion already carries.
+     The year   the term week by week: each subject's weekly proof, what is
+                coming up, the end-of-term targets and the Year 6 goals.
 
    NOTHING IS REMOVED FROM THE DASHBOARD BY THIS PHASE. The proposal has the
    homeschool card shrinking to a summary here, but the phase gate is "every
@@ -36,15 +38,15 @@ type Week = {
 const VIEWS = ["Today", "This week", "The year"] as const;
 type View = typeof VIEWS[number];
 
-/** "Term 4 — Week 1 (5–9 Oct)" → { term: 4, week: 1 }. Best effort: the Week
- *  column is free text, so anything unparseable degrades to nulls rather than
- *  inventing a position in a term. Phase 1 of the inventory marked this
- *  REBUILD precisely because it is a sentence, not structure. */
-function parseArc(weekTitle: string): { term: number | null; week: number | null } {
-  const term = /term\s*(\d+)/i.exec(weekTitle);
-  const week = /week\s*(\d+)/i.exec(weekTitle);
-  return { term: term ? Number(term[1]) : null, week: week ? Number(week[1]) : null };
-}
+type YearWeek = {
+  n: number; start: string; end: string; unit: string; history: string; maths: string; milestones: string[];
+  topics: string[]; review: ProofState; proofs: Record<Area, { planned: number; done: number; state: ProofState }>;
+};
+type Year = { today: string; currentWeek: number; configured: boolean; weeks: YearWeek[]; message?: string };
+
+const MARK: Record<ProofState, string> = { done: "✅", partial: "◐", due: "⏳", missed: "✗", upcoming: "○", none: "" };
+const SAY: Record<ProofState, string> = { done: "done", partial: "part done", due: "due this week", missed: "not done", upcoming: "coming", none: "not tracked (Week 1)" };
+const shortDate = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-AU", { day: "numeric", month: "short", timeZone: "UTC" });
 
 export default function SchoolPage() {
   const [view, setView] = useState<View>("Today");
@@ -65,6 +67,12 @@ export default function SchoolPage() {
   }
 
   useEffect(() => { load(); }, []);
+
+  const [year, setYear] = useState<Year | null>(null);
+  useEffect(() => {
+    if (view !== "The year" || year) return;
+    fetch("/api/school-year", { cache: "no-store" }).then(r => r.json()).then(setYear).catch(() => setYear({ today: "", currentWeek: 0, configured: false, weeks: [] }));
+  }, [view, year]);
 
   const today = useMemo(
     () => week?.days.find(d => d.isToday) ?? null,
@@ -94,7 +102,6 @@ export default function SchoolPage() {
     }
   }
 
-  const arc = parseArc(week?.weekTitle ?? "");
 
   return (
     <>
@@ -219,50 +226,111 @@ export default function SchoolPage() {
         ) : null}
 
         {/* ── THE YEAR ──────────────────────────────────────────────────── */}
-        {view === "The year" ? (
-          <section className={styles.card}>
-            <div className={styles.cardHead}>
-              <h2 className={styles.cardTitle}>
-                {arc.term ? `Term ${arc.term}` : "The year"}
-              </h2>
-              <span className={styles.cardMeta}>
-                {arc.week ? `Week ${arc.week} of 10` : "Week not numbered"}
-              </span>
-            </div>
-            {arc.week !== null ? (
-              <>
-                <div className={styles.arc} aria-label={`Week ${arc.week} of 10`}>
-                  {Array.from({ length: 10 }, (_, i) => {
-                    const w = arc.week as number;
-                    return (
-                      <span
-                        key={i}
-                        className={`${styles.arcCell} ${
-                          i + 1 === w ? styles.arcNow : i + 1 < w ? styles.arcCellOn : ""
-                        }`}
-                      />
-                    );
-                  })}
-                </div>
-                <p className={styles.note}>
-                  You are here — week {arc.week} of a ten-week term.
-                </p>
-              </>
-            ) : (
-              <p className={styles.empty}>
-                No term position is recorded. The Week column in Notion is free text
-                (&ldquo;{week?.weekTitle || "empty"}&rdquo;), so it cannot be placed in a term
-                until it becomes a real field.
-              </p>
-            )}
-            <p className={styles.note}>
-              Year level, curriculum and year goals are not yet recorded anywhere in the
-              system. The school inventory marks all five as REBUILD; nothing is invented here.
-            </p>
-          </section>
-        ) : null}
+        {view === "The year" ? <YearView year={year} /> : null}
        </div>
       </main>
+    </>
+  );
+}
+
+/** School → The year. Every week of the term, what each subject must show,
+ *  what is coming up, the end-of-term targets and what Year 6 expects. */
+function YearView({ year }: { year: Year | null }) {
+  if (!year) return <section className={styles.card}><p className={styles.empty}>Loading the term…</p></section>;
+  const now = year.weeks.find(w => w.n === year.currentWeek) ?? null;
+  const next = year.weeks.find(w => w.n === year.currentWeek + 1) ?? null;
+  const area = (a: Area) => a === "HASS" ? "History" : a;
+  const count = (a: Area) => year.weeks.filter(w => w.proofs[a]?.state === "done").length;
+  const planned = (a: Area) => year.weeks.filter(w => w.n >= TRACKING_FROM_WEEK && (w.proofs[a]?.planned ?? 0) > 0).length;
+  return (
+    <>
+      <section className={styles.card}>
+        <div className={styles.cardHead}>
+          <h2 className={styles.cardTitle}>{TERM.name}</h2>
+          <span className={styles.cardMeta}>
+            {now ? `Week ${now.n} of ${TERM.weeks}` : year.currentWeek > TERM.weeks ? "Term finished" : "Term not started"}
+          </span>
+        </div>
+        <ol className={styles.term} aria-label={`Week ${year.currentWeek} of ${TERM.weeks}`}>
+          {year.weeks.map(w => (
+            <li key={w.n} className={`${styles.termWeek} ${w.n === year.currentWeek ? styles.termNow : w.n < year.currentWeek ? styles.termPast : ""}`}>
+              <span className={styles.termN}>W{w.n}</span>
+              <span className={styles.termUnit}>{w.unit}</span>
+              <span className={styles.termDate}>{shortDate(w.start)}</span>
+            </li>
+          ))}
+        </ol>
+        <p className={styles.note}>{TERM.endLabel}. {!year.configured ? "Progress could not be loaded, so the ticks below are blank." : ""}</p>
+      </section>
+
+      {now ? (
+        <section className={styles.card}>
+          <div className={styles.cardHead}>
+            <h2 className={styles.cardTitle}>This week: {now.unit}</h2>
+            <span className={styles.cardMeta}>{shortDate(now.start)} – {shortDate(now.end)}</span>
+          </div>
+          <p className={styles.note}>{now.history} · Maths: {now.maths}</p>
+          <ul className={styles.proofs}>
+            {TRACKED.map(a => {
+              const p = now.proofs[a];
+              if (!p?.planned) return null;
+              return (
+                <li key={a} className={styles.proof}>
+                  <span className={styles.proofMark} aria-hidden>{MARK[p.state]}</span>
+                  <span><b>{area(a)}</b> · {WEEKLY_PROOF[a]}</span>
+                  <span className={styles.proofState}>{p.done} of {p.planned} blocks · {SAY[p.state]}</span>
+                </li>
+              );
+            })}
+            <li className={styles.proof}>
+              <span className={styles.proofMark} aria-hidden>⚽</span>
+              <span><b>Health &amp; PE</b> · {WEEKLY_PROOF["Health & PE"]}</span>
+              <a className={styles.proofState} href="/pathway">Football pathway</a>
+            </li>
+            <li className={styles.proof}>
+              <span className={styles.proofMark} aria-hidden>{MARK[now.review]}</span>
+              <span><b>Friday review</b> · handed in</span>
+              <span className={styles.proofState}>{SAY[now.review]}</span>
+            </li>
+          </ul>
+        </section>
+      ) : null}
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}><h2 className={styles.cardTitle}>Coming up</h2></div>
+        <ul className={styles.coming}>
+          {[now, next].filter((w): w is YearWeek => !!w).flatMap(w => w.milestones.map(m => <li key={`${w.n}-${m}`}>{m}</li>))}
+          {next ? <li>Next week (W{next.n}, {shortDate(next.start)}): <b>{next.unit}</b>, {next.history}. Maths: {next.maths}.</li> : null}
+          {year.weeks.filter(w => w.n > year.currentWeek + 1).flatMap(w => w.milestones.map(m => <li key={`${w.n}-${m}`} className={styles.later}>{m}</li>))}
+        </ul>
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}>
+          <h2 className={styles.cardTitle}>End of term targets</h2>
+          <span className={styles.cardMeta}>{TERM.endLabel}</span>
+        </div>
+        <ul className={styles.proofs}>
+          {(Object.keys(TERM_TARGETS) as Area[]).map(a => (
+            <li key={a} className={styles.proof}>
+              <span><b>{area(a)}</b> · {TERM_TARGETS[a]}</span>
+              {TRACKED.includes(a) ? <span className={styles.proofState}>{count(a)} of {planned(a)} weeks</span> : null}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}>
+          <h2 className={styles.cardTitle}>Year {YEAR_LEVEL} goals</h2>
+          <span className={styles.cardMeta}>Australian Curriculum v9</span>
+        </div>
+        <dl className={styles.goals}>
+          {(Object.keys(YEAR6_GOALS) as Area[]).map(a => (
+            <div key={a}><dt>{area(a)}</dt><dd>{YEAR6_GOALS[a]}</dd></div>
+          ))}
+        </dl>
+      </section>
     </>
   );
 }

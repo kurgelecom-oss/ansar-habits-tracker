@@ -29,6 +29,7 @@ import RestDayCard from "./components/dashboard/RestDayCard";
 import TodayPillars from "./components/dashboard/TodayPillars";
 import Noticeboard from "./components/dashboard/Noticeboard";
 import AssessmentLockCard from "./components/dashboard/AssessmentLockCard";
+import { usePaperLock } from "./components/dashboard/usePaperLock";
 import { saturdayPs5, saturdayStreak as saturdayStreakOf } from "./lib/weekend";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import dashboardStyles from "./components/dashboard/dashboard.module.css";
@@ -229,6 +230,9 @@ type Rejection = { habitId: string; habitName: string; reason: string; message: 
 
 export default function AnsarPage() {
   const [gate, setGate] = useState<GateSnapshot | null>(null);
+  // A due Friday review or exam hides everything but the Morning Habits (tk, 11 Oct 2026).
+  const { lock: paperLock, reload: reloadPaperLock } = usePaperLock();
+  const paperLocked = !!paperLock?.locked;
   const [notionHabits, setNotionHabits] = useState<NotionHabit[]>([]);
   /** Weekday/weekend PREVIEW. null = follow the server's real day. */
   const [dayView, setDayView] = useState<DayView | null>(null);
@@ -1277,6 +1281,7 @@ export default function AnsarPage() {
           when the day has no notices. */}
       <Noticeboard />
 
+      {!paperLocked && (<>
       {/* THE MATCH FIRST (tk, 5 Oct 2026). Real Madrid's next fixture opens the
           board as motivation, with the club band directly under it and the two
           pillars under that. Phase 4 had moved it to the foot as "context";
@@ -1299,8 +1304,10 @@ export default function AnsarPage() {
           the rest day switches the habits off, not the academies' summaries. */}
       <TodayPillars />
 
+      </>)}
+
       {/* Renders only while a Friday review or monthly exam is due. */}
-      <AssessmentLockCard />
+      <AssessmentLockCard lock={paperLock} onLifted={reloadPaperLock} />
 
       {/* Server-unreachable banner. The board fails closed, and says so. */}
       {mounted && !gate && (
@@ -1359,6 +1366,7 @@ export default function AnsarPage() {
           onHoldCancel={cancelHold}
         />
 
+        {!paperLocked && (<>
         {/* 2 — TODAY'S PROGRAMME. Homeschool, Afternoon/Evening and Conditional
             in one panel. Amendment 8027d53: the weekend removes only the
             Homeschool subsection; nothing else is allowed to disappear. */}
@@ -1406,6 +1414,7 @@ export default function AnsarPage() {
             onEarn={earnStretch}
           />
         )}
+        </>)}
       </div>
       )}
 
