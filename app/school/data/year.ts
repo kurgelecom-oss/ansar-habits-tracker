@@ -51,7 +51,7 @@ export const WEEKLY_PROOF: Record<Area, string> = {
 export const TERM_TARGETS: Record<Area, string> = {
   Maths: "80%+ on the October, November and December exams. Stretch goal: ratio and rates (Year 7 work).",
   English: "Finish Boy Overboard and The Boy at the Back of the Class, start Refugee, and write one five-paragraph essay.",
-  HASS: "Three teach-backs: Rome (30 Oct), the Islamic world (20 Nov), Europe (11 Dec).",
+  HASS: "Three teach-backs: the Ottomans (30 Oct), the Islamic world (20 Nov), Europe (11 Dec).",
   Science: "An experiment record every week from Week 2: 10 in all.",
   "The Arts": "A piece every week, gathered into a portfolio in Week 11.",
   Technologies: "The quiz game finished, shared and shown to the family.",
@@ -70,9 +70,9 @@ export type TermWeek = { n: number; start: string; unit: string; history: string
 
 export const WEEKS: TermWeek[] = [
   { n: 1, start: "2026-10-05", unit: "Istanbul", history: "Istanbul, the city on two continents (the last Ottoman week)", maths: "Fractions, decimals and percentages", milestones: [] },
-  { n: 2, start: "2026-10-12", unit: "Rome 1", history: "Rome: village, republic, legions, Caesar, empire", maths: "Percentages of amounts", milestones: ["Mon 12 Oct: maths level check opens (due Fri 16)"] },
-  { n: 3, start: "2026-10-19", unit: "Rome 2", history: "Rome: city life, law and Latin, trade, Constantine", maths: "Adding and subtracting fractions", milestones: [] },
-  { n: 4, start: "2026-10-26", unit: "Rome 3 · mastery", history: "Rome mastery week: roads, Pompeii, why Rome fell", maths: "Decimals", milestones: ["Fri 30 Oct: Rome teach-back", "Last week of Oct: October exams"] },
+  { n: 2, start: "2026-10-12", unit: "Ottomans 1", history: "Osman, into Europe and the Janissaries, 1453, Selim and the holy cities", maths: "Percentages of amounts", milestones: ["Mon 12 Oct: maths level check opens (due Fri 16)"] },
+  { n: 3, start: "2026-10-19", unit: "Ottomans 2", history: "Süleyman the Lawgiver, three continents, many peoples, maps, stars and printing", maths: "Adding and subtracting fractions", milestones: [] },
+  { n: 4, start: "2026-10-26", unit: "Ottomans 3 · mastery", history: "Ottoman mastery week: Vienna 1683, railways and reforms, the end in 1922", maths: "Decimals", milestones: ["Fri 30 Oct: Ottoman teach-back", "Last week of Oct: October exams"] },
   { n: 5, start: "2026-11-02", unit: "Islamic world 1", history: "The caliphs, paper, the astrolabe, Ibn al-Haytham", maths: "Negative numbers, order of operations, primes", milestones: ["Tue 3 Nov: Melbourne Cup Day, parents' call"] },
   { n: 6, start: "2026-11-09", unit: "Islamic world 2", history: "House of Wisdom, al-Khwarizmi, Ibn Sina, al-Idrisi", maths: "Algebra (he has already done variables: extend it)", milestones: [] },
   { n: 7, start: "2026-11-16", unit: "Islamic world 3 · mastery", history: "Sahara trade, Mansa Musa, Timbuktu, the Swahili coast", maths: "Area, volume and units", milestones: ["Fri 20 Nov: Islamic world teach-back"] },
