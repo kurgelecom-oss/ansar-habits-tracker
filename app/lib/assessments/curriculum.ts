@@ -61,7 +61,8 @@ export function mapProgramme(programme: NotionPage[], guides: NotionPage[]): { l
     if (!subjects.length || !task) continue;
     for (const subject of subjects) {
       const ownTask = splitTask(task, subject, subjects.length > 1);
-      if (!ownTask) { warnings.push(`${date}: ${subject} has no separable task detail`); continue; }
+      // Since 11 Oct 2026 Turkish has its own block, so a skills mix without it is expected.
+      if (!ownTask) { if (!(subject === 'Languages' && /skills mix/i.test(label))) warnings.push(`${date}: ${subject} has no separable task detail`); continue; }
       // Standing guides are background only; attach the correct subject's guide to combined rows.
       const relevant = new Map<string, NotionPage>();
       for (const ref of p.Guide?.relation || []) {
@@ -76,39 +77,96 @@ export function mapProgramme(programme: NotionPage[], guides: NotionPage[]): { l
 }
 
 /** How many days of one subject the Friday review asks about. Two keeps a full
- *  week near a dozen short answers; every day would be closer to twenty. */
+ *  week near fifteen short answers; every day would be closer to thirty. */
 const REVIEW_DAYS_PER_SUBJECT = 2;
 
+/** Subjects in the order a school day runs, so every Friday reads the same way. */
+const REVIEW_ORDER = ['Maths', 'English', 'HASS', 'Science', 'The Arts', 'Technologies', 'Languages', 'Health & PE'];
+
+/** One-day practical subjects: the "show it" question is the whole check. */
+const SHOW_ONLY = new Set(['Science', 'The Arts', 'Technologies']);
+
+/** Turkish words taught this week, read from "anne (mother)" pairs in the tasks. */
+export function taughtWords(lessons: Lesson[]): string[] {
+  const words = new Set<string>();
+  for (const l of lessons) for (const m of l.task.matchAll(/([\p{L}'’-]+) \(([^)]{1,40})\)/gu)) {
+    if (!/^(?:the|a|an|my|to|is|and)$/i.test(m[1])) words.add(m[1]);
+  }
+  return [...words].slice(0, 8);
+}
+
+const join = (topics: string[]) => topics.length ? topics.join('; ') : 'this week';
+
+/** The subject-specific question, built from what was set this week. */
+function showIt(subject: string, own: Lesson[]): Question | null {
+  const topics = [...new Set(own.map(l => l.topic.trim()).filter(Boolean))].map(t => t.slice(0, 60));
+  const ids = own.map(l => l.id);
+  const id = `q-${subjectSlug(subject)}-show`;
+  const plain = (prompt: string, rubric: string): Question => ({ id, type: 'written', sourceIds: ids, prompt, rubric });
+  switch (subject) {
+    case 'Maths': return plain(
+      `Maths (${join(topics)}): make up one new question like the ones you did this week. Use new numbers. Then solve it and show your working.`,
+      'Show it: 0 = no question, or not like this week\'s work; 1 = a fair question but the working or answer is wrong or missing; 2 = a question that uses this week\'s skill, solved correctly with working shown.');
+    case 'HASS': return plain(
+      `History (${join(topics)}): write 3 facts you learned this week and 1 date. Say why the date matters.`,
+      'Show it: 0 = no facts, or mostly wrong; 1 = some correct facts, or the date is missing or wrong; 2 = three correct facts from this week and a correct date with a reason.');
+    case 'Languages': {
+      const words = taughtWords(own);
+      return plain(words.length
+        ? `Turkish: write what each word means in English: ${words.join(', ')}. Then write one sentence in Turkish that uses two of them.`
+        : 'Turkish: write 4 words you learned this week and what they mean. Then write one sentence in Turkish.',
+        'Show it: 0 = fewer than half right; 1 = most meanings right but no correct sentence; 2 = the meanings right and one sentence that makes sense.');
+    }
+    case 'Science': return plain(
+      `Science (${join(topics)}): what did you guess would happen before you started? What really happened? Were you right?`,
+      'Show it: 0 = cannot say what the experiment was; 1 = describes it, but the guess or the real result is missing; 2 = gives the guess, the real result, and says if the guess was right. A wrong guess is fine.');
+    case 'The Arts': return plain(
+      `Art (${join(topics)}): what did you make? Describe it in 2 sentences. Which part are you proud of?`,
+      'Show it: 0 = cannot say what was made; 1 = says what was made but no detail; 2 = clear description of the piece and one part he is proud of.');
+    case 'Technologies': return plain(
+      `Scratch (${join(topics)}): what does your project do? Name 2 blocks you used and what each one does.`,
+      'Show it: 0 = cannot say what the project does; 1 = says what it does but cannot name the blocks; 2 = explains the project and two blocks correctly.');
+    default: return null;
+  }
+}
+
 /**
- * One review for the whole week, asking about the work itself (tk, 5 Oct 2026).
+ * One review for the whole week, built from that week's work (tk, 5 + 11 Oct 2026).
  *
- * For each subject it picks up to two of the days that subject was worked on,
- * the first and the last, and asks what the task was, what he did and what he
- * got. The task text is NOT printed: the point is to recall it, and printing it
- * would hand him the answer. Day and topic are the only cues. A final prompt
- * asks what is still unclear.
+ * HARD RULE: every question comes from the week's own dated lessons. Each
+ * subject gets the same three-part recall for up to two days it was worked on
+ * (what did you do, show one step, what did you get), then one question built
+ * for that subject from the week's tasks. Practical one-day subjects get only
+ * the second kind. It ends with what is still confusing.
+ *
+ * Plain words for a 12-year-old. The task text itself is NOT printed: that
+ * would hand him the answer. Day, topic and, for Turkish, the words are cues.
  */
 export function buildWeeklyReview(lessons: Lesson[], due: string): Paper {
   if (!lessons.length) throw new Error('Weekly review requires source lessons');
-  const subjects = [...new Set(lessons.map(l => l.subject))].sort();
+  const rank = (s: string) => { const i = REVIEW_ORDER.indexOf(s); return i < 0 ? 99 : i; };
+  const subjects = [...new Set(lessons.map(l => l.subject))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   const questions: Question[] = subjects.flatMap(subject => {
     const own = lessons.filter(l => l.subject === subject);
     const dates = [...new Set(own.map(l => l.date))].sort();
-    const asked = dates.length <= REVIEW_DAYS_PER_SUBJECT ? dates : [dates[0], dates[dates.length - 1]];
-    return asked.map((date): Question => {
+    const asked = SHOW_ONLY.has(subject) ? [] : dates.length <= REVIEW_DAYS_PER_SUBJECT ? dates : [dates[0], dates[dates.length - 1]];
+    const name = subject === 'Languages' && own.every(l => /turkish/i.test(l.task)) ? 'Turkish' : subject;
+    const days = asked.map((date): Question => {
       const day = own.filter(l => l.date === date);
       const topics = [...new Set(day.map(l => l.topic.trim()).filter(Boolean))].map(topic => topic.slice(0, 80)).join('; ');
       return {
         id: `q-${subjectSlug(subject)}-${date}`, type: 'written', sourceIds: day.map(l => l.id),
-        prompt: `${subject}, ${dayNameOf(date)} ${date}${topics ? ` (${topics})` : ''}: without opening your notes, what was the task, what did you do, and what answer or result did you get? If the work was not done, say so.`,
-        rubric: `Recall of the actual work: 0 = cannot say what the task was, or mainly incorrect; 1 = names the task accurately but the method or the result is missing or unclear; 2 = names the task, explains what he did in his own words and gives the answer or result, checked against the actual ${subject} work for that day. Saying honestly that it was not done is recorded as not done, not marked down as a wrong answer. Completion alone is not mastery.`,
+        prompt: `${name}, ${dayNameOf(date)} ${date}${topics ? ` (${topics})` : ''}. No notes. 1) What did you do? 2) Show one step. 3) What did you get or make? If you did not do it, say so.`,
+        rubric: `Recall: 0 = cannot say what the work was, or mostly wrong; 1 = says what the work was, but the step or the result is missing or unclear; 2 = says what he did, shows a real step and gives the answer or result, checked against the ${subject} work for that day. Saying honestly it was not done is recorded as not done, not marked wrong. Finishing is not the same as mastering.`,
       };
     });
+    const show = showIt(subject, own);
+    return show ? [...days, show] : days;
   });
   questions.push({
     id: 'q-unclear', type: 'written', sourceIds: lessons.map(l => l.id),
-    prompt: 'Across the whole week, what is still unclear? Write one specific question and one action you will take next to resolve it.',
-    rubric: 'Gap and next action: 0 = no reflection or next action; 1 = a relevant gap or question but a vague or missing next action, or an action without a clear question; 2 = an honest, specific uncertainty or check-for-understanding question and a concrete next action to resolve or verify it. Do not penalize admitting uncertainty; this mark rewards reflection and a useful plan, not claimed mastery.',
+    prompt: 'What is still confusing from this week? Write one question about it. Then write what you will do to fix it.',
+    rubric: 'Still confusing: 0 = nothing written; 1 = a real question but no plan, or a plan with no question; 2 = an honest, specific question and a clear next step. Do not penalize admitting uncertainty; this mark rewards an honest question and a plan, not claimed mastery.',
   });
   // A written recall is not a demonstration, so the practical check stays with the monthly exam.
   return { id: `review:${due}:week`, kind: 'review', month: due.slice(0, 7), due_date: due, opens_on: due, subject: 'All subjects', title: `Friday review · week ending ${due}`, status: 'published', duration_minutes: null, questions, lessons, coverage_note: coverageNote(lessons, false) };
