@@ -1,0 +1,336 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   /m — the phone sheet.
+
+   TOKENS ONLY. Every colour here is a var() from app/globals.css, so the three
+   looks (Matchday, Bernabéu, Notebook) recolour this screen without it knowing
+   a look exists. The two palette rules the board enforces are enforced here
+   too: a fill in the accent, gold, school or football colour carries
+   var(--ansar-base) as its text, and colour is never the only signal — every
+   toned tile also prints its number and a word.
+
+   ONE COLUMN, ALWAYS. The layout is a 520px sheet centred in the viewport, so
+   it is a phone screen on a phone and a phone-shaped panel on a desktop. There
+   is no second column at any width: a glance screen that reflows is a screen
+   you have to re-learn.
+
+   Touch targets are 44px minimum, and the sheet pads itself out of the home
+   indicator and the notch with env(safe-area-inset-*) — this page is meant to
+   be installed to a home screen and run without browser chrome.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.phone {
+  max-width: 520px;
+  margin: 0 auto;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 8px)
+    calc(env(safe-area-inset-right, 0px) + 12px)
+    calc(env(safe-area-inset-bottom, 0px) + 28px)
+    calc(env(safe-area-inset-left, 0px) + 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100%;
+  background: var(--ansar-base);
+  color: var(--ansar-text);
+  font-size: 16px;
+  /* The board's stadium photograph is a 500KB background on a card-sized
+     screen. The phone sheet is flat on purpose: it loads on mobile data. */
+}
+
+/* ── Masthead ──────────────────────────────────────────────────────────── */
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--ansar-border);
+  border-radius: var(--ansar-radius-panel);
+  background: var(--ansar-panel);
+}
+
+.mark { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.crest { font-size: 20px; color: var(--ansar-gold); line-height: 1; }
+.markText { display: flex; flex-direction: column; min-width: 0; }
+.markText strong {
+  font-family: var(--font-display);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-track);
+  font-weight: var(--display-weight);
+  font-size: 15px;
+  line-height: 1.1;
+}
+.markText small { color: var(--ansar-muted); font-size: 11px; line-height: 1.2; }
+
+.topRight { display: flex; align-items: center; gap: 10px; }
+.clock {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: var(--display-weight);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.conn { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--ansar-muted); }
+.dotLive, .dotOff { width: 7px; height: 7px; border-radius: 50%; }
+.dotLive { background: var(--ansar-success); }
+.dotOff { background: var(--ansar-danger); }
+
+/* ── A due paper, above everything ─────────────────────────────────────── */
+
+.alert {
+  padding: 12px;
+  border: 1px solid var(--ansar-gold);
+  border-radius: var(--ansar-radius-panel);
+  background: var(--ansar-gold);
+  color: var(--ansar-base);           /* dark text on gold — the palette rule */
+}
+.alert h2 {
+  font-size: 14px;
+  font-family: var(--font-display);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-track);
+}
+.alert p { font-size: 14px; margin-top: 2px; }
+.alert ul { list-style: none; margin-top: 6px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 600; }
+.alertLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ansar-base);
+}
+
+/* ── The day ───────────────────────────────────────────────────────────── */
+
+.day {
+  padding: 12px;
+  border: 1px solid var(--ansar-border);
+  border-radius: var(--ansar-radius-panel);
+  background: var(--ansar-panel);
+}
+.dayName { font-size: 12px; color: var(--ansar-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.dayStats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.stat { display: flex; flex-direction: column; align-items: flex-start; }
+.stat b {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+  font-weight: var(--display-weight);
+  font-variant-numeric: tabular-nums;
+}
+.stat small { color: var(--ansar-muted); font-size: 11px; margin-top: 2px; }
+
+.bar { height: 8px; border-radius: 999px; background: var(--ansar-row); overflow: hidden; margin-top: 12px; }
+.barFill { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width 240ms ease; }
+
+.perfect { margin-top: 8px; font-size: 13px; font-weight: 700; color: var(--ansar-gold); }
+
+/* ── Tiles ─────────────────────────────────────────────────────────────── */
+
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 86px;
+  padding: 10px;
+  border: 1px solid var(--ansar-border);
+  border-left: 4px solid var(--ansar-row);
+  border-radius: var(--ansar-radius-panel);
+  background: var(--ansar-panel);
+  color: inherit;
+  text-decoration: none;
+}
+.tileTop { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ansar-muted); }
+.tileValue {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.05;
+  font-weight: var(--display-weight);
+  font-variant-numeric: tabular-nums;
+}
+.tileDetail { font-size: 11px; color: var(--ansar-muted); }
+
+/* The tone is the LEFT EDGE, not the fill: four filled cards in four colours
+   read as an alarm. The number and the word carry the same meaning. */
+.tile[data-tone="done"] { border-left-color: var(--ansar-success); }
+.tile[data-tone="live"] { border-left-color: var(--accent); }
+.tile[data-tone="wait"] { border-left-color: var(--ansar-gold); }
+.tile[data-tone="missed"] { border-left-color: var(--ansar-danger); }
+.tile[data-tone="off"] { border-left-color: var(--ansar-row); }
+.tile[data-tone="done"] .tileValue { color: var(--ansar-success); }
+.tile[data-tone="missed"] .tileValue { color: var(--ansar-danger); }
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+
+.card {
+  padding: 12px;
+  border: 1px solid var(--ansar-border);
+  border-radius: var(--ansar-radius-panel);
+  background: var(--ansar-panel);
+}
+.cardTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  font-family: var(--font-display);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-track);
+  font-weight: var(--display-weight);
+}
+.cardCount {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ansar-muted);
+  font-variant-numeric: tabular-nums;
+}
+.cardSub { font-size: 12px; color: var(--ansar-muted); margin-top: 2px; }
+.cardLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.quiet { font-size: 13px; color: var(--ansar-muted); margin-top: 6px; }
+.done { font-size: 14px; font-weight: 700; color: var(--ansar-success); margin-top: 6px; }
+
+/* ── Right now ─────────────────────────────────────────────────────────── */
+
+.now {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: var(--ansar-radius-row);
+  background: var(--ansar-rowflat);
+  border-left: 4px solid var(--ansar-row);
+}
+.now[data-state="LIVE"] { border-left-color: var(--accent); }
+.now[data-state="LOCKED"] { border-left-color: var(--ansar-gold); }
+.now[data-state="MISSED"] { border-left-color: var(--ansar-danger); }
+.nowState { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: var(--ansar-muted); }
+.nowName { display: block; font-size: 18px; line-height: 1.2; margin-top: 2px; }
+.nowMeta { display: block; font-size: 12px; color: var(--ansar-muted); margin-top: 3px; }
+.nowMessage { font-size: 12px; margin-top: 6px; color: var(--ansar-text); }
+
+.blocks { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.blocks li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--ansar-rowflat);
+  border: 1px solid var(--ansar-border);
+  font-size: 11px;
+  color: var(--ansar-muted);
+}
+.blocks li b { color: var(--ansar-text); font-variant-numeric: tabular-nums; }
+.blocks li[data-tone="done"] { border-color: var(--ansar-success); }
+.blocks li[data-tone="done"] b { color: var(--ansar-success); }
+.blocks li[data-tone="missed"] { border-color: var(--ansar-danger); }
+.blocks li[data-tone="missed"] b { color: var(--ansar-danger); }
+.blocks li[data-tone="live"] { border-color: var(--accent); }
+
+.missed { margin-top: 10px; padding: 9px 10px; border-radius: var(--ansar-radius-row); background: var(--ansar-rowflat); border-left: 4px solid var(--ansar-danger); }
+.missed h3 { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ansar-danger); }
+.missed ul { list-style: none; margin-top: 4px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.missed small { color: var(--ansar-muted); }
+
+/* ── Row lists (school blocks, football sessions) ──────────────────────── */
+
+.rows { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.rows li { padding: 9px 10px; border-radius: var(--ansar-radius-row); background: var(--ansar-rowflat); }
+.rowHead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.rowHead b { font-size: 15px; }
+.rowHead em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--ansar-gold);
+  color: var(--ansar-base);           /* dark text on gold */
+}
+.rowHead small { margin-left: auto; font-size: 11px; color: var(--ansar-muted); }
+.rows li p { font-size: 12px; color: var(--ansar-muted); margin-top: 3px; }
+
+.match { margin-top: 10px; font-size: 13px; font-weight: 600; }
+.match small { display: block; font-weight: 400; color: var(--ansar-muted); font-size: 11px; }
+
+/* ── The week ──────────────────────────────────────────────────────────── */
+
+.weekList { list-style: none; margin-top: 6px; display: flex; flex-direction: column; }
+.weekList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ansar-hairline);
+  font-size: 14px;
+}
+.weekList li:last-child { border-bottom: 0; }
+.weekList li span { color: var(--ansar-muted); font-size: 13px; }
+.weekList li b { font-variant-numeric: tabular-nums; font-size: 16px; }
+.ps5 { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--ansar-gold); }
+
+/* ── Notices ───────────────────────────────────────────────────────────── */
+
+.notices { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 7px; }
+.notices li { font-size: 13px; line-height: 1.35; padding-left: 10px; border-left: 2px solid var(--ansar-row); }
+.notices li strong { color: var(--ansar-gold); margin-right: 4px; }
+
+/* ── Zones ─────────────────────────────────────────────────────────────── */
+
+.zones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.zone {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--ansar-radius-row);
+  background: var(--ansar-rowflat);
+  border: 1px solid var(--ansar-border);
+  color: inherit;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Foot ──────────────────────────────────────────────────────────────── */
+
+.foot { margin-top: 2px; display: flex; flex-direction: column; gap: 6px; }
+.full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border-radius: var(--ansar-radius-panel);
+  background: var(--accent);
+  color: var(--ansar-base);           /* dark text on blue — the palette rule */
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 15px;
+}
+.foot p { font-size: 11px; color: var(--ansar-muted); line-height: 1.4; }
+.warn { color: var(--ansar-gold); }
+
+/* A phone that asks for less motion gets none: the only animation here is the
+   progress bar's width, and it carries no information the number does not. */
+@media (prefers-reduced-motion: reduce) {
+  .barFill { transition: none; }
+}
