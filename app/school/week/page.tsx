@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ClubNavigation from "../../components/dashboard/ClubNavigation";
 import { StoryPlayer, Big, Ring, Columns, stagger, ease } from "../../components/week-story/StoryPlayer";
-import { BLOCKS, buildWeekStory, type Call, type Scene, type WeekReport } from "../../lib/week-story";
+import { BLOCKS, better, buildWeekStory, worse, type Call, type Scene, type WeekReport } from "../../lib/week-story";
 import styles from "../school.module.css";
 import "../../components/week-story/story.css";
 
@@ -14,6 +14,7 @@ const TONE: Record<Call, string> = { GREEN: "ok", "PROVISIONAL GREEN": "ok", YEL
 export default function WeekFilm() {
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [report, setReport] = useState<WeekReport | null>(null);
+  const [prev, setPrev] = useState<WeekReport | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "locked" | "error">("loading");
   const [sample, setSample] = useState(false);
 
@@ -24,11 +25,12 @@ export default function WeekFilm() {
     fetch(`/api/assessments/week-story${q}`, { cache: "no-store" }).then(async r => {
       if (r.status === 401) return setState("locked");
       if (!r.ok) return setState("error");
-      const d = await r.json(); setWeeks(d.weeks); setReport(d.report); setState("ready");
+      const d = await r.json(); setWeeks(d.weeks); setReport(d.report); setPrev(d.prev ?? null); setState("ready");
     }).catch(() => setState("error"));
   };
   useEffect(() => load(), []);
-  const scenes = useMemo(() => report ? buildWeekStory(report) : [], [report]);
+  // Rebuilt from that week's own report every time; prev is the film before it, for "Since last week".
+  const scenes = useMemo(() => report ? buildWeekStory(report, prev) : [], [report, prev]);
 
   return (
     <>
@@ -65,6 +67,13 @@ function Visual({ s, p }: { s: Scene; p: number }) {
       <div className="sty-split">
         <div className={`wk-call ${TONE[s.call]}`} style={{ opacity: ease(p * 1.4), transform: `scale(${0.92 + 0.08 * ease(p * 1.4)})` }}>{s.call}<small>{s.week}</small></div>
         <div><Big v={Math.round(s.full * p)} l="full days out of 4" /><p className="wk-why" style={{ opacity: ease(p * 1.6 - 0.4) }}>{s.why}</p></div>
+      </div>);
+    case "trend": return (
+      <div className="wk-trend">
+        <div className="wk-calls"><span className={`wk-chip ${TONE[s.from]}`}>{s.since} · {s.from}</span><b>→</b><span className={`wk-chip ${TONE[s.to]}`}>This week · {s.to}</span></div>
+        {s.rows.map((r, i) => { const e = stagger(p, i, 0.1); const tone = better(r) ? "ok" : worse(r) ? "bad" : ""; return (
+          <div key={r.label} className="wk-trow" style={{ opacity: e }}><span>{r.label}</span><span className="was">{r.before}</span><b className={tone}>{Math.round(r.before + (r.now - r.before) * e)}</b>
+            <em className={tone}>{better(r) ? "▲ better" : worse(r) ? "▼ worse" : "= same"}</em></div>); })}
       </div>);
     case "days": return (
       <div className="wk-grid" role="table" aria-label="Blocks done each day">

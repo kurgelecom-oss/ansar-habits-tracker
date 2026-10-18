@@ -69,10 +69,13 @@ export function validateWeekReport(raw: unknown, week: string): WeekReport | str
 }
 
 // ── Scenes ──────────────────────────────────────────────────────────────────
+export type Trend = { label: string; before: number; now: number; lowerIsBetter?: boolean };
+
 // id is unique per scene (the player keys edits on it); kind picks the visual. Long lists split into pages of 6.
 type Base = { id: string; label: string; hold: number; caption: string };
 export type Scene = Base & (
   | { kind: 'call'; call: Call; why: string; full: number; week: string }
+  | { kind: 'trend'; since: string; from: Call; to: Call; rows: Trend[] }
   | { kind: 'days'; days: DayRow[] }
   | { kind: 'device'; held: number | null }
   | { kind: 'areas'; areas: WeekReport['areas'] }
@@ -94,7 +97,24 @@ const pages = <T,>(xs: T[]) => xs.length ? Array.from({ length: Math.ceil(xs.len
 const paged = (label: string, i: number, n: number) => n > 1 ? `${label} ${i + 1}/${n}` : label;
 const holdFor = (base: number, items: number) => Math.min(16, base + Math.round(items * 1.5));
 
-export function buildWeekStory(r: WeekReport): Scene[] {
+/** This week against the previous film: what moved, in which direction. */
+export function trendRows(r: WeekReport, p: WeekReport): Trend[] {
+  const logs = (x: WeekReport) => x.days.reduce((n, d) => n + d.logs, 0);
+  const areas = (x: WeekReport) => x.areas.filter(a => a.now > 0).length;
+  return [
+    { label: 'Full days', before: fullDays(p.days), now: fullDays(r.days) },
+    { label: 'Work logs', before: logs(p), now: logs(r) },
+    { label: 'Areas covered', before: areas(p), now: areas(r) },
+    { label: 'Photos that count', before: p.evidence.unique, now: r.evidence.unique },
+    { label: 'Journals', before: p.journals.now, now: r.journals.now },
+    { label: 'Record problems', before: p.flags.length, now: r.flags.length, lowerIsBetter: true },
+  ];
+}
+export const better = (t: Trend) => t.lowerIsBetter ? t.now < t.before : t.now > t.before;
+export const worse = (t: Trend) => t.lowerIsBetter ? t.now > t.before : t.now < t.before;
+
+/** prev = the film before this one (null for the first film): adds the "Since last week" scene. */
+export function buildWeekStory(r: WeekReport, prev: WeekReport | null = null): Scene[] {
   const full = fullDays(r.days);
   const byLogs = [...r.days].sort((a, b) => b.logs - a.logs);
   const zero = r.areas.filter(a => a.now === 0).map(a => a.area);
@@ -116,6 +136,11 @@ export function buildWeekStory(r: WeekReport): Scene[] {
       caption: !r.evidence.submissions ? 'No work was logged, so there is no evidence.'
         : `${r.evidence.withFile} of ${r.evidence.submissions} logs had a photo. ${reused ? `${s(reused, 'photo')} had been used before, so ${r.evidence.unique} count.` : 'Every photo was new.'}` },
   ];
+  if (prev) {
+    const rows = trendRows(r, prev), up = rows.filter(better).length, down = rows.filter(worse).length;
+    scenes.splice(1, 0, { id: 'trend', kind: 'trend', label: 'Since last week', hold: 9, since: prev.label, from: prev.call, to: r.call, rows,
+      caption: `${prev.call === r.call ? `${r.call} again` : `${prev.call} last week, ${r.call} this week`}. ${up} ${up === 1 ? 'thing' : 'things'} got better, ${down} got worse.` });
+  }
   if (r.topics.length) pages(r.topics).forEach((topics, i, all) => scenes.push({ id: i ? `topics-${i + 1}` : 'topics', kind: 'topics', label: paged('Topics', i, all.length), hold: holdFor(6, topics.length), topics,
     caption: i ? `${s(r.topics.length, 'topic')} in all this week.`
       : plateaus.length ? `${plateaus[0].topic} ${plateaus[0].weeks > 1 ? `has been the same for ${plateaus[0].weeks} weeks` : 'has not moved on'}. Check you are moving forward.` : `${s(r.topics.length, 'topic')} this week, none stuck.` }));

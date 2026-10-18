@@ -83,3 +83,13 @@
 .wk-list.two .wk-item{padding:.9cqw 1.2cqw;font-size:1.35cqw} .wk-list.two .wk-item b{font-size:1.8cqw}
 .wk-list.dense .wk-quote{font-size:1.9cqw;padding:.8cqw 1.4cqw}
 .wk-points.dense{gap:1cqw} .wk-points.dense li{font-size:1.65cqw;grid-template-columns:4cqw 1fr;gap:1.2cqw} .wk-points.dense b{width:3.6cqw;height:3.6cqw;font-size:1.7cqw}
+/* Since last week */
+.wk-trend{display:grid;gap:1.1cqw;align-content:center}
+.wk-calls{display:flex;align-items:center;gap:1.4cqw;margin-bottom:.8cqw;font-size:1.6cqw;color:var(--sty-muted)}
+.wk-chip{padding:.5cqw 1.2cqw;border-radius:.6cqw;border:.2cqw solid var(--sty-muted);font-weight:800;color:var(--sty-ink)}
+.wk-chip.ok{border-color:var(--sty-ok)} .wk-chip.gold{border-color:var(--sty-gold)} .wk-chip.bad{border-color:var(--sty-bad)}
+.wk-trow{display:grid;grid-template-columns:24cqw 7cqw 7cqw 1fr;gap:1.4cqw;align-items:baseline;font-size:1.8cqw;color:var(--sty-ink)}
+.wk-trow .was{color:var(--sty-muted);text-align:right;text-decoration:line-through;text-decoration-thickness:.15cqw}
+.wk-trow b{font:800 3cqw var(--sty-display);text-align:right;font-variant-numeric:tabular-nums}
+.wk-trow em{font-style:normal;font-size:1.4cqw;font-weight:700;color:var(--sty-muted)}
+.wk-trow .ok{color:var(--sty-ok)} .wk-trow .bad{color:var(--sty-bad)}
