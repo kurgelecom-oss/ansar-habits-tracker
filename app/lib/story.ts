@@ -26,7 +26,7 @@ import { sydneyDateKey, weekStartOf } from './time';
 
 export const STORY_PASS = 80;
 /** Stories for weeks before this never lock (nothing was published then). */
-export const STORY_GATE_START = '2026-10-19';
+export const STORY_GATE_START = '2026-10-12';
 
 export type StoryQuestion = { id: string; prompt: string; options: string[]; answer: number; why: string; section: string };
 export type Story = {

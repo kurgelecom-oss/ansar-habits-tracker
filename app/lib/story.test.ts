@@ -15,7 +15,7 @@ describe('storyDue', () => {
     expect(storyDue('2026-10-26', SAMPLE_STORY, null, false)).toBe(false);
     expect(storyDue('2026-10-25', live, null, false)).toBe(false);
     expect(storyDue('2026-10-26', live, null, true)).toBe(false);
-    expect(storyDue('2026-10-12', { ...live, weekStart: '2026-10-12' }, null, false)).toBe(false);
+    expect(storyDue('2026-10-05', { ...live, weekStart: '2026-10-05' }, null, false)).toBe(false);
   });
 });
 
