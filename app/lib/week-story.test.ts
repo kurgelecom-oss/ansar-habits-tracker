@@ -32,4 +32,13 @@ describe('buildWeekStory', () => {
     expect(lean.find(x => x.id === 'flags')!.caption).toBe('Your records were clean this week.');
   });
   it('ends on the three actions', () => expect(sc[sc.length - 1]).toMatchObject({ id: 'next', items: SAMPLE_WEEK.actions }));
+  it('splits more than 6 flags into pages with unique ids', () => {
+    const flags = Array.from({ length: 12 }, (_, i) => ({ date: '2026-10-12', kind: 'Incomplete entry', detail: `Flag ${i}` }));
+    const f = buildWeekStory({ ...SAMPLE_WEEK, flags }).filter(x => x.kind === 'flags');
+    expect(f.map(x => [x.id, x.label, x.caption])).toEqual([['flags', 'Records 1/2', '12 record problems to put right.'], ['flags-2', 'Records 2/2', '6 more record problems to put right.']]);
+  });
+  it('does not claim a duration when the report gives none', () => {
+    const t = buildWeekStory({ ...SAMPLE_WEEK, topics: [{ area: 'Maths', topic: 'Ratios', weeks: 0, plateau: true }] }).find(x => x.id === 'topics')!;
+    expect(t.caption).toBe('Ratios has not moved on. Check you are moving forward.');
+  });
 });

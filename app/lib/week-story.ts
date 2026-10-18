@@ -69,18 +69,19 @@ export function validateWeekReport(raw: unknown, week: string): WeekReport | str
 }
 
 // ── Scenes ──────────────────────────────────────────────────────────────────
-type Base = { label: string; hold: number; caption: string };
+// id is unique per scene (the player keys edits on it); kind picks the visual. Long lists split into pages of 6.
+type Base = { id: string; label: string; hold: number; caption: string };
 export type Scene = Base & (
-  | { id: 'call'; call: Call; why: string; full: number; week: string }
-  | { id: 'days'; days: DayRow[] }
-  | { id: 'device'; held: number | null }
-  | { id: 'areas'; areas: WeekReport['areas'] }
-  | { id: 'evidence'; submissions: number; withFile: number; unique: number }
-  | { id: 'topics'; topics: WeekReport['topics'] }
-  | { id: 'journals'; now: number; before: number[] }
-  | { id: 'words'; words: WeekReport['words'] }
-  | { id: 'strong' | 'broke' | 'next'; items: string[] }
-  | { id: 'flags'; flags: WeekReport['flags'] }
+  | { kind: 'call'; call: Call; why: string; full: number; week: string }
+  | { kind: 'days'; days: DayRow[] }
+  | { kind: 'device'; held: number | null }
+  | { kind: 'areas'; areas: WeekReport['areas'] }
+  | { kind: 'evidence'; submissions: number; withFile: number; unique: number }
+  | { kind: 'topics'; topics: WeekReport['topics'] }
+  | { kind: 'journals'; now: number; before: number[] }
+  | { kind: 'words'; words: WeekReport['words'] }
+  | { kind: 'strong' | 'broke' | 'next'; items: string[] }
+  | { kind: 'flags'; flags: WeekReport['flags'] }
 );
 
 const s = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
@@ -88,6 +89,9 @@ const list = (xs: string[]) => xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).
 /** A full day = all four blocks logged. Friday is catch-up, so the household rule counts Mon–Thu. */
 export const fullDays = (days: DayRow[]) => days.slice(0, 4).filter(d => BLOCKS.every(([k]) => d[k])).length;
 /** Longer lists hold longer: 1.5 s per item on top of the base. */
+const PAGE = 6;
+const pages = <T,>(xs: T[]) => xs.length ? Array.from({ length: Math.ceil(xs.length / PAGE) }, (_, i) => xs.slice(i * PAGE, i * PAGE + PAGE)) : [[]];
+const paged = (label: string, i: number, n: number) => n > 1 ? `${label} ${i + 1}/${n}` : label;
 const holdFor = (base: number, items: number) => Math.min(16, base + Math.round(items * 1.5));
 
 export function buildWeekStory(r: WeekReport): Scene[] {
@@ -100,30 +104,31 @@ export function buildWeekStory(r: WeekReport): Scene[] {
   const top = [...r.words].sort((a, b) => b.days - a.days)[0];
 
   const scenes: Scene[] = [
-    { id: 'call', label: 'The call', hold: 7, call: r.call, why: r.callWhy, full, week: r.label,
+    { id: 'call', kind: 'call', label: 'The call', hold: 7, call: r.call, why: r.callWhy, full, week: r.label,
       caption: `${r.label}: ${r.call}. ${s(full, 'full day')} out of 4.` },
-    { id: 'days', label: 'Day by day', hold: 8, days: r.days,
+    { id: 'days', kind: 'days', label: 'Day by day', hold: 8, days: r.days,
       caption: byLogs[0].logs ? `${byLogs[0].day} was your strongest day with ${s(byLogs[0].logs, 'log')}. ${byLogs[4].day} was the quietest with ${byLogs[4].logs}.` : 'Nothing was logged this week.' },
-    { id: 'device', label: 'Device rule', hold: 6, held: r.deviceRule,
+    { id: 'device', kind: 'device', label: 'Device rule', hold: 6, held: r.deviceRule,
       caption: r.deviceRule === null ? 'The device rule was not written down this week, so the call cannot be a full green.' : `The device rule held ${s(r.deviceRule, 'morning')} out of 4.` },
-    { id: 'areas', label: '8 areas', hold: 9, areas: r.areas,
+    { id: 'areas', kind: 'areas', label: '8 areas', hold: 9, areas: r.areas,
       caption: zero.length ? `${8 - zero.length} of 8 learning areas covered. ${list(zero)} had nothing.` : 'All 8 learning areas had work this week.' },
-    { id: 'evidence', label: 'Evidence', hold: 7, ...r.evidence,
+    { id: 'evidence', kind: 'evidence', label: 'Evidence', hold: 7, ...r.evidence,
       caption: !r.evidence.submissions ? 'No work was logged, so there is no evidence.'
         : `${r.evidence.withFile} of ${r.evidence.submissions} logs had a photo. ${reused ? `${s(reused, 'photo')} had been used before, so ${r.evidence.unique} count.` : 'Every photo was new.'}` },
   ];
-  if (r.topics.length) scenes.push({ id: 'topics', label: 'Topics', hold: holdFor(6, r.topics.length), topics: r.topics,
-    caption: plateaus.length ? `${plateaus[0].topic} has been the same for ${plateaus[0].weeks} weeks. Check you are moving forward.` : 'Every topic moved forward this week.' });
-  scenes.push({ id: 'journals', label: 'Journal', hold: 6, now: r.journals.now, before: r.journals.before,
+  if (r.topics.length) pages(r.topics).forEach((topics, i, all) => scenes.push({ id: i ? `topics-${i + 1}` : 'topics', kind: 'topics', label: paged('Topics', i, all.length), hold: holdFor(6, topics.length), topics,
+    caption: i ? `${s(r.topics.length, 'topic')} in all this week.`
+      : plateaus.length ? `${plateaus[0].topic} ${plateaus[0].weeks > 1 ? `has been the same for ${plateaus[0].weeks} weeks` : 'has not moved on'}. Check you are moving forward.` : `${s(r.topics.length, 'topic')} this week, none stuck.` }));
+  scenes.push({ id: 'journals', kind: 'journals', label: 'Journal', hold: 6, now: r.journals.now, before: r.journals.before,
     caption: r.journals.now ? `${s(r.journals.now, 'journal')} this week, ${last} last week.` : 'No journal this week. Your journal is your best English work.' });
-  if (r.words.length) scenes.push({ id: 'words', label: 'Your words', hold: holdFor(7, r.words.length), words: r.words,
+  if (r.words.length) scenes.push({ id: 'words', kind: 'words', label: 'Your words', hold: holdFor(7, r.words.length), words: r.words,
     caption: `“${top.quote}” came up ${s(top.days, 'day')}. When you keep saying it, it matters.` });
   scenes.push(
-    { id: 'strong', label: 'Strong', hold: holdFor(6, r.strengths.length), items: r.strengths, caption: `${s(r.strengths.length, 'thing')} you did well this week.` },
-    { id: 'broke', label: 'Broke', hold: holdFor(6, r.weaknesses.length), items: r.weaknesses, caption: `${s(r.weaknesses.length, 'thing')} that broke. Each one has a fix.` },
-    { id: 'flags', label: 'Records', hold: r.flags.length ? holdFor(6, r.flags.length) : 5, flags: r.flags,
-      caption: r.flags.length ? `${s(r.flags.length, 'record problem')} to put right.` : 'Your records were clean this week.' },
-    { id: 'next', label: 'Next week', hold: 9, items: r.actions, caption: 'Three things for next week. That is the whole plan.' },
+    { id: 'strong', kind: 'strong', label: 'Strong', hold: holdFor(6, r.strengths.length), items: r.strengths, caption: `${s(r.strengths.length, 'thing')} you did well this week.` },
+    { id: 'broke', kind: 'broke', label: 'Broke', hold: holdFor(6, r.weaknesses.length), items: r.weaknesses, caption: `${s(r.weaknesses.length, 'thing')} that broke. Each one has a fix.` },
   );
+  pages(r.flags).forEach((flags, i, all) => scenes.push({ id: i ? `flags-${i + 1}` : 'flags', kind: 'flags', label: paged('Records', i, all.length), hold: flags.length ? holdFor(6, flags.length) : 5, flags,
+    caption: !r.flags.length ? 'Your records were clean this week.' : i ? `${s(r.flags.length - PAGE * i, 'more record problem')} to put right.` : `${s(r.flags.length, 'record problem')} to put right.` }));
+  scenes.push({ id: 'next', kind: 'next', label: 'Next week', hold: 9, items: r.actions, caption: 'Three things for next week. That is the whole plan.' });
   return scenes;
 }

@@ -60,7 +60,7 @@ export default function WeekFilm() {
 }
 
 function Visual({ s, p }: { s: Scene; p: number }) {
-  switch (s.id) {
+  switch (s.kind) {
     case "call": return (
       <div className="sty-split">
         <div className={`wk-call ${TONE[s.call]}`} style={{ opacity: ease(p * 1.4), transform: `scale(${0.92 + 0.08 * ease(p * 1.4)})` }}>{s.call}<small>{s.week}</small></div>
@@ -87,20 +87,20 @@ function Visual({ s, p }: { s: Scene; p: number }) {
       <div className="sty-split"><Ring part={s.unique} of={s.submissions} p={p} />
         <div><Big v={Math.round(s.withFile * p)} l={`of ${s.submissions} logs had a photo`} />{s.withFile > s.unique && <Big v={Math.round((s.withFile - s.unique) * p)} l="photos used twice" red />}</div></div>);
     case "topics": return (
-      <div className="wk-list">{s.topics.map((t, i) => { const e = stagger(p, i, 0.15, 1.8); return (
+      <div className={`wk-list${s.topics.length > 3 ? " two" : ""}`}>{s.topics.map((t, i) => { const e = stagger(p, i, 0.15, 1.8); return (
         <div key={t.area + t.topic} className={`wk-item ${t.plateau ? "bad" : "ok"}`} style={{ opacity: e, transform: `translateY(${(1 - e) * 10}px)` }}>
-          <small>{t.area}</small><b>{t.topic}</b><span>{t.plateau ? `Same for ${t.weeks} weeks` : t.weeks > 1 ? `Week ${t.weeks}, still moving` : "New this week"}</span></div>); })}</div>);
+          <small>{t.area}</small><b>{t.topic}</b>{t.plateau ? <span>{t.weeks > 1 ? `Same for ${t.weeks} weeks` : "Not moving on"}</span> : t.weeks > 1 ? <span>Week {t.weeks}, still moving</span> : null}</div>); })}</div>);
     case "journals": return <Columns steps={[{ label: "3 weeks ago", v: s.before[0] }, { label: "2 weeks ago", v: s.before[1] }, { label: "Last week", v: s.before[2] }, { label: "This week", v: s.now }]} p={p} />;
     case "words": return (
-      <div className="wk-list">{s.words.map((w, i) => { const e = stagger(p, i, 0.18, 1.8); return (
+      <div className={`wk-list${s.words.reduce((n, w) => n + w.quote.length, 0) > 260 ? " dense" : ""}`}>{s.words.map((w, i) => { const e = stagger(p, i, 0.18, 1.8); return (
         <blockquote key={w.theme} className="wk-quote" style={{ opacity: e, transform: `translateX(${(1 - e) * -14}px)` }}>
           <small>{w.theme} · {w.days} {w.days === 1 ? "day" : "days"}</small>“{w.quote}”</blockquote>); })}</div>);
     case "flags": return s.flags.length ? (
-      <div className="wk-list">{s.flags.map((f, i) => { const e = stagger(p, i, 0.12, 1.8); return (
+      <div className={`wk-list${s.flags.length > 3 ? " two" : ""}`}>{s.flags.map((f, i) => { const e = stagger(p, i, 0.12, 1.8); return (
         <div key={f.date + i} className="wk-item gold" style={{ opacity: e }}><small>{f.kind} · {f.date.slice(8)}/{f.date.slice(5, 7)}</small><span>{f.detail}</span></div>); })}</div>)
       : <div className="wk-note ok" style={{ opacity: ease(p) }}><b>✓</b>No record problems</div>;
     default: return (
-      <ol className={`wk-points ${s.id}`}>{s.items.map((t, i) => { const e = stagger(p, i, 0.2, 1.8); return (
-        <li key={i} style={{ opacity: e, transform: `translateY(${(1 - e) * 12}px)` }}><b>{s.id === "next" ? i + 1 : s.id === "strong" ? "✓" : "✕"}</b>{t}</li>); })}</ol>);
+      <ol className={`wk-points ${s.kind}${s.items.join("").length > 420 ? " dense" : ""}`}>{s.items.map((t, i) => { const e = stagger(p, i, 0.2, 1.8); return (
+        <li key={i} style={{ opacity: e, transform: `translateY(${(1 - e) * 12}px)` }}><b>{s.kind === "next" ? i + 1 : s.kind === "strong" ? "✓" : "✕"}</b>{t}</li>); })}</ol>);
   }
 }

@@ -78,3 +78,8 @@
 .wk-points li{display:grid;grid-template-columns:5cqw 1fr;gap:1.6cqw;align-items:center;font-size:2.2cqw;line-height:1.3;color:var(--sty-ink)}
 .wk-points b{display:grid;place-items:center;width:4.6cqw;height:4.6cqw;border-radius:50%;font:800 2.2cqw var(--sty-display);background:var(--sty-rule)}
 .wk-points.strong b{background:var(--sty-ok);color:var(--ansar-base)} .wk-points.broke b{background:var(--sty-bad);color:var(--ansar-base)} .wk-points.next b{background:var(--sty-gold);color:var(--ansar-base)}
+/* Dense weeks: up to 6 cards in two columns, smaller type for long sentences. */
+.wk-list.two{grid-template-columns:repeat(2,minmax(0,1fr));gap:1cqw}
+.wk-list.two .wk-item{padding:.9cqw 1.2cqw;font-size:1.35cqw} .wk-list.two .wk-item b{font-size:1.8cqw}
+.wk-list.dense .wk-quote{font-size:1.9cqw;padding:.8cqw 1.4cqw}
+.wk-points.dense{gap:1cqw} .wk-points.dense li{font-size:1.65cqw;grid-template-columns:4cqw 1fr;gap:1.2cqw} .wk-points.dense b{width:3.6cqw;height:3.6cqw;font-size:1.7cqw}
