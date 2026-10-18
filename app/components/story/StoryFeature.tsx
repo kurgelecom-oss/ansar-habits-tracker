@@ -88,7 +88,7 @@ export default function StoryFeature({ story, initial, onProgress, onSubmit, onD
           {banner && <p className={s.banner}>{banner}</p>}
           <header className={s.masthead}>
             <span className={s.brand}>Kawthar Weekly</span>
-            <span className={s.flag}>Monday feature · read before the board opens</span>
+            <span className={s.flag}>Monday read · do this to open your board</span>
           </header>
 
           <figure className={s.hero}>
@@ -100,7 +100,7 @@ export default function StoryFeature({ story, initial, onProgress, onSubmit, onD
           <p className={s.kicker}>{story.kicker}</p>
           <h1 id="story-headline" className={s.headline}>{story.headline}</h1>
           <p className={s.deck}>{story.deck}</p>
-          <p className={s.byline}>{mins} min read · Qur&apos;an → Sunnah → the scholars → the story · {story.topic}</p>
+          <p className={s.byline}>{mins} min read · Qur&apos;an → the Prophet ﷺ → the scholars → the story</p>
 
           <section className={s.lenses} aria-label="The evidence">
             {story.lenses.map(l => (
@@ -126,22 +126,22 @@ export default function StoryFeature({ story, initial, onProgress, onSubmit, onD
           <div ref={end} />
 
           <section className={s.check} aria-label="The check">
-            <h2 className={s.checkTitle}>The check</h2>
+            <h2 className={s.checkTitle}>Your questions</h2>
             {result?.passed ? (
               <div className={s.passed}>
                 <p className={s.passedBig}>{result.score}/{result.total}. Done.</p>
-                <p>The board is open. Your result has gone to Dad.</p>
+                <p>Well done. Your board is open again. Dad gets your result.</p>
                 {result.email && <pre className={s.emailPreview}>{`Subject: ${result.email.subject}\n\n${result.email.text}`}</pre>}
                 <button className={s.cta} onClick={onDone}>Back to the board</button>
               </div>
             ) : !unlocked ? (
               <p className={s.lockedNote}>
-                {scroll < 95 ? "Read to the end of the story to open the check." : `The check opens in ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")} of reading.`}
+                {scroll < 95 ? "Read to the end first. Then the questions open." : `Keep reading. The questions open in ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}.`}
               </p>
             ) : (
               <>
                 {result && !result.passed && result.ok && (
-                  <p className={s.retry}>{result.score}/{result.total}. You need {Math.ceil(0.8 * (result.total ?? 0))}. Re-read: {result.reread?.join(", ")}. The ones you missed are cleared: answer them again.</p>
+                  <p className={s.retry}>{result.score}/{result.total}. You need {Math.ceil(0.8 * (result.total ?? 0))}. Go back and read: {result.reread?.join(", ")}. The ones you got wrong are cleared. Try them again.</p>
                 )}
                 {result && !result.ok && <p className={s.retry}>{result.message}</p>}
                 {story.questions.map((q, i) => (
@@ -158,7 +158,7 @@ export default function StoryFeature({ story, initial, onProgress, onSubmit, onD
                 <label className={s.reflect}>
                   <span>{story.reflection}</span>
                   <textarea rows={3} value={reflection} onChange={e => setReflection(e.target.value)} />
-                  <small>{words < 8 ? `${8 - words} more words` : "Good."}</small>
+                  <small>{words < 8 ? `Write ${8 - words} more words` : "Good."}</small>
                 </label>
                 <button className={s.cta} disabled={!answered || words < 8 || busy} onClick={submit}>{busy ? "Marking…" : "Hand it in"}</button>
               </>
@@ -168,8 +168,8 @@ export default function StoryFeature({ story, initial, onProgress, onSubmit, onD
       </div>
       {!result?.passed && (
         <div className={s.sticky}>
-          <span>{unlocked ? "The check is open" : scroll < 95 ? `${Math.round(scroll)}% read` : `Check opens in ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`}</span>
-          <button className={s.stickyCta} onClick={() => end.current?.scrollIntoView({ behavior: "smooth" })} disabled={!unlocked}>Take the check →</button>
+          <span>{unlocked ? "Questions are open" : scroll < 95 ? `${Math.round(scroll)}% read` : `Questions open in ${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`}</span>
+          <button className={s.stickyCta} onClick={() => end.current?.scrollIntoView({ behavior: "smooth" })} disabled={!unlocked}>Go to the questions →</button>
         </div>
       )}
     </div>

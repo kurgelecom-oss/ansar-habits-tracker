@@ -4,6 +4,7 @@ import { queueEmail } from '../../lib/assessments/delivery';
 import { hasServiceRole } from '../../lib/supabase-admin';
 import { creditSeconds, retryWait, currentStory, grade, publicStory, saveSession, storyDue, storyReport, type StorySession } from '../../lib/story';
 import { sydneyDateKey } from '../../lib/time';
+import { importReady } from '../../lib/story-import';
 
 export const dynamic = 'force-dynamic';
 const noStore = { 'Cache-Control': 'no-store' };
@@ -17,6 +18,7 @@ export async function GET() {
   if (process.env.STORY_GATE === 'off' || !hasServiceRole()) return NextResponse.json({ due: false }, { headers: noStore });
   try {
     const today = sydneyDateKey();
+    await importReady();
     const { story, session, bypassed } = await currentStory(today);
     if (!story || !storyDue(today, story, session, bypassed)) return NextResponse.json({ due: false }, { headers: noStore });
     const s: StorySession = session ?? { openedAt: new Date().toISOString(), activeSeconds: 0, maxScroll: 0, attempts: [] };
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
     const wait = retryWait(session);
     if (wait > 0) {
       await saveSession(story.weekStart, session);
-      return NextResponse.json({ ok: false, message: `Re-read first: the check opens again in ${wait} s of reading.` }, { status: 409, headers: noStore });
+      return NextResponse.json({ ok: false, message: `Go back and read for ${wait} more seconds, then try again.` }, { status: 409, headers: noStore });
     }
     const raw = (body.answers ?? {}) as Record<string, unknown>;
     const answers = Object.fromEntries(story.questions.map(q => [q.id, Number.isInteger(raw[q.id]) ? raw[q.id] as number : -1]));
