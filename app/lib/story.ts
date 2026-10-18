@@ -81,7 +81,10 @@ export function creditSeconds(session: StorySession, reported: number, now = Dat
   const allowance = Math.max(0, Math.floor((now - since) / 1000)) + 5;
   const claimed = Math.max(0, (Math.floor(reported) || 0) - session.activeSeconds);
   session.lastBeat = new Date(now).toISOString();
-  return session.activeSeconds + Math.min(claimed, allowance);
+  const wall = Math.max(0, Math.floor((now - Date.parse(session.openedAt)) / 1000));
+  // Never more than the wall clock since opening, however the beats are timed.
+  // Not atomic: two simultaneous requests can share one gap, still under the wall cap.
+  return Math.max(session.activeSeconds, Math.min(wall, session.activeSeconds + Math.min(claimed, allowance)));
 }
 
 /** After a failed check he reads for this long again before the next try. */
