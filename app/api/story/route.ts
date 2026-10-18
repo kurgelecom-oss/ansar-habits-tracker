@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireSameOrigin } from '../../lib/assessments/auth';
 import { queueEmail } from '../../lib/assessments/delivery';
 import { hasServiceRole } from '../../lib/supabase-admin';
-import { creditSeconds, currentStory, grade, publicStory, saveSession, storyDue, storyReport, type StorySession } from '../../lib/story';
+import { creditSeconds, retryWait, currentStory, grade, publicStory, saveSession, storyDue, storyReport, type StorySession } from '../../lib/story';
 import { sydneyDateKey } from '../../lib/time';
 
 export const dynamic = 'force-dynamic';
@@ -52,13 +52,18 @@ export async function POST(request: Request) {
       await saveSession(story.weekStart, session);
       return NextResponse.json({ ok: false, message: 'Read to the end first.' }, { status: 409, headers: noStore });
     }
+    const wait = retryWait(session);
+    if (wait > 0) {
+      await saveSession(story.weekStart, session);
+      return NextResponse.json({ ok: false, message: `Re-read first: the check opens again in ${wait} s of reading.` }, { status: 409, headers: noStore });
+    }
     const raw = (body.answers ?? {}) as Record<string, unknown>;
     const answers = Object.fromEntries(story.questions.map(q => [q.id, Number.isInteger(raw[q.id]) ? raw[q.id] as number : -1]));
     const reflection = String(body.reflection ?? '').trim().slice(0, 2000);
     if (reflection.split(/\s+/).filter(Boolean).length < 8) return NextResponse.json({ ok: false, message: 'Write at least one full sentence in your own words.' }, { status: 400, headers: noStore });
 
     const result = grade(story, answers);
-    session.attempts.push({ at: new Date().toISOString(), answers, score: result.score, total: result.total, wrong: result.wrong });
+    session.attempts.push({ at: new Date().toISOString(), answers, score: result.score, total: result.total, wrong: result.wrong, activeAt: session.activeSeconds });
     session.reflection = reflection;
     if (result.passed) session.completedAt = new Date().toISOString();
     await saveSession(story.weekStart, session);

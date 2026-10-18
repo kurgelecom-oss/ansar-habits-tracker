@@ -30,8 +30,10 @@ describe('grade', () => {
 describe('metrics', () => {
   it('never credits more than the wall clock since opening', () => {
     const s: StorySession = { openedAt: new Date(Date.now() - 60_000).toISOString(), activeSeconds: 10, maxScroll: 0, attempts: [] };
-    expect(creditSeconds(s, 9999)).toBeLessThanOrEqual(61);
-    expect(creditSeconds(s, 5)).toBe(10);
+    expect(creditSeconds({ ...s }, 9999)).toBeLessThanOrEqual(76);
+    expect(creditSeconds({ ...s }, 5)).toBe(10);
+    const beat = { ...s, lastBeat: new Date().toISOString() };
+    expect(creditSeconds(beat, 9999)).toBeLessThanOrEqual(15);   // a forged count earns only the gap since the last check-in
   });
   it('the public story carries no answers', () => {
     expect(JSON.stringify(publicStory(SAMPLE_STORY).questions)).not.toMatch(/"answer"|"why"/);

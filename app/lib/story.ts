@@ -40,8 +40,8 @@ export type Story = {
   status: 'draft' | 'published';
 };
 export type PublicStory = Omit<Story, 'questions'> & { questions: Omit<StoryQuestion, 'answer' | 'why'>[]; minReadSeconds: number; words: number };
-export type Attempt = { at: string; answers: Record<string, number>; score: number; total: number; wrong: string[] };
-export type StorySession = { openedAt: string; activeSeconds: number; maxScroll: number; attempts: Attempt[]; reflection?: string; completedAt?: string };
+export type Attempt = { at: string; answers: Record<string, number>; score: number; total: number; wrong: string[]; activeAt?: number };
+export type StorySession = { openedAt: string; lastBeat?: string; activeSeconds: number; maxScroll: number; attempts: Attempt[]; reflection?: string; completedAt?: string };
 
 /** Words in everything he is asked to read. */
 export function wordCount(s: Pick<Story, 'lenses' | 'story' | 'lesson'>): number {
@@ -72,10 +72,23 @@ export function storyDue(today: string, story: Story | null, session: StorySessi
   return !session?.completedAt;
 }
 
-/** Credits active time without ever exceeding the wall clock since opening. */
+/**
+ * Credits active time from the browser's count, but never more than the wall
+ * time since the previous check-in (plus 5 s slack). Mutates lastBeat.
+ */
 export function creditSeconds(session: StorySession, reported: number, now = Date.now()): number {
-  const wall = Math.max(0, Math.floor((now - Date.parse(session.openedAt)) / 1000));
-  return Math.max(session.activeSeconds, Math.min(Math.floor(reported) || 0, wall));
+  const since = Date.parse(session.lastBeat ?? session.openedAt);
+  const allowance = Math.max(0, Math.floor((now - since) / 1000)) + 5;
+  const claimed = Math.max(0, (Math.floor(reported) || 0) - session.activeSeconds);
+  session.lastBeat = new Date(now).toISOString();
+  return session.activeSeconds + Math.min(claimed, allowance);
+}
+
+/** After a failed check he reads for this long again before the next try. */
+export const RETRY_READ_SECONDS = 60;
+export function retryWait(session: StorySession): number {
+  const last = session.attempts[session.attempts.length - 1];
+  return last ? Math.max(0, (last.activeAt ?? 0) + RETRY_READ_SECONDS - session.activeSeconds) : 0;
 }
 
 const fmtMin = (s: number) => `${Math.floor(s / 60)} min ${s % 60} s`;
