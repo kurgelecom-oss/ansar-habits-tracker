@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildWeekStory, fullDays, validateWeekReport } from './week-story';
-import { SAMPLE_WEEK } from './week-story-sample';
+import { better, buildWeekStory, fullDays, trendRows, validateWeekReport, worse } from './week-story';
+import { SAMPLE_PREV, SAMPLE_WEEK } from './week-story-sample';
 
 const { week: _w, ...written } = SAMPLE_WEEK;
 const valid = (over: Record<string, unknown> = {}) => validateWeekReport({ ...written, ...over }, '2026-10-12');
@@ -41,4 +41,23 @@ describe('buildWeekStory', () => {
     const t = buildWeekStory({ ...SAMPLE_WEEK, topics: [{ area: 'Maths', topic: 'Ratios', weeks: 0, plateau: true }] }).find(x => x.id === 'topics')!;
     expect(t.caption).toBe('Ratios has not moved on. Check you are moving forward.');
   });
+});
+
+describe('since last week', () => {
+  const rows = trendRows(SAMPLE_WEEK, SAMPLE_PREV);
+  const row = (l: string) => rows.find(r => r.label === l)!;
+  it('compares the hand-worked figures', () => {
+    expect(row('Full days')).toMatchObject({ before: 1, now: 2 });
+    expect(row('Work logs')).toMatchObject({ before: 9, now: 18 });
+    expect(row('Photos that count')).toMatchObject({ before: 9, now: 13 });
+    expect(row('Journals')).toMatchObject({ before: 3, now: 2 });
+  });
+  it('fewer record problems counts as better', () => expect(better(row('Record problems'))).toBe(true));
+  it('scene sits right after the call, with a plain caption', () => {
+    const sc = buildWeekStory(SAMPLE_WEEK, SAMPLE_PREV);
+    expect(sc[1]).toMatchObject({ id: 'trend', since: 'Week 11 · 5–9 Oct' });
+    expect(sc[1].caption).toBe('RED last week, YELLOW this week. 4 things got better, 1 got worse.');
+    expect(rows.filter(worse).map(r => r.label)).toEqual(['Journals']);
+  });
+  it('no previous film, no trend scene', () => expect(buildWeekStory(SAMPLE_WEEK).some(x => x.id === 'trend')).toBe(false));
 });

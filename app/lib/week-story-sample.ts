@@ -37,3 +37,12 @@ export const SAMPLE_WEEK: WeekReport = {
   actions: ['Start every block by 8:05, laptop open at 8:00.', 'Do Duolingo Turkish first on Monday and Thursday.', 'Finish the ratios unit and move to percentages.'],
   sources: { tally: 31, notion: 31 },
 };
+
+/** The invented week before it, so the preview shows "Since last week". */
+export const SAMPLE_PREV: WeekReport = {
+  ...SAMPLE_WEEK, week: '2026-10-05', label: 'Week 11 · 5–9 Oct', call: 'RED', deviceRule: 1,
+  days: SAMPLE_WEEK.days.map((d, i) => ({ ...d, english: i < 1, logs: Math.max(0, d.logs - 2) })),
+  evidence: { submissions: 12, withFile: 9, unique: 9 },
+  journals: { now: 3, before: [2, 1, 0] },
+  flags: [...SAMPLE_WEEK.flags, { date: '2026-10-08', kind: 'Incomplete entry', detail: 'Thursday HASS has no topic.' }],
+};

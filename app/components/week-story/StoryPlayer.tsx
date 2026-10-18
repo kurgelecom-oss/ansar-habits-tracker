@@ -57,7 +57,10 @@ export function StoryPlayer<S extends BaseScene>({ scenes: raw, render, storageK
     addEventListener("keydown", key); return () => removeEventListener("keydown", key);
   });
   const present = () => { const el = stage.current; if (!el) return; document.fullscreenElement ? document.exitFullscreen() : el.requestFullscreen?.(); };
-  const setHold = (v: number) => save({ ...edits, hold: { ...edits.hold, [sc.id]: Math.max(2, Math.min(20, v)) } });
+  const clampHold = (v: number) => Math.max(2, Math.min(20, v));
+  const setHold = (v: number) => save({ ...edits, hold: { ...edits.hold, [sc.id]: clampHold(v) } });
+  // Every scene at once: each keeps its own length, all move by the same step (still 2–20 s each).
+  const shiftAll = (d: number) => save({ ...edits, hold: Object.fromEntries(scenes.map(s => [s.id, clampHold(s.hold + d)])) });
 
   if (!sc) return <div className="sty-empty"><b>No data yet.</b> The story builds itself once the dashboard has numbers.</div>;
   return (
@@ -88,6 +91,13 @@ export function StoryPlayer<S extends BaseScene>({ scenes: raw, render, storageK
         <button className="sty-btn ghost sm" type="button" aria-label="Longer" onClick={() => setHold(sc.hold + 1)}>+</button>
         {(edits.cap[sc.id] || edits.hold[sc.id]) && <button className="sty-btn ghost sm" type="button" onClick={() => { const c = { ...edits.cap }, h = { ...edits.hold }; delete c[sc.id]; delete h[sc.id]; save({ cap: c, hold: h }); }}>Reset this scene</button>}
         {edits.cap[sc.id] && <span className="sty-hint">Live wording: “{sc.auto}”</span>}
+      </div>
+      <div className="sty-ctl" role="group" aria-label="Timing for every scene">
+        <span className="sty-hint"><b>Every scene.</b> Make all {scenes.length} scenes</span>
+        <button className="sty-btn ghost sm" type="button" aria-label="Every scene 1 second shorter" onClick={() => shiftAll(-1)}>−1s</button>
+        <button className="sty-btn ghost sm" type="button" aria-label="Every scene 1 second longer" onClick={() => shiftAll(1)}>+1s</button>
+        <span className="sty-hint">Whole story {Math.round(total / 1000)}s</span>
+        {Object.keys(edits.hold).length > 0 && <button className="sty-btn ghost sm" type="button" onClick={() => save({ ...edits, hold: {} })}>Reset all timing</button>}
       </div>
     </section>
   );
