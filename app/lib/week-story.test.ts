@@ -13,6 +13,8 @@ describe('validateWeekReport', () => {
   it('needs the eight areas in order', () => expect(valid({ areas: [...written.areas].reverse() })).toMatch(/8 VRQA areas/));
   it('evidence cannot claim more unique files than files', () => expect(valid({ evidence: { submissions: 5, withFile: 3, unique: 4 } })).toMatch(/unique/));
   it('accepts an unrecorded device rule', () => expect(valid({ deviceRule: null })).toMatchObject({ deviceRule: null }));
+  it('a theme can repeat on more than 7 days (the report looks back 4 weeks)', () => expect(valid({ words: [{ theme: 'Learn business', days: 14, quote: 'I need to learn business' }] })).toMatchObject({ words: [{ days: 14 }] }));
+  it('names the word item that fails', () => expect(valid({ words: [{ theme: 'A', days: 2, quote: 'ok' }, { theme: 'B', days: 40, quote: 'x' }] })).toBe('words[1]: theme max 40 characters, days 0–31, quote max 200 characters'));
 });
 
 describe('buildWeekStory', () => {

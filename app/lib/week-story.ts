@@ -49,7 +49,10 @@ export function validateWeekReport(raw: unknown, week: string): WeekReport | str
   if ([e.submissions, e.withFile, e.unique].some(v => int(v) === null) || e.withFile > e.submissions || e.unique > e.withFile) return 'evidence: unique ≤ withFile ≤ submissions';
   if (!Array.isArray(r.topics) || r.topics.length > 8 || r.topics.some((t: any) => !str(t?.area, 40) || !str(t?.topic, 120) || int(t.weeks, 52) === null || typeof t.plateau !== 'boolean')) return 'topics: up to 8 of { area, topic, weeks, plateau }';
   if (!Array.isArray(r.flags) || r.flags.length > 12 || r.flags.some((f: any) => !/^\d{4}-\d{2}-\d{2}$/.test(f?.date ?? '') || !str(f.kind, 40) || !str(f.detail, 240))) return 'flags: up to 12 of { date, kind, detail }';
-  if (!Array.isArray(r.words) || r.words.length > 6 || r.words.some((w: any) => !str(w?.theme, 40) || int(w.days, 7) === null || !str(w.quote, 200))) return 'words: up to 6 of { theme, days, quote }';
+  // days = how often the theme came up across the report's own window (it looks back up to 4 weeks), so more than 7 is normal.
+  if (!Array.isArray(r.words) || r.words.length > 6) return 'words: up to 6 items';
+  const badWord = r.words.findIndex((w: any) => !str(w?.theme, 40) || int(w.days, 31) === null || !str(w.quote, 200));
+  if (badWord >= 0) return `words[${badWord}]: theme max 40 characters, days 0–31, quote max 200 characters`;
   if (int(r.journals?.now, 7) === null || !Array.isArray(r.journals.before) || r.journals.before.length !== 3 || r.journals.before.some((n: unknown) => int(n, 7) === null)) return 'journals: { now, before: [3 weeks ago, 2 weeks ago, last week] }';
   const strengths = strs(r.strengths, 3, 5), weaknesses = strs(r.weaknesses, 3, 5), actions = strs(r.actions, 3, 3);
   if (!strengths || !weaknesses) return 'strengths and weaknesses: 3 to 5 short sentences each';
