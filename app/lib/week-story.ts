@@ -1,0 +1,129 @@
+/* The week film (tk, 18 Oct 2026): the Friday homeschool report played as a short
+   animated story on the School page, one point per scene.
+
+   The Friday report routine (trig_01FVdPZcJ2mK5GMguQ9Fg8RL) already does the analysis
+   for the email. It also writes the same numbers as JSON to Notion "🎬 Week Films";
+   week-story-import.ts checks them here and stores them as `week-report:<monday>`.
+   This file is pure (no I/O) so the page can import it and the tests can run it.
+   Note-to-Taylan items stay in the email; they are not part of the film. */
+import { dayNameOf } from './time';
+
+export const AREAS = ['English', 'Mathematics', 'Science', 'HASS', 'The Arts', 'Health & PE', 'Technologies', 'Languages'] as const;
+export const CALLS = ['GREEN', 'PROVISIONAL GREEN', 'YELLOW', 'RED'] as const;
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as const;
+export const BLOCKS = [['maths', 'Maths'], ['english', 'English'], ['hass', 'HASS'], ['rotation', 'Rotation']] as const;
+
+export type Call = typeof CALLS[number];
+export type DayRow = { day: typeof DAYS[number]; maths: boolean; english: boolean; hass: boolean; rotation: boolean; logs: number; start: string | null };
+export type WeekReport = {
+  week: string; label: string; call: Call; callWhy: string; deviceRule: number | null;
+  days: DayRow[];
+  areas: { area: typeof AREAS[number]; now: number; before: number; note: string }[];
+  evidence: { submissions: number; withFile: number; unique: number };
+  topics: { area: string; topic: string; weeks: number; plateau: boolean }[];
+  flags: { date: string; kind: string; detail: string }[];
+  words: { theme: string; days: number; quote: string }[];
+  journals: { now: number; before: number[] };
+  strengths: string[]; weaknesses: string[]; actions: string[];
+  sources: { tally: number; notion: number };
+};
+
+const str = (v: unknown, max = 400) => typeof v === 'string' && v.trim() && v.length <= max ? v.trim() : null;
+const int = (v: unknown, max = 999) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= max ? v as number : null;
+const strs = (v: unknown, min: number, max: number) => Array.isArray(v) && v.length >= min && v.length <= max && v.every(x => str(x, 240)) ? v.map(x => (x as string).trim()) : null;
+
+/** Checks the JSON the routine wrote. Returns the report or the first problem (that text goes into the Notion Note). */
+export function validateWeekReport(raw: unknown, week: string): WeekReport | string {
+  const r = raw as Record<string, any>;
+  if (!r || typeof r !== 'object') return 'Not a JSON object';
+  if (dayNameOf(week) !== 'Monday') return `Week ${week} is not a Monday`;
+  if (!str(r.label, 80)) return 'Missing label';
+  if (!CALLS.includes(r.call)) return `call must be one of ${CALLS.join(', ')}`;
+  if (!str(r.callWhy)) return 'Missing callWhy';
+  if (r.deviceRule !== null && int(r.deviceRule, 5) === null) return 'deviceRule must be 0–5 or null (not recorded)';
+  if (!Array.isArray(r.days) || r.days.length !== 5 || r.days.some((d: any, i: number) => d?.day !== DAYS[i] || BLOCKS.some(([k]) => typeof d[k] !== 'boolean') || int(d.logs, 40) === null || (d.start !== null && !/^\d{2}:\d{2}$/.test(d.start ?? ''))))
+    return 'days: Mon–Fri in order, each with maths/english/hass/rotation true|false, logs, start "HH:MM" or null';
+  if (!Array.isArray(r.areas) || r.areas.length !== 8 || AREAS.some((a, i) => r.areas[i]?.area !== a || int(r.areas[i].now) === null || int(r.areas[i].before) === null || typeof r.areas[i].note !== 'string'))
+    return `areas: exactly the 8 VRQA areas in order (${AREAS.join(', ')}) with now, before, note`;
+  const e = r.evidence ?? {};
+  if ([e.submissions, e.withFile, e.unique].some(v => int(v) === null) || e.withFile > e.submissions || e.unique > e.withFile) return 'evidence: unique ≤ withFile ≤ submissions';
+  if (!Array.isArray(r.topics) || r.topics.length > 8 || r.topics.some((t: any) => !str(t?.area, 40) || !str(t?.topic, 120) || int(t.weeks, 52) === null || typeof t.plateau !== 'boolean')) return 'topics: up to 8 of { area, topic, weeks, plateau }';
+  if (!Array.isArray(r.flags) || r.flags.length > 12 || r.flags.some((f: any) => !/^\d{4}-\d{2}-\d{2}$/.test(f?.date ?? '') || !str(f.kind, 40) || !str(f.detail, 240))) return 'flags: up to 12 of { date, kind, detail }';
+  if (!Array.isArray(r.words) || r.words.length > 6 || r.words.some((w: any) => !str(w?.theme, 40) || int(w.days, 7) === null || !str(w.quote, 200))) return 'words: up to 6 of { theme, days, quote }';
+  if (int(r.journals?.now, 7) === null || !Array.isArray(r.journals.before) || r.journals.before.length !== 3 || r.journals.before.some((n: unknown) => int(n, 7) === null)) return 'journals: { now, before: [3 weeks ago, 2 weeks ago, last week] }';
+  const strengths = strs(r.strengths, 3, 5), weaknesses = strs(r.weaknesses, 3, 5), actions = strs(r.actions, 3, 3);
+  if (!strengths || !weaknesses) return 'strengths and weaknesses: 3 to 5 short sentences each';
+  if (!actions) return 'actions: exactly 3 short sentences';
+  if (int(r.sources?.tally, 9999) === null || int(r.sources?.notion, 9999) === null) return 'sources: { tally, notion } row counts';
+  return {
+    week, label: r.label.trim(), call: r.call, callWhy: r.callWhy.trim(), deviceRule: r.deviceRule,
+    days: r.days.map((d: any) => ({ day: d.day, maths: d.maths, english: d.english, hass: d.hass, rotation: d.rotation, logs: d.logs, start: d.start })),
+    areas: r.areas.map((a: any) => ({ area: a.area, now: a.now, before: a.before, note: a.note.trim() })),
+    evidence: { submissions: e.submissions, withFile: e.withFile, unique: e.unique },
+    topics: r.topics.map((t: any) => ({ area: t.area.trim(), topic: t.topic.trim(), weeks: t.weeks, plateau: t.plateau })),
+    flags: r.flags.map((f: any) => ({ date: f.date, kind: f.kind.trim(), detail: f.detail.trim() })),
+    words: r.words.map((w: any) => ({ theme: w.theme.trim(), days: w.days, quote: w.quote.trim() })),
+    journals: { now: r.journals.now, before: [...r.journals.before] },
+    strengths, weaknesses, actions, sources: { tally: r.sources.tally, notion: r.sources.notion },
+  };
+}
+
+// ── Scenes ──────────────────────────────────────────────────────────────────
+type Base = { label: string; hold: number; caption: string };
+export type Scene = Base & (
+  | { id: 'call'; call: Call; why: string; full: number; week: string }
+  | { id: 'days'; days: DayRow[] }
+  | { id: 'device'; held: number | null }
+  | { id: 'areas'; areas: WeekReport['areas'] }
+  | { id: 'evidence'; submissions: number; withFile: number; unique: number }
+  | { id: 'topics'; topics: WeekReport['topics'] }
+  | { id: 'journals'; now: number; before: number[] }
+  | { id: 'words'; words: WeekReport['words'] }
+  | { id: 'strong' | 'broke' | 'next'; items: string[] }
+  | { id: 'flags'; flags: WeekReport['flags'] }
+);
+
+const s = (n: number, one: string, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+const list = (xs: string[]) => xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+/** A full day = all four blocks logged. Friday is catch-up, so the household rule counts Mon–Thu. */
+export const fullDays = (days: DayRow[]) => days.slice(0, 4).filter(d => BLOCKS.every(([k]) => d[k])).length;
+/** Longer lists hold longer: 1.5 s per item on top of the base. */
+const holdFor = (base: number, items: number) => Math.min(16, base + Math.round(items * 1.5));
+
+export function buildWeekStory(r: WeekReport): Scene[] {
+  const full = fullDays(r.days);
+  const byLogs = [...r.days].sort((a, b) => b.logs - a.logs);
+  const zero = r.areas.filter(a => a.now === 0).map(a => a.area);
+  const reused = r.evidence.withFile - r.evidence.unique;
+  const plateaus = r.topics.filter(t => t.plateau);
+  const last = r.journals.before[2];
+  const top = [...r.words].sort((a, b) => b.days - a.days)[0];
+
+  const scenes: Scene[] = [
+    { id: 'call', label: 'The call', hold: 7, call: r.call, why: r.callWhy, full, week: r.label,
+      caption: `${r.label}: ${r.call}. ${s(full, 'full day')} out of 4.` },
+    { id: 'days', label: 'Day by day', hold: 8, days: r.days,
+      caption: byLogs[0].logs ? `${byLogs[0].day} was your strongest day with ${s(byLogs[0].logs, 'log')}. ${byLogs[4].day} was the quietest with ${byLogs[4].logs}.` : 'Nothing was logged this week.' },
+    { id: 'device', label: 'Device rule', hold: 6, held: r.deviceRule,
+      caption: r.deviceRule === null ? 'The device rule was not written down this week, so the call cannot be a full green.' : `The device rule held ${s(r.deviceRule, 'morning')} out of 4.` },
+    { id: 'areas', label: '8 areas', hold: 9, areas: r.areas,
+      caption: zero.length ? `${8 - zero.length} of 8 learning areas covered. ${list(zero)} had nothing.` : 'All 8 learning areas had work this week.' },
+    { id: 'evidence', label: 'Evidence', hold: 7, ...r.evidence,
+      caption: !r.evidence.submissions ? 'No work was logged, so there is no evidence.'
+        : `${r.evidence.withFile} of ${r.evidence.submissions} logs had a photo. ${reused ? `${s(reused, 'photo')} had been used before, so ${r.evidence.unique} count.` : 'Every photo was new.'}` },
+  ];
+  if (r.topics.length) scenes.push({ id: 'topics', label: 'Topics', hold: holdFor(6, r.topics.length), topics: r.topics,
+    caption: plateaus.length ? `${plateaus[0].topic} has been the same for ${plateaus[0].weeks} weeks. Check you are moving forward.` : 'Every topic moved forward this week.' });
+  scenes.push({ id: 'journals', label: 'Journal', hold: 6, now: r.journals.now, before: r.journals.before,
+    caption: r.journals.now ? `${s(r.journals.now, 'journal')} this week, ${last} last week.` : 'No journal this week. Your journal is your best English work.' });
+  if (r.words.length) scenes.push({ id: 'words', label: 'Your words', hold: holdFor(7, r.words.length), words: r.words,
+    caption: `“${top.quote}” came up ${s(top.days, 'day')}. When you keep saying it, it matters.` });
+  scenes.push(
+    { id: 'strong', label: 'Strong', hold: holdFor(6, r.strengths.length), items: r.strengths, caption: `${s(r.strengths.length, 'thing')} you did well this week.` },
+    { id: 'broke', label: 'Broke', hold: holdFor(6, r.weaknesses.length), items: r.weaknesses, caption: `${s(r.weaknesses.length, 'thing')} that broke. Each one has a fix.` },
+    { id: 'flags', label: 'Records', hold: r.flags.length ? holdFor(6, r.flags.length) : 5, flags: r.flags,
+      caption: r.flags.length ? `${s(r.flags.length, 'record problem')} to put right.` : 'Your records were clean this week.' },
+    { id: 'next', label: 'Next week', hold: 9, items: r.actions, caption: 'Three things for next week. That is the whole plan.' },
+  );
+  return scenes;
+}

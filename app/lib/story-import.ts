@@ -64,24 +64,25 @@ const mark = (id: string, status: 'Published' | 'Rejected', note: string) => not
   method: 'PATCH', body: JSON.stringify({ properties: { Status: { select: { name: status } }, Note: { rich_text: [{ text: { content: note.slice(0, 1900) } }] } } }),
 });
 
-/** Imports every Ready row. Throttled; never throws (the board must not break). */
-export async function importReady(now = Date.now()): Promise<void> {
+/** Imports every Ready row of a "Status / Week / Note + JSON code block" Notion database.
+    `accept` validates and stores one row, returning the error text to reject it or null when stored.
+    Throttled to every 15 minutes per `checkId`; never throws (the board must not break). */
+export async function importFromNotion(ds: string, checkId: string, accept: (week: string, json: unknown) => Promise<string | null>, now = Date.now()): Promise<void> {
   if (!process.env.NOTION_TOKEN) return;
   try {
     const db = adminClient();
-    const last = await db.from('ansar_assessment_state').select('payload').eq('id', CHECK_ID).maybeSingle();
+    const last = await db.from('ansar_assessment_state').select('payload').eq('id', checkId).maybeSingle();
     if (now - Number(last.data?.payload?.at ?? 0) < EVERY_MS) return;
-    await db.from('ansar_assessment_state').upsert({ id: CHECK_ID, payload: { at: now }, updated_at: new Date(now).toISOString() });
-    const rows = await notion(`data_sources/${STORIES_DS}/query`, { method: 'POST', body: JSON.stringify({ filter: { property: 'Status', select: { equals: 'Ready' } }, page_size: 10 }) });
+    await db.from('ansar_assessment_state').upsert({ id: checkId, payload: { at: now }, updated_at: new Date(now).toISOString() });
+    const rows = await notion(`data_sources/${ds}/query`, { method: 'POST', body: JSON.stringify({ filter: { property: 'Status', select: { equals: 'Ready' } }, page_size: 10 }) });
     for (const page of rows.results ?? []) {
       const week = page.properties?.Week?.date?.start?.slice(0, 10);
       try {
         const blocks = await notion(`blocks/${page.id}/children?page_size=100`);
         const json = codeBlockText(blocks.results ?? []);
         if (!week || !json) { await mark(page.id, 'Rejected', 'No Week date or no JSON code block'); continue; }
-        const story = validateStory(JSON.parse(json), week);
-        if (typeof story === 'string') { await mark(page.id, 'Rejected', story); continue; }
-        await saveStory(story);
+        const problem = await accept(week, JSON.parse(json));
+        if (problem) { await mark(page.id, 'Rejected', problem); continue; }
         await mark(page.id, 'Published', `On the board from ${week}. Imported ${new Date(now).toISOString()}`);
       } catch (e) {
         await mark(page.id, 'Rejected', e instanceof SyntaxError ? 'The code block is not valid JSON' : 'Import failed').catch(() => {});
@@ -89,3 +90,11 @@ export async function importReady(now = Date.now()): Promise<void> {
     }
   } catch { /* try again in 15 minutes */ }
 }
+
+/** The Monday stories. */
+export const importReady = (now = Date.now()) => importFromNotion(STORIES_DS, CHECK_ID, async (week, json) => {
+  const story = validateStory(json, week);
+  if (typeof story === 'string') return story;
+  await saveStory(story);
+  return null;
+}, now);

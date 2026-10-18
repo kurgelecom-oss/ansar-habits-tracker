@@ -118,6 +118,7 @@ export default function SchoolPage() {
                 ? `Next week · ${week?.totals?.blocks ?? 0} blocks planned`
                 : `${week?.totals?.done ?? 0} of ${week?.totals?.blocks ?? 0} blocks done this week`}
           </p>
+          <a className={styles.proofState} href="/school/week">▶ Watch the week film</a>
         </header>
 
         <div className={styles.tabs} role="tablist" aria-label="School views">
