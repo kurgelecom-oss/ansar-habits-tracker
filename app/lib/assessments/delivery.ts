@@ -57,6 +57,10 @@ async function enqueue(jobs: Omit<Job, 'attempts'>[]) {
   const { error } = await adminClient().from(OUTBOX).upsert(jobs.map(j => ({ ...j, status: 'pending' })), { onConflict: 'id', ignoreDuplicates: true });
   if (error) throw new DeliveryError('Could not persist assessment notifications');
 }
+/** One plain email to the parent address, sent by the same outbox (the Monday story). */
+export async function queueEmail(id: string, subject: string, text: string): Promise<void> {
+  await enqueue([{ id, channel: 'email', payload: { subject, text } }]);
+}
 export async function queueAttemptReport(attempt: Attempt): Promise<void> {
   if (attempt.status === 'in_progress'||attempt.paper_snapshot.is_practice===true) return;
   const event = `attempt-${digest([attempt.id, attempt.status, attempt.parent_review?.reviewedAt || '', attempt.correction_at || ''].join(':'))}`;

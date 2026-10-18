@@ -54,6 +54,7 @@ import { getJournalEvidence, type JournalEvidence } from "../../lib/tally";
 import { evidenceRefusal, evidenceWarnings } from "../../lib/evidence-gate";
 import { getQuranEvidence, type QuranEvidence } from "../../lib/quran-os";
 import { assessmentLock } from "../../lib/assessments/gate";
+import { storyLock } from "../../lib/story";
 
 // Never prerendered, never cached: the answer depends on the current second.
 export const dynamic = "force-dynamic";
@@ -606,6 +607,12 @@ export async function POST(request: Request) {
        can lift it for the day from the lock card. See lib/assessments/gate.ts. */
     if (!refusal && habit.block !== "pre_homeschool") {
       const lock = await assessmentLock(ctx.serverDate);
+      if (lock.locked) refusal = { reason: "locked", message: lock.message };
+    }
+    // Gate 8 — this week's story is unread (tk, 18 Oct 2026). Same shape and
+    // exemptions as Gate 7. See lib/story.ts.
+    if (!refusal && habit.block !== "pre_homeschool") {
+      const lock = await storyLock(ctx.serverDate);
       if (lock.locked) refusal = { reason: "locked", message: lock.message };
     }
 
