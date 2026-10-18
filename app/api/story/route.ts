@@ -5,6 +5,7 @@ import { hasServiceRole } from '../../lib/supabase-admin';
 import { creditSeconds, retryWait, currentStory, grade, publicStory, saveSession, storyDue, storyReport, type StorySession } from '../../lib/story';
 import { sydneyDateKey } from '../../lib/time';
 import { importReady } from '../../lib/story-import';
+import { importWeekReports } from '../../lib/week-story-store';
 
 export const dynamic = 'force-dynamic';
 const noStore = { 'Cache-Control': 'no-store' };
@@ -19,6 +20,7 @@ export async function GET() {
   try {
     const today = sydneyDateKey();
     await importReady();
+    await importWeekReports(); // the Friday week film, so it is waiting before anyone opens it (both throttled, never throw)
     const { story, session, bypassed } = await currentStory(today);
     if (!story || !storyDue(today, story, session, bypassed)) return NextResponse.json({ due: false }, { headers: noStore });
     const s: StorySession = session ?? { openedAt: new Date().toISOString(), activeSeconds: 0, maxScroll: 0, attempts: [] };
