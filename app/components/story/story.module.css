@@ -1,0 +1,77 @@
+/* The Monday feature. A printed-magazine advertorial on purpose: it sits on
+   top of whichever look the board is in, so its palette is its own. */
+.overlay {
+  --paper: #f7f2e8; --ink: #1d1a16; --muted: #6b6257; --rule: #d8cdb9;
+  --accent: #b3261e; --gold: #a07a2c; --box: #efe6d3;
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(12, 10, 8, 0.82);
+  display: flex; flex-direction: column;
+}
+.scroller { flex: 1; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.progress { position: sticky; top: 0; height: 4px; background: rgba(255,255,255,0.12); z-index: 2; }
+.progress span { display: block; height: 100%; background: var(--accent); transition: width 0.2s; }
+.sheet {
+  max-width: 720px; margin: 24px auto 120px; background: var(--paper); color: var(--ink);
+  font-family: "Newsreader", Georgia, serif; font-size: 19px; line-height: 1.62;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden;
+}
+.sheet h1, .sheet h2 { text-transform: none; letter-spacing: normal; }
+.banner { margin: 0; padding: 10px 20px; background: #1d1a16; color: #f7f2e8; font: 600 13px/1.4 "Public Sans", system-ui, sans-serif; letter-spacing: 0.04em; text-align: center; }
+.masthead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 14px 28px; border-bottom: 3px double var(--ink); }
+.brand { font: 700 22px/1 "Bodoni Moda", Didot, serif; letter-spacing: 0.02em; }
+.flag { font: 700 11px/1.3 "Public Sans", system-ui, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.hero { margin: 0; position: relative; }
+.hero img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.hero figcaption { padding: 6px 28px 0; font: 11px/1.4 "Public Sans", system-ui, sans-serif; color: var(--muted); }
+.kicker { margin: 26px 28px 0; font: 700 12px/1.3 "Public Sans", system-ui, sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+.headline { margin: 10px 28px 0; font: 700 clamp(30px, 6vw, 46px)/1.08 "Bodoni Moda", Didot, Georgia, serif; }
+.deck { margin: 14px 28px 0; font-style: italic; font-size: 21px; line-height: 1.45; color: #3b352d; }
+.byline { margin: 16px 28px 0; padding-bottom: 18px; border-bottom: 1px solid var(--rule); font: 600 12px/1.4 "Public Sans", system-ui, sans-serif; color: var(--muted); letter-spacing: 0.03em; }
+.lenses { display: grid; gap: 14px; margin: 26px 28px 0; }
+.lens { background: var(--box); border-left: 4px solid var(--gold); padding: 14px 18px; }
+.lens h2 { margin: 0 0 6px; font: 700 13px/1.3 "Public Sans", system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+.lens p { margin: 0; font-size: 17px; line-height: 1.55; }
+.story { margin: 34px 28px 0; }
+.storyLabel { margin: 0; font: 700 12px/1.3 "Public Sans", system-ui, sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+.storyTitle { margin: 6px 0 18px; font: 700 32px/1.15 "Bodoni Moda", Didot, Georgia, serif; }
+.story p { margin: 0 0 1em; }
+.dropcap::first-letter { float: left; font: 700 68px/0.82 "Bodoni Moda", Didot, serif; padding: 6px 10px 0 0; color: var(--accent); }
+.pull { margin: 1.4em -8px; padding: 18px 0; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); font: italic 600 26px/1.3 "Bodoni Moda", Didot, Georgia, serif; text-align: center; }
+.lesson { margin: 10px 28px 0; padding: 18px 20px; background: var(--ink); color: var(--paper); font-size: 18px; }
+.lesson strong { color: #f0c76a; }
+.check { margin: 34px 28px 32px; padding-top: 22px; border-top: 3px double var(--ink); }
+.checkTitle { margin: 0 0 14px; font: 700 28px/1.2 "Bodoni Moda", Didot, Georgia, serif; }
+.lockedNote { margin: 0; padding: 16px 18px; background: var(--box); font: 600 15px/1.5 "Public Sans", system-ui, sans-serif; color: var(--muted); }
+.retry { margin: 0 0 14px; padding: 12px 16px; background: #fbe3df; color: #7a1a13; font: 600 15px/1.5 "Public Sans", system-ui, sans-serif; }
+.q { border: 0; margin: 0 0 18px; padding: 0; }
+.q legend { font-weight: 600; margin-bottom: 8px; font-size: 18px; }
+.opt, .optOn { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; margin-bottom: 6px; border: 1px solid var(--rule); border-radius: 6px; cursor: pointer; font: 16px/1.4 "Public Sans", system-ui, sans-serif; background: #fffdf8; }
+.optOn { border-color: var(--ink); background: var(--box); }
+.opt input, .optOn input { margin-top: 3px; accent-color: var(--accent); }
+.reflect { display: grid; gap: 8px; margin: 6px 0 18px; font-weight: 600; font-size: 18px; }
+.reflect textarea { font: 16px/1.5 "Public Sans", system-ui, sans-serif; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 6px; background: #fffdf8; color: var(--ink); resize: vertical; }
+.reflect small { font: 13px "Public Sans", system-ui, sans-serif; color: var(--muted); font-weight: 400; }
+.cta { appearance: none; border: 0; border-radius: 6px; padding: 14px 22px; background: var(--accent); color: #fff; font: 700 16px "Public Sans", system-ui, sans-serif; cursor: pointer; }
+.cta:disabled { opacity: 0.45; cursor: not-allowed; }
+.cta:focus-visible, .stickyCta:focus-visible { outline: 3px solid #f0c76a; outline-offset: 2px; }
+.passed { display: grid; gap: 10px; }
+.passedBig { margin: 0; font: 700 36px "Bodoni Moda", Didot, serif; color: #2e6b3a; }
+.emailPreview { white-space: pre-wrap; font: 12px/1.5 ui-monospace, Menlo, monospace; background: #fffdf8; border: 1px dashed var(--rule); padding: 12px; max-height: 360px; overflow: auto; }
+.sticky {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 3;
+  display: flex; justify-content: center; align-items: center; gap: 16px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: #1d1a16; color: #f7f2e8; font: 600 14px "Public Sans", system-ui, sans-serif;
+}
+.stickyCta { appearance: none; border: 0; border-radius: 999px; padding: 10px 18px; background: #b3261e; color: #fff; font: 700 14px "Public Sans", system-ui, sans-serif; cursor: pointer; }
+.stickyCta:disabled { background: #4a443c; color: #a59c8f; cursor: not-allowed; }
+.parent { position: fixed; left: 12px; bottom: 70px; z-index: 1001; font: 12px "Public Sans", system-ui, sans-serif; color: #a59c8f; }
+.parent button { background: none; border: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+.parent input { width: 90px; margin: 0 6px; padding: 4px 6px; }
+@media (max-width: 640px) {
+  .sheet { margin: 0 0 110px; border-radius: 0; font-size: 18px; }
+  .masthead, .kicker, .headline, .deck, .byline, .lenses, .story, .lesson, .check { margin-left: 16px; margin-right: 16px; }
+  .masthead { padding: 12px 16px; margin: 0; }
+  .hero figcaption { padding: 6px 16px 0; }
+}
+@media (prefers-reduced-motion: reduce) { .progress span { transition: none; } }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import PaperLockGate from "./components/PaperLockGate";
+import StoryGate from "./components/story/StoryGate";
 
 export const metadata: Metadata = {
   title: "Ansar · Daily Habits Tracker",
@@ -45,6 +46,8 @@ export default function RootLayout({
         {children}
         {/* A due Friday review or exam covers every page but Today and Tests. */}
         <PaperLockGate />
+        {/* This week's story covers every page until he passes its check. */}
+        <StoryGate />
       </body>
     </html>
   );
