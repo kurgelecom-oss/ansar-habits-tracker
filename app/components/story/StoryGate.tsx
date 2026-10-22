@@ -5,7 +5,7 @@ import StoryFeature from "./StoryFeature";
 import s from "./story.module.css";
 
 type Due = { due: true; story: PublicStory; session: { activeSeconds: number; maxScroll: number; attempts: { score: number; total: number }[] } };
-const MORNING_ENDS = 8 * 60 + 30;   // the Morning Habits window never locks
+const STORY_FROM = 8 * 60;   // 8:00am, before homeschool at 8:30 (tk, 22 Oct)
 const sydneyMinutes = () => {
   const [h, m] = new Intl.DateTimeFormat("en-GB", { timeZone: "Australia/Sydney", hourCycle: "h23", hour: "2-digit", minute: "2-digit" }).format(new Date()).split(":").map(Number);
   return h * 60 + m;
@@ -23,7 +23,10 @@ export default function StoryGate() {
     fetch("/api/story", { cache: "no-store" }).then(r => r.json()).then(d => setDue(d.due ? d : null)).catch(() => {});
   }, []);
   useEffect(() => { load(); const t = setInterval(() => setNow(sydneyMinutes()), 60_000); return () => clearInterval(t); }, [load]);
-  const showing = !!due && now >= MORNING_ENDS;
+  // A board left open since the weekend must still find Monday's story, so ask again
+  // every 5 minutes from 8:00 until one is due. Not earlier: the first read starts his reading clock.
+  useEffect(() => { if (!due && now >= STORY_FROM && now % 5 === 0) load(); }, [due, now, load]);
+  const showing = !!due && now >= STORY_FROM;
   useEffect(() => {
     if (!showing) return;
     const before = document.body.style.overflow;
