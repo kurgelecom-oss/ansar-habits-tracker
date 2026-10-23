@@ -20,7 +20,8 @@ const VERDICT = { GREEN: C.green, 'PROVISIONAL GREEN': C.green, YELLOW: C.amber,
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const pct = (n, d) => (d > 0 ? Math.round((100 * n) / d) : 0);
-const t = (size, color, extra = '') => `font-family:${FONT};font-size:${size}px;color:${color};${extra}`;
+// font-family is set once on the wrapper cell; Gmail, Apple Mail and Outlook web inherit it (keeps the HTML small)
+const t = (size, color, extra = '') => `font-size:${size}px;color:${color};${extra}`;
 const td = (bg, style = '', attrs = '') => `<td${bg ? ` bgcolor="${bg}"` : ''} ${attrs} style="${bg ? `background-color:${bg};` : ''}${style}">`;
 // 'auto' tables hold the round badges: rounded borders only draw with border-collapse:separate
 const table = (inner, w = '100%') => `<table role="presentation" width="${w}" cellpadding="0" cellspacing="0" border="0" style="width:${w};border-collapse:${w === 'auto' ? 'separate' : 'collapse'};">${inner}</table>`;
@@ -245,7 +246,7 @@ function html(r) {
     listCard('Where it broke', r.weaknesses, '!', C.amber),
     wordsCard(r), actionsCard(r), noteCard(r), flagsCard(r), footer(r)].join('\n');
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background-color:${C.page};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" style="width:100%;background-color:${C.page};"><tr><td align="center" style="padding:20px 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.page}" style="width:100%;background-color:${C.page};"><tr><td align="center" style="padding:20px 0;font-family:${FONT};">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;">
 ${body}
 </table></td></tr></table></body></html>`;
