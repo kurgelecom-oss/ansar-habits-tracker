@@ -160,17 +160,20 @@ function areasCard(r) {
   return card(`${kicker(`Eight VRQA areas · ${r.areas.filter((a) => a.count > 0).length} of 8 touched`)}${table(rows)}${why}`);
 }
 
+// HTML is the two-minute read: caps below are deliberate (tk, 23 Oct: "very congested").
+// Everything beyond them stays in the plain-text body, which the week-film routine reads.
+const CAP = { list: 3, words: 2, flags: 2 };
+
 function listCard(title, items, icon, color) {
   if (!items?.length) return '';
-  const rows = items.map((it) => `<tr>${td('', 'width:30px;vertical-align:top;padding:2px 0 14px 0;', 'width="30"')}${table(`<tr>${td(color, `width:22px;height:22px;border-radius:11px;${t(12, color === C.amber ? C.ink : '#FFFFFF', 'font-weight:800;line-height:22px;')}`, 'align="center" width="22" height="22"')}${icon}</td></tr>`, 'auto')}</td>${td('', 'vertical-align:top;padding:0 0 14px 0;')}
-      <div style="${t(15, C.ink, 'font-weight:700;line-height:1.35;')}">${esc(it.title)}</div>
-      ${it.detail ? `<div style="${t(13, C.muted, 'line-height:1.5;padding-top:3px;')}">${esc(it.detail)}</div>` : ''}</td></tr>`).join('');
+  const rows = items.slice(0, CAP.list).map((it) => `<tr>${td('', 'width:30px;vertical-align:top;padding:0 0 10px 0;', 'width="30"')}${table(`<tr>${td(color, `width:22px;height:22px;border-radius:11px;${t(12, color === C.amber ? C.ink : '#FFFFFF', 'font-weight:800;line-height:22px;')}`, 'align="center" width="22" height="22"')}${icon}</td></tr>`, 'auto')}</td>${td('', 'vertical-align:top;padding:1px 0 10px 0;')}
+      <div style="${t(15, C.ink, 'font-weight:600;line-height:1.35;')}">${esc(it.title)}</div></td></tr>`).join('');
   return card(`${kicker(title)}${table(rows)}`);
 }
 
 function wordsCard(r) {
   if (!r.words?.length) return '';
-  const rows = r.words.map((w) => `<tr>${td('', `padding:12px 0;border-top:1px solid ${C.line};vertical-align:top;`)}
+  const rows = r.words.slice(0, CAP.words).map((w) => `<tr>${td('', `padding:12px 0;border-top:1px solid ${C.line};vertical-align:top;`)}
       ${table(`<tr>${td('', 'vertical-align:top;')}<div style="${t(14, C.ink, 'font-weight:700;')}">${esc(w.theme)}</div></td>${td('', 'vertical-align:top;', 'align="right"')}${table(`<tr>${td(C.line, `padding:3px 10px;border-radius:999px;${t(12, C.ink, 'font-weight:800;white-space:nowrap;')}`)}${esc(w.days)}</td></tr>`, 'auto')}</td></tr>`)}
       <div style="${t(14, C.muted, 'font-style:italic;line-height:1.5;padding-top:6px;')}">&ldquo;${esc(w.quote)}&rdquo;</div></td></tr>`).join('');
   const j = r.journals ? `<div style="${t(13, C.ink, 'padding-top:12px;')}"><span style="font-weight:700;">Journals:</span> ${r.journals.this_week} this week · ${esc(r.journals.prior)}</div>` : '';
@@ -180,7 +183,6 @@ function wordsCard(r) {
 function actionsCard(r) {
   const rows = r.actions.map((a, i) => `<tr>${td('', 'width:44px;vertical-align:top;padding:0 0 16px 0;', 'width="44"')}${table(`<tr>${td(C.ink, `width:32px;height:32px;border-radius:16px;${t(15, '#FFFFFF', 'font-weight:800;line-height:32px;')}`, 'align="center" width="32" height="32"')}${i + 1}</td></tr>`, 'auto')}</td>${td('', 'vertical-align:top;padding:0 0 16px 0;')}
       <div style="${t(15, C.ink, 'font-weight:700;line-height:1.35;')}">${esc(a.title)}</div>
-      <div style="${t(13, C.muted, 'line-height:1.5;padding-top:3px;')}">${esc(a.detail || '')}</div>
       <div style="${t(11, C.green, 'font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding-top:5px;')}">${esc(a.owner || '')}${a.when ? ` · ${esc(a.when)}` : ''}</div></td></tr>`).join('');
   const last = r.last_actions?.length ? `<div style="padding-top:4px;border-top:1px solid ${C.line};">${kicker('')}<div style="${t(11, C.muted, 'font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:10px 0 8px 0;')}">Last week's three</div>${r.last_actions.map((l) => {
     const c = l.status === 'done' ? C.green : l.status === 'partly' ? C.amber : C.red;
@@ -192,7 +194,7 @@ function actionsCard(r) {
 
 function noteCard(r) {
   if (!r.note_to_taylan?.length) return '';
-  const paras = r.note_to_taylan.map((p) => `<div style="${t(14, '#FFFFFF', 'line-height:1.55;padding-top:8px;')}">${esc(p)}</div>`).join('');
+  const paras = r.note_to_taylan.slice(0, 1).map((p) => `<div style="${t(14, '#FFFFFF', 'line-height:1.55;padding-top:8px;')}">${esc(p)}</div>`).join('');
   return `<tr>${td('', 'padding:0 16px 14px 16px;')}${table(`<tr>${td(C.ink, 'padding:20px;border-radius:16px;')}<div style="${t(11, C.amber, 'font-weight:700;letter-spacing:1.5px;text-transform:uppercase;')}">Note to Taylan</div>${paras}</td></tr>`)}</td></tr>`;
 }
 
@@ -200,14 +202,15 @@ function flagsCard(r) {
   const f = r.flags; if (!f) return '';
   const all = [...(f.notion || []).map((x) => ({ ...x, src: 'Notion' })), ...(f.found || []).map((x) => ({ ...x, src: 'This report' }))];
   if (!all.length) return '';
-  const rows = all.map((x) => `<tr>${td('', `padding:8px 0;border-top:1px solid ${C.line};vertical-align:top;${t(13, C.ink, 'line-height:1.45;')}`)}<span style="color:${C.amber};">&#9888;</span>&nbsp;<span style="font-weight:700;">${esc(x.title)}</span> <span style="color:${C.muted};">${esc(x.detail || '')}</span></td>${td('', `padding:8px 0 8px 8px;border-top:1px solid ${C.line};vertical-align:top;white-space:nowrap;${t(11, C.muted)}`, 'align="right"')}${esc(x.src)}</td></tr>`).join('');
-  return card(`${kicker(`Data integrity · ${all.length} flags`)}${table(rows)}`);
+  const top = all.slice(0, CAP.flags).map((x) => esc(x.title)).join(' · ');
+  const more = all.length > CAP.flags ? ` · +${all.length - CAP.flags} more in the plain-text version` : '';
+  return `<tr>${td('', 'padding:0 20px 10px 20px;')}<div style="${t(12, C.muted, 'line-height:1.5;')}"><span style="color:${C.amber};">&#9888;</span> <span style="color:${C.ink};font-weight:700;">${all.length} data flags:</span> ${top}${more}</div></td></tr>`;
 }
 
 function footer(r) {
   const s = r.sources || {};
   return `<tr>${td('', 'padding:6px 24px 28px 24px;')}<div style="${t(11, C.muted, 'line-height:1.6;')}">
-    ${esc(s.summary || '')}<br>${esc(s.cross_check || '')}${s.not_recorded ? `<br>Not recorded anywhere: ${esc(s.not_recorded)}` : ''}<br>Generated ${esc(r.generated_at || '')}</div></td></tr>`;
+    ${esc(s.cross_check || '')} · Generated ${esc(r.generated_at || '')}</div></td></tr>`;
 }
 
 // ---------- plain text (mobile fallback + what the 7:30pm week-film routine reads) ----------
@@ -260,6 +263,13 @@ function check(r, out) {
   if (r.rings?.length !== 4) errs.push('rings must have exactly 4 entries');
   if (r.areas?.length !== 8) errs.push('areas must have exactly 8 entries');
   if (r.actions?.length !== 3) errs.push('actions must have exactly 3 entries');
+  const long = (label, v, max) => { if (v && String(v).length > max) errs.push(`${label} is ${String(v).length} chars; max ${max}. Shorten it`); };
+  long('verdict.headline', r.verdict?.headline, 110);
+  long('verdict.strict.why', r.verdict?.strict?.why, 140);
+  for (const k of ['strengths', 'weaknesses', 'actions']) (r[k] || []).forEach((x, i) => long(`${k}[${i}].title`, x.title, 60));
+  (r.words || []).slice(0, CAP.words).forEach((w, i) => { long(`words[${i}].quote`, w.quote, 110); long(`words[${i}].days`, w.days, 16); });
+  (r.rings || []).forEach((g, i) => long(`rings[${i}].note`, g.note, 28));
+  long('note_to_taylan[0]', r.note_to_taylan?.[0], 320);
   if (!VERDICT[r.verdict?.call]) errs.push(`verdict.call must be one of ${Object.keys(VERDICT).join(', ')}`);
   if ((out.match(/<style/g) || []).length > 1 || /display:\s*(flex|grid)|<svg|https?:\/\/[^"]*\.(png|jpe?g|gif)/i.test(out)) errs.push('forbidden markup in HTML');
   if (out.length > 35000) errs.push(`report.html is ${out.length} bytes; keep it under 35000 (shorten titles/details) or the send call can hit the output cap`);
