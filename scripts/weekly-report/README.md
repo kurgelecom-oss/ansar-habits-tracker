@@ -7,6 +7,8 @@ node render.mjs report.json outdir   # writes report.html, report.txt, ring.png,
 node render.mjs fixture.json /tmp/x  # smoke check (synthetic data only, this repo is public)
 ```
 
+Repeated inline styles are folded into one <head> <style> block of short classes and the self-check fails above 35KB: the routine pastes the whole email into one send_message call, and a ~90KB payload hit the output-token cap on 23 Oct 2026.
+
 Send with the Gmail MCP: `htmlBody` = report.html, `body` = report.txt, `attachments: [{content: <ring.b64.txt>, filename: "ring.png", mimeType: "image/png", inline: true}]`. The HTML points at `cid:att0`, which the Gmail MCP maps to attachment 0. External image URLs, SVG and data URIs are stripped by that tool, which is why the wheel is an inline PNG and everything else is tables.
 
 The 7:30pm week-film routine reads this email from Gmail. The plain-text body carries every number and section, so keep it complete.

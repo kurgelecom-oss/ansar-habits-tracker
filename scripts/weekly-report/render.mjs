@@ -22,9 +22,11 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 const pct = (n, d) => (d > 0 ? Math.round((100 * n) / d) : 0);
 // font-family is set once on the wrapper cell; Gmail, Apple Mail and Outlook web inherit it (keeps the HTML small)
 const t = (size, color, extra = '') => `font-size:${size}px;color:${color};${extra}`;
-const td = (bg, style = '', attrs = '') => `<td${bg ? ` bgcolor="${bg}"` : ''} ${attrs} style="${bg ? `background-color:${bg};` : ''}${style}">`;
+// Markup is kept lean on purpose: the routine copies the whole email into one send_message call,
+// and a ~90KB payload hit the model's output-token cap (23 Oct 2026). Keep report.html under ~35KB.
+const td = (bg, style = '', attrs = '') => `<td${attrs ? ` ${attrs}` : ''} style="${bg ? `background:${bg};` : ''}${style}">`;
 // 'auto' tables hold the round badges: rounded borders only draw with border-collapse:separate
-const table = (inner, w = '100%') => `<table role="presentation" width="${w}" cellpadding="0" cellspacing="0" border="0" style="width:${w};border-collapse:${w === 'auto' ? 'separate' : 'collapse'};">${inner}</table>`;
+const table = (inner, w = '100%') => `<table cellpadding="0" cellspacing="0"${w === 'auto' ? '' : ` width="${w}" style="border-collapse:collapse"`}>${inner}</table>`;
 const kicker = (s) => `<div style="${t(11, C.muted, 'font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:0 0 12px 0;')}">${esc(s)}</div>`;
 const card = (inner, bg = C.card) => `<tr>${td('', 'padding:0 16px 14px 16px;')}${table(`<tr>${td(bg, `padding:20px;border:1px solid ${C.line};border-radius:16px;`)}${inner}</td></tr>`)}</td></tr>`;
 
@@ -259,7 +261,8 @@ function check(r, out) {
   if (r.areas?.length !== 8) errs.push('areas must have exactly 8 entries');
   if (r.actions?.length !== 3) errs.push('actions must have exactly 3 entries');
   if (!VERDICT[r.verdict?.call]) errs.push(`verdict.call must be one of ${Object.keys(VERDICT).join(', ')}`);
-  if (/<style|class=|display:\s*(flex|grid)|<svg|https?:\/\/[^"]*\.(png|jpe?g|gif)/i.test(out)) errs.push('forbidden markup in HTML');
+  if ((out.match(/<style/g) || []).length > 1 || /display:\s*(flex|grid)|<svg|https?:\/\/[^"]*\.(png|jpe?g|gif)/i.test(out)) errs.push('forbidden markup in HTML');
+  if (out.length > 35000) errs.push(`report.html is ${out.length} bytes; keep it under 35000 (shorten titles/details) or the send call can hit the output cap`);
   if (/<(div|span|p)[^>]*background/i.test(out)) errs.push('background on div/span/p');
   const allowed = new Set(Object.values(C).map((x) => x.toUpperCase()).concat(['#FFFFFF', '#FBEDEA']));
   for (const h of out.match(/#[0-9A-Fa-f]{6}\b/g) || []) if (!allowed.has(h.toUpperCase())) errs.push(`off-palette colour ${h}`);
@@ -267,9 +270,19 @@ function check(r, out) {
 }
 
 export function render(r) {
+  const min = (h) => h.replace(/>\s+</g, '><').replace(/\s{2,}/g, ' ');
+  // Repeated inline styles become short classes in one <head> block (Gmail, Apple Mail and Outlook web keep it).
+  // Halves the size; one-off styles stay inline.
+  const classify = (h) => {
+    const n = new Map();
+    for (const [, v] of h.matchAll(/ style="([^"]*)"/g)) n.set(v, (n.get(v) || 0) + 1);
+    const cls = new Map([...n].filter(([v, k]) => k > 1 && v.length > 12).map(([v], i) => [v, `c${i.toString(36)}`]));
+    const css = [...cls].map(([v, c]) => `.${c}{${v}}`).join('');
+    return h.replace(/ style="([^"]*)"/g, (m, v) => (cls.has(v) ? ` class="${cls.get(v)}"` : m)).replace('</head>', `<style>${css}</style></head>`);
+  };
   const R = { ...r, rings: (r.rings || []).map((g, i) => ({ ...g, color: g.color || [C.green, C.amber, C.ink, C.muted][i] })) };
-  const out = html(R);
-  return { html: out, text: text(R), png: ringPng(R.rings.map((g) => ({ frac: g.d > 0 ? g.n / g.d : 0, color: g.color }))), errors: check(R, out) };
+  const out = classify(min(html(R)));
+  return { html: out, text: text(R), png: ringPng(R.rings.map((g) => ({ frac: g.d > 0 ? g.n / g.d : 0, color: g.color })), 280), errors: check(R, out) };
 }
 
 // realpath both sides: /tmp is a symlink on macOS and in some sandboxes
