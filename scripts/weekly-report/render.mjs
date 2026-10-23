@@ -6,7 +6,8 @@
 // The HTML references the ring as cid:att0 — the Gmail MCP maps that to attachments[0] (inline:true).
 // Schema: see README.md next to this file. Every figure comes from the routine; nothing is computed here
 // except percentages for display.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { deflateSync, crc32 } from 'node:zlib';
 
 const C = {
@@ -270,7 +271,8 @@ export function render(r) {
   return { html: out, text: text(R), png: ringPng(R.rings.map((g) => ({ frac: g.d > 0 ? g.n / g.d : 0, color: g.color }))), errors: check(R, out) };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// realpath both sides: /tmp is a symlink on macOS and in some sandboxes
+if (process.argv[1] && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) {
   const [, , input, outdir = '.'] = process.argv;
   if (!input) { console.error('usage: node render.mjs report.json [outdir]'); process.exit(2); }
   const res = render(JSON.parse(readFileSync(input, 'utf8')));
