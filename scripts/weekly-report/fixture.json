@@ -1,0 +1,278 @@
+{
+  "student": "Student",
+  "week": {
+    "number": 99,
+    "range": "Mon 1 – Fri 5 Jan 2099",
+    "term": "Fixture term"
+  },
+  "verdict": {
+    "call": "YELLOW",
+    "headline": "Fixture headline: 2 full days of 4.",
+    "strict": {
+      "call": "RED",
+      "why": "Fixture strict reason."
+    },
+    "detail": [
+      "Fixture detail."
+    ]
+  },
+  "days": [
+    {
+      "label": "Mon",
+      "status": "caveat",
+      "blocks": 4
+    },
+    {
+      "label": "Tue",
+      "status": "partial",
+      "blocks": 3
+    },
+    {
+      "label": "Wed",
+      "status": "full",
+      "blocks": 4
+    },
+    {
+      "label": "Thu",
+      "status": "partial",
+      "blocks": 1,
+      "logs": 2
+    },
+    {
+      "label": "Fri",
+      "status": "flex",
+      "logs": 1
+    }
+  ],
+  "rings": [
+    {
+      "label": "Full days",
+      "n": 2,
+      "d": 4,
+      "value": "2 / 4",
+      "note": "Mon, Wed"
+    },
+    {
+      "label": "Same-day logs",
+      "n": 13,
+      "d": 22,
+      "value": "13 / 22",
+      "note": "9 backfilled"
+    },
+    {
+      "label": "Areas touched",
+      "n": 7,
+      "d": 8,
+      "value": "7 / 8",
+      "note": "The Arts at zero"
+    },
+    {
+      "label": "Evidence",
+      "n": 22,
+      "d": 22,
+      "value": "100%",
+      "note": "no repeated files"
+    }
+  ],
+  "blocks": {
+    "days": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu"
+    ],
+    "rows": [
+      {
+        "label": "B1 Maths",
+        "cells": [
+          "done",
+          "done",
+          "done",
+          "missing"
+        ]
+      },
+      {
+        "label": "B2 English",
+        "cells": [
+          "backfilled",
+          "done",
+          "done",
+          "backfilled"
+        ]
+      },
+      {
+        "label": "B3 HASS",
+        "cells": [
+          "done",
+          "missing",
+          "done",
+          "missing"
+        ]
+      },
+      {
+        "label": "B4 Rotation",
+        "cells": [
+          "done",
+          "off_plan",
+          "done",
+          "missing"
+        ]
+      }
+    ]
+  },
+  "areas": [
+    {
+      "name": "English",
+      "count": 11,
+      "prior": 7
+    },
+    {
+      "name": "Maths",
+      "count": 3,
+      "prior": 4
+    },
+    {
+      "name": "Science",
+      "count": 1,
+      "prior": 1
+    },
+    {
+      "name": "HASS",
+      "count": 2,
+      "prior": 4
+    },
+    {
+      "name": "The Arts",
+      "count": 0,
+      "prior": 1,
+      "why": "Fixture reason for the zero."
+    },
+    {
+      "name": "Health & PE",
+      "count": 3,
+      "prior": 2
+    },
+    {
+      "name": "Technologies",
+      "count": 1,
+      "prior": 1
+    },
+    {
+      "name": "Languages",
+      "count": 1,
+      "prior": 1
+    }
+  ],
+  "strengths": [
+    {
+      "title": "Fixture strength 1.",
+      "detail": "Fixture detail with a number: 3 of 4."
+    },
+    {
+      "title": "Fixture strength 2.",
+      "detail": "Fixture detail with a number: 3 of 4."
+    },
+    {
+      "title": "Fixture strength 3.",
+      "detail": "Fixture detail with a number: 3 of 4."
+    },
+    {
+      "title": "Fixture strength 4.",
+      "detail": "Fixture detail with a number: 3 of 4."
+    },
+    {
+      "title": "Fixture strength 5.",
+      "detail": "Fixture detail with a number: 3 of 4."
+    }
+  ],
+  "weaknesses": [
+    {
+      "title": "Fixture weakness 1.",
+      "detail": "Fixture detail."
+    },
+    {
+      "title": "Fixture weakness 2.",
+      "detail": "Fixture detail."
+    },
+    {
+      "title": "Fixture weakness 3.",
+      "detail": "Fixture detail."
+    },
+    {
+      "title": "Fixture weakness 4.",
+      "detail": "Fixture detail."
+    },
+    {
+      "title": "Fixture weakness 5.",
+      "detail": "Fixture detail."
+    }
+  ],
+  "words": [
+    {
+      "theme": "Fixture theme",
+      "days": "3 of 5",
+      "quote": "Fixture quote in his words"
+    }
+  ],
+  "journals": {
+    "this_week": 2,
+    "prior": "Wk98 1, Wk97 3."
+  },
+  "actions": [
+    {
+      "title": "Fixture action 1.",
+      "detail": "Fixture detail.",
+      "owner": "Parent",
+      "when": "Monday"
+    },
+    {
+      "title": "Fixture action 2.",
+      "detail": "Fixture detail.",
+      "owner": "Student",
+      "when": "Monday Block 1"
+    },
+    {
+      "title": "Fixture action 3.",
+      "detail": "Fixture detail.",
+      "owner": "Student",
+      "when": "Every block"
+    }
+  ],
+  "note_to_taylan": [
+    "Fixture note."
+  ],
+  "flags": {
+    "notion": [
+      {
+        "title": "Incomplete entry ×1",
+        "detail": "Fixture."
+      }
+    ],
+    "found": [
+      {
+        "title": "Fixture finding",
+        "detail": "Fixture."
+      }
+    ]
+  },
+  "sources": {
+    "summary": "Fixture sources.",
+    "cross_check": "Fixture: Tally 10, Notion 10, agree.",
+    "not_recorded": "fixture item."
+  },
+  "generated_at": "1 Jan 2099, 6:00 pm",
+  "last_actions": [
+    {
+      "title": "Fixture last action A",
+      "status": "done"
+    },
+    {
+      "title": "Fixture last action B",
+      "status": "partly"
+    },
+    {
+      "title": "Fixture last action C",
+      "status": "not_done"
+    }
+  ]
+}
