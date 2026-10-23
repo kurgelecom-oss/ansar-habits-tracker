@@ -26,8 +26,8 @@ const t = (size, color, extra = '') => `font-size:${size}px;color:${color};${ext
 // and a ~90KB payload hit the model's output-token cap (23 Oct 2026). Keep report.html under ~35KB.
 const td = (bg, style = '', attrs = '') => `<td${attrs ? ` ${attrs}` : ''} style="${bg ? `background:${bg};` : ''}${style}">`;
 // 'auto' tables hold the round badges: rounded borders only draw with border-collapse:separate
-const table = (inner, w = '100%') => `<table cellpadding="0" cellspacing="0"${w === 'auto' ? '' : ` width="${w}" style="border-collapse:collapse"`}>${inner}</table>`;
-const kicker = (s) => `<div style="${t(11, C.muted, 'font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:0 0 12px 0;')}">${esc(s)}</div>`;
+const table = (inner, w = '100%') => `<table cellpadding="0" cellspacing="0"${w === 'auto' ? '' : ` width="${w}"`}>${inner}</table>`;
+const kicker = (s) => `<div style="${t(11, C.muted, 'font-weight:700;letter-spacing:1px;padding-bottom:12px;')}">${esc(String(s).toUpperCase())}</div>`;
 const card = (inner, bg = C.card) => `<tr>${td('', 'padding:0 16px 14px 16px;')}${table(`<tr>${td(bg, `padding:20px;border:1px solid ${C.line};border-radius:16px;`)}${inner}</td></tr>`)}</td></tr>`;
 
 // ---------- ring PNG ----------
@@ -149,7 +149,7 @@ function areasCard(r) {
     const bar = zero ? `<div style="${t(11, C.red, 'font-weight:700;padding-top:6px;')}">ZERO</div>`
       : table(`<tr>${td(C.green, `height:6px;border-radius:3px;font-size:0;line-height:0;`, `width="${w}%" height="6"`)}&nbsp;</td>${w < 100 ? `${td(C.line, 'height:6px;font-size:0;line-height:0;', `width="${100 - w}%" height="6"`)}&nbsp;</td>` : ''}</tr>`);
     return `${td('', 'width:50%;padding:5px;vertical-align:top;', 'width="50%"')}${table(`<tr>${td(zero ? '#FBEDEA' : C.page, `padding:12px;border-radius:12px;border:1px solid ${zero ? C.red : C.line};`)}
-      <div style="${t(11, C.muted, 'font-weight:700;letter-spacing:0.5px;text-transform:uppercase;')}">${esc(a.name)}</div>
+      <div style="${t(11, C.muted, 'font-weight:700;')}">${esc(a.name.toUpperCase())}</div>
       <div style="${t(24, zero ? C.red : C.ink, 'font-weight:800;padding-top:2px;')}">${a.count} <span style="${t(12, upc, 'font-weight:700;')}">${up}${a.prior == null ? '' : ` ${a.prior} last wk`}</span></div>
       <div style="padding-top:6px;">${bar}</div></td></tr>`)}</td>`;
   };
@@ -291,8 +291,9 @@ export function render(r) {
     return h.replace(/ style="([^"]*)"/g, (m, v) => (cls.has(v) ? ` class="${cls.get(v)}"` : m)).replace('</head>', `<style>${css}</style></head>`);
   };
   const R = { ...r, rings: (r.rings || []).map((g, i) => ({ ...g, color: g.color || [C.green, C.amber, C.ink, C.muted][i] })) };
-  const out = classify(min(html(R)));
-  return { html: out, text: text(R), png: ringPng(R.rings.map((g) => ({ frac: g.d > 0 ? g.n / g.d : 0, color: g.color })), 280), errors: check(R, out) };
+  // No classify(): the Gmail MCP strips class attributes on send, so every style must stay inline (23 Oct).
+  const out = min(html(R));
+  return { html: out, text: text(R), png: ringPng(R.rings.map((g) => ({ frac: g.d > 0 ? g.n / g.d : 0, color: g.color })), 220), errors: check(R, out) };
 }
 
 // realpath both sides: /tmp is a symlink on macOS and in some sandboxes
