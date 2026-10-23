@@ -272,6 +272,9 @@ function check(r, out) {
   long('note_to_taylan[0]', r.note_to_taylan?.[0], 320);
   if (!VERDICT[r.verdict?.call]) errs.push(`verdict.call must be one of ${Object.keys(VERDICT).join(', ')}`);
   if ((out.match(/<style/g) || []).length > 1 || /display:\s*(flex|grid)|<svg|https?:\/\/[^"]*\.(png|jpe?g|gif)/i.test(out)) errs.push('forbidden markup in HTML');
+  // The Gmail MCP strips class attributes and <style>, and needs cid:att0 for the ring (both broke a live send on 23 Oct)
+  if (/ class=|<style/i.test(out)) errs.push('class/style block in HTML; every style must be inline');
+  if (!out.includes('src="cid:att0"')) errs.push('ring image reference cid:att0 missing');
   if (out.length > 35000) errs.push(`report.html is ${out.length} bytes; keep it under 35000 (shorten titles/details) or the send call can hit the output cap`);
   if (/<(div|span|p)[^>]*background/i.test(out)) errs.push('background on div/span/p');
   const allowed = new Set(Object.values(C).map((x) => x.toUpperCase()).concat(['#FFFFFF', '#FBEDEA']));
