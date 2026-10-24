@@ -77,7 +77,7 @@
 .players td { width: 70px; }
 
 .form { display: flex; gap: 4px; }
-.form i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--ansar-row); font-style: normal; font-size: 11px; font-weight: 800; color: var(--ansar-base); }
+.form i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(138, 150, 184, 0.2); font-style: normal; font-size: 11px; font-weight: 800; color: var(--ansar-base); }
 .form .formW { background: var(--ansar-success); }
 .form .formD { background: var(--ansar-subtext); }
 .form .formL { background: var(--ansar-danger); }
@@ -98,4 +98,10 @@
   .match:nth-child(n) { padding-inline: 0; border-right: 0; }
   .panel.fixtures .match:nth-last-child(2):nth-child(odd) { border-bottom: 1px solid var(--ansar-hairline); }
   .when { min-width: 76px; }
+  /* Points stay on screen; only Last 5 needs the sideways scroll. */
+  .scroll { padding-inline: 6px; }
+  .table { font-size: 14px; }
+  .table th, .table td { padding-inline: 3px; }
+  .pos { width: 22px; }
+  .team { gap: 7px; }
 }
