@@ -77,7 +77,17 @@ export async function GET(request: Request) {
       };
     });
 
+    // Every stored week, oldest first, so the screen can step back and forward.
+    const all = await adminClient().from("school_programme_snapshots").select("lesson_date, week_title").order("lesson_date", { ascending: true }).limit(5000);
+    const weeks: { start: string; title: string }[] = [];
+    for (const r of (all.data ?? []) as { lesson_date: string; week_title: string }[]) {
+      const ws = weekStartOf(r.lesson_date);
+      if (!weeks.length || weeks[weeks.length - 1].start !== ws) weeks.push({ start: ws, title: r.week_title });
+    }
+
     return NextResponse.json({
+      weeks,
+      currentWeekStart: weekStartOf(today),
       weekStart: start,
       weekEnd: end,
       today,
