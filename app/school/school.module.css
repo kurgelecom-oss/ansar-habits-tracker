@@ -53,15 +53,6 @@
 .blockTask { color: var(--ansar-subtext); font-size: 14px; line-height: 1.5; margin: 7px 0 0; overflow-wrap: anywhere; }
 .guide { margin: 9px 0 0; padding-left: 18px; color: var(--ansar-muted); font-size: 13px; }
 
-/* Week grid. Scrolls sideways on a phone rather than crushing five columns. */
-.weekGrid { display: grid; grid-template-columns: repeat(5, minmax(200px, 1fr)); gap: 11px; overflow-x: auto; padding: 16px 0 6px; }
-.dayCol { background: var(--ansar-rowflat); border: 1px solid var(--ansar-border); border-radius: var(--ansar-radius-row); padding: 13px; }
-.dayColToday { border-color: var(--ansar-gold-bright); }
-.dayName { font-weight: 700; font-size: 14px; margin: 0; }
-.dayDate { color: var(--ansar-muted); font-size: 12px; margin: 2px 0 9px; }
-.dayTopic { color: var(--ansar-subtext); font-size: 12px; margin: 0 0 11px; line-height: 1.45; }
-.chip { display: block; background: var(--ansar-panel); border: 1px solid var(--ansar-border); border-radius: 8px; padding: 8px 9px; margin-bottom: 6px; color: var(--ansar-text); font-size: 12.5px; }
-.chipDone { border-color: var(--ansar-success); color: var(--ansar-success); }
 
 .arc { display: flex; gap: 6px; margin: 18px 0 10px; }
 .arcCell { flex: 1; height: 10px; border-radius: 4px; background: var(--ansar-rowflat); }
@@ -75,7 +66,6 @@
 @media (max-width: 650px) {
   .content { padding: 26px 14px 48px; }
   .card { padding: 16px; }
-  .weekGrid { grid-template-columns: repeat(5, 78vw); }
 }
 
 /* ── The year (tk + Nihal, 11 Oct 2026) ── */

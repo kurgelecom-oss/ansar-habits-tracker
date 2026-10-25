@@ -16,8 +16,9 @@ import { TERM, TRACKED, TRACKING_FROM_WEEK, WEEKLY_PROOF, TERM_TARGETS, YEAR6_GO
    Three views, all from data the system already holds:
      Today      the day's blocks, each with its REAL task text on the row, and
                 each one tickable on its own (Phase 1's record).
-     This week  Monday to Friday. A homeschooled child could not see his own
-                week before this screen.
+     Weeks      every stored week, back and forward, subject by subject, with
+                Friday's report behind the parent PIN (WeeksView.tsx). It
+                replaced the Monday-to-Friday grid on 25 Oct 2026 (tk).
      The year   the term week by week: each subject's weekly proof, what is
                 coming up, the end-of-term targets and the Year 6 goals.
 
@@ -36,7 +37,7 @@ type Week = {
   totals?: { blocks: number; done: number }; message?: string;
 };
 
-const VIEWS = ["Today", "This week", "Weeks", "The year"] as const;
+const VIEWS = ["Today", "Weeks", "The year"] as const;
 type View = typeof VIEWS[number];
 
 type YearWeek = {
@@ -189,42 +190,6 @@ export default function SchoolPage() {
                 ))}
               </>
             )}
-          </section>
-        ) : null}
-
-        {/* ── THIS WEEK ─────────────────────────────────────────────────── */}
-        {view === "This week" ? (
-          <section className={styles.card}>
-            <div className={styles.cardHead}>
-              <h2 className={styles.cardTitle}>{week?.upcoming ? "Next week, Monday to Friday" : "Monday to Friday"}</h2>
-              <span className={styles.cardMeta}>
-                {week?.weekStart} – {week?.weekEnd}
-              </span>
-            </div>
-            <div className={styles.weekGrid}>
-              {(week?.days ?? []).map(d => (
-                <div key={d.date} className={`${styles.dayCol} ${d.isToday ? styles.dayColToday : ""}`}>
-                  <p className={styles.dayName}>{d.weekday}</p>
-                  <p className={styles.dayDate}>
-                    {d.date}{d.isToday ? " · today" : ""}
-                  </p>
-                  <p className={styles.dayTopic}>{d.dayTopic || "—"}</p>
-                  {d.blocks.length === 0
-                    ? <span className={styles.chip}>No blocks</span>
-                    : d.blocks.map(b => (
-                        <span key={b.rowId} className={`${styles.chip} ${b.done ? styles.chipDone : ""}`}>
-                          {b.done ? "✓ " : ""}{b.label}
-                        </span>
-                      ))}
-                </div>
-              ))}
-            </div>
-            {week?.syncedAt ? (
-              <p className={styles.note}>
-                Stored copy, refreshed nightly. Last synced {new Date(week.syncedAt).toLocaleString("en-AU")}.
-                A week edited in Notion today appears here after tonight&apos;s sync.
-              </p>
-            ) : null}
           </section>
         ) : null}
 
