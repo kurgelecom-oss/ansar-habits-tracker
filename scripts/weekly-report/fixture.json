@@ -24,8 +24,9 @@
     },
     {
       "label": "Tue",
-      "status": "partial",
-      "blocks": 3
+      "status": "caught_up",
+      "blocks": 4,
+      "note": "HASS made up on Friday"
     },
     {
       "label": "Wed",
@@ -47,10 +48,10 @@
   "rings": [
     {
       "label": "Full days",
-      "n": 2,
+      "n": 3,
       "d": 4,
-      "value": "2 / 4",
-      "note": "Mon, Wed"
+      "value": "3 / 4",
+      "note": "Mon, Wed; Tue on Fri"
     },
     {
       "label": "Same-day logs",
@@ -104,7 +105,7 @@
         "label": "B3 HASS",
         "cells": [
           "done",
-          "missing",
+          "caught_up",
           "done",
           "missing"
         ]

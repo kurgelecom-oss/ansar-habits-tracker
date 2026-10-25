@@ -20,9 +20,9 @@ The 7:30pm week-film routine reads this email from Gmail. The plain-text body ca
 | `student` | `"Ansar"` |
 | `week` | `{number, range, term}` |
 | `verdict` | `{call: GREEN \| PROVISIONAL GREEN \| YELLOW \| RED, headline, strict?: {call, why}, detail?: [para]}`; `strict` = the call after discounting doubtful evidence, only when it differs |
-| `days` | 5 × `{label, status: full \| caveat \| partial \| none \| flex, blocks?, logs?, note?}`; `caveat` = full but resting on backfilled/doubtful logs |
+| `days` | 5 × `{label, status: full \| caught_up \| caveat \| partial \| none \| flex, blocks?, logs?, note?}`; `caught_up` = full once Friday catch-up work is counted (it counts as done); `caveat` = full but resting on backfilled/doubtful logs |
 | `rings` | exactly 4 × `{label, n, d, value, note?}`, in order: full days, same-day logs, areas touched, evidence |
-| `blocks` | `{days: [Mon..Thu], rows: 4 × {label, cells: done \| backfilled \| off_plan \| missing \| flex}}` |
+| `blocks` | `{days: [Mon..Thu], rows: 4 × {label, cells: done \| caught_up \| backfilled \| off_plan \| missing \| flex}}`; `caught_up` = missed on the day, done on Friday, counts as done |
 | `areas` | exactly 8 VRQA areas × `{name, count, prior?, why?}`; `why` required when count is 0 |
 | `strengths`, `weaknesses` | 3–5 × `{title, detail}`; title is one short sentence with the finding |
 | `words` | `{theme, days, quote}`; quote is verbatim |

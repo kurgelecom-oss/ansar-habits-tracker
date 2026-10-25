@@ -97,6 +97,8 @@ function verdictCard(r) {
 
 const DAY = {
   full: { bg: C.green, fg: '#FFFFFF', mark: '&#10003;', border: C.green },
+  // Missed Mon–Thu, made up on Friday: the day counts as full, the outline only notes the timing (tk 25 Oct)
+  caught_up: { bg: C.card, fg: C.green, mark: '&#10003;', border: C.green },
   caveat: { bg: C.amber, fg: C.ink, mark: '&#10003;', border: C.amber },
   partial: { bg: C.line, fg: C.ink, mark: null, border: C.line },
   none: { bg: C.card, fg: C.red, mark: '&#10005;', border: C.red },
@@ -111,8 +113,8 @@ function weekCard(r) {
       <div style="${t(12, C.ink, 'font-weight:700;padding-top:6px;')}">${esc(d.label)}</div>
       <div style="${t(11, C.muted)}">${d.logs != null ? `${esc(d.logs)} logs` : d.status === 'flex' ? 'flex' : `${d.blocks ?? 0}/4 blocks`}</div></td>`;
   }).join('');
-  const legend = [['full', 'Full'], ['caveat', 'Full, backfilled'], ['partial', 'Part'], ['none', 'Nothing']]
-    .map(([k, l]) => `<span style="${t(11, C.muted)}"><span style="color:${DAY[k].border === C.line ? C.muted : DAY[k].border};">&#9679;</span> ${l}</span>`).join('&nbsp;&nbsp; ');
+  const legend = [['full', 'Full'], ['caught_up', 'Full, caught up Fri'], ['caveat', 'Full, backfilled'], ['partial', 'Part'], ['none', 'Nothing']]
+    .map(([k, l]) => `<span style="${t(11, C.muted)}"><span style="color:${DAY[k].border === C.line ? C.muted : DAY[k].border};">${k === 'caught_up' ? '&#9675;' : '&#9679;'}</span> ${l}</span>`).join('&nbsp;&nbsp; ');
   return card(`${kicker('Day by day')}${table(`<tr>${cells}</tr>`)}<div style="padding-top:14px;line-height:1.8;">${legend}</div>`);
 }
 
@@ -124,7 +126,7 @@ function ringsCard(r) {
 }
 
 const BLK = {
-  done: { c: C.green, m: '&#9679;' }, backfilled: { c: C.amber, m: '&#9679;' }, off_plan: { c: C.amber, m: '&#9670;' },
+  done: { c: C.green, m: '&#9679;' }, caught_up: { c: C.green, m: '&#9673;' }, backfilled: { c: C.amber, m: '&#9679;' }, off_plan: { c: C.amber, m: '&#9670;' },
   missing: { c: C.red, m: '&#9675;' }, flex: { c: C.muted, m: '&#8211;' },
 };
 function blocksCard(r) {
@@ -134,7 +136,7 @@ function blocksCard(r) {
     const b = BLK[s] || BLK.flex;
     return `${td('', `${t(18, b.c)}padding:6px 0;border-top:1px solid ${C.line};`, 'align="center"')}${b.m}</td>`;
   }).join('')}</tr>`).join('');
-  const legend = [['done', 'Same day'], ['backfilled', 'Backfilled'], ['off_plan', 'Off plan'], ['missing', 'Missing']]
+  const legend = [['done', 'Same day'], ['caught_up', 'Caught up Fri'], ['backfilled', 'Backfilled'], ['off_plan', 'Off plan'], ['missing', 'Missing']]
     .map(([k, l]) => `<span style="${t(11, C.muted)}"><span style="color:${BLK[k].c};">${BLK[k].m}</span> ${l}</span>`).join('&nbsp;&nbsp; ');
   return card(`${kicker('The four blocks')}${table(head + rows)}<div style="padding-top:12px;line-height:1.8;">${legend}</div>`);
 }
