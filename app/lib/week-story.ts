@@ -131,8 +131,9 @@ export function buildWeekStory(r: WeekReport, prev: WeekReport | null = null): S
       caption: `${r.label}: ${r.call}. ${s(full, 'full day')} out of 4.` },
     { id: 'days', kind: 'days', label: 'Day by day', hold: 8, days: r.days,
       caption: byLogs[0].logs ? `${byLogs[0].day} was your strongest day with ${s(byLogs[0].logs, 'log')}. ${byLogs[4].day} was the quietest with ${byLogs[4].logs}.` : 'Nothing was logged this week.' },
-    { id: 'device', kind: 'device', label: 'Device rule', hold: 6, held: r.deviceRule,
-      caption: r.deviceRule === null ? 'The device rule was not written down this week, so the call cannot be a full green.' : `The device rule held ${s(r.deviceRule, 'morning')} out of 4.` },
+    // No scene when it was not recorded: tk does not want the device rule reported (25 Oct)
+    ...(r.deviceRule === null ? [] : [{ id: 'device', kind: 'device', label: 'Device rule', hold: 6, held: r.deviceRule,
+      caption: `The device rule held ${s(r.deviceRule, 'morning')} out of 4.` } as Scene]),
     { id: 'areas', kind: 'areas', label: '8 areas', hold: 9, areas: r.areas,
       caption: zero.length ? `${8 - zero.length} of 8 learning areas covered. ${list(zero)} had nothing.` : 'All 8 learning areas had work this week.' },
     { id: 'evidence', kind: 'evidence', label: 'Evidence', hold: 7, ...r.evidence,
