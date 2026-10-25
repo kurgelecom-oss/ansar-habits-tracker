@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-18",
+ "updated": "2026-10-25",
  "source": "Wikipedia (CC BY-SA 4.0)",
  "players": [
   {
@@ -17,7 +17,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Erling_Haaland_Morocco_v_Norway_7_June_2026-51.jpg/500px-Erling_Haaland_Morocco_v_Norway_7_June_2026-51.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Erling_Haaland",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "mbappe",
@@ -25,16 +25,15 @@
    "flag": "🇫🇷",
    "pos": "ST",
    "lead": [
-    "Kylian Mbappé Lottin is a French professional footballer who plays as a forward for La Liga club Real Madrid and captains the France national team. Widely regarded as one of the best players in the world, he is known for his pace, dribbling, and finishing. He has scored over 400 goals in his senior career, being the all-time top goalscorer for Paris Saint-Germain (256), and the France national team (67). He is also the highest-scoring player in the FIFA World Cup (22)."
+    "Kylian Mbappé Lottin is a French professional footballer who plays as a forward for La Liga club Real Madrid and captains the France national team. Widely regarded as one of the best players in the world, he is known for his pace, dribbling, and finishing. Mbappé has scored over 400 goals in his senior career, being the all-time top goalscorer for Paris Saint-Germain (256), and the France national team (67). He is also the highest-scoring player in the FIFA World Cup (22)."
    ],
    "early": [
-    "Kylian Mbappé Lottin was born on 20 December 1998 in the 19th arrondissement of Paris, and was raised in Bondy in the city's northeastern suburbs. His father, Wilfrid Mbappé, is a football coach who is originally from the Cameroonian island of Djébalè. His mother and agent, Fayza Lamari, is of Algerian Kabyle origin and is a former handball player. Mbappé has a younger brother, Ethan, who plays football for Lille. Their older adopted brother, Jirès Kembo Ekoko, is a former professional footballer.",
-    "As a child, Mbappé went to a private Catholic school in Bondy, where he was considered academically gifted but unruly. At 15, he began taking Spanish lessons, and eventually became fluent in the language. As a youth, Mbappé's favourite team was Real Madrid, and he also supported AC Milan. His football idols included Zinedine Zidane, Cristiano Ronaldo, Neymar, Ronaldinho, Lionel Messi, Ronaldo Nazario, Eden Hazard and Thierry Henry. In May 2024, days before his transfer to Real Madrid was announced, Mbappé said that he still follows AC Milan, and would like to play for them in the future."
+    "Kylian Mbappé Lottin was born on 20 December 1998 in the 19th arrondissement of Paris, and was raised in Bondy in the city's northeastern suburbs. His father, Wilfrid Mbappé, is a football coach who is originally from the Cameroonian island of Djébalè. His mother and agent, Fayza Lamari, is of Algerian Kabyle origin and is a former handball player. Mbappé has a younger brother, Ethan, who plays professionally for Lille. Their older adopted brother, Jirès Kembo Ekoko, is a former professional footballer."
    ],
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/95/Kylian_Mbappe_France_v_Senegal_16_June_2026-391_%28cropped%29.jpg/500px-Kylian_Mbappe_France_v_Senegal_16_June_2026-391_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Kylian_Mbapp%C3%A9",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "yamal",
@@ -45,12 +44,12 @@
     "Lamine Yamal Nasraoui Ebana is a Spanish professional footballer who plays as a right winger for the La Liga club Barcelona and the Spain national team. He is widely regarded as one of the best players in the world."
    ],
    "early": [
-    "Lamine Yamal Nasraoui Ebana was born on 13 July 2007, in Esplugues de Llobregat in the Barcelona metropolitan area in Catalonia. Yamal's father, Mounir Nasraoui, is from a village between Larache and Ksar el-Kebir in Morocco. His mother, Sheila Ebana, is from Bata, Equatorial Guinea. Yamal has a younger half-brother and a younger half-sister. He has a compound given name to honour two family friends, Lamine and Yamal, who helped his parents financially shortly before Yamal was born. As a baby he was featured in a 2007 UNICEF charity photo shoot with his future club Barcelona, during which he was bathed by a 20-year-old Lionel Messi. The photos went viral online in 2024 after Yamal's father posted one of them online. Two years later, the photos received additional attention in the media as Yamal and Messi prepared to face each other in the 2026 FIFA World Cup final."
+    "Lamine Yamal Nasraoui Ebana was born on 13 July 2007, in Esplugues de Llobregat in the Barcelona metropolitan area in Catalonia, Spain. Yamal's father, Mounir Nasraoui, is from a village between Larache and Ksar el-Kebir in Morocco. His mother, Sheila Ebana, is from Bata, Equatorial Guinea. Yamal has a younger half-brother and a younger half-sister. He has a compound given name to honour two family friends, Lamine and Yamal, who helped his parents financially shortly before Yamal was born. As a baby he was featured in a 2007 UNICEF charity photo shoot with his future club Barcelona, during which he was bathed by a 20-year-old Lionel Messi. The photos went viral online in 2024 after Yamal's father posted one of them online. Two years later, the photos received additional attention in the media as Yamal and Messi prepared to face each other in the 2026 FIFA World Cup final."
    ],
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Lamine_Yamal_France_v_Spain_7.24.26-142.jpg/500px-Lamine_Yamal_France_v_Spain_7.24.26-142.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Lamine_Yamal",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "bellingham",
@@ -58,7 +57,7 @@
    "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
    "pos": "AM",
    "lead": [
-    "Jude Victor William Bellingham is an English professional footballer who plays as an attacking midfielder for La Liga club Real Madrid and the England national team. He is widely regarded as one of the best players in the world, he is known for his dribbling, finishing and ball-winning ability."
+    "Jude Victor William Bellingham is an English professional footballer who plays as an attacking midfielder for La Liga club Real Madrid and the England national team. Widely regarded as one of the best players in the world, he is known for his dribbling, finishing and ball-winning ability."
    ],
    "early": [
     "Jude Victor William Bellingham was born on 29 June 2003 in Stourbridge, in the county of West Midlands in England. He is the eldest son of Denise and Mark Bellingham. He is of Afro-Jamaican descent through his mother and Irish descent through his father. His paternal grandfather, William Bellingham, served in the British Army in Berlin before becoming a teacher and the head of modern foreign languages at Southend High School for Boys, and was a strong influence on Jude's patriotism and values. Jude's father was a sergeant in the West Midlands Police until 2022, and was a prolific goalscorer in non-League football. Jude's younger brother, Jobe, is also a footballer. Jude was privately educated at Priory School in Edgbaston, Birmingham. He graduated from Loughborough College with a BTEC level 3 certificate in sport in 2021. He grew up idolising Zinedine Zidane."
@@ -66,7 +65,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/23/Jude_Bellingham_England_v_Ghana_23_June_2026-061_%28cropped%29.jpg/500px-Jude_Bellingham_England_v_Ghana_23_June_2026-061_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Jude_Bellingham",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "vinicius",
@@ -84,7 +83,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Vin%C3%ADcius_J%C3%BAnior_Brazil_V_Morocco_13_June_2026-207_%28cropped%29.jpg/500px-Vin%C3%ADcius_J%C3%BAnior_Brazil_V_Morocco_13_June_2026-207_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Vin%C3%ADcius_J%C3%BAnior",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "raphinha",
@@ -92,8 +91,8 @@
    "flag": "🇧🇷",
    "pos": "W",
    "lead": [
-    "Raphael Dias Belloli, known mononymously as Raphinha, is a Brazilian professional footballer who plays as a forward for La Liga club Barcelona, which he captains, and the Brazil national team. Considered one of the best players in the world, he is known for his pace, work rate, playmaking ability, and finishing.",
-    "Raphinha began his career with Brazilian club Avaí, before signing for the Portuguese Vitória de Guimarães in 2016, where he made his professional debut. In 2018, he joined fellow Primeira Liga club Sporting CP, winning the double of the Taça de Portugal and Taça da Liga in 2019."
+    "Raphael Dias Belloli, known as Raphinha, is a Brazilian professional footballer who plays as a forward for La Liga club Barcelona, which he captains, and the Brazil national team. Considered one of the best players in the world, he is known for his pace, work rate, playmaking ability, and finishing.",
+    "Raphinha began his career in Brazil with Avaí, before signing for Portuguese club Vitória de Guimarães in 2016, where he made his professional debut. In 2018, he joined fellow Primeira Liga club Sporting CP, winning the Taça de Portugal and Taça da Liga in 2019."
    ],
    "early": [
     "Raphinha was born in Porto Alegre, Brazil, and grew up in Restinga, a favela far from the city centre. His father is of Italian descent and his mother is mixed-race Brazilian. His father was a jobbing musician who played in a samba band. Raphinha has described a difficult upbringing: he shared a bedroom with his parents, his younger brother and the family's pets, sometimes could not afford the travel to matches, and occasionally had to ask strangers for food.",
@@ -102,7 +101,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b4/Raphinha_Brazil_V_Morocco_13_June_2026-133_%28cropped%29.jpg/500px-Raphinha_Brazil_V_Morocco_13_June_2026-133_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Raphinha",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "salah",
@@ -119,7 +118,7 @@
    "earlyHeading": "Youth",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Mohamed_Salah_Argentina_v_Egypt_7_July_2026-163_%28cropped%29.jpg/500px-Mohamed_Salah_Argentina_v_Egypt_7_July_2026-163_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Mohamed_Salah",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "kane",
@@ -127,7 +126,7 @@
    "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
    "pos": "ST",
    "lead": [
-    "Harry Edward Kane is an English professional footballer who plays as a striker for Bundesliga club Bayern Munich and captains the England national team. Known for his clinical finishing, tactical intelligence, and vision, he is widely regarded as one of the best players in the world, one of the best strikers of his generation, and one of England's greatest ever players. Kane has scored over 500 career goals for club and country, being Tottenham Hotspur's all-time top goalscorer (280), England's all-time top goalscorer (91), and the highest-scoring English player in the UEFA Champions League (57). He is also the Premier League's second-highest all-time goalscorer (213) and the joint…"
+    "Harry Edward Kane is an English professional footballer who plays as a striker for Bundesliga club Bayern Munich and captains the England national team. Known for his clinical finishing, tactical intelligence, and vision, he is widely regarded as one of the best players in the world, one of the best strikers of his generation, and one of England's greatest ever players. Kane has scored over 500 career goals for club and country, being Tottenham Hotspur's all-time top goalscorer (280), England's all-time top goalscorer (91), and the highest-scoring English player in the UEFA Champions League (58). He is also the Premier League's second-highest all-time goalscorer (213) and the sixth-highest…"
    ],
    "early": [
     "Harry Edward Kane was born on 28 July 1993 at Whipps Cross University Hospital in Leytonstone, London, the second son of Kim (née Hogg) and Patrick Kane, and has one older brother, Charlie. He has Irish ancestry through his father, who was born in Galway. The family lived in Walthamstow before moving to Chingford. Kane attended Larkswood Primary Academy until 2004, followed by Chingford Foundation School, which was also attended by David Beckham. He played football from a young age, joining the local Walthamstow club Ridgeway Rovers in 1999, when he was six. Kane spoke about football in his family:",
@@ -136,7 +135,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Harry_Kane_England_v_Ghana_23_June_2026-024_%28cropped%29.jpg/500px-Harry_Kane_England_v_Ghana_23_June_2026-024_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Harry_Kane",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "saka",
@@ -154,7 +153,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Bukayo_Saka_England_v_Ghana_23_June_2026-057_%28cropped%29.jpg/500px-Bukayo_Saka_England_v_Ghana_23_June_2026-057_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Bukayo_Saka",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "foden",
@@ -171,7 +170,7 @@
    "earlyHeading": "Early life and career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/2023-10-04_Fu%C3%9Fball%2C_M%C3%A4nner%2C_UEFA_Champions_League%2C_RB_Leipzig_-_Manchester_City_FC_1DX_2613%2C_Phil_Foden.jpg/500px-2023-10-04_Fu%C3%9Fball%2C_M%C3%A4nner%2C_UEFA_Champions_League%2C_RB_Leipzig_-_Manchester_City_FC_1DX_2613%2C_Phil_Foden.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Phil_Foden",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "rodri",
@@ -179,7 +178,7 @@
    "flag": "🇪🇸",
    "pos": "DM",
    "lead": [
-    "Rodrigo Hernández Cascante, known as Rodrigo or simply Rodri, is a Spanish professional footballer who plays as a defensive midfielder for La Liga club Barcelona and captains the Spain national team. Widely regarded as one of the best midfielders in the world, he is known for his passing, composure, playmaking and physical attributes. He is one of eleven players to have won the FIFA World Cup, UEFA Champions League, and Ballon d'Or in their career, and the only one to win the FIFA World Cup, FIFA Club World Cup, UEFA European Championship, UEFA Nations League, UEFA Champions League and the Best Player Award of each tournament."
+    "Rodrigo Hernández Cascante, known as Rodrigo or simply Rodri, is a Spanish professional footballer who plays as a defensive midfielder for La Liga club Barcelona and captains the Spain national team. Widely regarded as one of the best midfielders in the world, he is known for his passing, composure, playmaking and physical attributes. He is one of eleven players to have won the FIFA World Cup, UEFA Champions League, and Ballon d'Or in their career."
    ],
    "early": [
     "Rodrigo Hernández Cascante was born on 22 June 1996 in Madrid. He joined Atlético Madrid's youth setup in 2007 aged 11, from CF Rayo Majadahonda. Released in 2013 due to a \"lack of physical strength\", he subsequently signed with Villarreal.",
@@ -190,7 +189,7 @@
    "earlyHeading": "Early life and career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/Rodri_Argentina_v_Spain_19_July_2026-187_%28cropped%29.jpg/500px-Rodri_Argentina_v_Spain_19_July_2026-187_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Rodri",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "pedri",
@@ -206,7 +205,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1c/Pedri_France_v_Spain_7.24.26-245.jpg/500px-Pedri_France_v_Spain_7.24.26-245.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Pedri",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "gavi",
@@ -214,7 +213,7 @@
    "flag": "🇪🇸",
    "pos": "CM",
    "lead": [
-    "Pablo Martín Páez Gavira, known as Gavi, is a Spanish professional footballer who plays as a central midfielder for La Liga club Barcelona and the Spain national team."
+    "Pablo Martín Páez Gavira, known mononymously as Gavi, is a Spanish professional footballer who plays as a central midfielder for La Liga club Barcelona and the Spain national team. Gavi is known for his aggressive style."
    ],
    "early": [
     "Gavi was born in Los Palacios y Villafranca, Sevilla, Andalusia."
@@ -222,7 +221,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Gavi_Argentina_v_Spain_19_July_2026-013.jpg/500px-Gavi_Argentina_v_Spain_19_July_2026-013.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Gavi_(footballer)",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "wirtz",
@@ -238,7 +237,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/70/Florian_Wirtz_Ecuador_v_Germany_25_June_2026-181_%28cropped%29.jpg/500px-Florian_Wirtz_Ecuador_v_Germany_25_June_2026-181_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Florian_Wirtz",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "musiala",
@@ -256,7 +255,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Jamal_Musiala_Ecuador_v_Germany_25_June_2026-174_%28cropped%29.jpg/500px-Jamal_Musiala_Ecuador_v_Germany_25_June_2026-174_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Jamal_Musiala",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "debruyne",
@@ -270,7 +269,7 @@
    "earlyHeading": "Starting out",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Kevin_De_Bruyne_USMNT_v_Belgium_Mar_28_2026-64_%28cropped%29.jpg/500px-Kevin_De_Bruyne_USMNT_v_Belgium_Mar_28_2026-64_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Kevin_De_Bruyne",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "brunofernandes",
@@ -286,7 +285,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/Bruno_Fernandes_USMNT_v_Portugal_Mar_31_2026-27_%28cropped%29.jpg/500px-Bruno_Fernandes_USMNT_v_Portugal_Mar_31_2026-27_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Bruno_Fernandes",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "odegaard",
@@ -303,7 +302,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Martin_Odegaard_France_v_Norway_26_June_26-014.jpg/500px-Martin_Odegaard_France_v_Norway_26_June_26-014.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Martin_%C3%98degaard",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "rice",
@@ -320,7 +319,7 @@
    "earlyHeading": "Early life and career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Declan_Rice_England_v_Ghana_23_June_2026-150.jpg/500px-Declan_Rice_England_v_Ghana_23_June_2026-150.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Declan_Rice",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "palmer",
@@ -337,7 +336,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Cole_Palmer_2025_FIFA_Club_World_Cup_Final.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
    "source": "https://en.wikipedia.org/wiki/Cole_Palmer",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "valverde",
@@ -345,7 +344,7 @@
    "flag": "🇺🇾",
    "pos": "CM",
    "lead": [
-    "Federico Santiago Valverde Dipetta is a Uruguayan professional footballer who plays as a central midfielder for La Liga club Real Madrid, which he captains and the Uruguay national team. Considered one of the best midfielders in the world, he is known for his versatility, work rate, pace and shooting. Valverde mainly plays as a central midfielder but is also able to play as a right-back."
+    "Federico Santiago Valverde Dipetta is a Uruguayan professional footballer who plays as a central midfielder for La Liga club Real Madrid, which he captains, and the Uruguay national team. Considered one of the best midfielders in the world, he is known for his versatility, work rate, pace and vigorous shooting. Valverde mainly plays as a central midfielder but can also be deployed as a right-back."
    ],
    "early": [
     "Valverde was born on 22 July 1998 in Unión, a neighbourhood in the capital city of Montevideo, to Julio Valverde and Doris Dipetta. He has one older brother, Diego, and two step-brothers, Pablo and Matías Castro. Valverde is of Spanish and Italian descent and became a naturalised Spanish citizen in 2020 after receiving his Spanish passport. Valverde started his youth career with his local neighbourhood club, Estudiantes de la Unión. He then tried out for Peñarol a few years later and was scouted by Néstor Gonçalves."
@@ -353,7 +352,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Federico_Valverde_2021_%28cropped%29.jpg/500px-Federico_Valverde_2021_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Federico_Valverde",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "tchouameni",
@@ -370,7 +369,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Aurelien_Tchouameni_France_v_Senegal_16_June_2026-447_%28cropped%29.jpg/500px-Aurelien_Tchouameni_France_v_Senegal_16_June_2026-447_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Aur%C3%A9lien_Tchouam%C3%A9ni",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "camavinga",
@@ -388,7 +387,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Ofrenda_de_la_Liga_y_la_Champions-13-L.Mill%C3%A1n_%2852109790215%29_%28cropped%29.jpg/500px-Ofrenda_de_la_Liga_y_la_Champions-13-L.Mill%C3%A1n_%2852109790215%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Eduardo_Camavinga",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "guler",
@@ -405,7 +404,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9f/Arda_G%C3%BCler_2025.jpg/500px-Arda_G%C3%BCler_2025.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Arda_G%C3%BCler",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "leao",
@@ -421,7 +420,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ef/Rafael_Leao_Croatia_v_Portugal_2_July_2026-187_%28cropped%29.jpg/500px-Rafael_Leao_Croatia_v_Portugal_2_July_2026-187_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Rafael_Le%C3%A3o",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "kvaratskhelia",
@@ -440,7 +439,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Kvaratskhelia_asse_psg_2425.png/500px-Kvaratskhelia_asse_psg_2425.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Khvicha_Kvaratskhelia",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "lautaro",
@@ -456,7 +455,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e9/Lautaro_Martinez_Argentina_v_Spain_19_July_2026-049_%28cropped%29.jpg/500px-Lautaro_Martinez_Argentina_v_Spain_19_July_2026-049_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Lautaro_Mart%C3%ADnez",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "alvarez",
@@ -472,7 +471,7 @@
    "earlyHeading": "2018–2020: Youth career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/Julian_Alvarez_Argentina_v_Spain_19_July_2026-052_%28cropped%29.jpg/500px-Julian_Alvarez_Argentina_v_Spain_19_July_2026-052_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Juli%C3%A1n_Alvarez",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "macallister",
@@ -489,7 +488,7 @@
    "earlyHeading": "Youth career, senior debut, and 2020 Summer Olympics",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/db/Alexis_Mac_Allister_Argentina_v_Spain_19_July_2026-162_%28cropped%29.jpg/500px-Alexis_Mac_Allister_Argentina_v_Spain_19_July_2026-162_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alexis_Mac_Allister",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "enzo",
@@ -505,7 +504,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Enzo_Fernandez_Argentina_v_Spain_19_July_2026-050_%28cropped%29.jpg/500px-Enzo_Fernandez_Argentina_v_Spain_19_July_2026-050_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Enzo_Fern%C3%A1ndez",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "vandijk",
@@ -522,7 +521,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/20160604_AUT_NED_8876_%28cropped%29.jpg/500px-20160604_AUT_NED_8876_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Virgil_van_Dijk",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "saliba",
@@ -539,7 +538,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/06/William_Saliba_France_v_Paraguay_4_July_2026-183.jpg/500px-William_Saliba_France_v_Paraguay_4_July_2026-183.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/William_Saliba",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "hakimi",
@@ -547,7 +546,7 @@
    "flag": "🇲🇦",
    "pos": "FB",
    "lead": [
-    "Achraf Hakimi Mouh is a professional footballer who plays as a right-back for Ligue 1 club Paris Saint-Germain. Born in Spain, he plays for and captains the Morocco national team. Known for his attacking prowess and strong defensive contribution, he is widely regarded as one of the best right-backs in the world, and is the African player with the most European titles."
+    "Achraf Hakimi Mouh is a professional footballer who plays as a right-back for Ligue 1 club Paris Saint-Germain. Born in Spain, he plays for and captains the Morocco national team. Known for his attacking prowess and strong defensive contribution, he is widely regarded as one of the best right-backs of all time, and is the African player with the most European titles."
    ],
    "early": [
     "Hakimi was born on 4 November 1998, in Madrid, Spain, to Moroccan parents of Arab descent. His father Mohamed, from Oued Zem, worked as a street vendor, and his mother Saida, from Ksar el-Kebir, was a housewife. Hakimi grew up in Getafe belonging to the Community of Madrid, where his family faced economic challenges. At the age of 8, Hakimi joined CD Colonia Ofigevi, a local football club, where he began his football journey. His talent was quickly noticed, and in 2006, he joined Real Madrid's youth academy. He spent several years developing his skills in the academy, initially playing as a winger before transitioning to his more familiar role as a right-back. Hakimi has stated that although he was raised in Spain, he grew up in a household shaped by Arab and Muslim culture, which later influenced his decision to represent Morocco at international level."
@@ -555,7 +554,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/Achraf_Hakimi_Morocco_v_Norway_7_June_2026-16.jpg/500px-Achraf_Hakimi_Morocco_v_Norway_7_June_2026-16.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Achraf_Hakimi",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "kimmich",
@@ -573,7 +572,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Joshua_Kimmich_Ecuador_v_Germany_25_June_2026-149.jpg/500px-Joshua_Kimmich_Ecuador_v_Germany_25_June_2026-149.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Joshua_Kimmich",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "alisson",
@@ -587,7 +586,7 @@
    "earlyHeading": "Starting out",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Alisson_Becker_Brazil_V_Morocco_13_June_2026-117_%28cropped%29.jpg/500px-Alisson_Becker_Brazil_V_Morocco_13_June_2026-117_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alisson_Becker",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "courtois",
@@ -605,7 +604,7 @@
    "earlyHeading": "Early career at Genk",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Thibaut_Courtois_Belgium_v_USA_6_July_2026-076_%28cropped%29.jpg/500px-Thibaut_Courtois_Belgium_v_USA_6_July_2026-076_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Thibaut_Courtois",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "son",
@@ -622,7 +621,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/BFA_2023_-2_Heung-Min_Son_%28cropped%29.jpg/500px-BFA_2023_-2_Heung-Min_Son_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Son_Heung-min",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "griezmann",
@@ -630,7 +629,7 @@
    "flag": "🇫🇷",
    "pos": "AM",
    "lead": [
-    "Antoine Griezmann is a French professional footballer who plays as a forward or attacking midfielder for Major League Soccer club Orlando City."
+    "Antoine Griezmann is a French professional footballer who plays as a forward or attacking midfielder for Major League Soccer club Orlando City. Considered to be one of the best players of his generation, he is primarily known for his versatility, game intelligence, attacking output, and off-ball attributes."
    ],
    "early": [
     "Antoine Griezmann was born on 21 March 1991 in the commune of Mâcon in the department of Saône-et-Loire. His father, Alain Griezmann, a town councillor, has distant German and Luxembourgish ancestry. The German ancestor, the father's great-great-grandfather, named Emmerich Grieszmann, migrated to France from Münster in the early 19th century. He was a basket maker who had married Maria Haas from Kehlen, Luxembourg. The family surname was originally spelled \"Grieszmann\", before being changed to \"Griezmann\". Griezmann's mother, Isabelle Lopes, a former hospital cleaning supervisor, is of Portuguese descent, and her father Amaro Lopes was a Portuguese footballer for Paços de Ferreira. Amaro Lopes moved from Portugal to France with his wife Carolina to work in construction in 1957, where Isabelle was born, and he died in 1992 when his grandson was an infant. As a child, Griezmann often spent his holidays in Paços de Ferreira, Portugal."
@@ -638,7 +637,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6e/FRA-ARG_%2810%29_%28cropped%29.jpg/500px-FRA-ARG_%2810%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Antoine_Griezmann",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "dembele",
@@ -654,7 +653,7 @@
    "earlyHeading": "Early life and career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Ousmane_Dembele_France_v_Senegal_16_June_2026-341_%28cropped%29_2.jpg/500px-Ousmane_Dembele_France_v_Senegal_16_June_2026-341_%28cropped%29_2.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Ousmane_Demb%C3%A9l%C3%A9",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "doue",
@@ -668,7 +667,7 @@
    "earlyHeading": "Starting out",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/Desire_Doue_France_v_Senegal_16_June_2026-264.jpg/500px-Desire_Doue_France_v_Senegal_16_June_2026-264.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/D%C3%A9sir%C3%A9_Dou%C3%A9",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "joaoneves",
@@ -684,7 +683,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/be/Joao_Neves_Croatia_v_Portugal_2_July_2026-102.jpg/500px-Joao_Neves_Croatia_v_Portugal_2_July_2026-102.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Jo%C3%A3o_Neves",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "vitinha",
@@ -701,7 +700,7 @@
    "earlyHeading": "2019–20: Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Vitinha_USMNT_v_Portugal_Mar_31_2026-50_%28cropped%29.jpg/500px-Vitinha_USMNT_v_Portugal_Mar_31_2026-50_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Vitinha",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "nicowilliams",
@@ -718,7 +717,7 @@
    "earlyHeading": "Youth",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Nico_Williams_Argentina_v_Spain_19_July_2026-196_%28cropped%29.jpg/500px-Nico_Williams_Argentina_v_Spain_19_July_2026-196_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Nico_Williams",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "olmo",
@@ -726,7 +725,7 @@
    "flag": "🇪🇸",
    "pos": "AM",
    "lead": [
-    "Daniel Olmo Carvajal is a Spanish professional footballer who plays as an attacking midfielder or left winger for La Liga club Barcelona and the Spain national team.",
+    "Daniel Olmo Carvajal is a Spanish professional footballer who plays as an attacking midfielder or left winger for La Liga club Barcelona and the Spain national team. He is known for his spatial awareness, quick scanning and tight-space dribbling.",
     "After a period at La Masia, Olmo made his professional debut for Dinamo Zagreb in Croatia in 2015. He made 124 total appearances for the club, scoring 34 goals and winning the league five times and the cup three times. In 2020, he joined RB Leipzig, where he won two DFB-Pokals in 2022 and 2023 as well as the 2023 DFL-Supercup, where he scored a hat-trick, before rejoining boyhood club Barcelona in 2024."
    ],
    "early": [
@@ -735,7 +734,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Dani_Olmo_France_v_Spain_7.24.26-176_%28cropped%29.jpg/500px-Dani_Olmo_France_v_Spain_7.24.26-176_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Dani_Olmo",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "olise",
@@ -752,7 +751,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/04/Michael_Olise_France_v_Senegal_16_June_2026-307_%28cropped%29.jpg/500px-Michael_Olise_France_v_Senegal_16_June_2026-307_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Michael_Olise",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "isak",
@@ -769,7 +768,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/Alexander_Isak_-_Sweden_-_Greece21_%28cropped%29.jpg/500px-Alexander_Isak_-_Sweden_-_Greece21_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alexander_Isak",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "gyokeres",
@@ -786,7 +785,7 @@
    "earlyHeading": "Youth",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/Viktor_Gyokeres_France_v_Sweden_6.30.26-123_%28cropped%29.jpg/500px-Viktor_Gyokeres_France_v_Sweden_6.30.26-123_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Viktor_Gy%C3%B6keres",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "yildiz",
@@ -804,7 +803,7 @@
    "earlyHeading": "Early life",
    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Kenan_Y%C4%B1ld%C4%B1z_in_the_international_match_%28March_2025%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
    "source": "https://en.wikipedia.org/wiki/Kenan_Y%C4%B1ld%C4%B1z",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "cubarsi",
@@ -822,7 +821,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/77/Pau_Cubarsi_Argentina_v_Spain_19_July_2026-181_%28cropped%29.jpg/500px-Pau_Cubarsi_Argentina_v_Spain_19_July_2026-181_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Pau_Cubars%C3%AD",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "messi",
@@ -830,7 +829,7 @@
    "flag": "🇦🇷",
    "pos": "W",
    "lead": [
-    "Lionel Andrés \"Leo\" Messi is an Argentine professional footballer who plays as a forward for and captains the Major League Soccer club Inter Miami. Widely regarded as one of the greatest players in history, he played for the Argentina national team for 21 years, retiring in 2026. He has set numerous records for individual accolades won throughout his professional footballing career, including eight Ballons d'Or, six European Golden Shoes, and being named the world's best player by FIFA eight times. He was named the Laureus World Sportsman of the Year in 2020 and 2023, and was named the All Time Men's World Best Player by the IFFHS in 2025. He was among Time's 100 most influential people in…"
+    "Lionel Andrés \"Leo\" Messi is an Argentine professional footballer who plays as a forward for and captains the Major League Soccer club Inter Miami. Widely regarded as one of the greatest players in history, he played for the Argentina national team for 21 years. He has set numerous records for individual accolades won throughout his professional footballing career, including eight Ballons d'Or, six European Golden Shoes, and being named the world's best player by FIFA eight times. He was named the Laureus World Sportsman of the Year in 2020 and 2023, and was named the All Time Men's World Best Player by the IFFHS in 2025. He was among Time's 100 most influential people in the world in 2011,…"
    ],
    "early": [
     "Lionel Andrés Messi was born on 24 June 1987 in Rosario, Santa Fe Province, Argentina. His father, Jorge Messi (1958–2026), was the head of department at an Acindar pressed steel manufacturing plant in Villa Constitución. His mother, Celia Cuccittini, worked in a magnet manufacturing workshop. Messi's parents met as youngsters in the Las Heras district of Rosario, where Messi would later grow up. Jorge and Celia married in 1978, after Jorge completed military service in the Argentine Armed Forces. On his father's side, Messi is of Italian and Spanish descent, the great-grandson of immigrants from the Marche region of Italy (with his surname coming from Porto Recanati), and on his mother's side he has primarily Italian ancestry. Growing up in a tight-knit, football-loving family, \"Leo\" developed a passion for the sport from an early age, playing constantly with his older brothers, Rodrigo and Matías, and his cousins, Maximiliano and Emanuel Biancucchi, both of whom later became professional footballers. Messi also has a younger sister, María Sol."
@@ -838,7 +837,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c8/Leo_Messi_Argentina_v_Egypt_7_July_2026-1.jpg/500px-Leo_Messi_Argentina_v_Egypt_7_July_2026-1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Lionel_Messi",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "ronaldo",
@@ -854,7 +853,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/26/Cristiano_Ronaldo_Croatia_v_Portugal_2_July_2026-075_%28cropped%29.jpg/500px-Cristiano_Ronaldo_Croatia_v_Portugal_2_July_2026-075_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Cristiano_Ronaldo",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "modric",
@@ -870,7 +869,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/80/Luka_Modric_Croatia_v_Portugal_2_July_2026-055.jpg/500px-Luka_Modric_Croatia_v_Portugal_2_July_2026-055.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Luka_Modri%C4%87",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "davies",
@@ -878,7 +877,7 @@
    "flag": "🇨🇦",
    "pos": "FB",
    "lead": [
-    "Alphonso Boyle Davies is a professional soccer player who plays as a left-back, winger, or wing-back for Bundesliga club Bayern Munich and captains the Canada national team. Regarded as one of the best left-backs in the world, Davies has earned the nickname \"the Roadrunner\" for his pace, dribbling ability, and creativity."
+    "Alphonso Boyle Davies is a professional footballer who plays as a left-back, winger, or wing-back for Bundesliga club Bayern Munich and captains the Canada national team. Regarded as one of the best left-backs in the world, Davies has earned the nickname \"the Roadrunner\" for his pace, dribbling ability, and creativity."
    ],
    "early": [
     "Davies was born to Liberian parents in Buduburam, a refugee camp in Ghana, the fourth youngest of six siblings. His father, Debeah Davies, and his mother, Victoria Davies, originally lived in Monrovia, the capital of Liberia. They fled during the Second Liberian Civil War, which displaced more than 450,000 Liberians. In 2005, the family emigrated to Canada, eventually settling in Edmonton. After moving to Edmonton, Davies attended Mother Teresa Elementary School. At the age of 14, Davies relocated alone to Vancouver to join the Whitecaps FC Residency program. As part of the program, he attended Burnaby Central Secondary School. On June 6, 2017, he received Canadian citizenship; until then he had been a Liberian national.",
@@ -887,7 +886,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/Alphonso_Davies_Canada_v_Qatar_18_June_2026-007_%28cropped%29.jpg/500px-Alphonso_Davies_Canada_v_Qatar_18_June_2026-007_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alphonso_Davies",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "frimpong",
@@ -904,7 +903,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Jeremie_Frimpong_04012026_%283%29_%28cropped%29.jpg/500px-Jeremie_Frimpong_04012026_%283%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Jeremie_Frimpong",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "donnarumma",
@@ -912,7 +911,7 @@
    "flag": "🇮🇹",
    "pos": "GK",
    "lead": [
-    "Gianluigi Donnarumma is an Italian professional footballer, who plays as a goalkeeper for Premier League club Manchester City and captains the Italy national team. He is widely regarded as one of the best goalkeepers in the world."
+    "Gianluigi Donnarumma is an Italian professional footballer, who plays as a goalkeeper for Premier League club Manchester City and captains the Italy national team."
    ],
    "early": [
     "Donnarumma was born in Castellammare di Stabia in the Province of Naples, the son of Alfonso and Marinella. His older brother, Antonio, also came through AC Milan's youth system as a goalkeeper. Since childhood, he has supported Milan, although he grew up idolising Gianluigi Buffon."
@@ -920,7 +919,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2d/Norway_Italy_-_June_2025_A_17_%28Gianluigi_Donnarumma%29.jpg/500px-Norway_Italy_-_June_2025_A_17_%28Gianluigi_Donnarumma%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Gianluigi_Donnarumma",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "irankunda",
@@ -928,7 +927,7 @@
    "flag": "🇦🇺",
    "pos": "W",
    "lead": [
-    "Nestory Irankunda is a professional soccer player who plays as a winger for Primeira Liga club Sporting CP. Born in Tanzania to Burundian parents, he plays for the Australia national team. Known for his explosive pace and shot power, he is considered one of the greatest talents developed in Australia."
+    "Nestory Irankunda is an Australian professional soccer player who plays as a winger for Primeira Liga club Sporting CP. Born in Tanzania to Burundian parents, he plays for the Australia national team. Known for his explosive pace and shot power, he is considered one of the greatest talents developed in Australia."
    ],
    "early": [
     "Irankunda was born on 9 February 2006 in Kigoma, Tanzania, the third-eldest child with two older brothers and five younger sisters to Gideon Rurandagaye and Dafroza Siyajali. His parents were born in Burundi, but fled from their home amid the civil war. His father led his family to a refugee camp in Tanzania where he was born. At three months old, his family moved to Perth, Australia, and later to the northern suburbs of Adelaide when he was seven. Irankunda grew up in a Christian home, and found his love of football while playing with his older brothers. At the age of eight, he played for his first soccer club at Parafield Gardens after being brought in by the under-10s coach at the club."
@@ -936,7 +935,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/Nestory_Irankunda_Australia_v_USA_19_June_2026-241_%28cropped%29.jpg/500px-Nestory_Irankunda_Australia_v_USA_19_June_2026-241_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Nestory_Irankunda",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "kerr",
@@ -954,7 +953,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d7/Sam_Kerr_Gotham_v_Seattle_18_July_2026-378_%28cropped%29.jpg/500px-Sam_Kerr_Gotham_v_Seattle_18_July_2026-378_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Sam_Kerr",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "fowler",
@@ -972,7 +971,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f4/Adelaide_United_v_Canberra_United_W-League_Rd_6_2019-12-22_Fowler_%2849258071411%29_%28cropped%29.jpg/500px-Adelaide_United_v_Canberra_United_W-League_Rd_6_2019-12-22_Fowler_%2849258071411%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Mary_Fowler",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "bonmati",
@@ -991,7 +990,7 @@
    "earlyHeading": "Youth",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/25th_Laureus_World_Sports_Awards_-_240422_214032.jpg/500px-25th_Laureus_World_Sports_Awards_-_240422_214032.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Aitana_Bonmat%C3%AD",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   },
   {
    "id": "putellas",
@@ -1008,7 +1007,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Premios_Goya_2026_-_Alexia_Putellas_%28cropped%29.jpg/500px-Premios_Goya_2026_-_Alexia_Putellas_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alexia_Putellas",
-   "fetchedAt": "2026-10-18"
+   "fetchedAt": "2026-10-25"
   }
  ]
 }
