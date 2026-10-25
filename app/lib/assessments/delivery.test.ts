@@ -269,6 +269,13 @@ describe('fair parent and learner reminders', () => {
     const retroactive = { ...paper, due_date: '2026-10-23', opens_on: '2026-10-23', created_at: '2026-10-23T13:30:00Z' };
     expect(reminderPapers('2026-10-26', [retroactive], new Set())).toEqual([]);
   });
+  it('sends each reminder digest as styled HTML alongside its plain text', async () => {
+    const draft = { ...paper, id: 'exam-draft', kind: 'exam' as const, status: 'draft' as const, due_date: '2026-09-30', opens_on: '2026-09-24' };
+    reminders([paper, draft], [{ paper_id: paper.id, status: 'submitted' }]);
+    await queueDueReminders('2026-09-25');
+    const jobs = mocks.upsert.mock.calls[0][0];
+    for (const j of jobs) { expect(j.payload.text).toBeTruthy(); expect(j.payload.html).toContain('<!doctype html>'); expect(j.payload.html).not.toContain('Explain fractions'); }
+  });
   it('queues separate approval and feedback digests without answers or already reviewed work', async () => {
     const draft = { ...paper, id: 'exam-draft', kind: 'exam' as const, status: 'draft' as const, due_date: '2026-09-30', opens_on: '2026-09-24' };
     const reviewed = { ...paper, id: 'already-reviewed', title: 'Already reviewed private title' };
