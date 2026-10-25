@@ -23,6 +23,7 @@
    ══════════════════════════════════════════════════════════════════════════ */
 import { adminClient, hasServiceRole } from './supabase-admin';
 import { sydneyDateKey, weekStartOf } from './time';
+import { PALETTES, actionCard, callCard, email, quoteCard, rowsCard, statsCard } from './assessments/email-html';
 
 export const STORY_PASS = 80;
 /** Stories for weeks before this never lock (nothing was published then). */
@@ -97,8 +98,28 @@ export function retryWait(session: StorySession): number {
 const fmtMin = (s: number) => `${Math.floor(s / 60)} min ${s % 60} s`;
 const fmtTime = (iso: string) => new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Sydney', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
 
-/** The parent email. Plain text, so it survives every mail client. */
-export function storyReport(s: Story, session: StorySession): { subject: string; text: string } {
+/** The parent email: card layout in the story palette, with the full plain text as the fallback. */
+function storyHtml(s: Story, session: StorySession) {
+  const p = PALETTES.story, last = session.attempts[session.attempts.length - 1], words = wordCount(s);
+  const first = session.attempts[0], rightFirst = s.questions.filter(q => first.answers[q.id] === q.answer).length;
+  const steady = Math.round(words / 200), mins = Math.round(session.activeSeconds / 60);
+  return email(p, { kicker: "Kawthar Monday story · Finished", title: s.headline, sub: `${s.topic} · finished ${fmtTime(session.completedAt!)}` }, [
+    callCard(p, 'The result', `PASSED ${last.score}/${last.total}`, session.attempts.length === 1 ? 'Passed on the first attempt.' : `Passed on attempt ${session.attempts.length}, after re-reading.`),
+    statsCard(p, 'The numbers', [
+      { value: `${last.score}/${last.total}`, label: 'Score', filled: true },
+      { value: String(session.attempts.length), label: session.attempts.length === 1 ? 'Attempt' : 'Attempts', alert: session.attempts.length > 2 },
+      { value: `${mins}m`, label: `Reading (≈${steady}m pace)`, alert: mins < steady / 2 },
+      { value: `${Math.round(session.maxScroll)}%`, label: 'Scrolled' },
+    ]),
+    rowsCard(p, 'First try, question by question', s.questions.map((q, i) => {
+      const ok = first.answers[q.id] === q.answer;
+      return { title: `Q${i + 1}. ${q.prompt}`, detail: ok ? undefined : `First try: ${q.options[first.answers[q.id]] ?? 'no answer'}`, pill: ok ? 'Right' : 'Missed', alert: !ok };
+    }), `${rightFirst} of ${s.questions.length} right first time.`),
+    quoteCard(p, 'In his own words', session.reflection || '(nothing written)', s.reflection),
+    actionCard(p, 'Talk about it at dinner', `The lesson: ${s.lesson.split(/(?<=[.!?])\s/)[0]} Ask him what it means in his own words.`),
+  ], 'The full plain-text record is kept with this email.');
+}
+export function storyReport(s: Story, session: StorySession): { subject: string; text: string; html: string } {
   const last = session.attempts[session.attempts.length - 1];
   const words = wordCount(s);
   const lines = [
@@ -126,7 +147,7 @@ export function storyReport(s: Story, session: StorySession): { subject: string;
     `"${s.reflection}"`,
     session.reflection ? `> ${session.reflection}` : '> (nothing written)',
   ];
-  return { subject: `Kawthar story · ${s.topic} · ${last.score}/${last.total} · ${fmtMin(session.activeSeconds)} reading`, text: lines.join('\n') };
+  return { subject: `Kawthar story · ${s.topic} · ${last.score}/${last.total} · ${fmtMin(session.activeSeconds)} reading`, text: lines.join('\n'), html: storyHtml(s, session) };
 }
 
 /* ── I/O ─────────────────────────────────────────────────────────────────── */

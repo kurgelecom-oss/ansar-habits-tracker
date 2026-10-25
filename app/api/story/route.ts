@@ -72,8 +72,8 @@ export async function POST(request: Request) {
     if (result.passed) session.completedAt = new Date().toISOString();
     await saveSession(story.weekStart, session);
     if (result.passed) {
-      const { subject, text } = storyReport(story, session);
-      await queueEmail(`story-${story.weekStart}-email`, subject, text);
+      const { subject, text, html } = storyReport(story, session);
+      await queueEmail(`story-${story.weekStart}-email`, subject, text, html);
     }
     const sections = result.wrong.map(id => story.questions.find(q => q.id === id)!.section);
     return NextResponse.json({ ok: true, passed: result.passed, score: result.score, total: result.total, wrong: result.wrong, reread: [...new Set(sections)] }, { headers: noStore });

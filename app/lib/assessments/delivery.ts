@@ -2,11 +2,12 @@ import { createHash } from 'node:crypto';
 import { adminClient } from '../supabase-admin';
 import { sydneyDateKey } from '../time';
 import type { Attempt, Paper } from './types';
+import { PALETTES, actionCard, callCard, day, daysBetween, email, monthName, rowsCard, statsCard, tidyTitle, type Palette } from './email-html';
 
 const OUTBOX = 'ansar_assessment_outbox';
 const SITE = 'https://ansar-habits-tracker.netlify.app';
 type ReportMetadata = { title: string; subject: string; kind: 'review' | 'exam' | 'system'; status: 'submitted' | 'reviewed' | 'correction' | 'system'; month: string; dueDate: string | null; submittedAt: string | null; score: number | null };
-type Payload = { subject: string; text: string; report?: string; metadata?: ReportMetadata; practiceExplicit?: boolean; graphMessageId?: string; graphSendStartedAt?: string; resendStartedAt?: string; gmailSendStartedAt?: string };
+type Payload = { subject: string; text: string; html?: string; report?: string; metadata?: ReportMetadata; practiceExplicit?: boolean; graphMessageId?: string; graphSendStartedAt?: string; resendStartedAt?: string; gmailSendStartedAt?: string };
 type Job = { id: string; channel: 'notion' | 'email'; payload: Payload; attempts: number };
 class DeliveryError extends Error {
   constructor(message: string, readonly httpStatus?: number) { super(message); }
@@ -32,6 +33,21 @@ function statusText(attempt: Attempt) {
   const pending = result?.writtenPending || 0;
   return `${attempt.status === 'reviewed' ? 'Parent reviewed' : 'Submitted'}${result?.percentage != null ? ` · ${result.percentage}%${pending ? ' provisional' : ''}` : ''}${pending ? ` · ${pending} written responses awaiting review` : ''}`;
 }
+function attemptHtml(attempt: Attempt, practice: boolean) {
+  const paper = attempt.paper_snapshot, r = attempt.result, p: Palette = practice ? PALETTES.practice : PALETTES.report;
+  const state = attempt.correction_at ? 'CORRECTION RECORDED' : attempt.status === 'reviewed' ? 'REVIEWED' : 'SUBMITTED';
+  const pending = r?.writtenPending || 0;
+  return email(p, { kicker: practice ? 'Parent practice · fictional rehearsal' : `Homeschool · ${paper.kind === 'exam' ? 'Monthly exam' : 'Friday review'}`, title: paper.subject, sub: `${tidyTitle(paper.subject, paper.title)} · due ${day(paper.due_date)}` }, [
+    callCard(p, 'Where it stands', practice ? `PRACTICE · ${state}` : state, `${statusText(attempt)}.`),
+    statsCard(p, 'The numbers', [
+      { value: r?.percentage != null ? `${r.percentage}%` : '—', label: pending ? 'Score, provisional' : 'Score', filled: true },
+      { value: `${r?.objectiveCorrect ?? 0}/${r?.objectiveTotal ?? 0}`, label: 'Objective' },
+      { value: `${r?.writtenPoints ?? 0}/${r?.writtenTotal ?? 0}`, label: 'Written' },
+      { value: String(pending), label: 'Awaiting marks', alert: pending > 0 },
+    ]),
+    actionCard(p, attempt.status === 'reviewed' ? 'The record' : 'Your part', attempt.status === 'reviewed' ? 'Marks, feedback and the next step are saved in the private learning record.' : 'Read his responses, mark the written answers and set the next learning step.', { label: practice ? 'Open the rehearsal' : 'Open the learning record', url: practice ? `${workspaceUrl()}/practice` : workspaceUrl() }),
+  ], practice ? 'PARENT PRACTICE: fictional workflow rehearsal only. Nothing here is Ansar\'s record.' : 'Detailed responses stay in the private record, never in email.');
+}
 export function attemptReport(attempt: Attempt, practice=false): Payload {
   const paper = attempt.paper_snapshot;
   const review = attempt.parent_review;
@@ -48,8 +64,8 @@ export function attemptReport(attempt: Attempt, practice=false): Payload {
     `Correction (${attempt.correction_at || 'not recorded'}):\n${attempt.correction || 'No correction submitted'}`,
     `Private workspace: ${practice?`${workspaceUrl()}/practice`:workspaceUrl()}`,
   ].join('\n\n');
-  if(practice)return {subject:`PARENT PRACTICE: ${paper.subject} — report`,text:`PARENT PRACTICE. ${statusText(attempt)}.\nView the rehearsal: ${workspaceUrl()}/practice`,report:`PARENT PRACTICE — fictional workflow rehearsal only.\n\n${report}`,metadata:{title:`PARENT PRACTICE — ${paper.title}`,subject:'Assessment system',kind:'system',status:'system',month:'',dueDate:null,submittedAt:null,score:null},practiceExplicit:true};
-  return { subject: `Ansar assessment: ${paper.subject} — ${attempt.correction_at ? 'correction recorded' : attempt.status === 'reviewed' ? 'reviewed' : 'submitted'}`, text: `${statusText(attempt)}.\nView the private learning record: ${workspaceUrl()}`, report, metadata: { title: paper.title, subject: paper.subject, kind: paper.kind, status: attempt.correction_at ? 'correction' : attempt.status === 'reviewed' ? 'reviewed' : 'submitted', month: paper.month, dueDate: paper.due_date, submittedAt: attempt.submitted_at, score: attempt.result?.percentage ?? null } };
+  if(practice)return {subject:`PARENT PRACTICE: ${paper.subject} — report`,text:`PARENT PRACTICE. ${statusText(attempt)}.\nView the rehearsal: ${workspaceUrl()}/practice`,html:attemptHtml(attempt,true),report:`PARENT PRACTICE — fictional workflow rehearsal only.\n\n${report}`,metadata:{title:`PARENT PRACTICE — ${paper.title}`,subject:'Assessment system',kind:'system',status:'system',month:'',dueDate:null,submittedAt:null,score:null},practiceExplicit:true};
+  return { subject: `Ansar assessment: ${paper.subject} — ${attempt.correction_at ? 'correction recorded' : attempt.status === 'reviewed' ? 'reviewed' : 'submitted'}`, text: `${statusText(attempt)}.\nView the private learning record: ${workspaceUrl()}`, html: attemptHtml(attempt, false), report, metadata: { title: paper.title, subject: paper.subject, kind: paper.kind, status: attempt.correction_at ? 'correction' : attempt.status === 'reviewed' ? 'reviewed' : 'submitted', month: paper.month, dueDate: paper.due_date, submittedAt: attempt.submitted_at, score: attempt.result?.percentage ?? null } };
 }
 export function practiceAttemptReport(attempt:Attempt){return attemptReport(attempt,true);}
 async function enqueue(jobs: Omit<Job, 'attempts'>[]) {
@@ -58,20 +74,20 @@ async function enqueue(jobs: Omit<Job, 'attempts'>[]) {
   if (error) throw new DeliveryError('Could not persist assessment notifications');
 }
 /** One plain email to the parent address, sent by the same outbox (the Monday story). */
-export async function queueEmail(id: string, subject: string, text: string): Promise<void> {
-  await enqueue([{ id, channel: 'email', payload: { subject, text } }]);
+export async function queueEmail(id: string, subject: string, text: string, html?: string): Promise<void> {
+  await enqueue([{ id, channel: 'email', payload: { subject, text, html } }]);
 }
 export async function queueAttemptReport(attempt: Attempt): Promise<void> {
   if (attempt.status === 'in_progress'||attempt.paper_snapshot.is_practice===true) return;
   const event = `attempt-${digest([attempt.id, attempt.status, attempt.parent_review?.reviewedAt || '', attempt.correction_at || ''].join(':'))}`;
   const payload = attemptReport(attempt);
   // Detailed work is present only in the private Notion job, never the email job.
-  await enqueue([{ id: `${event}-notion`, channel: 'notion', payload }, { id: `${event}-email`, channel: 'email', payload: { subject: payload.subject, text: payload.text } }]);
+  await enqueue([{ id: `${event}-notion`, channel: 'notion', payload }, { id: `${event}-email`, channel: 'email', payload: { subject: payload.subject, text: payload.text, html: payload.html } }]);
 }
 export async function queuePracticeReport(attempt:Attempt):Promise<void>{
  if(attempt.status==='in_progress'||attempt.paper_snapshot.is_practice!==true)throw new DeliveryError('Only submitted practice attempts can be sent');
  const event=`practice-${digest([attempt.id,attempt.status,attempt.parent_review?.reviewedAt||'',attempt.correction_at||''].join(':'))}`;const payload=practiceAttemptReport(attempt);
- await enqueue([{id:`${event}-notion`,channel:'notion',payload},{id:`${event}-email`,channel:'email',payload:{subject:payload.subject,text:payload.text,practiceExplicit:true}}]);
+ await enqueue([{id:`${event}-notion`,channel:'notion',payload},{id:`${event}-email`,channel:'email',payload:{subject:payload.subject,text:payload.text,html:payload.html,practiceExplicit:true}}]);
 }
 export function reminderPapers(today: string, papers: Paper[], completedIds: Set<string>): Paper[] {
   const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
@@ -82,6 +98,36 @@ export function reminderPapers(today: string, papers: Paper[], completedIds: Set
     (p.kind === 'exam' && today <= p.due_date && examWindow) ||
     (weekday === 1 && p.due_date < today && assignedByDueDate(p))
   ));
+}
+const STALE_DAYS = 14;
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+export function dueHtml(today: string, due: Paper[]) {
+  const p = PALETTES.due, late = due.filter(x => x.due_date < today), next = due.filter(x => x.due_date >= today).map(x => x.due_date).sort()[0];
+  return email(p, { kicker: 'Homeschool · Work due', title: "Ansar's work due", sub: day(today) }, [
+    callCard(p, 'The call', late.length ? `${late.length} OVERDUE` : `${due.length} DUE`, late.length ? `${plural(late.length, 'piece')} past the due date, ${due.length - late.length} still on time.` : `${plural(due.length, 'piece')} awaiting submission.`, late.length > 0),
+    statsCard(p, 'At a glance', [{ value: String(due.length), label: 'Waiting', filled: true }, { value: String(late.length), label: 'Overdue', alert: late.length > 0 }, { value: next ? day(next).slice(4) : '—', label: 'Next due' }]),
+    rowsCard(p, 'The list', due.map(x => { const d = daysBetween(x.due_date, today); return { title: x.subject, detail: tidyTitle(x.subject, x.title), pill: d > 0 ? `${plural(d, 'day')} late` : d === 0 ? 'Due today' : `Due ${day(x.due_date)}`, alert: d > 0 }; })),
+    actionCard(p, 'What to do', 'Open the private workspace to see each piece. Submission records completion; parent review assesses understanding.', { label: 'Open the workspace', url: workspaceUrl() }),
+  ], 'Sent by the assessment room once a day at most.');
+}
+export function approvalHtml(today: string, drafts: Paper[]) {
+  const p = PALETTES.approval, due = drafts.map(x => x.due_date).sort()[0], left = daysBetween(today, due);
+  const month = monthName(drafts[0].month || '');
+  return email(p, { kicker: 'Homeschool · Exam approval', title: `Approve ${month ? `${month}'s` : 'the'} papers`, sub: `${plural(drafts.length, 'paper')} · due ${day(due)}` }, [
+    callCard(p, 'The call', `${drafts.length} TO APPROVE`, "Ansar can't begin until you check what was taught and approve each paper.", left <= 2),
+    statsCard(p, 'At a glance', [{ value: String(drafts.length), label: 'Papers', filled: true }, { value: String(Math.max(0, left)), label: left === 1 ? 'Day left' : 'Days left', alert: left <= 2 }, { value: day(due).slice(4), label: 'Due' }]),
+    rowsCard(p, 'The papers', drafts.map(x => ({ title: x.subject, detail: tidyTitle(x.subject, x.title), pill: `Due ${day(x.due_date)}` }))),
+    actionCard(p, 'What to do', 'Preview the questions and marking guides privately, confirm what was taught, and agree any extra time. Unapproved papers are not assigned to Ansar.', { label: 'Review the papers', url: workspaceUrl() }),
+  ], 'Exams stay in draft until you approve them. Approved papers cannot change.');
+}
+export function feedbackHtml(today: string, waiting: Paper[]) {
+  const p = PALETTES.feedback, ages = waiting.map(x => Math.max(0, daysBetween(x.due_date, today))), oldest = Math.max(...ages), stale = ages.filter(a => a >= STALE_DAYS).length;
+  return email(p, { kicker: 'Homeschool · Parent review', title: "Ansar's work to review", sub: `${plural(waiting.length, 'submission')} waiting · ${day(today)}` }, [
+    callCard(p, 'The call', `${waiting.length} TO REVIEW`, stale ? `${plural(stale, 'piece')} waiting over two weeks. The oldest was due ${plural(oldest, 'day')} ago.` : 'Each needs your marks, feedback and next learning step.', stale > 0),
+    statsCard(p, 'At a glance', [{ value: String(waiting.length), label: 'Waiting', filled: true }, { value: `${oldest}d`, label: 'Oldest', alert: oldest >= STALE_DAYS }, { value: String(stale), label: 'Over 2 weeks', alert: stale > 0 }]),
+    rowsCard(p, 'Oldest first', waiting.map((x, i) => ({ x, age: ages[i] })).sort((a, b) => b.age - a.age).map(({ x, age }) => ({ title: x.subject, detail: tidyTitle(x.subject, x.title), pill: age ? `${age} days` : 'Today', alert: age >= STALE_DAYS })), 'Age counts from the due date.'),
+    actionCard(p, 'What to do', 'Open his private responses and record marks, feedback and the next learning step for each.', { label: 'Start reviewing', url: workspaceUrl() }),
+  ], 'Submission records completion; understanding awaits your review.');
 }
 export async function queueDueReminders(today: string): Promise<void> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) throw new DeliveryError('Invalid reminder date');
@@ -106,14 +152,17 @@ export async function queueDueReminders(today: string): Promise<void> {
   // refreshes after a paper is published or an attempt changes status.
   if (due.length) jobs.push({ id: `reminder-${today}-learner`, channel: 'email', payload: {
     subject: 'Ansar: learning work due',
+    html: dueHtml(today, due),
     text: `Work awaiting submission:\n${due.map(p => `${p.subject}: ${p.title} — due ${p.due_date}${p.due_date < today ? ' (overdue)' : ''}`).join('\n')}\n\nOpen the private workspace: ${workspaceUrl()}\nSubmission records completion; parent review assesses understanding.`,
   } });
   if (drafts.length) jobs.push({ id: `reminder-${today}-parent-approval`, channel: 'email', payload: {
     subject: 'Nihal: approve monthly exam papers',
+    html: approvalHtml(today, drafts),
     text: `These monthly papers are awaiting your coverage check and approval before Ansar can begin:\n${drafts.map(p => `${p.subject}: ${p.title} — due ${p.due_date}`).join('\n')}\n\nPreview the questions and marking guides privately, confirm what was taught, and agree any extra time: ${workspaceUrl()}\nUnapproved papers are not assigned to Ansar.`,
   } });
   if (awaitingReview.length) jobs.push({ id: `reminder-${today}-parent-feedback`, channel: 'email', payload: {
     subject: 'Nihal: review submitted learning work',
+    html: feedbackHtml(today, awaitingReview),
     text: `Ansar has submitted this work and is awaiting your marks, feedback and next learning step:\n${awaitingReview.map(p => `${p.subject}: ${p.title}`).join('\n')}\n\nOpen the private responses and record your review: ${workspaceUrl()}\nSubmission records completion; understanding awaits your review.`,
   } });
   await enqueue(jobs);
@@ -169,7 +218,7 @@ async function deliverGraph(job: Job) {
   if (!token) throw new DeliveryError('Microsoft authentication returned no access token');
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'IdType="ImmutableId"' };
   if (!job.payload.graphMessageId) {
-    const draft = await request('https://graph.microsoft.com/v1.0/me/messages', { method: 'POST', headers, body: JSON.stringify({ subject: job.payload.subject, body: { contentType: 'Text', content: job.payload.text }, toRecipients: [{ emailAddress: { address: process.env.ASSESSMENT_EMAIL_TO } }] }) }, 'Microsoft mail');
+    const draft = await request('https://graph.microsoft.com/v1.0/me/messages', { method: 'POST', headers, body: JSON.stringify({ subject: job.payload.subject, body: job.payload.html ? { contentType: 'HTML', content: job.payload.html } : { contentType: 'Text', content: job.payload.text }, toRecipients: [{ emailAddress: { address: process.env.ASSESSMENT_EMAIL_TO } }] }) }, 'Microsoft mail');
     job.payload.graphMessageId = (await draft.json()).id;
     if (!job.payload.graphMessageId) throw new DeliveryError('Microsoft mail returned no draft ID');
     await persistPayload(job);
@@ -210,7 +259,7 @@ async function deliverGmail(job: Job) {
   job.payload.gmailSendStartedAt = new Date().toISOString();
   await persistPayload(job);
   try {
-    await composio('GMAIL_SEND_EMAIL', { recipient_email: process.env.ASSESSMENT_EMAIL_TO, subject: `${job.payload.subject} [${marker}]`, body: job.payload.text, is_html: false, user_id: 'me' });
+    await composio('GMAIL_SEND_EMAIL', { recipient_email: process.env.ASSESSMENT_EMAIL_TO, subject: `${job.payload.subject} [${marker}]`, body: job.payload.html || job.payload.text, is_html: Boolean(job.payload.html), user_id: 'me' });
   } catch (error) {
     // HTTP 4xx (other than request timeout) rejects execution. Tool failures
     // inside HTTP 200 may be ambiguous, so their checkpoints remain intact.
@@ -227,7 +276,7 @@ async function deliverEmail(job: Job) {
   if (job.payload.resendStartedAt && Date.now() - Date.parse(job.payload.resendStartedAt) >= 23 * 60 * 60 * 1000) throw new DeliveryError('Resend delivery confirmation expired; retained for manual reconciliation');
   if (!job.payload.resendStartedAt) { job.payload.resendStartedAt = new Date().toISOString(); await persistPayload(job); }
   try {
-    await request('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': job.id }, body: JSON.stringify({ from: process.env.ASSESSMENT_EMAIL_FROM, to: [process.env.ASSESSMENT_EMAIL_TO], subject: job.payload.subject, text: job.payload.text }) }, 'Resend');
+    await request('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': job.id }, body: JSON.stringify({ from: process.env.ASSESSMENT_EMAIL_FROM, to: [process.env.ASSESSMENT_EMAIL_TO], subject: job.payload.subject, text: job.payload.text, ...(job.payload.html ? { html: job.payload.html } : {}) }) }, 'Resend');
   } catch (error) {
     if (definitivelyRejected(error)) { delete job.payload.resendStartedAt; await persistPayload(job); }
     throw error;
