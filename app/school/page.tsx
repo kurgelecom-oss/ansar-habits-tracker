@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ClubNavigation from "../components/dashboard/ClubNavigation";
 import styles from "./school.module.css";
+import WeeksView from "./WeeksView";
 import { TERM, TRACKED, TRACKING_FROM_WEEK, WEEKLY_PROOF, TERM_TARGETS, YEAR6_GOALS, YEAR_LEVEL, type Area, type ProofState } from "./data/year";
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -35,7 +36,7 @@ type Week = {
   totals?: { blocks: number; done: number }; message?: string;
 };
 
-const VIEWS = ["Today", "This week", "The year"] as const;
+const VIEWS = ["Today", "This week", "Weeks", "The year"] as const;
 type View = typeof VIEWS[number];
 
 type YearWeek = {
@@ -110,8 +111,9 @@ export default function SchoolPage() {
        <div className={styles.content}>
         <header>
           <p className={styles.kicker}>Ansar OS · School</p>
-          <h1 className={styles.title}>{week?.weekTitle || "School"}</h1>
-          <p className={styles.sub}>
+          {/* On Weeks the week card below is the heading; a second, different week title here confused (tk 25 Oct). */}
+          <h1 className={styles.title}>{view === "Weeks" ? "Weeks" : week?.weekTitle || "School"}</h1>
+          <p className={styles.sub} hidden={view === "Weeks"}>
             {state === "loading" ? "Loading…"
               : state === "unavailable" ? "The week could not be loaded."
               : week?.upcoming
@@ -225,6 +227,9 @@ export default function SchoolPage() {
             ) : null}
           </section>
         ) : null}
+
+        {/* ── WEEKS: back and forward, subject by subject (tk, 25 Oct 2026) ── */}
+        {view === "Weeks" ? <WeeksView /> : null}
 
         {/* ── THE YEAR ──────────────────────────────────────────────────── */}
         {view === "The year" ? <YearView year={year} /> : null}
