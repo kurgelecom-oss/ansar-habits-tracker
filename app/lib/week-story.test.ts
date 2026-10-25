@@ -27,7 +27,7 @@ describe('buildWeekStory', () => {
   it('reused photos do not count', () => expect(get('evidence').caption).toBe('15 of 18 logs had a photo. 2 photos had been used before, so 13 count.'));
   it('flags the plateau', () => expect(get('topics').caption).toMatch(/^Ratios has been the same for 3 weeks/));
   it('quotes his most repeated words', () => expect(get('words').caption).toMatch(/^“slow down and read the question” came up 4 days/));
-  it('unrecorded device rule says so', () => expect(buildWeekStory({ ...SAMPLE_WEEK, deviceRule: null }).find(x => x.id === 'device')!.caption).toMatch(/not written down/));
+  it('unrecorded device rule gets no scene', () => expect(buildWeekStory({ ...SAMPLE_WEEK, deviceRule: null }).some(x => x.id === 'device')).toBe(false));
   it('skips empty optional scenes and keeps clean-records scene', () => {
     const lean = buildWeekStory({ ...SAMPLE_WEEK, topics: [], words: [], flags: [] });
     expect(lean.map(x => x.id)).toEqual(['call', 'days', 'device', 'areas', 'evidence', 'journals', 'strong', 'broke', 'flags', 'next']);
