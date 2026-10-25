@@ -63,26 +63,13 @@
 .warnBox { border-left: 3px solid var(--ansar-danger) !important; }
 .next { border-left: 3px solid var(--ansar-gold-bright) !important; }
 
-/* subjects */
-.subjects { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 16px; }
-.subject { border: 1px solid var(--ansar-border); border-top: 4px solid var(--tone); border-radius: var(--ansar-radius-panel); background: color-mix(in srgb, var(--ansar-panel) 94%, transparent); padding: 20px 20px 16px; display: grid; gap: 12px; align-content: start; }
-.subjectHead { display: flex; align-items: center; gap: 12px; }
+/* lessons (shared by the day view) */
 .icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; background: color-mix(in srgb, var(--tone) 18%, transparent); }
-.subjectHead h3 { margin: 0; font: 700 21px var(--font-display); }
-.subjectHead p { margin: 2px 0 0; color: var(--ansar-subtext); font-size: 13px; }
-.lessons { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.lessons > li { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 12px; padding: 12px; border-radius: var(--ansar-radius-row); background: var(--ansar-rowflat); border: 1px solid var(--ansar-border); }
-.lessonDone { border-color: color-mix(in srgb, var(--ansar-success) 55%, var(--ansar-border)) !important; }
-.lessonMeta { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--ansar-subtext); }
-.lessonMeta b { font-size: 14px; color: var(--tone); letter-spacing: .04em; }
-.lessonMeta em { font-style: normal; font-weight: 700; color: var(--ansar-text); font-size: 11px; margin-top: 4px; }
+.lessonDone { border-top-color: color-mix(in srgb, var(--ansar-success) 55%, var(--ansar-border)) !important; border-right-color: color-mix(in srgb, var(--ansar-success) 55%, var(--ansar-border)) !important; border-bottom-color: color-mix(in srgb, var(--ansar-success) 55%, var(--ansar-border)) !important; }
 .tick { font-style: normal; color: var(--ansar-success); font-weight: 800; margin-top: 4px; }
 .lessonBody h4 { margin: 0; font-size: 15px; line-height: 1.35; font-weight: 700; }
 .lessonBody ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; color: var(--ansar-subtext); font-size: 13.5px; line-height: 1.5; }
 .lessonBody b { color: var(--ansar-text); }
-.guide { border-top: 1px solid var(--ansar-border); padding-top: 10px; font-size: 13px; color: var(--ansar-subtext); }
-.guide summary { cursor: pointer; font-weight: 700; color: var(--ansar-text); }
-.guide ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 5px; line-height: 1.45; }
 .foot { color: var(--ansar-muted); font-size: 12.5px; margin: 0; }
 
 @media (max-width: 760px) {
@@ -91,4 +78,37 @@
   .areas { grid-template-columns: 1fr 1fr; }
   .stats { gap: 14px; }
   .stats div { text-align: left; }
+}
+
+/* ── day by day (25 Oct) ── */
+.themes a { color: inherit; text-decoration: none; display: block; }
+.themes li:hover { border-color: var(--accent); }
+.daysList { display: grid; gap: 16px; }
+.day { border: 1px solid var(--ansar-border); border-radius: var(--ansar-radius-panel); background: color-mix(in srgb, var(--ansar-panel) 94%, transparent); padding: 20px; scroll-margin-top: 90px; }
+.dayToday { border-color: var(--ansar-gold-bright); box-shadow: 0 0 0 1px var(--ansar-gold-bright) inset; }
+.dayHead { display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: 18px; align-items: start; padding-bottom: 14px; border-bottom: 1px solid var(--ansar-border); }
+.dayDate b { display: block; font: 700 26px/1 var(--font-display); text-transform: uppercase; }
+.dayDate span { display: block; color: var(--ansar-subtext); font-size: 13px; margin-top: 4px; }
+.dayTheme span { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ansar-gold-bright); }
+.dayTheme h3 { margin: 3px 0 0; font: 700 20px/1.25 var(--font-display); }
+.dayTheme p { margin: 6px 0 0; color: var(--ansar-subtext); font-size: 13.5px; line-height: 1.45; }
+.dayMeta { color: var(--ansar-subtext); font-size: 13px; white-space: nowrap; display: grid; justify-items: end; gap: 6px; }
+.dayMeta em { font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--ansar-base); background: var(--ansar-gold-bright); border-radius: 999px; padding: 3px 9px; }
+.dayLessons { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.dayLessons > li { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px; padding: 14px; border-radius: var(--ansar-radius-row); background: var(--ansar-rowflat); border: 1px solid var(--ansar-border); border-left: 4px solid var(--tone); }
+.subjectTag { display: flex; gap: 10px; align-items: flex-start; }
+.subjectTag b { display: block; font-size: 14.5px; color: var(--tone); }
+.subjectTag span:not(.icon) { display: block; font-size: 12px; color: var(--ansar-subtext); margin-top: 2px; }
+.subjectTag .tick { display: block; margin-top: 4px; font-size: 12px; }
+.subjectTag .icon { width: 36px; height: 36px; font-size: 18px; border-radius: 10px; flex: none; }
+.guides { border: 1px solid var(--ansar-border); border-radius: var(--ansar-radius-panel); background: color-mix(in srgb, var(--ansar-panel) 93%, transparent); padding: 16px 20px; }
+.guides summary { cursor: pointer; font-weight: 700; }
+.guideGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; margin-top: 14px; }
+.guideGrid > div { border-left: 3px solid var(--tone); padding-left: 12px; }
+.guideGrid h4 { margin: 0 0 6px; font-size: 14px; }
+.guideGrid ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; color: var(--ansar-subtext); font-size: 13px; line-height: 1.45; }
+@media (max-width: 760px) {
+  .dayHead { grid-template-columns: 1fr; gap: 8px; }
+  .dayMeta { justify-items: start; }
+  .dayLessons > li { grid-template-columns: 1fr; gap: 8px; }
 }

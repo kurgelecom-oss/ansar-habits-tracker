@@ -4,8 +4,8 @@ import styles from "./weeks.module.css";
 
 /* ════════════════════════════════════════════════════════════════════════════
    School → Weeks. Step back and forward through every stored week and read it
-   subject by subject, the way the Notion week pages are written, without
-   opening Notion.
+   day by day, Monday to Friday: each day's theme, then every lesson in the
+   order it is taught, tagged with its subject. No need to open Notion.
 
    Plan: the nightly programme snapshot (/api/school-week?weekStart=…), every
    dated row with its subject, day topic, full task and subject guide.
@@ -166,45 +166,54 @@ export default function WeeksView() {
           </dl>
         </div>
         <ol className={styles.themes}>{week.days.map(d => (
-          <li key={d.date} className={d.isToday ? styles.themeToday : ""}><span>{d.weekday.slice(0, 3)}</span><b>{d.dayTopic || "—"}</b></li>
+          <li key={d.date} className={d.isToday ? styles.themeToday : ""}><a href={`#day-${d.date}`}><span>{d.weekday.slice(0, 3)}</span><b>{d.dayTopic || "—"}</b></a></li>
         ))}</ol>
       </section>}
 
       {/* ── how the week went ── */}
       {week && (past || rel === "This week") && <ReportCard report={report} past={past} />}
 
-      {/* ── subject by subject ── */}
+      {/* ── day by day: Monday to Friday, every lesson in teaching order (tk, 25 Oct 2026) ── */}
       {week && !subjects.length && state === "ready" && <p className={styles.warn}>Nothing is stored for this week yet. Weeks appear here the night after they are written in Notion.</p>}
-      <div className={styles.subjects}>
-        {subjects.map(s => (
-          <article key={s.key} className={styles.subject} style={{ "--tone": s.tone } as React.CSSProperties}>
-            <header className={styles.subjectHead}>
-              <span className={styles.icon} aria-hidden="true">{s.icon}</span>
-              <div>
-                <h3>{s.name}</h3>
-                <p>{s.lessons.length} lesson{s.lessons.length === 1 ? "" : "s"}{s.mins ? ` · ${s.mins} min` : ""}{(past || rel === "This week") && s.done ? ` · ${s.done} ticked ✓` : ""}</p>
-              </div>
-            </header>
-            <ol className={styles.lessons}>{s.lessons.map(l => (
-              <li key={l.block.rowId + l.day.date} className={l.block.done ? styles.lessonDone : ""}>
-                <div className={styles.lessonMeta}>
-                  <b>{l.day.weekday.slice(0, 3)}</b>
-                  <span>{dayShort(l.day.date).replace(/^\w+ /, "")}</span>
-                  {l.block.duration && <span>{l.block.duration}</span>}
-                  {s.key === "english" && /grammar/i.test(l.block.label) && <em>Grammar</em>}
-                  {s.key === "friday" && <em>{l.block.label}</em>}
-                  {l.block.done && <i className={styles.tick}>✓ done</i>}
-                </div>
-                <div className={styles.lessonBody}>
-                  <h4>{l.head}</h4>
-                  {l.body.length > 0 && <ul>{l.body.map((t, i) => <Step key={i} text={t} />)}</ul>}
-                </div>
-              </li>
-            ))}</ol>
-            {s.guide.length > 0 && <details className={styles.guide}><summary>How {s.name.split(" ·")[0]} works</summary><ul>{s.guide.map((g, i) => <li key={i}>{g}</li>)}</ul></details>}
-          </article>
-        ))}
+      <div className={styles.daysList}>
+        {week?.days.filter(d => d.blocks.length).map(d => {
+          const mins = d.blocks.reduce((n, b) => n + minutes(b.duration), 0), done = d.blocks.filter(b => b.done).length;
+          return (
+            <section key={d.date} id={`day-${d.date}`} className={`${styles.day} ${d.isToday ? styles.dayToday : ""}`}>
+              <header className={styles.dayHead}>
+                <div className={styles.dayDate}><b>{d.weekday}</b><span>{dayShort(d.date).replace(/^\w+ /, "")}</span></div>
+                <div className={styles.dayTheme}><span>Today&apos;s theme</span><h3>{d.dayTopic || "—"}</h3>{d.note && <p>{d.note}</p>}</div>
+                <div className={styles.dayMeta}>{d.blocks.length} lessons · {Math.floor(mins / 60)}h{mins % 60 ? ` ${mins % 60}m` : ""}{(past || rel === "This week") ? ` · ${done}/${d.blocks.length} ticked` : ""}{d.isToday && <em>Today</em>}</div>
+              </header>
+              <ol className={styles.dayLessons}>{d.blocks.map(b => {
+                const sub = SUBJECTS.find(x => x.key === subjectOf(b.label))!;
+                const l = lesson(sub.key, b, d.dayTopic);
+                const name = sub.key === "english" && /grammar/i.test(b.label) ? "Grammar" : sub.key === "friday" ? b.label : sub.name;
+                return (
+                  <li key={b.rowId} className={b.done ? styles.lessonDone : ""} style={{ "--tone": sub.tone } as React.CSSProperties}>
+                    <div className={styles.subjectTag}>
+                      <span className={styles.icon} aria-hidden="true">{sub.icon}</span>
+                      <div><b>{name}</b>{b.duration && <span>{b.duration}</span>}{b.done && <i className={styles.tick}>✓ done</i>}</div>
+                    </div>
+                    <div className={styles.lessonBody}>
+                      <h4>{l.head}</h4>
+                      {l.body.length > 0 && <ul>{l.body.map((t, i) => <Step key={i} text={t} />)}</ul>}
+                    </div>
+                  </li>
+                );
+              })}</ol>
+            </section>
+          );
+        })}
       </div>
+
+      {/* Standing guidance, once per subject, out of the way of the daily view. */}
+      {subjects.some(s => s.guide.length) && <details className={styles.guides}>
+        <summary>Subject guides · how each subject works</summary>
+        <div className={styles.guideGrid}>{subjects.filter(s => s.guide.length).map(s => (
+          <div key={s.key} style={{ "--tone": s.tone } as React.CSSProperties}><h4>{s.icon} {s.name}</h4><ul>{s.guide.map((g, i) => <li key={i}>{g}</li>)}</ul></div>
+        ))}</div>
+      </details>}
       {week?.syncedAt && <p className={styles.foot}>From the stored programme, refreshed nightly (last {new Date(week.syncedAt).toLocaleString("en-AU")}). Use ← → to change week.</p>}
     </div>
   );
