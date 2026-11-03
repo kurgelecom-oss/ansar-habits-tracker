@@ -19,6 +19,19 @@
 /** Weekdays (of Mon–Fri) with `homeschool_session` done that earn Saturday PS5. */
 export const WEEKEND_UNLOCK_MIN_SCHOOL_DAYS = 4;
 
+/**
+ * Weekday public holidays with no school. Each counts as a school day done for
+ * rule 1, so a day off cannot cost him the weekend; its lessons move to Friday
+ * catch-up. Known limit: hand-kept list, add each holiday as it is decided.
+ */
+export const PUBLIC_HOLIDAYS: ReadonlySet<string> = new Set([
+  "2026-11-03", // Melbourne Cup Day (tk, 4 Nov 2026)
+]);
+
+export function isPublicHoliday(date: string): boolean {
+  return PUBLIC_HOLIDAYS.has(date);
+}
+
 /** The one day the whole system is switched off. */
 export const REST_DAY = "Sunday";
 

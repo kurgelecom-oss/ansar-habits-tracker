@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRestDay, saturdayPs5, saturdayStreak, weekendUnlocked, WEEKEND_UNLOCK_MIN_SCHOOL_DAYS } from "./weekend";
+import { isPublicHoliday, isRestDay, saturdayPs5, saturdayStreak, weekendUnlocked, WEEKEND_UNLOCK_MIN_SCHOOL_DAYS } from "./weekend";
 
 describe("weekend rules", () => {
   it("needs school finished on 4 of the 5 weekdays", () => {
@@ -53,5 +53,9 @@ describe("saturdayStreak", () => {
   it("reads from a weekday against the last Saturday", () => {
     expect(saturdayStreak(sats, "2026-09-09")).toBe(3);
     expect(saturdayStreak(new Set(["2026-08-29"]), "2026-09-09")).toBe(0);
+  });
+  it("counts Melbourne Cup Day 2026 as a public holiday, and only that day", () => {
+    expect(isPublicHoliday("2026-11-03")).toBe(true);
+    expect(isPublicHoliday("2026-11-04")).toBe(false);
   });
 });
