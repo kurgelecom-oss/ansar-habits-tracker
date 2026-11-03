@@ -30,7 +30,7 @@ import TodayPillars from "./components/dashboard/TodayPillars";
 import Noticeboard from "./components/dashboard/Noticeboard";
 import AssessmentLockCard from "./components/dashboard/AssessmentLockCard";
 import { usePaperLock } from "./components/dashboard/usePaperLock";
-import { saturdayPs5, saturdayStreak as saturdayStreakOf } from "./lib/weekend";
+import { isPublicHoliday, saturdayPs5, saturdayStreak as saturdayStreakOf } from "./lib/weekend";
 import WorkWeekPanel from "./components/dashboard/WorkWeekPanel";
 import dashboardStyles from "./components/dashboard/dashboard.module.css";
 import { deriveMatchReadiness, journalEvidenceState } from "./dashboard/model";
@@ -447,7 +447,9 @@ export default function AnsarPage() {
       .filter(ds => SQUAD_DAYS.includes(dayNameOf(ds)) && byDate[ds]);
     setWeek({
       // Rule 1 of lib/weekend.ts counts exactly this.
-      schoolDays: weekdayDates.filter(ds => byDate[ds].has("homeschool_session")).length,
+      // A public holiday counts as done (lib/weekend.ts PUBLIC_HOLIDAYS).
+      schoolDays: [0, 1, 2, 3, 4].map(i => addDays(weekStart, i))
+        .filter(ds => ds <= today && (isPublicHoliday(ds) || byDate[ds]?.has("homeschool_session"))).length,
       fullDays: weekdayDates.filter(ds => {
         const { applicable, preIds, baseIds } = idsFor(ds);
         return applicable.length > 0 && scoreDay(byDate[ds], dayNameOf(ds), preIds, baseIds).perfect;
