@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-15",
+ "updated": "2026-11-22",
  "source": "Wikipedia (CC BY-SA 4.0)",
  "players": [
   {
@@ -17,7 +17,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Erling_Haaland_Morocco_v_Norway_7_June_2026-51.jpg/500px-Erling_Haaland_Morocco_v_Norway_7_June_2026-51.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Erling_Haaland",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "mbappe",
@@ -33,7 +33,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/95/Kylian_Mbappe_France_v_Senegal_16_June_2026-391_%28cropped%29.jpg/500px-Kylian_Mbappe_France_v_Senegal_16_June_2026-391_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Kylian_Mbapp%C3%A9",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "yamal",
@@ -44,12 +44,13 @@
     "Lamine Yamal Nasraoui Ebana is a Spanish professional footballer who plays as a right winger for the La Liga club Barcelona and the Spain national team. He is widely regarded as one of the best players in the world."
    ],
    "early": [
-    "Lamine Yamal Nasraoui Ebana was born on 13 July 2007, in Esplugues de Llobregat in the Barcelona metropolitan area in Catalonia, Spain. Yamal's father, Mounir Nasraoui, is from a village between Larache and Ksar el-Kebir in Morocco. His mother, Sheila Ebana, is from Bata, Equatorial Guinea. Yamal has a younger half-brother and a younger half-sister. His first and middle name honour two family friends, Lamine and Yamal, who helped his parents financially shortly before Yamal was born. As a baby he was featured in a 2007 UNICEF charity photo shoot with his future club Barcelona, during which he was bathed by a 20-year-old Lionel Messi. The photos went viral online in 2024 after Yamal's father posted one of them online. Two years later, the photos received additional attention in the media as Yamal and Messi prepared to face each other in the 2026 FIFA World Cup final."
+    "Lamine Yamal Nasraoui Ebana was born on 13 July 2007, in Esplugues de Llobregat in the Barcelona metropolitan area in Catalonia, Spain. Yamal's father, Mounir Nasraoui, is from a village between Larache and Ksar el-Kebir in Morocco. His mother, Sheila Ebana, is from Bata, Equatorial Guinea. Yamal has a younger half-brother and a younger half-sister. His first and middle name honour two family friends, Lamine and Yamal, who helped his parents financially shortly before Yamal was born.",
+    "As a baby he was featured in a 2007 UNICEF charity photo shoot with his future club Barcelona, during which he was bathed by a 20-year-old Lionel Messi. The photos went viral online in 2024 after Yamal's father posted one of them online. Two years later, the photos received additional attention in the media as Yamal and Messi prepared to face each other in the 2026 FIFA World Cup final."
    ],
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Lamine_Yamal_France_v_Spain_7.24.26-142.jpg/500px-Lamine_Yamal_France_v_Spain_7.24.26-142.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Lamine_Yamal",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "bellingham",
@@ -65,7 +66,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/23/Jude_Bellingham_England_v_Ghana_23_June_2026-061_%28cropped%29.jpg/500px-Jude_Bellingham_England_v_Ghana_23_June_2026-061_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Jude_Bellingham",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "vinicius",
@@ -83,7 +84,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Vin%C3%ADcius_J%C3%BAnior_Brazil_V_Morocco_13_June_2026-207_%28cropped%29.jpg/500px-Vin%C3%ADcius_J%C3%BAnior_Brazil_V_Morocco_13_June_2026-207_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Vin%C3%ADcius_J%C3%BAnior",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "raphinha",
@@ -101,7 +102,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b4/Raphinha_Brazil_V_Morocco_13_June_2026-133_%28cropped%29.jpg/500px-Raphinha_Brazil_V_Morocco_13_June_2026-133_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Raphinha",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "salah",
@@ -117,7 +118,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Mohamed_Salah_Argentina_v_Egypt_7_July_2026-163_%28cropped%29.jpg/500px-Mohamed_Salah_Argentina_v_Egypt_7_July_2026-163_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Mohamed_Salah",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "kane",
@@ -125,7 +126,7 @@
    "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
    "pos": "ST",
    "lead": [
-    "Harry Edward Kane is an English professional footballer who plays as a striker for Bundesliga club Bayern Munich and captains the England national team. Known for his clinical finishing, passing, vision, and tactical versatility, he is widely regarded as one of the best players in the world. Kane has scored over 500 career goals for club and country, being Tottenham Hotspur's all-time top goalscorer (280), England's all-time top goalscorer (92) and its most-capped player, and the highest-scoring English player in the UEFA Champions League (58). He is also the Premier League's second-highest all-time goalscorer (213) and Bayern Munich's sixth-highest all-time goalscorer (156)."
+    "Harry Edward Kane is an English professional footballer who plays as a striker for Bundesliga club Bayern Munich and captains the England national team. Known for his clinical finishing, passing, vision, and tactical versatility, he is widely regarded as one of the best players in the world. Kane has scored over 500 career goals for club and country, being Tottenham Hotspur's all-time top goalscorer (280), England's all-time top goalscorer (93), and the highest-scoring English player in the UEFA Champions League (58). He is also the Premier League's second-highest all-time goalscorer (213) and Bayern Munich's sixth-highest all-time goalscorer (156)."
    ],
    "early": [
     "Harry Edward Kane was born on 28 July 1993 at Whipps Cross University Hospital in Leytonstone, London, the second son of Kim (née Hogg) and Patrick Kane, and has one older brother, Charlie. He has Irish ancestry through his father, who was born in Galway. The family lived in Walthamstow before moving to Chingford. Kane attended Larkswood Primary Academy until 2004, followed by Chingford Foundation School, which was also attended by David Beckham. He has played football since a very young age, joining the local Walthamstow club Ridgeway Rovers in 1999, when he was six. Kane spoke about football in his family:",
@@ -134,7 +135,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Harry_Kane_England_v_Ghana_23_June_2026-024_%28cropped%29.jpg/500px-Harry_Kane_England_v_Ghana_23_June_2026-024_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Harry_Kane",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "saka",
@@ -152,7 +153,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Bukayo_Saka_England_v_Ghana_23_June_2026-057_%28cropped%29.jpg/500px-Bukayo_Saka_England_v_Ghana_23_June_2026-057_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Bukayo_Saka",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "foden",
@@ -169,7 +170,7 @@
    "earlyHeading": "Early life and career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/2023-10-04_Fu%C3%9Fball%2C_M%C3%A4nner%2C_UEFA_Champions_League%2C_RB_Leipzig_-_Manchester_City_FC_1DX_2613%2C_Phil_Foden.jpg/500px-2023-10-04_Fu%C3%9Fball%2C_M%C3%A4nner%2C_UEFA_Champions_League%2C_RB_Leipzig_-_Manchester_City_FC_1DX_2613%2C_Phil_Foden.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Phil_Foden",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "rodri",
@@ -188,7 +189,7 @@
    "earlyHeading": "Early life and career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/Rodri_Argentina_v_Spain_19_July_2026-187_%28cropped%29.jpg/500px-Rodri_Argentina_v_Spain_19_July_2026-187_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Rodri",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "pedri",
@@ -204,7 +205,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1c/Pedri_France_v_Spain_7.24.26-245.jpg/500px-Pedri_France_v_Spain_7.24.26-245.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Pedri",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "gavi",
@@ -220,7 +221,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Gavi_Argentina_v_Spain_19_July_2026-013.jpg/500px-Gavi_Argentina_v_Spain_19_July_2026-013.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Gavi_(footballer)",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "wirtz",
@@ -236,7 +237,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/70/Florian_Wirtz_Ecuador_v_Germany_25_June_2026-181_%28cropped%29.jpg/500px-Florian_Wirtz_Ecuador_v_Germany_25_June_2026-181_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Florian_Wirtz",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "musiala",
@@ -254,7 +255,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Jamal_Musiala_Ecuador_v_Germany_25_June_2026-174_%28cropped%29.jpg/500px-Jamal_Musiala_Ecuador_v_Germany_25_June_2026-174_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Jamal_Musiala",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "debruyne",
@@ -268,7 +269,7 @@
    "earlyHeading": "Starting out",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Kevin_De_Bruyne_USMNT_v_Belgium_Mar_28_2026-64_%28cropped%29.jpg/500px-Kevin_De_Bruyne_USMNT_v_Belgium_Mar_28_2026-64_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Kevin_De_Bruyne",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "brunofernandes",
@@ -284,7 +285,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/Bruno_Fernandes_USMNT_v_Portugal_Mar_31_2026-27_%28cropped%29.jpg/500px-Bruno_Fernandes_USMNT_v_Portugal_Mar_31_2026-27_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Bruno_Fernandes",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "odegaard",
@@ -301,7 +302,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Martin_Odegaard_France_v_Norway_26_June_26-014.jpg/500px-Martin_Odegaard_France_v_Norway_26_June_26-014.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Martin_%C3%98degaard",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "rice",
@@ -318,7 +319,7 @@
    "earlyHeading": "Early life and career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Declan_Rice_England_v_Ghana_23_June_2026-150.jpg/500px-Declan_Rice_England_v_Ghana_23_June_2026-150.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Declan_Rice",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "palmer",
@@ -335,7 +336,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Cole_Palmer_2025_FIFA_Club_World_Cup_Final.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
    "source": "https://en.wikipedia.org/wiki/Cole_Palmer",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "valverde",
@@ -351,7 +352,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Federico_Valverde_2021_%28cropped%29.jpg/500px-Federico_Valverde_2021_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Federico_Valverde",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "tchouameni",
@@ -368,7 +369,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Aurelien_Tchouameni_France_v_Senegal_16_June_2026-447_%28cropped%29.jpg/500px-Aurelien_Tchouameni_France_v_Senegal_16_June_2026-447_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Aur%C3%A9lien_Tchouam%C3%A9ni",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "camavinga",
@@ -386,7 +387,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Ofrenda_de_la_Liga_y_la_Champions-13-L.Mill%C3%A1n_%2852109790215%29_%28cropped%29.jpg/500px-Ofrenda_de_la_Liga_y_la_Champions-13-L.Mill%C3%A1n_%2852109790215%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Eduardo_Camavinga",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "guler",
@@ -403,7 +404,7 @@
    "earlyHeading": "Early career",
    "image": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Arda_G%C3%BCler_2025_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
    "source": "https://en.wikipedia.org/wiki/Arda_G%C3%BCler",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "leao",
@@ -419,7 +420,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ef/Rafael_Leao_Croatia_v_Portugal_2_July_2026-187_%28cropped%29.jpg/500px-Rafael_Leao_Croatia_v_Portugal_2_July_2026-187_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Rafael_Le%C3%A3o",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "kvaratskhelia",
@@ -438,7 +439,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Kvaratskhelia_asse_psg_2425.png/500px-Kvaratskhelia_asse_psg_2425.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Khvicha_Kvaratskhelia",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "lautaro",
@@ -454,7 +455,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e9/Lautaro_Martinez_Argentina_v_Spain_19_July_2026-049_%28cropped%29.jpg/500px-Lautaro_Martinez_Argentina_v_Spain_19_July_2026-049_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Lautaro_Mart%C3%ADnez",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "alvarez",
@@ -470,7 +471,7 @@
    "earlyHeading": "2018–2020: Youth career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/Julian_Alvarez_Argentina_v_Spain_19_July_2026-052_%28cropped%29.jpg/500px-Julian_Alvarez_Argentina_v_Spain_19_July_2026-052_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Juli%C3%A1n_Alvarez",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "macallister",
@@ -487,7 +488,7 @@
    "earlyHeading": "Youth career, senior debut, and 2020 Summer Olympics",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/db/Alexis_Mac_Allister_Argentina_v_Spain_19_July_2026-162_%28cropped%29.jpg/500px-Alexis_Mac_Allister_Argentina_v_Spain_19_July_2026-162_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alexis_Mac_Allister",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "enzo",
@@ -503,7 +504,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Enzo_Fernandez_Argentina_v_Spain_19_July_2026-050_%28cropped%29.jpg/500px-Enzo_Fernandez_Argentina_v_Spain_19_July_2026-050_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Enzo_Fern%C3%A1ndez",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "vandijk",
@@ -520,7 +521,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/20160604_AUT_NED_8876_%28cropped%29.jpg/500px-20160604_AUT_NED_8876_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Virgil_van_Dijk",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "saliba",
@@ -537,7 +538,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/06/William_Saliba_France_v_Paraguay_4_July_2026-183.jpg/500px-William_Saliba_France_v_Paraguay_4_July_2026-183.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/William_Saliba",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "hakimi",
@@ -553,7 +554,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Achraf_Hakimi_Morocco_v_Norway_7_June_2026-32.jpg/500px-Achraf_Hakimi_Morocco_v_Norway_7_June_2026-32.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Achraf_Hakimi",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "kimmich",
@@ -571,7 +572,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Joshua_Kimmich_Ecuador_v_Germany_25_June_2026-149.jpg/500px-Joshua_Kimmich_Ecuador_v_Germany_25_June_2026-149.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Joshua_Kimmich",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "alisson",
@@ -585,7 +586,7 @@
    "earlyHeading": "Starting out",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Alisson_Becker_Brazil_V_Morocco_13_June_2026-117_%28cropped%29.jpg/500px-Alisson_Becker_Brazil_V_Morocco_13_June_2026-117_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alisson_Becker",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "courtois",
@@ -596,14 +597,14 @@
     "Thibaut Nicolas Marc Courtois is a Belgian professional footballer who plays as a goalkeeper for La Liga club Real Madrid and the Belgium national team. He is regarded as one of the greatest goalkeepers of all time."
    ],
    "early": [
-    "Courtois was born in the city of Bree in Flanders, to a Walloon father and a Flemish mother. He began his career with local side Bilzen V.V., as a left back. Soon after, in 1999, he joined Racing Genk at the age of seven, and it was there that he was converted into a goalkeeper.",
-    "Courtois progressed through the Genk youth system, where Koen Casteels was initially regarded as the primary goalkeeper, but during an injury crisis Courtois, aged 16 years and 341 days, made his first team debut on 17 April 2009 against Gent. After turning down a transfer to TSG Hoffenheim of the Bundesliga, Courtois was made first-choice goalkeeper for the 2010–11 season ahead of Casteels, when Laszlo Koteles' registration ran into issues.",
-    "He was a key figure in Genk's title victory in the 2010–11 season in the Belgian Pro League. He received the Goalkeeper of the Year and Genk's Player of the Year award, only conceding 32 goals over the course of 40 league matches and keeping 14 clean sheets for Genk."
+    "Courtois was born in the city of Bree in Flanders, to a Walloon father and a Flemish mother. He began his career with local side Bilzen V.V., as a left back. Soon after, in 1999, he joined Racing Genk at the age of seven, and it was there that he was converted to a goalkeeper.",
+    "Courtois progressed through the Genk youth system, where Koen Casteels was initially regarded as the starting goalkeeper. However, during Casteels’ injury crisis, Courtois, aged 16 years and 341 days, made his first team debut on 17 April 2009 for Gent. After turning down a transfer to TSG Hoffenheim from the Bundesliga, Courtois was made first-choice goalkeeper for the 2010–11 season ahead of Casteels, when Laszlo Koteles' registration ran into issues.",
+    "He was a key figure in Genk's title victory in the 2010–11 season in the Belgian Pro League. He received the Goalkeeper of the Year and Genk's Player of the Year award, only conceding 32 goals over the course of 40 league matches, and keeping 14 clean sheets for Genk."
    ],
    "earlyHeading": "Early career at Genk",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Thibaut_Courtois_Belgium_v_USA_6_July_2026-076_%28cropped%29.jpg/500px-Thibaut_Courtois_Belgium_v_USA_6_July_2026-076_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Thibaut_Courtois",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "son",
@@ -620,7 +621,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/BFA_2023_-2_Heung-Min_Son_%28cropped%29.jpg/500px-BFA_2023_-2_Heung-Min_Son_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Son_Heung-min",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "griezmann",
@@ -636,7 +637,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6e/FRA-ARG_%2810%29_%28cropped%29.jpg/500px-FRA-ARG_%2810%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Antoine_Griezmann",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "dembele",
@@ -652,7 +653,7 @@
    "earlyHeading": "Early life and career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Ousmane_Dembele_France_v_Senegal_16_June_2026-341_%28cropped%29_2.jpg/500px-Ousmane_Dembele_France_v_Senegal_16_June_2026-341_%28cropped%29_2.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Ousmane_Demb%C3%A9l%C3%A9",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "doue",
@@ -666,7 +667,7 @@
    "earlyHeading": "Starting out",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/Desire_Doue_France_v_Senegal_16_June_2026-264.jpg/500px-Desire_Doue_France_v_Senegal_16_June_2026-264.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/D%C3%A9sir%C3%A9_Dou%C3%A9",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "joaoneves",
@@ -680,9 +681,9 @@
     "Born in Tavira, Neves began his youth career with hometown club Casa Benfica Tavira, one of Benfica's feeder clubs, he then spent four seasons in Benfica's development centre in Algarve, before moving to Benfica's main academy in 2016. Neves signed his first professional contract with S.L Benfica in December 2020."
    ],
    "earlyHeading": "Early career",
-   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/be/Joao_Neves_Croatia_v_Portugal_2_July_2026-102.jpg/500px-Joao_Neves_Croatia_v_Portugal_2_July_2026-102.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+   "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8b/Joao_Neves_Croatia_v_Portugal_2_July_2026-102_%28cropped%29.jpg/500px-Joao_Neves_Croatia_v_Portugal_2_July_2026-102_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Jo%C3%A3o_Neves",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "vitinha",
@@ -699,7 +700,7 @@
    "earlyHeading": "2019–20: Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Vitinha_USMNT_v_Portugal_Mar_31_2026-50_%28cropped%29.jpg/500px-Vitinha_USMNT_v_Portugal_Mar_31_2026-50_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Vitinha",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "nicowilliams",
@@ -716,7 +717,7 @@
    "earlyHeading": "Youth",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Nico_Williams_Argentina_v_Spain_19_July_2026-196_%28cropped%29.jpg/500px-Nico_Williams_Argentina_v_Spain_19_July_2026-196_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Nico_Williams",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "olmo",
@@ -733,7 +734,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Dani_Olmo_France_v_Spain_7.24.26-176_%28cropped%29.jpg/500px-Dani_Olmo_France_v_Spain_7.24.26-176_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Dani_Olmo",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "olise",
@@ -750,7 +751,7 @@
    "earlyHeading": "Early life and family",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/04/Michael_Olise_France_v_Senegal_16_June_2026-307_%28cropped%29.jpg/500px-Michael_Olise_France_v_Senegal_16_June_2026-307_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Michael_Olise",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "isak",
@@ -767,7 +768,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/Alexander_Isak_-_Sweden_-_Greece21_%28cropped%29.jpg/500px-Alexander_Isak_-_Sweden_-_Greece21_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alexander_Isak",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "gyokeres",
@@ -784,7 +785,7 @@
    "earlyHeading": "Youth",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/Viktor_Gyokeres_France_v_Sweden_6.30.26-123_%28cropped%29.jpg/500px-Viktor_Gyokeres_France_v_Sweden_6.30.26-123_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Viktor_Gy%C3%B6keres",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "yildiz",
@@ -802,7 +803,7 @@
    "earlyHeading": "Early life",
    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Kenan_Y%C4%B1ld%C4%B1z_in_the_international_match_%28March_2025%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
    "source": "https://en.wikipedia.org/wiki/Kenan_Y%C4%B1ld%C4%B1z",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "cubarsi",
@@ -810,7 +811,7 @@
    "flag": "🇪🇸",
    "pos": "CB",
    "lead": [
-    "Pau Cubarsí Paredes is a Spanish professional footballer who plays as a centre-back for La Liga club Barcelona and the Spain national team. He is considered one of the best defenders in the world.",
+    "Pau Cubarsí Paredes is a Spanish professional footballer who plays as a centre-back for La Liga club Barcelona and the Spain national team.",
     "Formerly a Girona youth player, Cubarsí transitioned into being a La Masia talent, and he later made his senior debut for Barcelona on 18 January 2024, just days before his 17th birthday. He later won La Liga in 2025 and 2026 with the club."
    ],
    "early": [
@@ -820,7 +821,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/77/Pau_Cubarsi_Argentina_v_Spain_19_July_2026-181_%28cropped%29.jpg/500px-Pau_Cubarsi_Argentina_v_Spain_19_July_2026-181_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Pau_Cubars%C3%AD",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "messi",
@@ -836,7 +837,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c8/Leo_Messi_Argentina_v_Egypt_7_July_2026-1.jpg/500px-Leo_Messi_Argentina_v_Egypt_7_July_2026-1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Lionel_Messi",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "ronaldo",
@@ -852,7 +853,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/26/Cristiano_Ronaldo_Croatia_v_Portugal_2_July_2026-075_%28cropped%29.jpg/500px-Cristiano_Ronaldo_Croatia_v_Portugal_2_July_2026-075_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Cristiano_Ronaldo",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "modric",
@@ -860,7 +861,7 @@
    "flag": "🇭🇷",
    "pos": "CM",
    "lead": [
-    "Luka Modrić is a Croatian professional footballer who plays as a central midfielder for Serie A club AC Milan and captains the Croatia national team. He is widely regarded as one of the greatest midfielders of all time and as the greatest Croatian footballer in history. With 34 major trophies, he is the most decorated Croatian player in world football. His career longevity ranks third globally for all-time international appearances having amassed over 1,150 career appearances – the first and only Croatian to do so."
+    "Luka Modrić is a Croatian professional footballer who plays as a central midfielder for Serie A club AC Milan and captains the Croatia national team. He is widely regarded as one of the greatest midfielders of all time and as the greatest Croatian footballer in history. With 34 major trophies, he is the most decorated Croatian player in world football. His career longevity ranks him joint-second globally for all-time international appearances and among the players with the highest number of official matches ever played, making him the first and only Croatian to reach the 1,150-appearance milestone."
    ],
    "early": [
     "Luka Modrić was born on 9 September 1985 in Zadar and was raised in the hamlet of Modrići, which is a part of Zaton Obrovački, a village situated on the southern slopes of the mountain Velebit, north of the city of Zadar in SR Croatia, then a republic within SFR Yugoslavia. He is the oldest child of Stipe Modrić from Modrići and Radojka Dopuđ from Kruševo near Obrovac, both of whom initially worked in a knitwear factory. Modrić mostly spent his early years in the stone house where his paternal grandfather usually lived after whom he was named, located on the road above the hamlet of Modrići, and was shepherding goats as a five-year-old."
@@ -868,7 +869,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/80/Luka_Modric_Croatia_v_Portugal_2_July_2026-055.jpg/500px-Luka_Modric_Croatia_v_Portugal_2_July_2026-055.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Luka_Modri%C4%87",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "davies",
@@ -885,7 +886,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/Alphonso_Davies_Canada_v_Qatar_18_June_2026-007_%28cropped%29.jpg/500px-Alphonso_Davies_Canada_v_Qatar_18_June_2026-007_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alphonso_Davies",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "frimpong",
@@ -902,7 +903,7 @@
    "earlyHeading": "Early career",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Jeremie_Frimpong_04012026_%283%29_%28cropped%29.jpg/500px-Jeremie_Frimpong_04012026_%283%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Jeremie_Frimpong",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "donnarumma",
@@ -918,7 +919,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2d/Norway_Italy_-_June_2025_A_17_%28Gianluigi_Donnarumma%29.jpg/500px-Norway_Italy_-_June_2025_A_17_%28Gianluigi_Donnarumma%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Gianluigi_Donnarumma",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "irankunda",
@@ -934,7 +935,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/Nestory_Irankunda_Australia_v_USA_19_June_2026-241_%28cropped%29.jpg/500px-Nestory_Irankunda_Australia_v_USA_19_June_2026-241_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Nestory_Irankunda",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "kerr",
@@ -952,7 +953,7 @@
    "earlyHeading": "Early life",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d7/Sam_Kerr_Gotham_v_Seattle_18_July_2026-378_%28cropped%29.jpg/500px-Sam_Kerr_Gotham_v_Seattle_18_July_2026-378_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Sam_Kerr",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "fowler",
@@ -970,7 +971,7 @@
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f4/Adelaide_United_v_Canberra_United_W-League_Rd_6_2019-12-22_Fowler_%2849258071411%29_%28cropped%29.jpg/500px-Adelaide_United_v_Canberra_United_W-League_Rd_6_2019-12-22_Fowler_%2849258071411%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Mary_Fowler",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "bonmati",
@@ -989,7 +990,7 @@
    "earlyHeading": "Youth",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/25th_Laureus_World_Sports_Awards_-_240422_214032.jpg/500px-25th_Laureus_World_Sports_Awards_-_240422_214032.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Aitana_Bonmat%C3%AD",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   },
   {
    "id": "putellas",
@@ -998,15 +999,16 @@
    "pos": "CM",
    "she": true,
    "lead": [
-    "Alèxia Putellas i Segura, often known simply as Alexia, is a Spanish professional footballer from Catalonia who plays as a midfielder or forward for the Women's Super League club London City Lionesses and the Spain women's national team. She previously played for the clubs Espanyol, Levante, and Barcelona, and has also played for the Catalonia women's national team. She has won all the major club awards and most of the individual awards available to a European player, and is widely regarded as one of the greatest female footballers of all time."
+    "Alèxia Putellas i Segura, often known simply as Alexia, is a Spanish professional footballer from Catalonia. She plays as a midfielder and forward for the Women's Super League club London City Lionesses and the Spain national team. She has also played for the Catalonia national team. She has won all the major club awards and most of the individual awards available to a European player, and is widely regarded as one of the greatest female footballers of all time."
    ],
    "early": [
-    "Alèxia Putellas i Segura was born on 4 February 1994, to Jaume Putellas Rota and Elisabet \"Eli\" Segura Sabaté in Mollet del Vallès, a municipality in the province of Barcelona. She has a younger sister, Alba. Putellas has been a supporter of FC Barcelona since her early childhood and would travel with the penya of Mollet del Vallès to watch matches at the Camp Nou with her father. She would also watch Barcelona matches at a local bar, La Bolera, with her family; she has said that her family have always been fanatic supporters of the club, with the exception of a cousin who supports Real Madrid. As of 2021, Putellas was still a member of the Mollet penya. In her youth, Putellas idolised male footballers Andrés Iniesta, Rivaldo, and Ronaldinho, who all played for Barcelona, as well as female footballer Louisa Nécib, who played for Olympique Lyonnais. Iniesta has returned the idolatry, calling Putellas a role model and saying she encapsulates the values of FC Barcelona."
+    "Alèxia Putellas i Segura was born on 4 February 1994, to Jaume Putellas Rota and Elisabet Segura Sabaté in Mollet del Vallès, a municipality in the province of Barcelona. She has a younger sister, Alba. Putellas has been a supporter of FC Barcelona since her early childhood, when she traveled with her father to watch matches at Camp Nou. She idolised the footballers Andrés Iniesta, Rivaldo, and Ronaldinho of Barcelona, as well as Louisa Nécib of Olympique Lyonnais.",
+    "As a child, Putellas played basketball, roller hockey and tennis in addition to football, and attended football camps run by Xavi. She also participated in Catalan folk dancing. Putellas joined a football club at the age of seven, and was made captain of her age group when she was nine. However, she did not think she could have a football career due to being female. The first club team she played for was the CF Mollet UE boys' team. She did not like the atmosphere of the team, and left after three training sessions. Soon after, she joined the Sabadell girls' team."
    ],
    "earlyHeading": "Early life and education",
    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Premios_Goya_2026_-_Alexia_Putellas_%28cropped%29.jpg/500px-Premios_Goya_2026_-_Alexia_Putellas_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
    "source": "https://en.wikipedia.org/wiki/Alexia_Putellas",
-   "fetchedAt": "2026-11-15"
+   "fetchedAt": "2026-11-22"
   }
  ]
 }
